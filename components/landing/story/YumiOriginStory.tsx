@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
-import OrbitalBackdrop from "@/components/shop/OrbitalBackdrop";
+import OrbitalBackdrop, { Burst } from "@/components/shop/OrbitalBackdrop";
 import StationDock from "@/components/shop/StationDock";
 import YumiLoading from "@/components/yumi3d/YumiLoading";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
@@ -29,6 +29,8 @@ import {
   STORY_TRACKS,
   DOCKED_AT_MS,
   LAYERS_DRAWN_AT_MS,
+  lookAt,
+  outfitAt,
   planetTrack,
   actAt,
   yumiAt,
@@ -49,7 +51,8 @@ type StoryCopy = TranslationDictionary["landing"]["story"];
    One WebGL Yumi, made when the film comes near the screen and drawn only
    while it is on it. In the Station 33 scene she wears the shop's real
    pieces — the same catalogue and the same 3D models the app sells — and
-   whatever she is wearing, she lands on Earth in.
+   whatever she is wearing, she lands on Earth in: the looks she tries on by
+   herself (STATION_LOOKS), or what the reader picks for her.
    ========================================================= */
 
 /** A few of the shop's pieces: something to wear, something from Earth. */
@@ -251,6 +254,8 @@ export default function YumiOriginStory({
   const actRef = useRef(0);
   const endRef = useRef(false);
   const dockedRef = useRef(false);
+  const lookRef = useRef(-1);
+  const ownRef = useRef(outfitAt(0));
   const mergedRef = useRef(false);
   const drawnRef = useRef(false);
   const veilRef = useRef<HTMLDivElement>(null);
@@ -272,7 +277,14 @@ export default function YumiOriginStory({
   const [layersDrawn, setLayersDrawn] = useState(false);
   const [yumi, setYumi] = useState<"loading" | "live" | "unavailable">("loading");
   const [catalog, setCatalog] = useState<Catalog | null>(null);
-  const [outfit, setOutfit] = useState<YumiOutfit>({});
+  /** Which of her own looks she has on (STATION_LOOKS); -1 before them. */
+  const [look, setLook] = useState(-1);
+  /** What she has on by herself (outfitAt). */
+  const [ownOutfit, setOwnOutfit] = useState<YumiOutfit>(() => outfitAt(0));
+  /** What the reader picked for her, which takes over from her own looks
+     until the film is played again from the start. */
+  const [chosen, setChosen] = useState<YumiOutfit | null>(null);
+  const outfit = chosen ?? ownOutfit;
 
   const showTime = useCallback((time: number) => {
     const nextAct = actAt(time);
@@ -290,6 +302,16 @@ export default function YumiOriginStory({
     if (nextMerged !== mergedRef.current) {
       mergedRef.current = nextMerged;
       setMerged(nextMerged);
+    }
+    const nextLook = lookAt(time);
+    if (nextLook !== lookRef.current) {
+      lookRef.current = nextLook;
+      setLook(nextLook);
+    }
+    const nextOwn = outfitAt(time);
+    if (nextOwn !== ownRef.current) {
+      ownRef.current = nextOwn;
+      setOwnOutfit(nextOwn);
     }
     const nextDocked = time >= DOCKED_AT_MS;
     if (nextDocked !== dockedRef.current) {
@@ -342,8 +364,9 @@ export default function YumiOriginStory({
       setPlaying(true);
       setEnded(false);
     };
-    // From the end card back to the first frame is a cut, not a jump.
-    if (clock.time() >= STORY_DURATION_MS - 1) cut(start);
+    // From the end card back to the first frame is a cut, not a jump, and
+    // a fresh showing: she tries her own looks on again.
+    if (clock.time() >= STORY_DURATION_MS - 1) cut(() => { setChosen(null); start(); });
     else start();
   }, [cut]);
 
@@ -635,7 +658,8 @@ export default function YumiOriginStory({
     if (!catalog) return;
     // Trying something on is a reason to stop and look.
     if (clockRef.current?.playing()) pause();
-    setOutfit(current => catalog.toggle(current, item));
+    // From what she has on now, her own look or the reader's last pick.
+    setChosen(catalog.toggle(outfit, item));
   };
 
   const onPrimary = () => {
@@ -711,6 +735,9 @@ export default function YumiOriginStory({
                 <span className={styles.planetAtmosphere} />
                 <span data-track="flare" className={styles.flare} />
               </div>
+              {/* Each of her own looks goes on with a ring of light from the
+                  stand, the shop's own for a purchase. */}
+              {look >= 0 && !chosen ? <Burst key={look} /> : null}
             </div>
             <div data-track="dock" className={styles.dock}>
               <StationDock />
@@ -820,7 +847,7 @@ export default function YumiOriginStory({
               </ul>
               <p className={styles.tryOnHint}>{copy.tryOn.hint}</p>
               {Object.keys(outfit).length ? (
-                <button type="button" className={styles.takeOff} onClick={() => setOutfit({})}>
+                <button type="button" className={styles.takeOff} onClick={() => setChosen({})}>
                   {copy.tryOn.takeOff}
                 </button>
               ) : null}

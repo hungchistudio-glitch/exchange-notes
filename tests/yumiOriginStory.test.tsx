@@ -12,6 +12,9 @@ import {
   MERGE_AT_MS,
   STORY_ACTS,
   STORY_DURATION_MS,
+  STATION_LOOKS,
+  lookAt,
+  outfitAt,
   LAYERS_DRAWN_AT_MS,
   STORY_TRACKS,
   actAt,
@@ -20,6 +23,7 @@ import {
   yumiAt,
 } from "@/components/landing/story/storyTimeline";
 import { getTranslations } from "@/lib/i18n";
+import { shopItem } from "@/lib/shop/catalog";
 
 const scene = vi.hoisted(() => ({
   handle: null as null | Record<string, ReturnType<typeof vi.fn>>,
@@ -213,6 +217,41 @@ describe("the descent to Station 33", () => {
   });
 });
 
+describe("Station 33's fitting", () => {
+  it("tries three of the shop's real pieces on her while she is on the stand", () => {
+    expect(STATION_LOOKS).toHaveLength(3);
+    for (const [index, look] of STATION_LOOKS.entries()) {
+      expect(look.at).toBeGreaterThan(DOCKED_AT_MS);
+      expect(look.at + 1_400).toBeLessThan(STATION_LOOKS[index + 1]?.at ?? STORY_ACTS[4].start);
+      for (const [slot, id] of Object.entries(look.outfit)) expect(shopItem(id)?.slot, id).toBe(slot);
+      expect(lookAt(look.at)).toBe(index);
+      expect(lookAt(look.at - 1)).toBe(index - 1);
+    }
+    // She goes down to Earth in the last.
+    expect(lookAt(STORY_DURATION_MS)).toBe(STATION_LOOKS.length - 1);
+  });
+
+  it("has each look on unseen while she is still in two pieces, then nothing until the fitting", () => {
+    expect(outfitAt(0)).toEqual({});
+    STATION_LOOKS.forEach((look, index) => {
+      const time = 1_000 * (index + 1) + 500;
+      expect(outfitAt(time)).toBe(look.outfit);
+      expect(yumiAt(time).parts).not.toBeNull();
+    });
+    expect(outfitAt(MERGE_AT_MS)).toEqual({});
+    expect(outfitAt(STATION_LOOKS[0].at - 1)).toEqual({});
+    expect(outfitAt(STATION_LOOKS[0].at)).toBe(STATION_LOOKS[0].outfit);
+  });
+
+  it("hops as each look goes on, and stands still under reduced motion", () => {
+    for (const look of STATION_LOOKS) {
+      expect(yumiAt(look.at).y).toBeLessThan(yumiAt(look.at - 400).y - 0.02);
+      expect(yumiAt(look.at + 400).y).toBeCloseTo(yumiAt(look.at - 400).y, 3);
+      expect(yumiAt(look.at, false, true).y).toBeCloseTo(yumiAt(look.at - 400, false, true).y, 3);
+    }
+  });
+});
+
 describe("YU and MI", () => {
   it("drift apart as a U and an i, and close in until they are one", () => {
     const start = yumiAt(0, false, true);
@@ -349,6 +388,29 @@ describe("the film on the page", () => {
     fireEvent.click(within(rail).getByRole("button", { name: story.tryOn.takeOff }));
     expect(monocle).toHaveAttribute("aria-pressed", "false");
     expect(scene.handle!.setOutfit).toHaveBeenLastCalledWith({});
+  });
+
+  it("puts her own looks on by herself, until the reader picks something", async () => {
+    renderStory();
+    await waitFor(() => expect(scene.handle).not.toBeNull());
+
+    fireEvent.click(screen.getByRole("button", { name: /Station 33/ }));
+    const later = skipAhead(STATION_LOOKS[0].at - STORY_ACTS[3].start + 100);
+    const rail = await screen.findByRole("group", { name: story.tryOn.title });
+    await waitFor(() => expect(scene.handle!.setOutfit).toHaveBeenLastCalledWith(STATION_LOOKS[0].outfit));
+    later.mockRestore();
+    expect(within(rail).getByRole("button", { name: /Beret/ })).toHaveAttribute("aria-pressed", "true");
+    expect(within(rail).getByRole("button", { name: /Brass monocle/ })).toHaveAttribute("aria-pressed", "true");
+
+    // The reader's pick starts from what she has on, and stays.
+    fireEvent.click(within(rail).getByRole("button", { name: /Studio headphones/ }));
+    expect(scene.handle!.setOutfit).toHaveBeenLastCalledWith({ head: "headphones", eyewear: "monocle" });
+    fireEvent.click(screen.getByRole("button", { name: story.play }));
+    const muchLater = skipAhead(STATION_LOOKS[2].at - STORY_ACTS[3].start + 100);
+    await waitFor(() => expect(screen.getByRole("region", { name: story.ariaLabel })).toHaveAttribute("data-act", "station"));
+    await new Promise(resolve => setTimeout(resolve, 50));
+    muchLater.mockRestore();
+    expect(scene.handle!.setOutfit).toHaveBeenLastCalledWith({ head: "headphones", eyewear: "monocle" });
   });
 
   it("names the pieces in the page's language", async () => {
