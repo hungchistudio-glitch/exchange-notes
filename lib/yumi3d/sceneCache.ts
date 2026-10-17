@@ -47,6 +47,10 @@ export function relayedOptions(
   return {
     reducedMotion,
     continuousRotation: true,
+    /* Both homes report her canvas's size changes (a ResizeObserver each),
+       so the scene need not measure it on every frame — a measurement that
+       landed after the rest of the page's writes and forced a layout. */
+    embedded: true,
     onPullOpen: () => relay.current.onPullOpen?.(),
     onTap: () => relay.current.onTap?.(),
     onLungeArrive: () => relay.current.onLungeArrive?.(),
