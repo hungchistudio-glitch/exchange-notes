@@ -21,7 +21,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "jade-disc-earrings",
     "country": "tw",
     "slot": "earrings",
-    "price": 35,
+    "price": 36,
     "tone": "#6caa91",
     "names": {
       "traditional-chinese": "玉璧耳環",
@@ -36,7 +36,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "tw-signal-brow",
     "country": "tw",
     "slot": "brow",
-    "price": 25,
+    "price": 24,
     "tone": "#df534b",
     "names": {
       "traditional-chinese": "赤藍訊號眉環",
@@ -51,7 +51,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "plum-orbit-necklace",
     "country": "tw",
     "slot": "necklace",
-    "price": 40,
+    "price": 39,
     "tone": "#c694b4",
     "names": {
       "traditional-chinese": "梅花軌道項鍊",
@@ -66,7 +66,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "tea-bucket-hat",
     "country": "tw",
     "slot": "head",
-    "price": 40,
+    "price": 39,
     "tone": "#718f77",
     "names": {
       "traditional-chinese": "茶山漁夫帽",
@@ -81,7 +81,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "market-weave-scarf",
     "country": "tw",
     "slot": "neck",
-    "price": 35,
+    "price": 36,
     "tone": "#447b74",
     "names": {
       "traditional-chinese": "茄芷織紋圍巾",
@@ -111,7 +111,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "rose-copper",
     "country": "tw",
     "slot": "material",
-    "price": 65,
+    "price": 66,
     "tone": "#c78c7b",
     "names": {
       "traditional-chinese": "玫瑰銅",
@@ -126,7 +126,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "tw-orbit-stamp",
     "country": "tw",
     "slot": "pin",
-    "price": 25,
+    "price": 24,
     "tone": "#d54c48",
     "names": {
       "traditional-chinese": "雙十紀念郵票・10月10日",
@@ -171,7 +171,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "silver-star-earrings",
     "country": "us",
     "slot": "earrings",
-    "price": 35,
+    "price": 36,
     "tone": "#bbc4d4",
     "names": {
       "traditional-chinese": "銀星耳環",
@@ -186,7 +186,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "us-signal-brow",
     "country": "us",
     "slot": "brow",
-    "price": 25,
+    "price": 24,
     "tone": "#4969aa",
     "names": {
       "traditional-chinese": "星際訊號眉環",
@@ -201,7 +201,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "lunar-dogtag-necklace",
     "country": "us",
     "slot": "necklace",
-    "price": 40,
+    "price": 39,
     "tone": "#afb6c0",
     "names": {
       "traditional-chinese": "月面識別牌項鍊",
@@ -216,7 +216,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "orbital-beanie",
     "country": "us",
     "slot": "head",
-    "price": 40,
+    "price": 39,
     "tone": "#33486d",
     "names": {
       "traditional-chinese": "軌道毛帽",
@@ -231,7 +231,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "launch-stripe-scarf",
     "country": "us",
     "slot": "neck",
-    "price": 35,
+    "price": 36,
     "tone": "#b34443",
     "names": {
       "traditional-chinese": "發射條紋圍巾",
@@ -246,7 +246,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "midnight-titanium",
     "country": "us",
     "slot": "material",
-    "price": 65,
+    "price": 66,
     "tone": "#293e63",
     "names": {
       "traditional-chinese": "午夜鈦金屬",
@@ -276,7 +276,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "us-orbit-stamp",
     "country": "us",
     "slot": "pin",
-    "price": 25,
+    "price": 24,
     "tone": "#4c6299",
     "names": {
       "traditional-chinese": "獨立日紀念郵票・7月4日",
@@ -321,7 +321,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "pearl-orbit-earrings",
     "country": "fr",
     "slot": "earrings",
-    "price": 35,
+    "price": 36,
     "tone": "#e9dfcd",
     "names": {
       "traditional-chinese": "珍珠軌道耳環",
@@ -336,7 +336,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "fr-signal-brow",
     "country": "fr",
     "slot": "brow",
-    "price": 25,
+    "price": 24,
     "tone": "#405c93",
     "names": {
       "traditional-chinese": "三色光點眉環",
@@ -351,7 +351,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "pearl-satellite-necklace",
     "country": "fr",
     "slot": "necklace",
-    "price": 40,
+    "price": 39,
     "tone": "#e9dac0",
     "names": {
       "traditional-chinese": "珍珠衛星項鍊",
@@ -366,7 +366,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "riviera-boater",
     "country": "fr",
     "slot": "head",
-    "price": 40,
+    "price": 39,
     "tone": "#d8ba83",
     "names": {
       "traditional-chinese": "蔚藍海岸平頂草帽",
@@ -381,7 +381,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "atelier-ribbon-scarf",
     "country": "fr",
     "slot": "neck",
-    "price": 35,
+    "price": 36,
     "tone": "#3c4f7b",
     "names": {
       "traditional-chinese": "工坊三色絲巾",
@@ -411,7 +411,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "pink-pearl",
     "country": "fr",
     "slot": "material",
-    "price": 65,
+    "price": 66,
     "tone": "#dbc0c4",
     "names": {
       "traditional-chinese": "玫瑰珍珠瓷",
@@ -426,7 +426,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "fr-orbit-stamp",
     "country": "fr",
     "slot": "pin",
-    "price": 25,
+    "price": 24,
     "tone": "#3c5992",
     "names": {
       "traditional-chinese": "國慶紀念郵票・7月14日",
@@ -471,7 +471,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "millefiori-earrings",
     "country": "it",
     "slot": "earrings",
-    "price": 35,
+    "price": 36,
     "tone": "#cc7956",
     "names": {
       "traditional-chinese": "琉璃花耳環",
@@ -486,7 +486,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "it-signal-brow",
     "country": "it",
     "slot": "brow",
-    "price": 25,
+    "price": 24,
     "tone": "#439476",
     "names": {
       "traditional-chinese": "翡翠訊號眉環",
@@ -501,7 +501,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "sun-medallion-necklace",
     "country": "it",
     "slot": "necklace",
-    "price": 40,
+    "price": 39,
     "tone": "#c8a058",
     "names": {
       "traditional-chinese": "日光圓章項鍊",
@@ -516,7 +516,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "espresso-fedora",
     "country": "it",
     "slot": "head",
-    "price": 40,
+    "price": 39,
     "tone": "#6c4a37",
     "names": {
       "traditional-chinese": "濃縮咖啡紳士帽",
@@ -531,7 +531,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "riviera-knit-scarf",
     "country": "it",
     "slot": "neck",
-    "price": 35,
+    "price": 36,
     "tone": "#439475",
     "names": {
       "traditional-chinese": "蔚藍海岸針織圍巾",
@@ -546,7 +546,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "lagoon-glass",
     "country": "it",
     "slot": "material",
-    "price": 70,
+    "price": 69,
     "tone": "#498f91",
     "names": {
       "traditional-chinese": "潟湖琉璃",
@@ -576,7 +576,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "it-orbit-stamp",
     "country": "it",
     "slot": "pin",
-    "price": 25,
+    "price": 24,
     "tone": "#438469",
     "names": {
       "traditional-chinese": "共和國日郵票・6月2日",
@@ -621,7 +621,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "solar-fan-earrings",
     "country": "es",
     "slot": "earrings",
-    "price": 35,
+    "price": 36,
     "tone": "#d2a651",
     "names": {
       "traditional-chinese": "日光摺扇耳環",
@@ -636,7 +636,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "es-signal-brow",
     "country": "es",
     "slot": "brow",
-    "price": 25,
+    "price": 24,
     "tone": "#ceaa4b",
     "names": {
       "traditional-chinese": "赤金訊號眉環",
@@ -651,7 +651,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "mosaic-pendant-necklace",
     "country": "es",
     "slot": "necklace",
-    "price": 40,
+    "price": 39,
     "tone": "#608cb1",
     "names": {
       "traditional-chinese": "花磚墜飾項鍊",
@@ -666,7 +666,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "cordoba-flat-hat",
     "country": "es",
     "slot": "head",
-    "price": 40,
+    "price": 39,
     "tone": "#313337",
     "names": {
       "traditional-chinese": "科爾多瓦平頂帽",
@@ -681,7 +681,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "fiesta-woven-scarf",
     "country": "es",
     "slot": "neck",
-    "price": 35,
+    "price": 36,
     "tone": "#b9443d",
     "names": {
       "traditional-chinese": "慶典織紋圍巾",
@@ -711,7 +711,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "cobalt-metal",
     "country": "es",
     "slot": "material",
-    "price": 65,
+    "price": 66,
     "tone": "#325e9e",
     "names": {
       "traditional-chinese": "鈷藍金屬",
@@ -726,7 +726,7 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "id": "es-orbit-stamp",
     "country": "es",
     "slot": "pin",
-    "price": 25,
+    "price": 24,
     "tone": "#c65843",
     "names": {
       "traditional-chinese": "國慶紀念郵票・10月12日",

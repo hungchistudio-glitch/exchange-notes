@@ -16,6 +16,8 @@
  *   node scripts/render-shop-thumbnails.mjs
  *
  * Options: --base http://localhost:3000 --port 9222 --out public/shop-thumbs
+ *          --collection station33   (or cultural, earrings: only those pieces,
+ *                                   so the other pictures are not rewritten)
  *
  * No dependencies: Node's global WebSocket speaks the DevTools protocol
  * directly (see scripts/capture-opening-frames.mjs).
@@ -30,6 +32,7 @@ for (let i = 2; i < process.argv.length; i += 2) {
 const base = args.get("base") ?? "http://localhost:3000";
 const port = args.get("port") ?? "9222";
 const outDir = args.get("out") ?? "public/shop-thumbs";
+const collection = args.get("collection");
 
 const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
 const ws = new WebSocket(version.webSocketDebuggerUrl);
@@ -53,7 +56,9 @@ const send = (method, params = {}, sessionId) => new Promise(resolve => {
 const { result: { targetId } } = await send("Target.createTarget", { url: "about:blank" });
 const { result: { sessionId } } = await send("Target.attachToTarget", { targetId, flatten: true });
 await send("Page.enable", {}, sessionId);
-await send("Page.navigate", { url: `${base}/yumi-shop-thumbnails-review` }, sessionId);
+await send("Page.navigate", {
+  url: `${base}/yumi-shop-thumbnails-review${collection ? `?collection=${encodeURIComponent(collection)}` : ""}`,
+}, sessionId);
 
 let pictures = null;
 for (let tries = 0; tries < 240 && !pictures; tries += 1) {

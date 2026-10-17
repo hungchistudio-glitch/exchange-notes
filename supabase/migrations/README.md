@@ -105,7 +105,14 @@ turn and were renamed again:
 | `20260911192656_lock_down_social_graph_grants` | `20260911192656` |
 | `20260911192708_message_analysis_pair_key` | `20260911192708` |
 
-**Twelve renames across five occasions now. `apply_migration` always stamps its
+On 2026-10-17 the Station 33 collection and its prices in threes, applied
+before the merge (it only adds pieces and re-prices existing ones):
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261017120000_yumi_shop_station33` | `20261017204433` |
+
+**Thirteen renames across six occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 

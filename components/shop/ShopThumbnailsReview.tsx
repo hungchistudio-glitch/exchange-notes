@@ -21,7 +21,10 @@ export default function ShopThumbnailsReview() {
     void import("@/lib/yumi3d/thumbnails")
       .then(({ renderThumbnailSet }) => {
         const collection = new URLSearchParams(window.location.search).get("collection");
-        const items = collection === "earrings" ? CULTURAL_ITEMS.filter(item => item.slot === "earrings") : collection === "cultural" ? CULTURAL_ITEMS : SHOP_ITEMS;
+        const items = collection === "earrings" ? CULTURAL_ITEMS.filter(item => item.slot === "earrings")
+          : collection === "cultural" ? CULTURAL_ITEMS
+            : collection === "station33" ? SHOP_ITEMS.filter(item => item.id.startsWith("s33-"))
+              : SHOP_ITEMS;
         return renderThumbnailSet(items.map(item => item.id), 256, "image/webp", .9, () => cancelled, (done, total) => { if (!cancelled) setProgress(`${done} / ${total}`); });
       })
       .then(rendered => {
