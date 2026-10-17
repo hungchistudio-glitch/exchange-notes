@@ -26,6 +26,10 @@ import type { YumiParts } from "@/lib/yumi3d/scene";
 export const STORY_DURATION_MS = 35_000;
 /** The instant YU and MI become one. */
 export const MERGE_AT_MS = 11_000;
+/** Earth has become Station 33's horizon: the descent ends here. */
+export const ARRIVE_AT_MS = 21_000;
+/** Yumi is on the stand; the shop's pieces come up after this. */
+export const DOCKED_AT_MS = 22_600;
 
 export const STORY_ACTS = [
   { id: "drift", start: 0 },
@@ -158,10 +162,19 @@ export function yumiAt(time: number, portrait = false, reduced = false): StoryYu
   x = lerp(x, portrait ? 0.5 : 0.36, toPlanet);
   y = lerp(y, portrait ? 0.62 : 0.5, toPlanet);
   r = lerp(r, portrait ? 0.15 : 0.17, toPlanet);
-  if (time >= 14_200 && time < 20_500) gaze = { x: portrait ? 0.3 : 1, y: portrait ? -1 : -0.25 };
+  if (time >= 14_200 && time < DOCKED_AT_MS) {
+    /* She watches the planet the whole way down: up at it first, then
+       down at the horizon it becomes under the station. */
+    const down = span(time, 18_200, ARRIVE_AT_MS);
+    gaze = {
+      x: lerp(portrait ? 0.3 : 1, 0, down),
+      y: lerp(portrait ? -1 : -0.25, 0.75, down),
+    };
+  }
 
-  // Act IV: docked on the stand, in the middle.
-  const dock = span(time, 20_500, 22_000);
+  // Act IV: the stand rises under her as the descent ends, and she settles
+  // onto it in the middle.
+  const dock = span(time, 21_000, DOCKED_AT_MS);
   x = lerp(x, 0.5, dock);
   y = lerp(y, 0.5, dock);
   r = lerp(r, 0.2, dock);
@@ -211,6 +224,68 @@ function track(keys: Key[]): Keyframe[] {
 
 const t3 = (x: number, y: number, scale = 1) => `translate3d(${x}%, ${y}%, 0) scale(${scale})`;
 
+/* A long, even move with no lurch at either end: the descent. */
+/* It settles completely before the station shows through, so the two
+   rims are one line when they cross. */
+const DESCENT = "cubic-bezier(0.42, 0, 0.08, 1)";
+
+/** The screen the default keyframes are worked out for (a 2.1:1 desktop
+ *  film); the projector replaces them with its own screen's. */
+export const PLANET_REFERENCE = { width: 1100, height: 524 } as const;
+
+/**
+ * Where the planet must end so that it lies exactly on Station 33's Earth,
+ * as planet-relative percentages and a scale. Everything here mirrors the
+ * stylesheet, in units of the screen (W × H):
+ *
+ * - the camera is the screen grown 8% on every side, and from 19s on holds
+ *   at translate(-5%, -1%) of its own box and scale(1.02) about its centre,
+ *   which is the screen's;
+ * - the planet is a circle of min(44cqh, 52cqw), its box 14% of the
+ *   camera's width from its right and 19% of its height from its top;
+ * - the station's Earth (OrbitalBackdrop) is a circle 175% of the window's
+ *   width wide, its top at 63% of the window's height, centred.
+ *
+ * So the planet does not cross-fade into a different Earth in a different
+ * place: the camera descends to it, it grows and sinks until its rim is the
+ * station's horizon, and then the station is simply there around it.
+ */
+export function planetArrival(width: number, height: number) {
+  const W = width, H = height;
+  const P = Math.min(0.44 * H, 0.52 * W);
+  // Planet centre on the screen, before any transform.
+  const pc = { x: -0.08 * W + 1.16 * W * 0.86 - P / 2, y: -0.08 * H + 1.16 * H * 0.19 + P / 2 };
+  // The camera, held from 19s.
+  const c = { s: 1.02, tx: -0.05 * 1.16 * W, ty: -0.01 * 1.16 * H, ox: W / 2, oy: H / 2 };
+  // The station's Earth.
+  const R = 0.875 * W;
+  const target = { x: W / 2, y: 0.63 * H + R };
+  // Undo the camera: where the planet must be inside it.
+  const inside = {
+    x: c.ox + (target.x - c.ox - c.tx) / c.s,
+    y: c.oy + (target.y - c.oy - c.ty) / c.s,
+  };
+  const round = (value: number) => Math.round(value * 1000) / 1000;
+  return {
+    x: round(((inside.x - pc.x) / P) * 100),
+    y: round(((inside.y - pc.y) / P) * 100),
+    scale: round((2 * R) / (c.s * P)),
+  };
+}
+
+/** The planet's keyframes, for a screen of this size. */
+export function planetTrack(width: number, height: number): Keyframe[] {
+  const end = planetArrival(width, height);
+  return track([
+    [0, { opacity: 0, transform: t3(22, 26, 0.55) }],
+    [13_500, { opacity: 0, transform: t3(22, 26, 0.55) }, EASE_OUT],
+    [17_800, { opacity: 1, transform: t3(0, 0, 1) }],
+    [18_200, { opacity: 1, transform: t3(0, 0, 1) }, DESCENT],
+    [ARRIVE_AT_MS, { opacity: 1, transform: t3(end.x, end.y, end.scale) }, EASE],
+    [ARRIVE_AT_MS + 700, { opacity: 0, transform: t3(end.x, end.y, end.scale) }],
+  ]);
+}
+
 /** Every painted layer, by the data-track name it carries in the markup. */
 export const STORY_TRACKS = {
   /* The camera: a slow push, a dolly in on the meeting, a pan to the
@@ -254,36 +329,46 @@ export const STORY_TRACKS = {
     [11_000, { opacity: 0.9, transform: "scale(0.35)" }, EASE_OUT],
     [12_600, { opacity: 0, transform: "scale(3.2)" }],
   ]),
-  /* The planet she sees: rising in from the right, then a slow glow. */
-  planet: track([
-    [0, { opacity: 0, transform: t3(22, 26, 0.55) }],
-    [13_500, { opacity: 0, transform: t3(22, 26, 0.55) }, EASE_OUT],
-    [17_800, { opacity: 1, transform: t3(0, 0, 1) }, EASE],
-    [20_300, { opacity: 1, transform: t3(-2, -1, 1.06) }, EASE_IN],
-    [21_200, { opacity: 0, transform: t3(-4, -2, 1.18) }],
+  /* The planet she sees, rising in from the right; then the descent to it
+     (see planetTrack: the size it ends at depends on the screen's). */
+  planet: planetTrack(PLANET_REFERENCE.width, PLANET_REFERENCE.height),
+  /* The planet takes on the light of the Earth it becomes (Station 33 shows
+     the reader's own time of day; the stylesheet sets how dark, and by day
+     not at all). A track of its own rather than a transition, so it is
+     painted once with the planet and never changes layers mid-film. */
+  planetDusk: track([
+    [0, { opacity: 0 }],
+    [19_600, { opacity: 0 }, EASE],
+    [ARRIVE_AT_MS, { opacity: 1 }],
   ]),
+  /* The sunrise on its rim, gone before the planet starts to move. */
   flare: track([
     [0, { opacity: 0 }],
     [14_800, { opacity: 0 }, EASE_OUT],
     [16_200, { opacity: 0.85 }, EASE],
-    [18_400, { opacity: 0.45 }, EASE],
-    [20_500, { opacity: 0 }],
+    [17_600, { opacity: 0.45 }, EASE],
+    [18_600, { opacity: 0 }],
   ]),
   /* Station 33's window on Earth: in with the dock, and in act V the dive
      toward the planet below it, until the window is all atmosphere. */
   orbit: track([
-    [0, { opacity: 0, transform: t3(0, 0, 1.08) }],
-    [20_500, { opacity: 0, transform: t3(0, 0, 1.08) }, EASE_OUT],
-    [21_700, { opacity: 1, transform: t3(0, 0, 1) }],
+    [0, { opacity: 0, transform: t3(0, 0, 1) }],
+    /* Still, so the planet can land exactly on its horizon; it shows
+       through over the last of the descent. */
+    [ARRIVE_AT_MS - 200, { opacity: 0, transform: t3(0, 0, 1) }, EASE_OUT],
+    [ARRIVE_AT_MS + 600, { opacity: 1, transform: t3(0, 0, 1) }],
     [29_000, { opacity: 1, transform: t3(0, 0, 1) }, EASE_IN],
     [32_400, { opacity: 1, transform: t3(0, -16, 2.7) }, EASE],
     [33_400, { opacity: 0, transform: t3(0, -20, 3.2) }],
   ]),
   /* The dock rises under her, and falls away when she leaves. */
+  /* It comes up into the frame from below rather than fading in under her,
+     and is under her shell as she settles. */
   dock: track([
-    [0, { opacity: 0, transform: t3(0, 40) }],
-    [20_700, { opacity: 0, transform: t3(0, 40) }, EASE_OUT],
-    [22_200, { opacity: 1, transform: t3(0, 0) }],
+    [0, { opacity: 0, transform: t3(0, 130) }],
+    [21_000, { opacity: 0, transform: t3(0, 130) }],
+    [21_050, { opacity: 1, transform: t3(0, 130) }, EASE_OUT],
+    [DOCKED_AT_MS, { opacity: 1, transform: t3(0, 0) }],
     [28_200, { opacity: 1, transform: t3(0, 0) }, EASE_IN],
     [29_600, { opacity: 0, transform: t3(0, 120) }],
   ]),

@@ -17,7 +17,7 @@ import styles from "./StationDock.module.css";
 export default function StationDock({ className }: { className?: string }) {
   return (
     <div className={`${styles.dock} ${className ?? ""}`} aria-hidden="true">
-      <div className={styles.spotlight} />
+      <div className={styles.spotlight} data-part="spotlight" />
       <div className={styles.pedestal}>
         <span className={styles.plinthSide} />
         <span className={styles.plinthTop} />
