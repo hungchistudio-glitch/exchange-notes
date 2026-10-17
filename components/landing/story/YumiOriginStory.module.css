@@ -260,18 +260,17 @@
 
 /* ------------------------------------------------------------ the planet */
 
-.planet,
-.flare {
-  position: absolute;
-  right: 14%;
-  top: 19%;
-  width: min(44cqh, 52cqw);
-  aspect-ratio: 1;
-}
-
+/* The one Earth, drawn where Station 33's horizon is: a circle 175% of the
+   screen's width, its top at 63% of the height, centred — the window's own
+   Earth (OrbitalBackdrop's .earth), which the film leaves out. The film only
+   ever shrinks it from here (globe() in storyTimeline.ts). */
 .planet {
+  position: absolute;
+  left: -37.5%;
+  top: 63%;
+  width: 175%;
+  aspect-ratio: 1;
   opacity: 0;
-  transform: translate3d(22%, 26%, 0) scale(0.55);
 }
 
 .planetSurface {
@@ -284,6 +283,9 @@
 
 /* A strip twice the planet's width, tiled once and sliding by half: an
    endless turn, as on Station 33's window. */
+/* A strip twice the planet's width, two turns of it side by side, sliding
+   by half: an endless turn, as on Station 33's window. Each continent and
+   cloud is its own small soft shape (see BLOBS in YumiOriginStory.tsx). */
 .planetLand,
 .planetClouds {
   position: absolute;
@@ -291,39 +293,20 @@
   left: 0;
   width: 200%;
   height: 100%;
-  background-repeat: repeat-x;
-  background-size: 50% 100%;
+}
+
+.planetLand i,
+.planetClouds i {
+  position: absolute;
 }
 
 .planetLand {
   opacity: 0.62;
-  /* Continents as clusters of soft shapes, so no one of them reads as a
-     spot: a long one, a broad one with a desert, and an island chain. */
-  background-image:
-    radial-gradient(7% 15% at 9% 34%, #6e9a5c, transparent 70%),
-    radial-gradient(6% 9% at 13% 52%, #7fa463, transparent 70%),
-    radial-gradient(5% 8% at 16% 66%, #8a9d5f, transparent 70%),
-    radial-gradient(13% 9% at 38% 30%, #6f9a5e, transparent 72%),
-    radial-gradient(9% 8% at 44% 40%, #b5a26f, transparent 70%),
-    radial-gradient(7% 11% at 36% 46%, #7aa365, transparent 70%),
-    radial-gradient(3% 3% at 62% 62%, #7aa365, transparent 70%),
-    radial-gradient(2.4% 2.4% at 66% 66%, #8eaa6c, transparent 70%),
-    radial-gradient(2% 2% at 69% 71%, #7aa365, transparent 70%),
-    radial-gradient(10% 7% at 82% 22%, #86a768, transparent 72%),
-    radial-gradient(6% 10% at 86% 34%, #6e9a5c, transparent 70%),
-    radial-gradient(18% 5% at 50% 94%, #e9f1f4, transparent 72%),
-    radial-gradient(18% 5% at 50% 4%, #e9f1f4, transparent 72%);
   animation: planetTurn 90s linear infinite;
 }
 
 .planetClouds {
   opacity: 0.75;
-  background-image:
-    radial-gradient(18% 4% at 16% 22%, rgba(255, 255, 255, 0.85), transparent 70%),
-    radial-gradient(22% 5% at 46% 48%, rgba(255, 255, 255, 0.7), transparent 72%),
-    radial-gradient(14% 3.5% at 70% 30%, rgba(255, 255, 255, 0.8), transparent 70%),
-    radial-gradient(20% 4.5% at 84% 68%, rgba(255, 255, 255, 0.65), transparent 72%),
-    radial-gradient(12% 3% at 30% 80%, rgba(255, 255, 255, 0.7), transparent 70%);
   animation: planetTurn 54s linear infinite;
 }
 
@@ -361,12 +344,14 @@
     rgba(140, 210, 255, 0.14) 97%,
     transparent 100%
   );
-  box-shadow: 0 0 9cqmin rgba(79, 176, 255, 0.22);
+  box-shadow: 0 0 33cqw rgba(79, 176, 255, 0.22);
 }
 
 /* The sunrise on its rim: a glint, and the long horizontal streak a cinema
-   lens draws across the frame from it. */
+   lens draws across the frame from it. Laid over the planet's own box. */
 .flare {
+  position: absolute;
+  inset: 0;
   opacity: 0;
 }
 
@@ -407,26 +392,14 @@
   );
 }
 
-/* How dark the planet grows as it becomes Station 33's Earth: the night
-   side by night, a little at dawn and dusk, not at all by day. The film's
-   planetDusk track fades it in over the end of the descent. */
-.planetDusk {
+/* ------------------------------------------------------------ Station 33 */
+
+/* The window's stars, sun and glass, around the one Earth. */
+.station {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  background: transparent;
   opacity: 0;
 }
-
-.film[data-earth="night"] .planetDusk {
-  background: rgba(6, 26, 48, 0.66);
-}
-
-.film[data-earth="twilight"] .planetDusk {
-  background: rgba(6, 26, 48, 0.28);
-}
-
-/* ------------------------------------------------------------ Station 33 */
 
 .orbit {
   opacity: 0;
@@ -453,9 +426,13 @@
 
 /* ------------------------------------------------------------ the dive */
 
+/* The haze of the upper air: still, under the clouds rushing past. It was
+   tiled with them, and the seam between tiles swept up the frame as a hard
+   line every 1.1s. */
 .streaks {
   opacity: 0;
   overflow: hidden;
+  background: linear-gradient(180deg, rgba(120, 178, 228, 0.12), rgba(150, 200, 240, 0.42));
 }
 
 /* Cloud tops rushing up past her. */
@@ -468,8 +445,7 @@
     radial-gradient(34% 8% at 74% 26%, rgba(255, 255, 255, 0.7), transparent 72%),
     radial-gradient(22% 6% at 40% 44%, rgba(255, 255, 255, 0.8), transparent 72%),
     radial-gradient(30% 7% at 86% 62%, rgba(255, 255, 255, 0.75), transparent 72%),
-    radial-gradient(24% 6% at 12% 80%, rgba(255, 255, 255, 0.7), transparent 72%),
-    linear-gradient(180deg, rgba(120, 178, 228, 0.12), rgba(150, 200, 240, 0.42));
+    radial-gradient(24% 6% at 12% 80%, rgba(255, 255, 255, 0.7), transparent 72%);
   animation: rush 1.1s linear infinite;
   animation-play-state: paused;
 }
@@ -684,6 +660,7 @@
 }
 
 .captionGhost,
+.captionLeaving,
 .captionLive {
   display: grid;
   grid-area: 1 / 1;
@@ -697,6 +674,21 @@
 
 .captionGhost p {
   animation: none;
+}
+
+.captionLeaving {
+  animation: captionOut 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.captionLeaving p {
+  animation: none;
+}
+
+@keyframes captionOut {
+  to {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0);
+  }
 }
 
 @keyframes captionIn {
@@ -1013,28 +1005,25 @@
   Every boundary falls where the track is already at opacity 0 (see
   storyTimeline.ts), so switching visibility there shows nothing.
 
-  Station 33's window and stand are shown (still at opacity 0) from the
-  Earth act rather than their own: their one-time paint then lands while the
-  planet is still fading in, not in the middle of the planet becoming the
-  station's horizon.
+  The film is one unbroken shot (Chi, 2026-10-17), so no first paint may
+  land on a chapter change. The layers that come later — the meeting's
+  light, Station 33's window with the one Earth in it, the stand — are
+  drawn two seconds in instead, at the film's calmest moment
+  (LAYERS_DRAWN_AT_MS), and their loops start with them.
 */
-.film:not([data-act="meet"]) :is([data-track="flash"], [data-track="ring"]),
-.film:not([data-act="earth"]) [data-track="flare"],
-.film:not(:is([data-act="earth"], [data-act="station"])) [data-track="planet"],
-.film:not(:is([data-act="earth"], [data-act="station"], [data-act="land"])) :is([data-track="orbit"], [data-track="dock"]),
+.film:not([data-drawn]) :is([data-track="flash"], [data-track="ring"], [data-track="orbit"], [data-track="dock"]),
+.film:is([data-act="station"], [data-act="land"]) :is([data-track="flash"], [data-track="ring"]),
 .film:not([data-act="land"]) :is([data-track="streaks"], [data-track="sky"]),
 .film:is([data-act="station"], [data-act="land"]) [data-track="matter"] {
   visibility: hidden;
 }
 
-/* Each ambient loop runs only in the act it is seen in. Station 33's own
-   (its clouds, stars, satellite) start with the Earth act, when its window
-   is first painted at opacity 0: started at the station act, each became a
-   new layer to paint at the window's dive zoom, mid cross-fade. */
+/* Each ambient loop runs only once its layer is drawn. Those in Station 33's
+   window (the Earth's turning, its clouds, stars, satellite) start with its
+   first paint at opacity 0: started later, each became a new layer to
+   paint at the window's dive zoom, mid-shot. */
 .film:is([data-act="station"], [data-act="land"]) .matter span,
-.film:not(:is([data-act="earth"], [data-act="station"])) .planetLand,
-.film:not(:is([data-act="earth"], [data-act="station"])) .planetClouds,
-.film:not(:is([data-act="earth"], [data-act="station"], [data-act="land"])) .orbit * {
+.film:not([data-drawn]) .orbit * {
   animation-play-state: paused;
 }
 
@@ -1042,8 +1031,6 @@
    planet and the clouds stop with the clock, rather than going on moving
    behind a film that says it is paused. */
 .film:not([data-playing]) .matter span,
-.film:not([data-playing]) .planetLand,
-.film:not([data-playing]) .planetClouds,
 .film:not([data-playing]) .orbit *,
 .film:not([data-playing]) .cloudOne,
 .film:not([data-playing]) .cloudTwo {
@@ -1138,6 +1125,7 @@
   }
 
   .captionGhost,
+  .captionLeaving,
   .captionLive {
     align-content: start;
   }
@@ -1271,6 +1259,11 @@
   .endCard,
   .tryOn {
     animation: none;
+  }
+
+  /* A plain change of words: nothing fades, so nothing stays behind. */
+  .captionLeaving {
+    display: none;
   }
 
   .canvas,

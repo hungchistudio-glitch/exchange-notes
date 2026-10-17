@@ -172,7 +172,7 @@ const english: TranslationDictionary = {
     story: {
       eyebrow: "Meet Yumi",
       title: "YU + MI = Yumi",
-      intro: "Where Yumi comes from, and why she came to Earth: a 35-second film in five scenes.",
+      intro: "Where Yumi comes from, and why she came to Earth: a 33-second film in five scenes.",
       ariaLabel: "Yumi’s story, a short film",
       play: "Play",
       pause: "Pause",

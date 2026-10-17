@@ -172,7 +172,7 @@ const spanish: TranslationDictionary = {
     story: {
       eyebrow: "Conoce a Yumi",
       title: "YU + MI = Yumi",
-      intro: "De dónde viene Yumi y por qué vino a la Tierra: una película de 35 segundos en cinco escenas.",
+      intro: "De dónde viene Yumi y por qué vino a la Tierra: una película de 33 segundos en cinco escenas.",
       ariaLabel: "La historia de Yumi, un cortometraje",
       play: "Reproducir",
       pause: "Pausar",
