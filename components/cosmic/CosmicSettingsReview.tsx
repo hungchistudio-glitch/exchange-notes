@@ -4,6 +4,7 @@ import { Bell, BellRing, CircleHelp, Globe, GraduationCap, Languages, LogOut, Or
 import { useEffect, useRef, useState } from "react";
 
 import { ModeTransitionScene } from "@/components/cosmic/ModeTransitionStage";
+import HtmlMarker from "@/components/foundation/HtmlMarker";
 import { ProgressHudDisplay } from "@/components/cosmic/ProgressHud";
 import SegmentedControl from "@/components/foundation/forms/SegmentedControl";
 import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
@@ -239,6 +240,7 @@ export default function CosmicSettingsReview() {
           {sheet && ["profile", "devices", "help", "account", "navigation"].includes(sheet) && <p className="text-sm leading-6 text-ink-soft">This is a visual review of the settings page. Navigation and account actions remain local to this preview.</p>}
         </div>
       </BottomSheet>
+      <HtmlMarker name="cosmicSettings" />
     </main>
   );
 }

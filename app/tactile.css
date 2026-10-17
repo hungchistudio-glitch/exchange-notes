@@ -176,7 +176,7 @@ html:not([data-interface-mode="yumi-cosmic"]) {
   with a white veil and the ink panels flashed grey. Inside the app it is
   the ground instead.
 */
-html:not([data-interface-mode="yumi-cosmic"]) body:has([data-app-viewport]) {
+html:not([data-interface-mode="yumi-cosmic"])[data-app-shell] body {
   background: var(--surface);
 }
 
@@ -210,7 +210,7 @@ html:not([data-interface-mode="yumi-cosmic"]) .cosmic-header {
   which is what reads best small, and so do the headings that are labels
   (small capitals, tracked out) or that name their own face.
 */
-html:not([data-interface-mode="yumi-cosmic"]) body:has([data-app-viewport]) :is(h1, h2, h3):not(.uppercase, .font-cjk, .font-phonetic, .font-zhuyin, .font-mono),
+html:not([data-interface-mode="yumi-cosmic"])[data-app-shell] body :is(h1, h2, h3):not(.uppercase, .font-cjk, .font-phonetic, .font-zhuyin, .font-mono),
 html:not([data-interface-mode="yumi-cosmic"]) .tactile-serif {
   font-family: var(--font-display);
   font-weight: 600;
@@ -514,11 +514,15 @@ html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] p:has(+
   mouth all keep working; no image, no 3D engine. "Inside the app" is any
   page with the app's viewport on it, sheets portalled to <body> included;
   the splash and the landing page keep the brand mark as drawn.
+
+  [data-app-shell] on <html> is that test (components/foundation/
+  HtmlMarker, rendered by AppViewport). It was body:has([data-app-viewport]),
+  which made every DOM change on every page restyle the whole page.
 */
-html:not([data-interface-mode="yumi-cosmic"]) body:has([data-app-viewport]) svg [data-mark-part="gloss"] {
+html:not([data-interface-mode="yumi-cosmic"])[data-app-shell] body svg [data-mark-part="gloss"] {
   display: inline;
 }
 
-html:not([data-interface-mode="yumi-cosmic"]) body:has([data-app-viewport]) svg :is([data-mark-part="nebula"], [data-mark-part="constellation"]) {
+html:not([data-interface-mode="yumi-cosmic"])[data-app-shell] body svg :is([data-mark-part="nebula"], [data-mark-part="constellation"]) {
   display: none;
 }

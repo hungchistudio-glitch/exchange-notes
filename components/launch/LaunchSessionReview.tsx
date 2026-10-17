@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from "react";
 
+import HtmlMarker from "@/components/foundation/HtmlMarker";
 import { ACTIVE_LAUNCH } from "@/components/launch/activeLaunch";
 import SplashGate, {
   LAUNCH_REPLAY_AFTER_MS,
@@ -122,6 +123,7 @@ export default function LaunchSessionReview() {
             僅供開發與預覽驗證 · {ACTIVE_LAUNCH.id}
           </p>
         </section>
+        <HtmlMarker name="appShell" />
       </main>
     </>
   );

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import HtmlMarker from "@/components/foundation/HtmlMarker";
+
 type AppViewportProps = {
   children: ReactNode;
   navigation: ReactNode;
@@ -29,6 +31,9 @@ export default function AppViewport({
       </div>
 
       {navigation}
+
+      {/* Inside the app, for app/tactile.css: see HtmlMarker. */}
+      <HtmlMarker name="appShell" />
     </div>
   );
 }

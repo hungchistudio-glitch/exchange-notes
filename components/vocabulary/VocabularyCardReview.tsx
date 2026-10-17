@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import VocabularyList from "@/components/vocabulary/VocabularyList";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
+import HtmlMarker from "@/components/foundation/HtmlMarker";
 import { VocabularyProvider } from "@/contexts/VocabularyContext";
 import type { VocabularyItem } from "@/lib/types/app";
 
@@ -124,6 +125,7 @@ export default function VocabularyCardReview() {
               />
             </main>
           </div>
+          <HtmlMarker name="appShell" />
         </div>
       </VocabularyProvider>
     </LearningLanguageProvider>
