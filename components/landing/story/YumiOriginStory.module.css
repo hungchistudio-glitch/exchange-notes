@@ -271,7 +271,7 @@
 
 .planet {
   opacity: 0;
-  transform: translate3d(22%, 26%, 0) scale(0.55);
+  transform: translate3d(150%, 12%, 0) scale(0.85);
 }
 
 .planetSurface {
@@ -684,6 +684,7 @@
 }
 
 .captionGhost,
+.captionLeaving,
 .captionLive {
   display: grid;
   grid-area: 1 / 1;
@@ -697,6 +698,21 @@
 
 .captionGhost p {
   animation: none;
+}
+
+.captionLeaving {
+  animation: captionOut 520ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.captionLeaving p {
+  animation: none;
+}
+
+@keyframes captionOut {
+  to {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0);
+  }
 }
 
 @keyframes captionIn {
@@ -1011,30 +1027,35 @@
   rasterised until its act comes, and then only that act's layers.
 
   Every boundary falls where the track is already at opacity 0 (see
-  storyTimeline.ts), so switching visibility there shows nothing.
+  storyTimeline.ts), so switching visibility there shows nothing. The
+  meeting's light is still fading when the Earth act begins (the shot does
+  not stop for the new chapter), so it stays drawn through that act too.
 
-  Station 33's window and stand are shown (still at opacity 0) from the
-  Earth act rather than their own: their one-time paint then lands while the
-  planet is still fading in, not in the middle of the planet becoming the
-  station's horizon.
+  Everything the Earth act shows — the planet, its flare, Station 33's
+  window and stand, and their loops below — is drawn (still at opacity 0)
+  from the Meet act on. Their one-time paint is the planet at its descent's
+  zoom, and it costs the same wherever it lands (measured 2026-10-17: 100–
+  130ms on a phone, up to ~330ms on a desktop). From the meeting to the
+  planet is one unbroken camera move (Chi, 2026-10-17), so it cannot land at
+  the Earth act any more; at the Meet act it falls where the camera's push
+  and YU and MI's approach are both just beginning, at their slowest.
 */
-.film:not([data-act="meet"]) :is([data-track="flash"], [data-track="ring"]),
-.film:not([data-act="earth"]) [data-track="flare"],
-.film:not(:is([data-act="earth"], [data-act="station"])) [data-track="planet"],
-.film:not(:is([data-act="earth"], [data-act="station"], [data-act="land"])) :is([data-track="orbit"], [data-track="dock"]),
+.film:not(:is([data-act="meet"], [data-act="earth"])) :is([data-track="flash"], [data-track="ring"], [data-track="flare"]),
+.film:not(:is([data-act="meet"], [data-act="earth"], [data-act="station"])) [data-track="planet"],
+.film:not(:is([data-act="meet"], [data-act="earth"], [data-act="station"], [data-act="land"])) :is([data-track="orbit"], [data-track="dock"]),
 .film:not([data-act="land"]) :is([data-track="streaks"], [data-track="sky"]),
 .film:is([data-act="station"], [data-act="land"]) [data-track="matter"] {
   visibility: hidden;
 }
 
-/* Each ambient loop runs only in the act it is seen in. Station 33's own
-   (its clouds, stars, satellite) start with the Earth act, when its window
-   is first painted at opacity 0: started at the station act, each became a
-   new layer to paint at the window's dive zoom, mid cross-fade. */
+/* Each ambient loop runs only from the act its layer is first drawn in.
+   Station 33's own (its clouds, stars, satellite) start with its window's
+   first paint at opacity 0: started at the station act, each became a new
+   layer to paint at the window's dive zoom, mid cross-fade. */
 .film:is([data-act="station"], [data-act="land"]) .matter span,
-.film:not(:is([data-act="earth"], [data-act="station"])) .planetLand,
-.film:not(:is([data-act="earth"], [data-act="station"])) .planetClouds,
-.film:not(:is([data-act="earth"], [data-act="station"], [data-act="land"])) .orbit * {
+.film:not(:is([data-act="meet"], [data-act="earth"], [data-act="station"])) .planetLand,
+.film:not(:is([data-act="meet"], [data-act="earth"], [data-act="station"])) .planetClouds,
+.film:not(:is([data-act="meet"], [data-act="earth"], [data-act="station"], [data-act="land"])) .orbit * {
   animation-play-state: paused;
 }
 
@@ -1138,6 +1159,7 @@
   }
 
   .captionGhost,
+  .captionLeaving,
   .captionLive {
     align-content: start;
   }
@@ -1271,6 +1293,11 @@
   .endCard,
   .tryOn {
     animation: none;
+  }
+
+  /* A plain change of words: nothing fades, so nothing stays behind. */
+  .captionLeaving {
+    display: none;
   }
 
   .canvas,

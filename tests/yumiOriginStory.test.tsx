@@ -92,7 +92,8 @@ describe("the film's clock", () => {
 
     expect(STORY_TRACKS.planet[0]).toMatchObject({ opacity: 0 });
     expect(rule("planet")).toMatch(/opacity: 0;/);
-    expect(rule("planet")).toMatch(/transform: translate3d\(22%, 26%, 0\) scale\(0\.55\);/);
+    expect(rule("planet")).toMatch(/transform: translate3d\(150%, 12%, 0\) scale\(0\.85\);/);
+    expect(STORY_TRACKS.planet[0]).toMatchObject({ transform: "translate3d(150%, 12%, 0) scale(0.85)" });
     for (const name of ["flash", "ring", "orbit", "dock", "streaks", "sky", "flare"] as const) {
       expect(STORY_TRACKS[name][0], name).toMatchObject({ opacity: 0 });
       expect(rule(name), name).toMatch(/opacity: 0;/);
@@ -170,7 +171,7 @@ describe("the descent to Station 33", () => {
     expect(film).toMatch(/\.camera \{\n  inset: -8%;/);
     expect(film).toMatch(/\.planet,\n\.flare \{\n  position: absolute;\n  right: 14%;\n  top: 19%;\n  width: min\(44cqh, 52cqw\);/);
     expect(shop).toMatch(/\.earth \{\n  position: absolute;\n  left: 50%;\n  top: 63%;\n  width: 175%;/);
-    const camera = STORY_TRACKS.camera.filter(frame => (frame.offset as number) * STORY_DURATION_MS >= 19_000);
+    const camera = STORY_TRACKS.camera.filter(frame => (frame.offset as number) * STORY_DURATION_MS >= 17_000);
     for (const frame of camera) expect(frame.transform).toBe("translate3d(-5%, -1%, 0) scale(1.02)");
   });
 
@@ -189,7 +190,7 @@ describe("YU and MI", () => {
     expect(start.parts!.yu.rotation).toBeCloseTo(Math.PI / 2);
     expect(start.parts!.mi.rotation).toBeCloseTo(Math.PI / 2);
 
-    const gaps = [0, 3_000, 7_000, 9_000, 10_500, 10_900].map(time => {
+    const gaps = [0, 2_000, 5_000, 7_000, 8_500, 8_900].map(time => {
       const { parts } = yumiAt(time, false, true);
       return distance(parts!.yu, parts!.mi);
     });
@@ -205,7 +206,7 @@ describe("YU and MI", () => {
   });
 
   it("looks at the planet, stands on the dock, then lands beside the end card and reads it", () => {
-    expect(yumiAt(16_000).gaze?.x).toBeGreaterThan(0.5);
+    expect(yumiAt(14_000).gaze?.x).toBeGreaterThan(0.5);
     const docked = yumiAt(24_000);
     expect(docked.x).toBeCloseTo(0.5);
     expect(docked.y).toBeCloseTo(0.5);

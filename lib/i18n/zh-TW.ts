@@ -170,7 +170,7 @@ const traditionalChinese: TranslationDictionary = {
     story: {
       eyebrow: "認識 Yumi",
       title: "YU + MI = Yumi",
-      intro: "Yumi 從哪裡來、為什麼來到地球：一部五幕、35 秒的小電影。",
+      intro: "Yumi 從哪裡來、為什麼來到地球：一部五幕、33 秒的小電影。",
       ariaLabel: "Yumi 的故事小電影",
       play: "播放",
       pause: "暫停",

@@ -216,6 +216,8 @@ export default function YumiOriginStory({
   const tookOverRef = useRef(false);
 
   const [act, setAct] = useState(0);
+  /** The act whose words are fading out under the new act's. */
+  const [leaving, setLeaving] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
   const [endCard, setEndCard] = useState(false);
@@ -238,6 +240,7 @@ export default function YumiOriginStory({
   const showTime = useCallback((time: number) => {
     const nextAct = actAt(time);
     if (nextAct !== actRef.current) {
+      setLeaving(actRef.current);
       actRef.current = nextAct;
       setAct(nextAct);
     }
@@ -724,6 +727,20 @@ export default function YumiOriginStory({
                 <CaptionBody copy={copy} index={index} />
               </div>
             ))}
+            {/* The last act's words go as the next act's come: a crossfade,
+                so the box is never empty between scenes while the picture
+                runs on (Chi, 2026-10-17). */}
+            {leaving !== null && leaving !== act ? (
+              <div
+                key={`leaving-${leaving}`}
+                className={styles.captionLeaving}
+                onAnimationEnd={event => {
+                  if (event.target === event.currentTarget) setLeaving(null);
+                }}
+              >
+                <CaptionBody copy={copy} index={leaving} />
+              </div>
+            ) : null}
             <div key={act} className={styles.captionLive}>
               <CaptionBody copy={copy} index={act} />
             </div>

@@ -175,7 +175,7 @@ const italian: TranslationDictionary = {
     story: {
       eyebrow: "Ecco Yumi",
       title: "YU + MI = Yumi",
-      intro: "Da dove viene Yumi e perché è arrivata sulla Terra: un film di 35 secondi in cinque scene.",
+      intro: "Da dove viene Yumi e perché è arrivata sulla Terra: un film di 33 secondi in cinque scene.",
       ariaLabel: "La storia di Yumi, un cortometraggio",
       play: "Riproduci",
       pause: "Pausa",

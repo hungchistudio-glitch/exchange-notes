@@ -175,7 +175,7 @@ const french: TranslationDictionary = {
     story: {
       eyebrow: "Voici Yumi",
       title: "YU + MI = Yumi",
-      intro: "D’où vient Yumi, et pourquoi elle est venue sur Terre : un film de 35 secondes en cinq scènes.",
+      intro: "D’où vient Yumi, et pourquoi elle est venue sur Terre : un film de 33 secondes en cinq scènes.",
       ariaLabel: "L’histoire de Yumi, un court-métrage",
       play: "Lire",
       pause: "Pause",
