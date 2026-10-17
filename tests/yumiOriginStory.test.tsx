@@ -12,6 +12,7 @@ import {
   MERGE_AT_MS,
   STORY_ACTS,
   STORY_DURATION_MS,
+  LAYERS_DRAWN_AT_MS,
   STORY_TRACKS,
   actAt,
   planetArrival,
@@ -129,6 +130,16 @@ describe("the film's clock", () => {
     for (const selector of block!.split(",\n")) {
       const acts = [...selector.matchAll(/data-act="(\w+)"/g)].map(match => match[1]);
       const tracks = [...selector.matchAll(/data-track="(\w+)"/g)].map(match => match[1]) as (keyof typeof STORY_TRACKS)[];
+      // Station 33 is drawn by the clock, not by a chapter.
+      if (selector.includes(":not([data-drawn])")) {
+        for (const name of tracks) {
+          for (let time = 0; time <= LAYERS_DRAWN_AT_MS; time += 10) {
+            expect(opacityAt(STORY_TRACKS[name], time), `${name} before it is drawn, at ${time}ms`).toBe(0);
+          }
+          checked += 1;
+        }
+        continue;
+      }
       const hiddenIn = selector.includes(":not(") ? ids.filter(id => !acts.includes(id)) : acts;
       for (const name of tracks) {
         for (const act of hiddenIn) {

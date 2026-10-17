@@ -49,6 +49,21 @@ export const STORY_ACTS = [
 
 export type StoryActId = (typeof STORY_ACTS)[number]["id"];
 
+/**
+ * When the layers that come later — the meeting's light, the planet and its
+ * flare, Station 33's window and stand — are first drawn, still unseen at
+ * opacity 0.
+ *
+ * Drawing them is the film's one big paint: each is rasterised at the
+ * largest zoom it will ever reach, the window at its dive's (measured
+ * 2026-10-17: 100–130ms on a phone, up to ~380ms on a desktop, at a chapter
+ * change). It cannot come with the play press (the reader is often still
+ * scrolling) or at any chapter change: from the drift to the planet the film
+ * is one unbroken shot (Chi, 2026-10-17). Two seconds in, the letterbox has
+ * settled and YU, MI and the camera are at their slowest.
+ */
+export const LAYERS_DRAWN_AT_MS = 2_000;
+
 /** Where the end card comes up, over the sky. */
 export const END_CARD_AT_MS = 31_200;
 
@@ -72,7 +87,7 @@ export const ACT_STILLS_MS = [2_500, 9_800, 16_000, 23_000, 32_500] as const;
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
 const easeOut = (x: number) => 1 - (1 - x) ** 3;
-const easeIn = (x: number) => x * x * x;
+const easeInQuad = (x: number) => x * x;
 const lerp = (a: number, b: number, x: number) => a + (b - a) * x;
 
 /** 0..1 across [from, to], eased. */
@@ -111,33 +126,28 @@ function partsAt(time: number, portrait: boolean, reduced: boolean): YumiParts |
   const sx = portrait ? 0.42 : 1;
   const sy = portrait ? 2.1 : 1;
 
-  // Act I: drifting, slowly closing in.
-  const drift = span(time, 0, 5_000, easeInOut);
+  /*
+   * Acts I and II are one approach (Chi, 2026-10-17: the drift into the
+   * meeting in one shot). They drift and close in, faster and faster, all
+   * the way to the glancing bump: nothing slows to a stop where the
+   * chapter changes. Their sway dies away as they get close.
+   */
+  const approach = span(time, 0, 7_000, easeInQuad);
+  const sway = wobble * (1 - span(time, 4_000, 7_000));
   let yu = {
-    x: lerp(-5.2, -3.8, drift) * sx + Math.sin(time * 0.0006) * 0.25 * wobble,
-    y: (0.9 + Math.sin(time * 0.0009) * 0.3 * wobble) * sy,
+    x: lerp(-5.2, -1.9, approach) * sx + Math.sin(time * 0.0006) * 0.25 * sway,
+    y: (lerp(0.9, 0.4, approach) + Math.sin(time * 0.0009) * 0.3 * sway) * sy,
     rotation: QUARTER + Math.sin(time * 0.0005) * 0.18 * wobble,
   };
   let mi = {
-    x: lerp(5.0, 3.6, drift) * sx + Math.sin(time * 0.0007 + 1) * 0.25 * wobble,
-    y: (-0.7 + Math.sin(time * 0.0011 + 2) * 0.3 * wobble) * sy,
+    x: lerp(5.0, 1.5, approach) * sx + Math.sin(time * 0.0007 + 1) * 0.25 * sway,
+    y: (lerp(-0.7, -0.2, approach) + Math.sin(time * 0.0011 + 2) * 0.3 * sway) * sy,
     rotation: QUARTER + Math.sin(time * 0.0006 + 1) * 0.22 * wobble,
   };
 
-  if (time < 5_000) return { yu, mi };
+  if (time < 7_000) return { yu, mi };
 
-  // Act II: closer, a glancing bump, then the perfect angle.
-  const close = span(time, 5_000, 7_000, easeIn);
-  yu = {
-    x: lerp(yu.x, -1.9 * sx, close),
-    y: lerp(yu.y, 0.4 * sy, close),
-    rotation: yu.rotation,
-  };
-  mi = {
-    x: lerp(mi.x, 1.5 * sx, close),
-    y: lerp(mi.y, -0.2 * sy, close),
-    rotation: mi.rotation,
-  };
+  // The glancing bump, then the perfect angle.
 
   const bump = span(time, 7_000, 7_500, easeOut);
   yu = { x: yu.x + (-0.5 * sx) * bump, y: yu.y, rotation: yu.rotation - 0.25 * bump };
@@ -239,6 +249,8 @@ const t3 = (x: number, y: number, scale = 1) => `translate3d(${x}%, ${y}%, 0) sc
    rims are one line when they cross. */
 const DESCENT = "cubic-bezier(0.42, 0, 0.08, 1)";
 
+/* Into the merge: slow at first, gathering speed to the punch-in. */
+const PUSH = "cubic-bezier(0.45, 0, 0.85, 0.5)";
 /* Out of the merge without stopping: the release from the punch-in is
    quick, then the pan glides on until the descent. */
 const PAN = "cubic-bezier(0.2, 0.55, 0.3, 1)";
@@ -310,12 +322,12 @@ export function planetTrack(width: number, height: number): Keyframe[] {
 
 /** Every painted layer, by the data-track name it carries in the markup. */
 export const STORY_TRACKS = {
-  /* The camera: a slow push, a dolly in on the meeting, and out of it
-     straight into the pan to the planet — one move, never still until the
-     descent. It carries space, the matter, the flash and the planet. */
+  /* The camera: one push from the first frame to the meeting, gathering
+     speed, and out of it straight into the pan to the planet — never still
+     until the descent. It carries space, the matter, the flash and the
+     planet. */
   camera: track([
-    [0, { transform: t3(0, 0, 1.06) }, EASE],
-    [5_000, { transform: t3(-1, 0.6, 1.1) }, EASE_IN],
+    [0, { transform: t3(0, 0, 1.06) }, PUSH],
     [MERGE_AT_MS, { transform: t3(0, 0, 1.2) }, PAN],
     [17_000, { transform: t3(-5, -1, 1.02) }],
     [18_500, { transform: t3(-5, -1, 1.02) }],

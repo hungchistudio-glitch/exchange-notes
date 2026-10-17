@@ -1031,18 +1031,16 @@
   meeting's light is still fading when the Earth act begins (the shot does
   not stop for the new chapter), so it stays drawn through that act too.
 
-  Everything the Earth act shows — the planet, its flare, Station 33's
-  window and stand, and their loops below — is drawn (still at opacity 0)
-  from the Meet act on. Their one-time paint is the planet at its descent's
-  zoom, and it costs the same wherever it lands (measured 2026-10-17: 100–
-  130ms on a phone, up to ~330ms on a desktop). From the meeting to the
-  planet is one unbroken camera move (Chi, 2026-10-17), so it cannot land at
-  the Earth act any more; at the Meet act it falls where the camera's push
-  and YU and MI's approach are both just beginning, at their slowest.
+  From the drift to the planet the film is one unbroken shot (Chi,
+  2026-10-17), so no first paint may land on a chapter change. The layers
+  that come later — the meeting's light, the planet, its flare, Station
+  33's window and stand — are drawn two seconds in instead, at the film's
+  calmest moment (LAYERS_DRAWN_AT_MS), and their loops start with them.
 */
-.film:not(:is([data-act="meet"], [data-act="earth"])) :is([data-track="flash"], [data-track="ring"], [data-track="flare"]),
-.film:not(:is([data-act="meet"], [data-act="earth"], [data-act="station"])) [data-track="planet"],
-.film:not(:is([data-act="meet"], [data-act="earth"], [data-act="station"], [data-act="land"])) :is([data-track="orbit"], [data-track="dock"]),
+.film:not([data-drawn]) :is([data-track="flash"], [data-track="ring"], [data-track="planet"], [data-track="flare"], [data-track="orbit"], [data-track="dock"]),
+.film:is([data-act="station"], [data-act="land"]) :is([data-track="flash"], [data-track="ring"]),
+.film:is([data-act="station"], [data-act="land"]) [data-track="flare"],
+.film[data-act="land"] [data-track="planet"],
 .film:not([data-act="land"]) :is([data-track="streaks"], [data-track="sky"]),
 .film:is([data-act="station"], [data-act="land"]) [data-track="matter"] {
   visibility: hidden;
@@ -1053,9 +1051,11 @@
    first paint at opacity 0: started at the station act, each became a new
    layer to paint at the window's dive zoom, mid cross-fade. */
 .film:is([data-act="station"], [data-act="land"]) .matter span,
-.film:not(:is([data-act="meet"], [data-act="earth"], [data-act="station"])) .planetLand,
-.film:not(:is([data-act="meet"], [data-act="earth"], [data-act="station"])) .planetClouds,
-.film:not(:is([data-act="meet"], [data-act="earth"], [data-act="station"], [data-act="land"])) .orbit * {
+.film:not([data-drawn]) .planetLand,
+.film:not([data-drawn]) .planetClouds,
+.film[data-act="land"] .planetLand,
+.film[data-act="land"] .planetClouds,
+.film:not([data-drawn]) .orbit * {
   animation-play-state: paused;
 }
 

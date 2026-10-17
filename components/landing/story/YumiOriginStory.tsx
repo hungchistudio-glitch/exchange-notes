@@ -28,6 +28,7 @@ import {
   STORY_DURATION_MS,
   STORY_TRACKS,
   DOCKED_AT_MS,
+  LAYERS_DRAWN_AT_MS,
   planetTrack,
   actAt,
   yumiAt,
@@ -210,6 +211,7 @@ export default function YumiOriginStory({
   const endRef = useRef(false);
   const dockedRef = useRef(false);
   const mergedRef = useRef(false);
+  const drawnRef = useRef(false);
   const veilRef = useRef<HTMLDivElement>(null);
   const veilAnimationRef = useRef<Animation | null>(null);
   /** The reader has pressed play, pause or a scene: autoplay stands down. */
@@ -225,6 +227,8 @@ export default function YumiOriginStory({
   const [docked, setDocked] = useState(false);
   /** Once YU and MI are one, she can be turned. */
   const [merged, setMerged] = useState(false);
+  /** The later layers are drawn, still unseen (see LAYERS_DRAWN_AT_MS). */
+  const [layersDrawn, setLayersDrawn] = useState(false);
   const [yumi, setYumi] = useState<"loading" | "live" | "unavailable">("loading");
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [outfit, setOutfit] = useState<YumiOutfit>({});
@@ -245,6 +249,11 @@ export default function YumiOriginStory({
       setAct(nextAct);
     }
     const nextMerged = time >= MERGE_AT_MS;
+    const nextDrawn = time >= LAYERS_DRAWN_AT_MS;
+    if (nextDrawn !== drawnRef.current) {
+      drawnRef.current = nextDrawn;
+      setLayersDrawn(nextDrawn);
+    }
     if (nextMerged !== mergedRef.current) {
       mergedRef.current = nextMerged;
       setMerged(nextMerged);
@@ -622,6 +631,7 @@ export default function YumiOriginStory({
         data-playing={playing || undefined}
         data-act={STORY_ACTS[act].id}
         data-docked={docked || undefined}
+        data-drawn={layersDrawn || undefined}
         data-earth={orbitView(scene).time}
       >
         <div className={styles.frame}>
