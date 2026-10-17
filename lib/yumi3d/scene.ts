@@ -415,7 +415,12 @@ export function createYumiScene(
     yuGroup.add(seam);
   }
 
-  const outfit = createOutfitRig({ model, eyeGroup, lookGroup, pupil, shellMaterial });
+  /* Each piece's shader compile, while it runs (setOutfit below). */
+  const compiles = new Map<THREE.Object3D, Promise<unknown>>();
+  const outfit = createOutfitRig({
+    model, eyeGroup, lookGroup, pupil, shellMaterial,
+    settling: piece => compiles.get(piece),
+  });
   /* Pieces just put on, hidden until their shaders are compiled, so trying
      one on never stalls a frame compiling it (where the browser can compile
      in parallel; elsewhere it costs the same, just not mid-frame). */
@@ -885,9 +890,10 @@ export function createYumiScene(
         piece.visible = true;
         compiling.add(piece);
         // compileAsync gathers what it needs now, while the piece is visible.
-        void renderer.compileAsync(piece, camera, scene)
+        const compile = renderer.compileAsync(piece, camera, scene)
           .catch(() => {})
-          .finally(() => { compiling.delete(piece); });
+          .finally(() => { compiling.delete(piece); compiles.delete(piece); });
+        compiles.set(piece, compile);
         piece.visible = false;
       }
     },

@@ -7,6 +7,7 @@ import { toTraditional } from "@/lib/chinese/toTraditional";
 import {
   SHOP_COUNTRIES,
   SHOP_ITEMS,
+  SHOP_SLOTS,
   cleanOutfit,
   itemsFor,
   ownedOnly,
@@ -27,9 +28,10 @@ import { buildableIds } from "@/lib/yumi3d/outfit";
 
 describe("the catalogue", () => {
   it("has 23 pieces per country, including 10 new cultural pieces, and 12 basics", () => {
-    expect(SHOP_ITEMS).toHaveLength(127);
+    const first = SHOP_ITEMS.filter(item => !item.id.startsWith("s33-"));
+    expect(first).toHaveLength(127);
     for (const country of SHOP_COUNTRIES.filter(c => c !== "basic")) {
-      const pieces = SHOP_ITEMS.filter(item => item.country === country);
+      const pieces = first.filter(item => item.country === country);
       expect(pieces).toHaveLength(23);
       expect(pieces.filter(item => item.slot === "material")).toHaveLength(5);
     }
@@ -37,7 +39,20 @@ describe("the catalogue", () => {
     expect(basics).toHaveLength(12);
     // Chi asked for more eyes: every basic is one.
     expect(basics.every(item => ["pupil", "iris", "eyewear"].includes(item.slot))).toBe(true);
-    expect(new Set(SHOP_ITEMS.map(item => item.id)).size).toBe(127);
+    expect(new Set(SHOP_ITEMS.map(item => item.id)).size).toBe(SHOP_ITEMS.length);
+  });
+
+  it("adds Station 33: three new pieces for every slot, from the five countries", () => {
+    const station = SHOP_ITEMS.filter(item => item.id.startsWith("s33-"));
+    expect(station).toHaveLength(36);
+    expect(SHOP_ITEMS).toHaveLength(163);
+    for (const slot of SHOP_SLOTS) expect(station.filter(item => item.slot === slot), slot).toHaveLength(3);
+    expect(station.every(item => item.country !== "basic")).toBe(true);
+  });
+
+  /* Yumi counts on three fingers a hand (Chi, 2026-10-17). */
+  it("prices everything in threes", () => {
+    expect(SHOP_ITEMS.filter(item => item.price % 3 !== 0).map(item => `${item.id} ${item.price}`)).toEqual([]);
   });
 
   it("ships a picture of every piece, so phones do not render them", () => {
@@ -65,7 +80,7 @@ describe("the catalogue", () => {
     expect(files.length).toBeGreaterThan(0);
     const prices = new Map<string, { id: string; slot: string; price: number }>();
     for (const name of files) {
-      for (const [, id, slot, price] of readFileSync(join(dir, name), "utf8").matchAll(/\('([a-z-]+)', '([a-z]+)', (\d+)\)/g)) {
+      for (const [, id, slot, price] of readFileSync(join(dir, name), "utf8").matchAll(/\('([a-z0-9-]+)', '([a-z]+)', (\d+)\)/g)) {
         prices.set(id, { id, slot, price: Number(price) });
       }
     }

@@ -1,9 +1,17 @@
 import * as THREE from "three";
 import { buildCulturalPiece, buildCulturalScarf, CULTURAL_FINISHES } from "./culturalOutfit";
+import {
+  STATION33_BROW, STATION33_BUILDABLE, STATION33_CHARM, STATION33_EARRINGS, STATION33_EYEWEAR, STATION33_FINISHES,
+  STATION33_HEAD, STATION33_IRISES, STATION33_MOUTH, STATION33_NECK, STATION33_NECKLACE, STATION33_PIN, STATION33_PUPILS,
+} from "./station33Outfit";
 import { CULTURAL_ITEMS } from "@/lib/shop/culturalCollection";
 
 import { cleanOutfit, shopItem, type ShopSlot, type YumiOutfit } from "@/lib/shop/catalog";
 
+import {
+  bendToEye, brass, chain, chrome, clothBand, ellipseRing, extrude, feltTexture, glaze, group, heartPath, irisCap, irisTexture, lathe, mesh, paint, phys, radialShape, ringFrame, roundedRect, seeded, std, stripes, tail, taperedTube, tintedLens,
+  SHELL_REPEAT, type NeckPiece, type Rand, type ShellFinish,
+} from "./outfitKit";
 import {
   ARM_RADIUS, EYE_RADIUS, GAP_HALF, SHELL_DEPTH, SHELL_RADIUS, TUBE_FRONT, TUBE_RADIUS,
   tubeCentre,
@@ -37,207 +45,12 @@ import {
 
 // ------------------------------------------------------------------ helpers
 
-type Rand = () => number;
-
-/** Stable noise for textures: the same piece looks the same every time. */
-function seeded(seed: number): Rand {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function paint(
-  width: number,
-  height: number,
-  seed: number,
-  draw: (ctx: CanvasRenderingContext2D, rand: Rand, w: number, h: number) => void,
-  repeat: [number, number] = [1, 1],
-): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d")!;
-  draw(ctx, seeded(seed), width, height);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(repeat[0], repeat[1]);
-  texture.anisotropy = 4;
-  return texture;
-}
-
-type StdOptions = THREE.MeshStandardMaterialParameters;
-type PhysOptions = THREE.MeshPhysicalMaterialParameters;
-
-const std = (color: THREE.ColorRepresentation, metalness = 0, roughness = 0.5, extra: StdOptions = {}) =>
-  new THREE.MeshStandardMaterial({ color, metalness, roughness, ...extra });
-
-const phys = (color: THREE.ColorRepresentation, extra: PhysOptions = {}) =>
-  new THREE.MeshPhysicalMaterial({ color, ...extra });
-
-const brass = () => std(0xc9a55a, 0.92, 0.27, { envMapIntensity: 1.1 });
-const chrome = () => std(0xc5cacf, 0.95, 0.18, { envMapIntensity: 1.1 });
-const glaze = (color: THREE.ColorRepresentation, roughness = 0.18) =>
-  phys(color, { roughness, clearcoat: 1, clearcoatRoughness: 0.08 });
-
-function mesh(
-  geometry: THREE.BufferGeometry,
-  material: THREE.Material | THREE.Material[],
-  x = 0, y = 0, z = 0,
-): THREE.Mesh {
-  const m = new THREE.Mesh(geometry, material);
-  m.position.set(x, y, z);
-  return m;
-}
-
-function group(...children: THREE.Object3D[]): THREE.Group {
-  const g = new THREE.Group();
-  if (children.length) g.add(...children);
-  return g;
-}
-
-/** An ellipse of wire, for collars and rims that must keep a round section. */
-function ellipseRing(rx: number, ry: number, tube: number, material: THREE.Material) {
-  const points: THREE.Vector3[] = [];
-  for (let i = 0; i < 48; i += 1) {
-    const a = (i / 48) * Math.PI * 2;
-    points.push(new THREE.Vector3(Math.cos(a) * rx, Math.sin(a) * ry, 0));
-  }
-  const curve = new THREE.CatmullRomCurve3(points, true);
-  return new THREE.Mesh(new THREE.TubeGeometry(curve, 96, tube, 8, true), material);
-}
-
-/** A chain of small links along a path, for monocles and charms. */
-function chain(points: THREE.Vector3[], material: THREE.Material, link = 0.035) {
-  const curve = new THREE.CatmullRomCurve3(points);
-  const length = curve.getLength();
-  const count = Math.max(2, Math.round(length / (link * 1.7)));
-  const g = new THREE.Group();
-  const geometry = new THREE.TorusGeometry(link, link * 0.28, 6, 12);
-  for (let i = 0; i <= count; i += 1) {
-    const t = i / count;
-    const ring = new THREE.Mesh(geometry, material);
-    ring.position.copy(curve.getPointAt(t));
-    const tangent = curve.getTangentAt(t);
-    ring.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), tangent);
-    ring.rotateX(i % 2 ? Math.PI / 2 : 0);
-    ring.scale.set(1.35, 1, 1);
-    g.add(ring);
-  }
-  return g;
-}
-
-function roundedRect(w: number, h: number, r: number) {
-  const s = new THREE.Shape();
-  const x = -w / 2;
-  const y = -h / 2;
-  s.moveTo(x + r, y);
-  s.lineTo(x + w - r, y);
-  s.quadraticCurveTo(x + w, y, x + w, y + r);
-  s.lineTo(x + w, y + h - r);
-  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  s.lineTo(x + r, y + h);
-  s.quadraticCurveTo(x, y + h, x, y + h - r);
-  s.lineTo(x, y + r);
-  s.quadraticCurveTo(x, y, x + r, y);
-  return s;
-}
-
-function extrude(shape: THREE.Shape, depth: number, bevel = 0.01, curveSegments = 24) {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth,
-    bevelEnabled: bevel > 0,
-    bevelThickness: bevel,
-    bevelSize: bevel,
-    bevelSegments: 3,
-    curveSegments,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  return geometry;
-}
-
-/** A bowl, cup or dish: a lathe of (radius, height) pairs, base to rim. */
-function lathe(profile: Array<[number, number]>, segments = 48) {
-  return new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), segments);
-}
-
-/** A tube whose thickness changes along its path: croissants, churros. */
-function taperedTube(
-  curve: THREE.Curve<THREE.Vector3>,
-  radius: (t: number, angle: number) => number,
-  segments = 64,
-  radial = 24,
-) {
-  const frames = curve.computeFrenetFrames(segments, false);
-  const positions: number[] = [];
-  const uvs: number[] = [];
-  const indices: number[] = [];
-  for (let i = 0; i <= segments; i += 1) {
-    const t = i / segments;
-    const p = curve.getPointAt(t);
-    const n = frames.normals[i];
-    const b = frames.binormals[i];
-    for (let j = 0; j <= radial; j += 1) {
-      const a = (j / radial) * Math.PI * 2;
-      const r = radius(t, a);
-      const c = Math.cos(a) * r;
-      const s = Math.sin(a) * r;
-      positions.push(p.x + c * n.x + s * b.x, p.y + c * n.y + s * b.y, p.z + c * n.z + s * b.z);
-      uvs.push(t, j / radial);
-    }
-  }
-  for (let i = 0; i < segments; i += 1) {
-    for (let j = 0; j < radial; j += 1) {
-      const a = i * (radial + 1) + j;
-      const b = a + radial + 1;
-      indices.push(a, b, a + 1, b, b + 1, a + 1);
-    }
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setIndex(indices);
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-/** A frame whose local Z runs along the tube at `angle`, X outward, Y forward. */
-function ringFrame(angle: number, along = 0) {
-  const radial = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0);
-  const depth = new THREE.Vector3(0, 0, 1);
-  const axis = new THREE.Vector3().crossVectors(radial, depth);
-  const frame = new THREE.Group();
-  frame.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(radial, depth, axis));
-  frame.position.copy(tubeCentre(angle)).addScaledVector(axis, along);
-  return frame;
-}
 
 // ---------------------------------------------------------------- materials
 
-type ShellFinish = {
-  color: THREE.ColorRepresentation;
-  metalness: number;
-  roughness: number;
-  clearcoat?: number;
-  clearcoatRoughness?: number;
-  envMapIntensity?: number;
-  opacity?: number;
-  emissive?: THREE.ColorRepresentation;
-  emissiveIntensity?: number;
-  map?: () => THREE.Texture;
-};
-
-/* The torus' u runs along the C (about 8 units), v around the tube (about
-   2.8), so a 2:1 canvas repeated 1.5 times keeps patterns square. */
-const SHELL_REPEAT: [number, number] = [1.5, 1];
-
 const SHELL_FINISHES: Record<string, ShellFinish> = {
   ...CULTURAL_FINISHES,
+  ...STATION33_FINISHES,
   jade: {
     color: 0xffffff, metalness: 0.02, roughness: 0.2, clearcoat: 0.9, clearcoatRoughness: 0.08,
     map: () => paint(512, 256, 11, (ctx, rand, w, h) => {
@@ -535,6 +348,11 @@ export function applyShellFinish(material: THREE.MeshPhysicalMaterial, id: strin
   const finish = id ? SHELL_FINISHES[id] : undefined;
   material.map?.dispose();
   material.map = finish?.map ? finish.map() : null;
+  // One texture serves both channels, so it is disposed once.
+  material.roughnessMap?.dispose();
+  const surface = finish?.surface ? finish.surface() : null;
+  material.roughnessMap = surface;
+  material.metalnessMap = surface;
   material.color.set(finish ? finish.color : SHELL_DEFAULT.color);
   material.metalness = finish ? finish.metalness : SHELL_DEFAULT.metalness;
   material.roughness = finish ? finish.roughness : SHELL_DEFAULT.roughness;
@@ -554,26 +372,6 @@ export function applyShellFinish(material: THREE.MeshPhysicalMaterial, id: strin
    and close with her blink. +Z is out through the middle of the eye, and
    the eyeball's surface there is at EYE_RADIUS. */
 
-function heartPath(s: THREE.Shape | THREE.Path, k = 1, ox = 0, oy = 0) {
-  const p = (x: number, y: number): [number, number] => [ox + x * k, oy + y * k];
-  s.moveTo(...p(0, -0.27));
-  s.bezierCurveTo(...p(-0.16, -0.14), ...p(-0.33, -0.02), ...p(-0.29, 0.13));
-  s.bezierCurveTo(...p(-0.25, 0.28), ...p(-0.06, 0.29), ...p(0, 0.15));
-  s.bezierCurveTo(...p(0.06, 0.29), ...p(0.25, 0.28), ...p(0.29, 0.13));
-  s.bezierCurveTo(...p(0.33, -0.02), ...p(0.16, -0.14), ...p(0, -0.27));
-  return s;
-}
-
-function radialShape(points: number, radius: (i: number, a: number) => number) {
-  const s = new THREE.Shape();
-  for (let i = 0; i <= points; i += 1) {
-    const a = (i / points) * Math.PI * 2 + Math.PI / 2;
-    const r = radius(i, a);
-    if (i) s.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-    else s.moveTo(Math.cos(a) * r, Math.sin(a) * r);
-  }
-  return s;
-}
 
 function pupilShape(id: string): THREE.Shape {
   if (id === "heart-pupil") return heartPath(new THREE.Shape()) as THREE.Shape;
@@ -601,57 +399,6 @@ function pupilShape(id: string): THREE.Shape {
   return radialShape(160, (_i, a) => 0.17 + 0.12 * Math.pow(Math.abs(Math.cos((a - Math.PI / 2) * 2.5)), 0.7));
 }
 
-const IRIS_RADIUS = 0.39;
-
-/** A cap of colour on the eyeball inside the bezel, painted flat. */
-function irisCap(texture: THREE.Texture, lift = 1.006) {
-  const theta = Math.asin(IRIS_RADIUS / EYE_RADIUS);
-  const geometry = new THREE.SphereGeometry(EYE_RADIUS * lift, 56, 12, 0, Math.PI * 2, 0, theta);
-  geometry.rotateX(Math.PI / 2);
-  const p = geometry.attributes.position;
-  const uv = geometry.attributes.uv;
-  for (let i = 0; i < p.count; i += 1) {
-    uv.setXY(i, 0.5 + p.getX(i) / (2 * IRIS_RADIUS), 0.5 + p.getY(i) / (2 * IRIS_RADIUS));
-  }
-  return mesh(geometry, std(0xffffff, 0.05, 0.22, { map: texture, envMapIntensity: 0.8 }));
-}
-
-function irisTexture(seed: number, base: string, deep: string, light: string) {
-  return paint(256, 256, seed, (ctx, rand, w, h) => {
-    const cx = w / 2;
-    const cy = h / 2;
-    const R = w / 2;
-    const g = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, R);
-    g.addColorStop(0, deep);
-    g.addColorStop(0.42, base);
-    g.addColorStop(0.84, base);
-    g.addColorStop(1, deep);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
-    // Fibres from the pupil out to the rim, light and dark.
-    ctx.lineCap = "round";
-    for (let i = 0; i < 180; i += 1) {
-      const a = rand() * Math.PI * 2;
-      const r0 = R * (0.34 + rand() * 0.12);
-      const r1 = R * (0.68 + rand() * 0.26);
-      const bend = (rand() - 0.5) * 0.12;
-      ctx.strokeStyle = rand() > 0.5 ? light : deep;
-      ctx.globalAlpha = 0.2 + rand() * 0.35;
-      ctx.lineWidth = 1 + rand() * 2.2;
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
-      ctx.lineTo(cx + Math.cos(a + bend) * r1, cy + Math.sin(a + bend) * r1);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 0.55;
-    ctx.strokeStyle = light;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(cx, cy, R * 0.52, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  });
-}
 
 function muranoTexture() {
   return paint(256, 256, 131, (ctx, _rand, w, h) => {
@@ -847,21 +594,6 @@ function buildVenetianMask(): THREE.Object3D {
   return group(face, trim, jewel, feathers);
 }
 
-/** A flat shape bent round the eye, so frames sit on it rather than float. */
-function bendToEye(geometry: THREE.BufferGeometry, k = 0.32, ky = 0.12) {
-  const position = geometry.attributes.position;
-  for (let i = 0; i < position.count; i += 1) {
-    const x = position.getX(i);
-    const y = position.getY(i);
-    position.setZ(i, position.getZ(i) - k * x * x - ky * y * y);
-  }
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-function tintedLens(colour: THREE.ColorRepresentation, opacity: number) {
-  return phys(colour, { roughness: 0.03, clearcoat: 1, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
-}
 
 function buildRoundGlasses(): THREE.Object3D {
   const acetate = glaze(0x2a2522, 0.18);
@@ -967,18 +699,6 @@ function buildLongLashes(): THREE.Object3D {
 
 // -------------------------------------------------------------------- head
 
-function feltTexture(seed: number, base: string, fleck: string) {
-  return paint(256, 256, seed, (ctx, rand, w, h) => {
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 4000; i += 1) {
-      ctx.fillStyle = fleck;
-      ctx.globalAlpha = rand() * 0.25;
-      ctx.fillRect(rand() * w, rand() * h, 1 + rand() * 2, 1);
-    }
-    ctx.globalAlpha = 1;
-  }, [2, 2]);
-}
 
 function buildBeret(): THREE.Object3D {
   const felt = std(0xffffff, 0, 0.96, { map: feltTexture(5, "#3c3a3b", "#8a8789") });
@@ -1116,44 +836,6 @@ function buildHairComb(): THREE.Object3D {
 
 // -------------------------------------------------------------------- neck
 
-type NeckPiece = { band: THREE.Object3D; front: THREE.Object3D };
-
-function stripes(seed: number, base: string, stripe: string, every = 32, width = 9, angle = 1) {
-  return paint(256, 256, seed, (ctx, _rand, w, h) => {
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = stripe;
-    ctx.lineWidth = width;
-    for (let i = -h; i < w + h; i += every) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i + h * angle, h);
-      ctx.stroke();
-    }
-  });
-}
-
-/** A band of cloth around the tube, flattened to the tube's oval section. */
-function clothBand(material: THREE.Material, width: number, thickness: number) {
-  const torus = new THREE.TorusGeometry(1, width / 2, 16, 72);
-  const band = mesh(torus, material);
-  const rx = TUBE_RADIUS + thickness;
-  const ry = TUBE_FRONT + thickness;
-  // Squashed to the tube's oval; the cloth keeps its full width along it.
-  band.scale.set(rx, ry, 1);
-  return band;
-}
-
-function tail(length: number, width: number, material: THREE.Material) {
-  const s = new THREE.Shape();
-  s.moveTo(-width / 2, 0);
-  s.lineTo(width / 2, 0);
-  s.lineTo(width * 0.62, -length * 0.88);
-  s.lineTo(0, -length);
-  s.lineTo(-width * 0.55, -length * 0.85);
-  s.closePath();
-  return mesh(extrude(s, 0.022, 0.008), material);
-}
 
 function buildSilkScarf(): NeckPiece {
   const silk = phys(0xffffff, {
@@ -2083,6 +1765,7 @@ const EYEWEAR: Record<string, Builder> = {
   "heart-shades": buildHeartShades,
   "pirate-patch": buildPiratePatch,
   "long-lashes": buildLongLashes,
+  ...STATION33_EYEWEAR,
 };
 
 /* Lashes are part of the eye: they close with the blink, so they go in the
@@ -2148,6 +1831,7 @@ const CHARM: Record<string, Builder> = {
 export function buildableIds(): string[] {
   return [
     ...CULTURAL_ITEMS.map(item => item.id),
+    ...STATION33_BUILDABLE,
     ...Object.keys(SHELL_FINISHES), ...PUPILS, ...Object.keys(IRISES), ...Object.keys(EYEWEAR), ...Object.keys(HEAD),
     ...Object.keys(NECK), ...Object.keys(PIN), ...Object.keys(MOUTH), ...Object.keys(CHARM),
   ];
@@ -2208,6 +1892,14 @@ export type OutfitRigParts = {
   lookGroup: THREE.Group;
   pupil: THREE.Mesh;
   shellMaterial: THREE.MeshPhysicalMaterial;
+  /**
+   * A piece's shaders may still be compiling when it comes off (the reader
+   * tapped the next one quickly). three.js polls its materials until they
+   * are ready, and a material disposed under it throws from that poll. So
+   * a piece that is still compiling is taken off at once but disposed only
+   * once its compile has settled.
+   */
+  settling?: (object: THREE.Object3D) => Promise<unknown> | undefined;
 };
 
 export type OutfitRig = {
@@ -2240,39 +1932,126 @@ function disposeObject(object: THREE.Object3D) {
   }
 }
 
+/* Yumi has no ears: her single earring has a cuff around her shell, with a
+   real chain running from the cuff to the earring's top loop. */
+const EARRING_ANGLE = THREE.MathUtils.degToRad(164);
+
+function earringMount() {
+  const cuff = ringFrame(EARRING_ANGLE);
+  const metal = brass();
+  cuff.add(ellipseRing(TUBE_RADIUS + .018, TUBE_FRONT + .018, .024, metal));
+  // The clasp emerges from the front of the cuff. A centre-plane hanger
+  // would bury the upper drop inside the curved shell.
+  const top = tubeCentre(EARRING_ANGLE);
+  top.z = TUBE_FRONT + .035;
+  const hang = top.clone().add(new THREE.Vector3(-.16, -.12, .075));
+  const links = chain([top, top.clone().lerp(hang, .5), hang], metal, .022);
+  return { parts: group(cuff, links), hang };
+}
+
+/* A necklace hangs across the front of the lower tube from two studs. */
+const NECKLACE_CENTRE = new THREE.Vector3(0, -SHELL_RADIUS + .05, TUBE_FRONT + .035);
+
+function necklaceStuds() {
+  const fasteners = group();
+  for (const side of [-1, 1]) {
+    const stud = mesh(new THREE.CylinderGeometry(.048, .048, .15, 12), brass(), side * .65, -SHELL_RADIUS + .30, TUBE_FRONT - .015);
+    stud.rotation.x = Math.PI / 2;
+    fasteners.add(stud);
+  }
+  return fasteners;
+}
+
+/* A brow piece clamps round the upper right of the tube, clear of the eye. */
+const BROW_ANGLE = THREE.MathUtils.degToRad(68);
+
+function browCuff(material: THREE.Material) {
+  return ellipseRing(TUBE_RADIUS + .018, TUBE_FRONT + .018, .025, material);
+}
+
+/**
+ * The Station 33 collection (station33Outfit.ts). Hats, pins, scarves,
+ * eyes, brows and necklaces are made at the size they are worn; the small
+ * hanging things are made at the design book's size and brought up here to
+ * match the first collection's on the same chains (compared side by side
+ * on the stand, 2026-10-17).
+ */
+const STATION33_HANGING_SCALE = { mouth: 1.25, charm: 1.35, earrings: 1.15 } as const;
+
+function buildStation33(slot: ShopSlot, id: string): { model?: THREE.Object3D; eye?: THREE.Object3D; look?: THREE.Object3D } | null {
+  if (slot === "pupil" && STATION33_PUPILS[id]) return { look: STATION33_PUPILS[id]() };
+  if (slot === "iris" && STATION33_IRISES[id]) return { look: STATION33_IRISES[id]() };
+  if (slot === "head" && STATION33_HEAD[id]) {
+    const anchor = headAnchor();
+    anchor.add(STATION33_HEAD[id]());
+    return { model: anchor };
+  }
+  if (slot === "neck" && STATION33_NECK[id]) {
+    const piece = STATION33_NECK[id]();
+    const frame = ringFrame(NECK_ANGLE);
+    frame.add(piece.band);
+    piece.front.position.copy(tubeCentre(NECK_ANGLE));
+    piece.front.position.z = TUBE_FRONT + 0.07;
+    return { model: group(frame, piece.front) };
+  }
+  if (slot === "pin" && STATION33_PIN[id]) {
+    // The plate's back just clear of the tube; its pins go into the shell.
+    const anchor = pinAnchor();
+    anchor.position.z = TUBE_FRONT + 0.014;
+    anchor.add(STATION33_PIN[id]());
+    return { model: anchor };
+  }
+  if (slot === "mouth" && STATION33_MOUTH[id]) {
+    const { parts, anchor } = hangingAnchor(JAW_ANGLE, -0.24, 0.32, 0.12);
+    anchor.add(STATION33_MOUTH[id]());
+    anchor.scale.setScalar(STATION33_HANGING_SCALE.mouth);
+    return { model: group(parts, anchor) };
+  }
+  if (slot === "charm" && STATION33_CHARM[id]) {
+    const { parts, anchor } = hangingAnchor(CHARM_ANGLE, 0, TUBE_RADIUS, 0.16);
+    anchor.add(STATION33_CHARM[id]());
+    anchor.scale.setScalar(STATION33_HANGING_SCALE.charm);
+    return { model: group(parts, anchor) };
+  }
+  if (slot === "earrings" && STATION33_EARRINGS[id]) {
+    const { parts, hang } = earringMount();
+    const drop = STATION33_EARRINGS[id]();
+    drop.position.copy(hang);
+    drop.scale.setScalar(STATION33_HANGING_SCALE.earrings);
+    return { model: group(parts, drop) };
+  }
+  if (slot === "brow" && STATION33_BROW[id]) {
+    const frame = ringFrame(BROW_ANGLE);
+    frame.add(browCuff(brass()), STATION33_BROW[id]());
+    return { model: frame };
+  }
+  if (slot === "necklace" && STATION33_NECKLACE[id]) {
+    const piece = STATION33_NECKLACE[id]();
+    piece.position.copy(NECKLACE_CENTRE);
+    return { model: group(piece, necklaceStuds()) };
+  }
+  return null;
+}
+
 /** Builds the piece for one slot, already placed in the model's frame. */
 function buildForSlot(slot: ShopSlot, id: string): { model?: THREE.Object3D; eye?: THREE.Object3D; look?: THREE.Object3D } | null {
+  const station = buildStation33(slot, id);
+  if (station) return station;
   const culturalItem = CULTURAL_ITEMS.find(item => item.id === id);
   if (culturalItem?.slot === "earrings") {
-    const wornEarring = group();
-    // Yumi has no ears: her single earring has a cuff around her shell,
-    // with a real chain running from the cuff to the earring's top loop.
-    {
-      const angle = THREE.MathUtils.degToRad(164);
-      const cuff = ringFrame(angle);
-      const metal = brass();
-      cuff.add(ellipseRing(TUBE_RADIUS + .018, TUBE_FRONT + .018, .024, metal));
-      // The clasp emerges from the front of the cuff. A centre-plane
-      // hanger would bury the upper drop inside the curved shell.
-      const top = tubeCentre(angle);
-      top.z = TUBE_FRONT + .035;
-      const hang = top.clone().add(new THREE.Vector3(-.16, -.12, .075));
-      const links = chain([top, top.clone().lerp(hang,.5), hang], metal,.022);
-      const drop = buildCulturalPiece(id)!;
-      drop.scale.setScalar(1.3);
-      drop.position.copy(hang).add(new THREE.Vector3(0, -.319, 0));
-      wornEarring.add(cuff, links, drop);
-    }
-    return { model: wornEarring };
+    const { parts, hang } = earringMount();
+    const drop = buildCulturalPiece(id)!;
+    drop.scale.setScalar(1.3);
+    drop.position.copy(hang).add(new THREE.Vector3(0, -.319, 0));
+    return { model: group(parts, drop) };
   }
   if (culturalItem?.slot === "brow") {
     // A piercing-sized ornament on a structural cuff, following the upper
     // shell instead of floating in front of the eyeball or blinking flat.
-    const angle = THREE.MathUtils.degToRad(68);
-    const frame = ringFrame(angle);
-    frame.add(ellipseRing(TUBE_RADIUS + .018, TUBE_FRONT + .018, .025, chrome()));
+    const frame = ringFrame(BROW_ANGLE);
+    frame.add(browCuff(chrome()));
     const ornament = buildCulturalPiece(id)!;
-    ornament.position.copy(tubeCentre(angle));
+    ornament.position.copy(tubeCentre(BROW_ANGLE));
     ornament.position.z = TUBE_FRONT;
     ornament.rotation.z = -.45;
     return { model: group(frame, ornament) };
@@ -2283,15 +2062,8 @@ function buildForSlot(slot: ShopSlot, id: string): { model?: THREE.Object3D; eye
     if (slot === "pin") { const a = pinAnchor(); a.add(cultural); return { model: a }; }
     if (slot === "charm") { const {parts, anchor} = hangingAnchor(CHARM_ANGLE, 0, TUBE_RADIUS, .16); anchor.add(cultural); return {model: group(parts,anchor)}; }
     if (slot === "necklace") {
-      cultural.position.set(0, -SHELL_RADIUS + .05, TUBE_FRONT + .035);
-      // Two fastening studs land on the shell's front surface.
-      const fasteners = group();
-      for (const side of [-1, 1]) {
-        const stud = mesh(new THREE.CylinderGeometry(.048,.048,.15,12), brass(),side*.65,-SHELL_RADIUS+.30,TUBE_FRONT-.015);
-        stud.rotation.x = Math.PI/2;
-        fasteners.add(stud);
-      }
-      return { model: group(cultural,fasteners) };
+      cultural.position.copy(NECKLACE_CENTRE);
+      return { model: group(cultural, necklaceStuds()) };
     }
     return { model: cultural };
   }
@@ -2354,7 +2126,9 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
     if (!current) return;
     for (const object of current.objects) {
       object.parent?.remove(object);
-      disposeObject(object);
+      const pending = parts.settling?.(object);
+      if (pending) void pending.then(() => disposeObject(object), () => disposeObject(object));
+      else disposeObject(object);
     }
     worn.delete(slot);
     if (slot === "pupil") pupil.visible = true;
@@ -2410,6 +2184,7 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
       for (const slot of [...worn.keys()]) remove(slot);
       eyeGroup.remove(eyewear);
       shellMaterial.map?.dispose();
+      shellMaterial.roughnessMap?.dispose();
     },
   };
 }
@@ -2453,12 +2228,12 @@ export function buildThumbnailObject(id: string): THREE.Object3D | null {
     const arm = mesh(new THREE.CylinderGeometry(ARM_RADIUS, ARM_RADIUS, 0.9, 24), std(0x8d9399, 0.95, 0.23), -0.9, 0, 0);
     arm.rotation.z = Math.PI / 2;
     eye.add(arm);
-    if (item.slot === "pupil") eye.add(buildPupil(id));
+    if (item.slot === "pupil") eye.add(STATION33_PUPILS[id]?.() ?? buildPupil(id));
     else {
       const round = mesh(new THREE.SphereGeometry(0.3, 28, 18), std(0x000000, 0.15, 0.07), 0, 0, EYE_RADIUS * 0.74);
       if (item.slot === "iris") {
         round.scale.setScalar(0.72);
-        eye.add(buildIris(id));
+        eye.add(STATION33_IRISES[id]?.() ?? buildIris(id));
       } else {
         eye.add(EYEWEAR[id]());
       }
@@ -2468,7 +2243,7 @@ export function buildThumbnailObject(id: string): THREE.Object3D | null {
   }
 
   if (item.slot === "neck") {
-    const piece = NECK[id] ? NECK[id]() : buildCulturalScarf(id)!;
+    const piece = STATION33_NECK[id]?.() ?? (NECK[id] ? NECK[id]() : buildCulturalScarf(id)!);
     const tube = mesh(new THREE.CapsuleGeometry(TUBE_RADIUS, 0.7, 10, 32), std(0x17181b, 0.5, 0.4));
     tube.scale.z = SHELL_DEPTH;
     const band = piece.band;
@@ -2480,9 +2255,27 @@ export function buildThumbnailObject(id: string): THREE.Object3D | null {
     return g;
   }
 
+  if (item.slot === "brow" && STATION33_BROW[id]) {
+    // On a short length of tube, as the scarves are, turned so the piece
+    // across its front faces the card: on its own, the cuff is all a
+    // reader would see.
+    const tube = mesh(new THREE.CapsuleGeometry(TUBE_RADIUS, 0.6, 10, 32), std(0x17181b, 0.5, 0.4));
+    tube.rotation.x = Math.PI / 2;
+    tube.scale.set(1, 1, SHELL_DEPTH);
+    const g = group(tube, browCuff(brass()), STATION33_BROW[id]());
+    // Front to the card, the tube lying across it like a brow.
+    g.rotation.set(Math.PI / 2, Math.PI / 2, 0);
+    return group(g);
+  }
+  if (item.slot === "necklace" && STATION33_NECKLACE[id]) {
+    const studs = group(...[-1, 1].map(side => mesh(new THREE.SphereGeometry(.045, 14, 10), brass(), side * .65, .25, -.05)));
+    return group(STATION33_NECKLACE[id](), studs);
+  }
+
   const cultural = buildCulturalPiece(id);
   if (cultural) return cultural;
-  const builder = HEAD[id] ?? PIN[id] ?? MOUTH[id] ?? CHARM[id];
+  const builder = HEAD[id] ?? PIN[id] ?? MOUTH[id] ?? CHARM[id]
+    ?? STATION33_HEAD[id] ?? STATION33_PIN[id] ?? STATION33_MOUTH[id] ?? STATION33_CHARM[id] ?? STATION33_EARRINGS[id];
   return builder ? builder() : null;
 }
 
