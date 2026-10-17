@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
-import OrbitalBackdrop from "@/components/shop/OrbitalBackdrop";
+import OrbitalBackdrop, { orbitView } from "@/components/shop/OrbitalBackdrop";
 import StationDock from "@/components/shop/StationDock";
 import YumiLoading from "@/components/yumi3d/YumiLoading";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
@@ -27,6 +27,8 @@ import {
   STORY_ACTS,
   STORY_DURATION_MS,
   STORY_TRACKS,
+  DOCKED_AT_MS,
+  planetTrack,
   actAt,
   yumiAt,
   type StoryTrack,
@@ -80,6 +82,8 @@ type FilmClock = {
   dispose(): void;
   /** True when the clock is the layers' own Web Animations. */
   compositor: boolean;
+  /** The screen changed size: tracks drawn to its size are redrawn. */
+  resize?(width: number, height: number): void;
 };
 
 /**
@@ -87,18 +91,28 @@ type FilmClock = {
  * chapter jump is one currentTime write on each, and the 3D Yumi reads the
  * time back from the first.
  */
-function createLayerClock(root: HTMLElement): FilmClock | null {
+function createLayerClock(root: HTMLElement, screen: HTMLElement): FilmClock | null {
   const elements = Array.from(root.querySelectorAll<HTMLElement>("[data-track]"));
   if (!elements.length || typeof elements[0].animate !== "function") return null;
 
+  /* The planet's descent ends on Station 33's horizon, which is placed in
+     proportion to the screen's width and height; its keyframes are worked
+     out for this screen. */
+  const framesFor = (name: StoryTrack) =>
+    name === "planet" && screen.clientWidth > 0 && screen.clientHeight > 0
+      ? planetTrack(screen.clientWidth, screen.clientHeight)
+      : STORY_TRACKS[name];
+
+  let planet: Animation | null = null;
   const animations = elements.map(element => {
     const name = element.dataset.track as StoryTrack;
-    const animation = element.animate(STORY_TRACKS[name], {
+    const animation = element.animate(framesFor(name), {
       duration: STORY_DURATION_MS,
       fill: "both",
     });
     animation.pause();
     animation.currentTime = 0;
+    if (name === "planet") planet = animation;
     return animation;
   });
   const lead = animations[0];
@@ -120,6 +134,9 @@ function createLayerClock(root: HTMLElement): FilmClock | null {
     },
     dispose() {
       for (const a of animations) a.cancel();
+    },
+    resize(width, height) {
+      if (width > 0 && height > 0) (planet?.effect as KeyframeEffect | null)?.setKeyframes(planetTrack(width, height));
     },
   };
 }
@@ -191,6 +208,7 @@ export default function YumiOriginStory({
   const reducedRef = useRef(false);
   const actRef = useRef(0);
   const endRef = useRef(false);
+  const dockedRef = useRef(false);
   const mergedRef = useRef(false);
   const veilRef = useRef<HTMLDivElement>(null);
   const veilAnimationRef = useRef<Animation | null>(null);
@@ -201,6 +219,8 @@ export default function YumiOriginStory({
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
   const [endCard, setEndCard] = useState(false);
+  /** Yumi is on Station 33's stand: the shop's pieces may come up. */
+  const [docked, setDocked] = useState(false);
   /** Once YU and MI are one, she can be turned. */
   const [merged, setMerged] = useState(false);
   const [yumi, setYumi] = useState<"loading" | "live" | "unavailable">("loading");
@@ -225,6 +245,11 @@ export default function YumiOriginStory({
     if (nextMerged !== mergedRef.current) {
       mergedRef.current = nextMerged;
       setMerged(nextMerged);
+    }
+    const nextDocked = time >= DOCKED_AT_MS;
+    if (nextDocked !== dockedRef.current) {
+      dockedRef.current = nextDocked;
+      setDocked(nextDocked);
     }
     const nextEnd = time >= END_CARD_AT_MS;
     if (nextEnd !== endRef.current) {
@@ -312,7 +337,7 @@ export default function YumiOriginStory({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     reducedRef.current = reduced;
 
-    const clock = createLayerClock(film) ?? createPlainClock();
+    const clock = createLayerClock(film, screen) ?? createPlainClock();
     clockRef.current = clock;
     if (reduced) {
       clock.seek(ACT_STILLS_MS[0]);
@@ -530,6 +555,7 @@ export default function YumiOriginStory({
             size.width = screen.clientWidth;
             size.height = screen.clientHeight;
             handleRef.current?.resize();
+            clock.resize?.(size.width, size.height);
           });
     resize?.observe(screen);
 
@@ -592,6 +618,8 @@ export default function YumiOriginStory({
         aria-label={copy.ariaLabel}
         data-playing={playing || undefined}
         data-act={STORY_ACTS[act].id}
+        data-docked={docked || undefined}
+        data-earth={orbitView(scene).time}
       >
         <div className={styles.frame}>
           <div ref={screenRef} className={styles.screen}>
@@ -623,6 +651,7 @@ export default function YumiOriginStory({
                   <span className={styles.planetClouds} />
                 </span>
                 <span className={styles.planetShade} />
+                <span data-track="planetDusk" className={styles.planetDusk} />
                 <span className={styles.planetAtmosphere} />
               </div>
               <div data-track="flare" className={styles.flare} />
@@ -700,7 +729,7 @@ export default function YumiOriginStory({
             </div>
           </div>
 
-          {STORY_ACTS[act].id === "station" && catalog && catalog.items.length ? (
+          {STORY_ACTS[act].id === "station" && docked && catalog && catalog.items.length ? (
             <div className={styles.tryOn} role="group" aria-label={copy.tryOn.title}>
               <p className={styles.tryOnTitle}>{copy.tryOn.title}</p>
               <ul>

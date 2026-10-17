@@ -6,12 +6,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import YumiOriginStory from "@/components/landing/story/YumiOriginStory";
 import {
   ACT_STILLS_MS,
+  ARRIVE_AT_MS,
+  DOCKED_AT_MS,
   END_CARD_AT_MS,
   MERGE_AT_MS,
   STORY_ACTS,
   STORY_DURATION_MS,
   STORY_TRACKS,
   actAt,
+  planetArrival,
+  planetTrack,
   yumiAt,
 } from "@/components/landing/story/storyTimeline";
 import { getTranslations } from "@/lib/i18n";
@@ -141,6 +145,42 @@ describe("the film's clock", () => {
   });
 });
 
+describe("the descent to Station 33", () => {
+  /* The planet does not cross-fade into a different Earth: it ends exactly on
+     the station's horizon. Re-derive both circles from the stylesheets'
+     numbers and check they coincide, on a desktop and a phone screen. */
+  it.each([[1100, 524], [342, 428], [560, 700]])("lands the planet on the station's Earth on a %ix%i screen", (W, H) => {
+    const end = planetArrival(W, H);
+    const P = Math.min(0.44 * H, 0.52 * W);
+    const pc = { x: -0.08 * W + 1.16 * W * 0.86 - P / 2, y: -0.08 * H + 1.16 * H * 0.19 + P / 2 };
+    const inCamera = { x: pc.x + (end.x / 100) * P, y: pc.y + (end.y / 100) * P };
+    const onScreen = {
+      x: W / 2 + 1.02 * (inCamera.x - W / 2) - 0.05 * 1.16 * W,
+      y: H / 2 + 1.02 * (inCamera.y - H / 2) - 0.01 * 1.16 * H,
+    };
+    const radius = (1.02 * end.scale * P) / 2;
+    expect(radius).toBeCloseTo(0.875 * W, 0);
+    expect(onScreen.x).toBeCloseTo(W / 2, 0);
+    expect(onScreen.y - radius).toBeCloseTo(0.63 * H, 0);
+  });
+
+  it("checks those numbers against the stylesheets", () => {
+    const film = readFileSync(resolve(process.cwd(), "components/landing/story/YumiOriginStory.module.css"), "utf8");
+    const shop = readFileSync(resolve(process.cwd(), "components/shop/OrbitalBackdrop.module.css"), "utf8");
+    expect(film).toMatch(/\.camera \{\n  inset: -8%;/);
+    expect(film).toMatch(/\.planet,\n\.flare \{\n  position: absolute;\n  right: 14%;\n  top: 19%;\n  width: min\(44cqh, 52cqw\);/);
+    expect(shop).toMatch(/\.earth \{\n  position: absolute;\n  left: 50%;\n  top: 63%;\n  width: 175%;/);
+    const camera = STORY_TRACKS.camera.filter(frame => (frame.offset as number) * STORY_DURATION_MS >= 19_000);
+    for (const frame of camera) expect(frame.transform).toBe("translate3d(-5%, -1%, 0) scale(1.02)");
+  });
+
+  it("arrives before the station is fully there, and docks her after", () => {
+    expect(STORY_ACTS[3].start).toBeLessThan(ARRIVE_AT_MS);
+    expect(ARRIVE_AT_MS).toBeLessThan(DOCKED_AT_MS);
+    expect(planetTrack(342, 428).at(-1)).toMatchObject({ opacity: 0 });
+  });
+});
+
 describe("YU and MI", () => {
   it("drift apart as a U and an i, and close in until they are one", () => {
     const start = yumiAt(0, false, true);
@@ -202,6 +242,13 @@ describe("the film on the page", () => {
     return copy;
   }
 
+  /* jsdom has no Web Animations, so the film runs on its plain clock, which
+     reads performance.now(): moving that on moves the film on. */
+  function skipAhead(ms: number) {
+    const real = performance.now.bind(performance);
+    return vi.spyOn(performance, "now").mockImplementation(() => real() + ms);
+  }
+
   it("waits for Yumi to be ready before it starts on its own", async () => {
     scene.hold = true;
     renderStory();
@@ -253,7 +300,11 @@ describe("the film on the page", () => {
     await waitFor(() => expect(scene.handle).not.toBeNull());
 
     fireEvent.click(screen.getByRole("button", { name: /Station 33/ }));
+    // The pieces wait until she has come down onto the stand.
+    expect(screen.queryByRole("group", { name: story.tryOn.title })).not.toBeInTheDocument();
+    const later = skipAhead(DOCKED_AT_MS - STORY_ACTS[3].start + 200);
     const rail = await screen.findByRole("group", { name: story.tryOn.title });
+    later.mockRestore();
     const monocle = within(rail).getByRole("button", { name: /Brass monocle/ });
     expect(within(rail).getAllByRole("button", { pressed: false })).toHaveLength(5);
 
@@ -272,7 +323,9 @@ describe("the film on the page", () => {
     const copy = renderStory("traditional-chinese");
     await act(async () => {});
     fireEvent.click(screen.getByRole("button", { name: new RegExp(copy.acts[3].name) }));
+    const later = skipAhead(DOCKED_AT_MS - STORY_ACTS[3].start + 200);
     const rail = await screen.findByRole("group", { name: copy.tryOn.title });
+    later.mockRestore();
     expect(within(rail).getByText("黃銅單片鏡")).toBeInTheDocument();
     expect(within(rail).getByText("30 塊餅乾")).toBeInTheDocument();
   });
