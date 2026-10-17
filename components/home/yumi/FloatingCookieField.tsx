@@ -9,6 +9,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import usePhonetics from "@/hooks/usePhonetics";
 import { onCookieGatherRequest } from "@/lib/home/cookieGather";
 import { floatingCopy } from "@/lib/home/floatingCopy";
+import { onHomeFrame } from "@/lib/home/homeFrame";
 import { returnHomeFromSearch } from "@/lib/home/homeMoments";
 import { avoid, bound, clamp, collide, scatter, type Body, type Rect } from "@/lib/home/floatingPhysics";
 import { getCoachStep, getServerCoachStep, subscribeToCoach } from "@/lib/home/tutorialCoach";
@@ -184,7 +185,7 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
   }, [paused, stageRef]);
 
   useEffect(() => {
-    let raf = 0, previous = performance.now(), measureAt = 0;
+    let previous = performance.now(), measureAt = 0;
     /* Reported to a mode crossing once the cookies stand where she will be
        revealed among them — the last thing on this home to arrive. */
     let placedAtRest = false;
@@ -192,38 +193,46 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
     let parked: { cookies: Cookie[]; width: number; height: number } | null = null;
     const painted = new Map<string, string>();
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
-    const tick = (now: number) => {
+    /* Measured in the frame's first half, before anything on the home screen
+       has written to the page, and used in its second (lib/home/homeFrame.ts). */
+    let blocked = true, width = 0, height = 0;
+    let nudge: { cookie: HTMLElement; x: string; y: string } | null = null;
+    const read = (now: number) => {
+      const state = latest.current;
+      blocked = document.hidden || state.activeId !== null || state.mode === "open" || !!document.querySelector("[aria-modal='true']");
+      if (blocked) return;
+      width = window.innerWidth; height = window.innerHeight;
+      if (state.mode !== "rest" || now <= measureAt) return;
+      obstacles = Array.from(document.querySelectorAll<HTMLElement>("[data-yumi-protected]"))
+        .filter(el => getComputedStyle(el).opacity !== "0")
+        .map(el => el.getBoundingClientRect());
+      const figure = stageRef.current?.querySelector("[data-yumi-figure]")?.getBoundingClientRect();
+      if (figure) obstacles.push(figure);
+      // The tour's demonstrating cookie leans toward her, wherever it is.
+      const hinted = field.current?.querySelector<HTMLElement>("[data-hint='feed']");
+      if (hinted && figure) {
+        const own = hinted.getBoundingClientRect();
+        const dx = figure.left + figure.width / 2 - (own.left + own.width / 2);
+        const dy = figure.top + figure.height / 2 - (own.top + own.height / 2);
+        const length = Math.hypot(dx, dy) || 1;
+        nudge = { cookie: hinted, x: `${((dx / length) * NUDGE).toFixed(1)}px`, y: `${((dy / length) * NUDGE).toFixed(1)}px` };
+      }
+      measureAt = now + 160;
+    };
+    const write = (now: number) => {
       const dt = Math.min(.032, (now - previous) / 1000);
       previous = now;
       const state = latest.current;
-      const width = window.innerWidth, height = window.innerHeight;
       const idle = state.mode === "rest";
-      const blocked = document.hidden || state.activeId !== null || state.mode === "open" || !!document.querySelector("[aria-modal='true']");
       if (!blocked) {
         // Search parks the cookies once. Typing must not keep measuring the
         // page and rewriting twelve motion layers on every animation frame.
-        if (!idle && parked?.cookies === state.cookies && parked.width === width && parked.height === height) {
-          raf = requestAnimationFrame(tick);
-          return;
-        }
+        if (!idle && parked?.cookies === state.cookies && parked.width === width && parked.height === height) return;
         parked = idle ? null : { cookies: state.cookies, width, height };
-        if (idle && now > measureAt) {
-          obstacles = Array.from(document.querySelectorAll<HTMLElement>("[data-yumi-protected]"))
-            .filter(el => getComputedStyle(el).opacity !== "0")
-            .map(el => el.getBoundingClientRect());
-          const figure = stageRef.current?.querySelector("[data-yumi-figure]")?.getBoundingClientRect();
-          if (figure && idle) obstacles.push(figure);
-          // The tour's demonstrating cookie leans toward her, wherever it is.
-          const hinted = field.current?.querySelector<HTMLElement>("[data-hint='feed']");
-          if (hinted && figure) {
-            const own = hinted.getBoundingClientRect();
-            const dx = figure.left + figure.width / 2 - (own.left + own.width / 2);
-            const dy = figure.top + figure.height / 2 - (own.top + own.height / 2);
-            const length = Math.hypot(dx, dy) || 1;
-            hinted.style.setProperty("--nudge-x", `${((dx / length) * NUDGE).toFixed(1)}px`);
-            hinted.style.setProperty("--nudge-y", `${((dy / length) * NUDGE).toFixed(1)}px`);
-          }
-          measureAt = now + 160;
+        if (nudge) {
+          nudge.cookie.style.setProperty("--nudge-x", nudge.x);
+          nudge.cookie.style.setProperty("--nudge-y", nudge.y);
+          nudge = null;
         }
         const rows = state.cookies.slice(0, 12);
         const ids = new Set(rows.map(row => row.id));
@@ -286,10 +295,8 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
           markReadyRef.current?.("standard", "field");
         }
       }
-      raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return onHomeFrame({ read, write });
   }, [stageRef]);
 
   useEffect(() => {

@@ -169,10 +169,14 @@ describe("what the heaviest tabs drag in with them", () => {
    * debug，合併上線"). components/home/yumi/PrecisionDial and its own
    * stylesheet replace LiquidRingButton, which styled itself from the
    * overlay's CSS — two files for one. It imports React and nothing else.
+   * Raised home 180 → 181 (2026-10-17): lib/home/homeFrame.ts, the one
+   * animation frame Yumi's loop and the floating cookies now share so that
+   * every measurement comes before any write (Chi: stutter "on every
+   * device"). It imports nothing.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 162],
-    ["home", TABS.home, 180],
+    ["home", TABS.home, 181],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {
