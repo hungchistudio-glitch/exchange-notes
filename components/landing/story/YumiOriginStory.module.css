@@ -966,6 +966,30 @@
 
 /* ------------------------------------------------------------ by act */
 
+/*
+  Each track is drawn only in the acts it can be seen in.
+
+  Pressing play starts every track's Web Animation at once, and Chrome
+  paints each animated layer at the largest scale that animation will ever
+  reach: Station 33's window at 3.2× for its dive, the meeting's ring at
+  3.2×, the flash at 2.4×, full-screen, on a 3× phone screen. None of them
+  can be seen in the first seven seconds. Measured 2026-10-16: a 250–380ms
+  freeze the moment the film started, every time, just as the reader was
+  scrolling onto it. A hidden layer paints nothing, so nothing is
+  rasterised until its act comes, and then only that act's layers.
+
+  Every boundary falls where the track is already at opacity 0 (see
+  storyTimeline.ts), so switching visibility there shows nothing.
+*/
+.film:not([data-act="meet"]) :is([data-track="flash"], [data-track="ring"]),
+.film:not([data-act="earth"]) [data-track="flare"],
+.film:not(:is([data-act="earth"], [data-act="station"])) [data-track="planet"],
+.film:not(:is([data-act="station"], [data-act="land"])) :is([data-track="orbit"], [data-track="dock"]),
+.film:not([data-act="land"]) :is([data-track="streaks"], [data-track="sky"]),
+.film:is([data-act="station"], [data-act="land"]) [data-track="matter"] {
+  visibility: hidden;
+}
+
 /* Each ambient loop runs only in the act it is seen in. */
 .film:is([data-act="station"], [data-act="land"]) .matter span,
 .film:not(:is([data-act="earth"], [data-act="station"])) .planetLand,

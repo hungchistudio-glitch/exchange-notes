@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 
+import { prepareWhenIdle } from "@/lib/yumi3d/prepareWhenIdle";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
 import YumiLoading from "./YumiLoading";
@@ -44,6 +45,12 @@ export type Yumi3DFigureProps = {
    * how she takes a cookie, and how she answers a word remembered.
    */
   reach?: { key: number; target: RefObject<HTMLElement | null> };
+  /**
+   * "idle" makes her in the quiet after the page loads, before anyone
+   * scrolls to her (lib/yumi3d/prepareWhenIdle); "near" (the default) waits
+   * until she is about a screen away.
+   */
+  prepare?: "near" | "idle";
   className?: string;
 };
 
@@ -53,6 +60,7 @@ export default function Yumi3DFigure({
   fill = 0.42,
   gaze = null,
   reach,
+  prepare = "near",
   className,
 }: Yumi3DFigureProps) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -63,6 +71,7 @@ export default function Yumi3DFigure({
   );
   const live = status === "live";
 
+  const prepareRef = useRef(prepare);
   const onPullOpenRef = useRef(onPullOpen);
   const fillRef = useRef(fill);
   const gazeRef = useRef(gaze);
@@ -93,6 +102,9 @@ export default function Yumi3DFigure({
     let requested = false;
     let giveUp = 0;
     let pending: YumiSceneHandle | null = null;
+    /** Settles when she is live, unavailable, or no longer wanted. */
+    let finished: () => void = () => {};
+    const settled = new Promise<void>(resolve => { finished = resolve; });
     let lastDraw = -Infinity;
 
     const reduced =
@@ -160,7 +172,7 @@ export default function Yumi3DFigure({
              to compile them all on the main thread, a visible hitch in the
              middle of scrolling past her. */
           whenIdle(() => {
-            if (cancelled) return;
+            if (cancelled) { finished(); return; }
             const made = createYumiScene(canvas, {
               reducedMotion: reduced,
               embedded: true,
@@ -169,12 +181,14 @@ export default function Yumi3DFigure({
             if (!made) {
               window.clearTimeout(giveUp);
               setStatus("unavailable");
+              finished();
               return;
             }
             pending = made;
             void (made.ready?.() ?? Promise.resolve()).then(() => {
               pending = null;
               window.clearTimeout(giveUp);
+              finished();
               if (cancelled) {
                 made.dispose();
                 return;
@@ -188,9 +202,17 @@ export default function Yumi3DFigure({
         })
         .catch(() => {
           window.clearTimeout(giveUp);
+          finished();
           if (!cancelled) setStatus("unavailable");
         });
     };
+    const cancelPrepare =
+      prepareRef.current === "idle"
+        ? prepareWhenIdle(() => {
+            request();
+            return settled;
+          })
+        : () => {};
 
     /* Guarded, because this also renders under a test renderer and on the
        odd browser without it — and "I cannot tell whether she is on screen"
@@ -229,6 +251,8 @@ export default function Yumi3DFigure({
 
     return () => {
       cancelled = true;
+      cancelPrepare();
+      finished();
       window.clearTimeout(giveUp);
       cancelAnimationFrame(raf);
       near?.disconnect();

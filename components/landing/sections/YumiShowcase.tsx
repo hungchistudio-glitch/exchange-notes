@@ -45,6 +45,7 @@ export default function YumiShowcase({
     <div className={styles.yumi} role="group" aria-label={copy.previewAriaLabel}>
       <div className={styles.yumiStage}>
         <Yumi3DFigure
+          prepare="idle"
           gaze={phase === "idle" ? null : { x: 0, y: 0.9 }}
           reach={{ key: reachKey, target: cardRef }}
         />
