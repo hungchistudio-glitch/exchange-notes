@@ -1,0 +1,28 @@
+/*
+ * The card settles into place as the page arrives: a short rise and fade
+ * rather than appearing all at once, which on a slow first paint read as the
+ * page snapping in. Small numbers on purpose; this is the first thing a new
+ * reader sees and the screen they come back to after signing out, and it
+ * should feel settled, not performed.
+ *
+ * No white veil over the page ground, though one was tried (2026-10-18): the
+ * document streams, the ground can paint before the veil exists, and the
+ * result was cream, then white, then cream again — a flash where there had
+ * only been a cut.
+ */
+.card {
+  animation: arrive 480ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+}

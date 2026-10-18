@@ -3,7 +3,6 @@
 import { useState, type ReactNode } from "react";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { track, type AnalyticsEvent } from "@/lib/analytics/track";
-import { createClient } from "@/lib/supabase/client";
 
 type LandingCtaEvent = Extract<
   AnalyticsEvent,
@@ -41,6 +40,13 @@ export default function GoogleLoginButton({
     track("google_auth_start", { source: analyticsSource });
 
     try {
+      /*
+       * Fetched on the tap rather than shipped with the page. This button is
+       * the fallback on the login screen, and a static import here put the
+       * whole Supabase client on that screen's critical path even when the
+       * button never appears. See components/auth/GoogleIdentityButton.
+       */
+      const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
       const redirectTo = `${window.location.origin}/auth/callback`;
 
