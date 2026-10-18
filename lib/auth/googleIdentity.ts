@@ -21,7 +21,7 @@
    official SDKs, used the way they are documented.
    ========================================================= */
 
-const GSI_SRC = "https://accounts.google.com/gsi/client";
+import { GOOGLE_IDENTITY_SCRIPT_SRC as GSI_SRC } from "@/lib/auth/googleRedirect";
 
 /** Every attempt gets its own. 16 bytes is well past what a nonce needs. */
 const NONCE_BYTES = 16;
@@ -43,11 +43,14 @@ export type GoogleIdentityApi = {
     id: {
       initialize(config: {
         client_id: string;
-        callback: (response: GoogleCredentialResponse) => void;
+        /** Popup mode only; redirect mode posts to login_uri instead. */
+        callback?: (response: GoogleCredentialResponse) => void;
         nonce?: string;
         auto_select?: boolean;
         cancel_on_tap_outside?: boolean;
         ux_mode?: "popup" | "redirect";
+        /** Redirect mode only: where Google POSTs the ID token. */
+        login_uri?: string;
         use_fedcm_for_prompt?: boolean;
         itp_support?: boolean;
         error_callback?: (error: { type?: string; message?: string }) => void;

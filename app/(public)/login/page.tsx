@@ -1,76 +1,60 @@
-"use client";
+import { redirect } from "next/navigation";
+import { preconnect, preload } from "react-dom";
 
-import Link from "next/link";
-import { Fragment } from "react";
+import LoginScreen from "@/components/auth/LoginScreen";
+import { readCurrentUser } from "@/lib/auth/currentUser";
+import {
+  GOOGLE_IDENTITY_SCRIPT_SRC,
+  LOGIN_ERROR_PARAM,
+} from "@/lib/auth/googleRedirect";
+import { createClient } from "@/lib/supabase/server";
 
-import GoogleIdentityButton from "@/components/auth/GoogleIdentityButton";
-import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
-import useTranslation from "@/hooks/i18n/useTranslation";
-import { learningLanguageList } from "@/lib/languages";
+type LoginRouteProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default function LoginPage() {
-  const { t } = useTranslation();
-  const copy = t.auth.login;
+export default async function LoginRoute({ searchParams }: LoginRouteProps) {
+  /*
+   * A reader who is already signed in has nothing to do here, and showing
+   * them the button anyway invites a second sign-in that changes nothing —
+   * which is exactly what a reopened app, a back button or a bookmark used to
+   * do. Same rule as the landing page: only a confirmed session goes home,
+   * and an auth server that cannot be reached gets the login screen rather
+   * than an error, because this is the page for not being signed in.
+   *
+   * getUser rather than a local JWT check, deliberately. The protected layout
+   * asks getUser too, and the two have to agree: a token that still verifies
+   * locally for a session the server has revoked would send this page to
+   * /home and /home straight back here, for as long as the token had left.
+   *
+   * Without a session cookie this asks the network nothing.
+   */
+  if (
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  ) {
+    const current = await readCurrentUser(await createClient());
 
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-surface px-5 py-8 text-black">
-      <section className="w-full max-w-md rounded-3xl bg-white p-7 shadow-sm sm:p-8">
-        {/*
-          The one screen in the app that carries the identity rather than the
-          character: there is no Yumi here yet to introduce herself, so the
-          mark does it. It takes --yumi-mark rather than the page's text
-          colour, which is what carries it across into Cosmic Mode — the card
-          turns deep navy there and the mark turns white with it.
-        */}
-        <ExchangeNotesLogo className="mb-6 h-11 w-11 text-[color:var(--yumi-mark)]" />
+    if (current.state === "signed-in") redirect("/home");
+  }
 
-        {/*
-          The languages themselves, each in its own name, and deliberately
-          not translated: this is the brand mark rather than UI copy, and a
-          reader who arrives wanting Italian should see Italiano whatever the
-          interface happens to be set to.
+  /*
+   * Google's script and its button page are the slowest things on this
+   * screen, and the button cannot start loading until the page has hydrated.
+   * Asked for here, they are in the document head: the connection is open and
+   * the script is downloading while the app's own JavaScript is still
+   * arriving, so by the time GoogleIdentityButton appends the tag it runs
+   * from the cache.
+   *
+   * Only when a client id is configured, so a deployment that will show the
+   * redirect button never reaches Google at all.
+   */
+  if (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim()) {
+    preconnect("https://accounts.google.com");
+    preload(GOOGLE_IDENTITY_SCRIPT_SRC, { as: "script" });
+  }
 
-          Read from the language table. Written out by hand it said
-          "English × 繁體中文" for as long as the app had five languages — on
-          the one screen every new reader sees before anything else.
-        */}
-        <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] leading-5 text-black">
-          {learningLanguageList()}
-        </p>
+  const { [LOGIN_ERROR_PARAM]: error } = await searchParams;
 
-        <h1 className="mt-3 text-4xl font-bold tracking-tight text-black">
-          {copy.title}
-        </h1>
-
-        <p className="mt-3 leading-7 text-neutral-700">
-          {copy.googleSubtitle}
-        </p>
-
-        <div className="mt-8">
-          <GoogleIdentityButton />
-        </div>
-
-        {/*
-          Where a new reader agrees to the terms, so it names them and links
-          them, and states the age the AI provider's terms require. It
-          replaces a line that only said signing in with Google is secure.
-        */}
-        <p className="mt-6 text-center text-xs leading-5 text-ink-soft">
-          {copy.legalNotice.split(/(\{terms\}|\{privacy\})/).map((part, index) =>
-            part === "{terms}" ? (
-              <Link key={index} href="/terms" className="underline underline-offset-2">
-                {t.info.nav.terms}
-              </Link>
-            ) : part === "{privacy}" ? (
-              <Link key={index} href="/privacy" className="underline underline-offset-2">
-                {t.info.nav.privacy}
-              </Link>
-            ) : (
-              <Fragment key={index}>{part}</Fragment>
-            ),
-          )}
-        </p>
-      </section>
-    </main>
-  );
+  return <LoginScreen initialError={error === "google"} />;
 }

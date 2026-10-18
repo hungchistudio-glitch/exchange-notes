@@ -112,7 +112,14 @@ before the merge (it only adds pieces and re-prices existing ones):
 | --- | --- |
 | `20261017120000_yumi_shop_station33` | `20261017204433` |
 
-**Thirteen renames across six occasions now. `apply_migration` always stamps its
+On 2026-10-18 the five-minute keep-warm knock, applied before the merge (it
+only schedules a request to /home and does not depend on any code):
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261018180000_keep_app_warm` | `20261018174327` |
+
+**Fourteen renames across seven occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 

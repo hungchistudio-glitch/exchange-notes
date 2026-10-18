@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
+import styles from "@/components/auth/GoogleIdentityButton.module.css";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { track } from "@/lib/analytics/track";
 import {
@@ -13,8 +14,28 @@ import {
   type GoogleCredentialResponse,
   type SignInNonce,
 } from "@/lib/auth/googleIdentity";
+import {
+  GOOGLE_LOGIN_PATH,
+  isInstalledApp,
+  rememberRedirectNonce,
+} from "@/lib/auth/googleRedirect";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
-import { createClient } from "@/lib/supabase/client";
+
+/*
+ * The Supabase client, fetched when it is first needed rather than shipped
+ * with the login page.
+ *
+ * It is the largest thing this screen would otherwise load — around 220KB of
+ * script, most of it realtime, storage and database code that signing in
+ * never touches — and it was parsed before the page could hydrate, which is
+ * to say before the Google button could even start loading. The popup flow
+ * asks for it as soon as the button is up, so it is long in the cache by the
+ * time anyone has picked an account. The installed app's redirect flow signs
+ * in on the server and never needs it at all.
+ */
+function loadSupabase() {
+  return import("@/lib/supabase/client");
+}
 
 /**
  * Sign in with Google, with the app's name on the consent screen.
@@ -47,13 +68,67 @@ import { createClient } from "@/lib/supabase/client";
  */
 const GSI_GRACE_MS = 4000;
 
+/*
+ * How long to wait for Google's button to settle before showing it anyway.
+ *
+ * renderButton draws Google's plain button into the page straight away and
+ * loads a small iframe of Google's beside it, which swaps in a personalised
+ * "Continue as …" when the reader is signed in to Google. Revealing on the
+ * return could show one button and then replace it with the other. The
+ * reveal waits for that iframe's load instead, with this as the ceiling in
+ * case it never says.
+ */
+const BUTTON_PAINT_CEILING_MS = 1500;
+
 /* Google clamps the rendered button; this keeps it inside the card. */
 const MIN_BUTTON_WIDTH = 200;
 const MAX_BUTTON_WIDTH = 400;
 
 type Status = "pending" | "ready" | "signing-in" | "fallback";
 
-export default function GoogleIdentityButton() {
+/**
+ * Resolves once the iframe Google added to `container` has loaded, or after
+ * `ceiling`, whichever comes first.
+ */
+function buttonPainted(container: HTMLElement, ceiling: number) {
+  return new Promise<void>((resolve) => {
+    let done = false;
+    let frame: HTMLIFrameElement | null = null;
+
+    const finish = () => {
+      if (done) return;
+      done = true;
+      observer.disconnect();
+      frame?.removeEventListener("load", finish);
+      window.clearTimeout(timer);
+      resolve();
+    };
+
+    const watch = () => {
+      frame = container.querySelector("iframe");
+      if (!frame) return false;
+      frame.addEventListener("load", finish, { once: true });
+      return true;
+    };
+
+    const observer = new MutationObserver(() => {
+      if (watch()) observer.disconnect();
+    });
+
+    const timer = window.setTimeout(finish, ceiling);
+
+    if (!watch()) observer.observe(container, { childList: true, subtree: true });
+  });
+}
+
+type GoogleIdentityButtonProps = {
+  /** Set when the last attempt came back refused (see app/auth/google). */
+  initialError?: boolean;
+};
+
+export default function GoogleIdentityButton({
+  initialError = false,
+}: GoogleIdentityButtonProps) {
   const { t, language } = useTranslation();
   const copy = t.auth.login;
 
@@ -77,7 +152,9 @@ export default function GoogleIdentityButton() {
   const [status, setStatus] = useState<Status>(
     clientId ? "pending" : "fallback",
   );
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState(
+    initialError ? copy.genericError : "",
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const nonceRef = useRef<SignInNonce | null>(null);
@@ -98,6 +175,7 @@ export default function GoogleIdentityButton() {
       setErrorMessage("");
 
       try {
+        const { createClient } = await loadSupabase();
         const supabase = createClient();
 
         /*
@@ -153,6 +231,16 @@ export default function GoogleIdentityButton() {
 
     if (!clientId) return;
 
+    /*
+     * This run's own flag, alongside the component's. goneRef is reset by the
+     * next run, so a run that was superseded while it waited for Google — the
+     * development double-mount, or a language change mid-load — used to read
+     * it as false and initialize Google a second time. In redirect mode that
+     * matters: the nonce cookie and the nonce Google signs have to come from
+     * the same run.
+     */
+    let superseded = false;
+
     /* The ceiling. Cleared the moment the button is actually up. */
     const grace = window.setTimeout(() => {
       if (goneRef.current) return;
@@ -167,13 +255,27 @@ export default function GoogleIdentityButton() {
         ]);
 
         const container = containerRef.current;
-        if (goneRef.current || !container) return;
+        if (superseded || goneRef.current || !container) return;
 
         nonceRef.current = nonce;
 
+        /*
+         * An installed app goes to Google and back in its own window, where a
+         * popup in a Home Screen web app opens a separate browser that does
+         * not reliably hand the account back. See lib/auth/googleRedirect.
+         */
+        const redirect = isInstalledApp();
+
+        if (redirect) rememberRedirectNonce(nonce.raw);
+
         identity.accounts.id.initialize({
           client_id: clientId,
-          callback: handleCredential,
+          ...(redirect
+            ? {
+                ux_mode: "redirect" as const,
+                login_uri: `${window.location.origin}${GOOGLE_LOGIN_PATH}`,
+              }
+            : { ux_mode: "popup" as const, callback: handleCredential }),
           nonce: nonce.hashed,
           /*
            * Never sign somebody in without asking, which is the same property
@@ -184,7 +286,6 @@ export default function GoogleIdentityButton() {
            */
           auto_select: false,
           cancel_on_tap_outside: true,
-          ux_mode: "popup",
           /* Safari partitions third-party storage; this is Google's opt-in. */
           itp_support: true,
           error_callback: (error) => {
@@ -213,46 +314,67 @@ export default function GoogleIdentityButton() {
           locale: googleButtonLocale(htmlLang),
         });
 
+        /* The button exists, so the fallback is no longer needed. */
         window.clearTimeout(grace);
-        if (!goneRef.current) setStatus("ready");
+
+        if (!redirect) void loadSupabase();
+
+        await buttonPainted(container, BUTTON_PAINT_CEILING_MS);
+        if (!superseded && !goneRef.current) setStatus("ready");
       } catch (error) {
         console.error(error);
         window.clearTimeout(grace);
-        if (!goneRef.current) setStatus("fallback");
+        if (!superseded && !goneRef.current) setStatus("fallback");
       }
     })();
 
     return () => {
+      superseded = true;
       goneRef.current = true;
       window.clearTimeout(grace);
       window.google?.accounts.id.cancel();
     };
   }, [clientId, handleCredential, htmlLang]);
 
+  const error = errorMessage ? (
+    <p className="mt-3 text-center text-sm text-red-600" role="alert">
+      {errorMessage}
+    </p>
+  ) : null;
+
   if (status === "fallback") {
-    return <GoogleLoginButton />;
+    return (
+      <div className="w-full">
+        <GoogleLoginButton />
+        {error}
+      </div>
+    );
   }
 
   return (
     <div className="w-full">
       {/*
-        Always mounted and always laid out. Google renders into it and cannot
-        be handed a node that does not exist yet — and it must not be `hidden`
-        either: the width handed to renderButton is measured from this element,
-        and a hidden element measures zero, which silently drew every button at
-        the minimum width instead of the width of the card. Empty, it is
-        invisible and costs no height, so there is nothing to hide.
+        The placeholder and the button share one slot of the button's own
+        height, so nothing below moves when Google's arrives; the two cross
+        over once it has actually drawn (see buttonPainted above).
       */}
-      <div
-        ref={containerRef}
-        className="flex w-full justify-center"
-        aria-busy={status === "signing-in"}
-      />
+      <div className={styles.slot} data-status={status}>
+        <div className={styles.placeholder} aria-hidden="true" />
 
-      {status === "pending" && (
-        /* Holds the button's height so the card does not jump when it lands. */
-        <div className="min-h-12 w-full animate-pulse rounded-full bg-black/[0.06]" />
-      )}
+        {/*
+          Always mounted and always laid out. Google renders into it and
+          cannot be handed a node that does not exist yet — and it must not be
+          `hidden` either: the width handed to renderButton is measured from
+          this element, and a hidden element measures zero, which silently
+          drew every button at the minimum width instead of the width of the
+          card. Transparent until drawn, which measures the same.
+        */}
+        <div
+          ref={containerRef}
+          className={`${styles.button} flex w-full justify-center`}
+          aria-busy={status === "signing-in"}
+        />
+      </div>
 
       {status === "signing-in" && (
         <p className="mt-3 text-center text-sm text-ink-soft" role="status">
@@ -260,11 +382,7 @@ export default function GoogleIdentityButton() {
         </p>
       )}
 
-      {errorMessage ? (
-        <p className="mt-3 text-center text-sm text-red-600" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
+      {error}
     </div>
   );
 }

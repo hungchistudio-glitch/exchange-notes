@@ -342,11 +342,18 @@ export default function ProfilePage() {
     try {
       const supabase = createClient();
 
-      // "global" revokes every refresh token for the account, not just this
-      // tab's — a session left open on another device should not survive a
-      // deliberate sign-out here.
+      /*
+       * This device only. It used to be "global", which revokes every refresh
+       * token on the account, so signing out of the phone also signed out the
+       * laptop, the tablet and the Home Screen app. Each of those then opened
+       * onto the login screen with no idea why, and the next request from
+       * each failed its refresh with "Refresh Token Not Found" (Chi chose
+       * this device only, 2026-10-18). Ending other devices' sessions is a
+       * different action from leaving this one, and deserves its own button
+       * if it is ever wanted.
+       */
       const { error: signOutError } = await supabase.auth.signOut({
-        scope: "global",
+        scope: "local",
       });
 
       /*

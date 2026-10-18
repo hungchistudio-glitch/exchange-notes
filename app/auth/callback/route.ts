@@ -1,13 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-import {
-  friendInvitePath,
-  PENDING_FRIEND_INVITE_COOKIE,
-} from "@/lib/friends";
 import { track } from "@/lib/analytics/track";
-import { normalizeExchangeId } from "@/lib/utils";
+import { redirectAfterSignIn } from "@/lib/auth/afterSignIn";
+import { LOGIN_ERROR_PARAM } from "@/lib/auth/googleRedirect";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -36,36 +33,23 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
-      track("google_auth_success");
+    /*
+     * Straight back to the login page, saying so. This used to carry on to
+     * /home regardless, whose auth check bounced the reader to /login with
+     * nothing on it to say the attempt had failed — a second sign-in that
+     * looked like the first one had simply been ignored.
+     */
+    if (error) {
+      console.error(`[auth] Code exchange failed: ${error.message}`);
+
+      const login = new URL("/login", request.url);
+      login.searchParams.set(LOGIN_ERROR_PARAM, "google");
+
+      return NextResponse.redirect(login);
     }
+
+    track("google_auth_success");
   }
 
-  /*
-   * /invite parks a scanned Exchange ID here when the visitor turned out to be
-   * signed out, so a QR code scanned from the lock screen still ends where it
-   * was pointing instead of dumping them on the home page.
-   *
-   * Re-normalized rather than trusted: the cookie is httpOnly, but the value
-   * goes into a redirect, and "the last hop wrote it" is not a reason to skip
-   * checking. Anything that does not survive normalization sends them home.
-   */
-  const pendingCookie = cookieStore.get(PENDING_FRIEND_INVITE_COOKIE);
-  const pendingInvite = normalizeExchangeId(pendingCookie?.value ?? "");
-
-  const destination = pendingInvite
-    ? friendInvitePath(pendingInvite)
-    : "/home";
-
-  const response = NextResponse.redirect(
-    new URL(destination, request.url),
-  );
-
-  // Cleared whenever it was set, not only when it was usable, so a value that
-  // fails normalization cannot sit around redirecting later sign-ins.
-  if (pendingCookie) {
-    response.cookies.delete(PENDING_FRIEND_INVITE_COOKIE);
-  }
-
-  return response;
+  return redirectAfterSignIn(cookieStore, request.url);
 }
