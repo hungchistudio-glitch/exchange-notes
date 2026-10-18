@@ -18,6 +18,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const gsi = vi.hoisted(() => ({
   config: null as Record<string, unknown> | null,
+  /* Cleared after each test, so none can fire into a torn-down document. */
+  timers: new Set<ReturnType<typeof setTimeout>>(),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -43,7 +45,13 @@ vi.mock("@/lib/auth/googleIdentity", async (importOriginal) => {
           renderButton: (parent: HTMLElement) => {
             const frame = document.createElement("iframe");
             parent.appendChild(frame);
-            setTimeout(() => frame.dispatchEvent(new Event("load")), 10);
+            const timer = setTimeout(() => {
+              gsi.timers.delete(timer);
+              /* The frame's own window's Event, not whichever global is current. */
+              const view = frame.ownerDocument.defaultView;
+              if (view) frame.dispatchEvent(new view.Event("load"));
+            }, 10);
+            gsi.timers.add(timer);
           },
           disableAutoSelect: () => {},
           cancel: () => {},
@@ -77,6 +85,8 @@ beforeEach(() => {
 
 afterEach(() => {
   setStandalone(false);
+  gsi.timers.forEach(clearTimeout);
+  gsi.timers.clear();
 });
 
 describe("the Google button", () => {
