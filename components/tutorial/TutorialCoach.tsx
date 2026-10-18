@@ -15,7 +15,9 @@ import {
 import {
   COACH_FINISHED,
   getCoachStep,
+  getCoachTrack,
   getServerCoachStep,
+  getServerCoachTrack,
   setCoachStep,
   subscribeToCoach,
 } from "@/lib/home/tutorialCoach";
@@ -42,11 +44,12 @@ import styles from "./TutorialCoach.module.css";
 
    So there is one tour, in one order, and it teaches both:
 
-     1. Home            — Standard: pull her eye, look up, keep, feed.
-     2. Around the app  — Vocabulary, Review, Messages, Notes, Discover,
-                          Settings.
-     3. Yumi's shop     — where cookies come from, trying a piece on, and
-                          how buying works.
+     1. Home            — Standard: open the dial and turn it, look up,
+                          keep, see what a kept word earns, feed.
+     2. Around the app  — Vocabulary, Review, the Pronunciation Lab,
+                          Messages, Notes, Discover, Settings.
+     3. Yumi's shop     — where cookies come from, the energy supply,
+                          trying a piece on, and how buying works.
      4. The other look  — the reader switches to Cosmic themselves, with
                           the switch at the top of Home (the one they will
                           use from then on), and is shown what is different:
@@ -55,13 +58,28 @@ import styles from "./TutorialCoach.module.css";
 
    and ends by asking which look to start in, and taking them there.
 
-   Chapters rather than one count, because nineteen steps in a row is a tour
+   Chapters rather than one count, because twenty-three steps in a row is a tour
    people skip at step four. "Chapter 2 · 3/5" is a short thing to finish;
    "9 of 15" is not.
 
+   ── One word, two things ───────────────────────────────────────────────
+
+   A saved word earns two different cookies, and the tour says so at the
+   moment it happens (Chi, 2026-10-18: "一個字，兩種用途"). One is on Home,
+   with the word's first letter on it, for feeding Yumi. The other is an
+   energy cookie in the shop's wallet. Feeding her never spends the wallet,
+   which is what the old copy left a reader to guess.
+
+   ── What's new, for readers who had finished ───────────────────────────
+
+   Steps marked `refresh` are the ones the current edition added
+   (lib/home/tutorialCoach.ts). A reader who finished an earlier edition gets
+   only those, labelled as new, and only in Standard: the refresh track keeps
+   quiet in Cosmic rather than asking someone to change looks for it.
+
    ── What it leaves alone ───────────────────────────────────────────────
 
-   Anything that is not one of the six main screens, and the mode-switch
+   Anything that is not one of the main screens a step names, and the mode-switch
    animation itself: a card over a message composer, or over the deck
    waking up, is in the way of the very thing it wants the reader to see.
    ========================================================= */
@@ -70,16 +88,20 @@ type Chapter = "home" | "pages" | "shop" | "cosmic";
 
 type StepKey =
   | "meet"
+  | "dial"
   | "ask"
   | "keep"
+  | "earned"
   | "feed"
   | "library"
   | "review"
+  | "pronunciation"
   | "share"
   | "notes"
   | "discover"
   | "settings"
   | "cookies"
+  | "wallet"
   | "tryOn"
   | "buy"
   | "modeSwitch"
@@ -100,6 +122,8 @@ type Step = {
   awaits?: ReadonlyArray<HomeMoment | "word-saved">;
   /** Take the reader to `route` without asking — used right after a switch. */
   autoGo?: boolean;
+  /** New in this edition: shown to readers who finished the last one. */
+  refresh?: boolean;
 };
 
 const STANDARD: InterfaceMode = "standard";
@@ -107,6 +131,19 @@ const COSMIC: InterfaceMode = "yumi-cosmic";
 
 export const COACH_STEPS: readonly Step[] = [
   { key: "meet", chapter: "home", route: "/home", mode: STANDARD, awaits: ["ring-opened"] },
+  /*
+   * The dial (Chi, 2026-10-16) turns, and only a tap goes in. A reader who
+   * drags expecting the key under their finger to open is left wondering why
+   * nothing did, so they turn it once while being told.
+   */
+  {
+    key: "dial",
+    chapter: "home",
+    route: "/home",
+    mode: STANDARD,
+    awaits: ["dial-turned"],
+    refresh: true,
+  },
   /*
    * A lookup that came back empty still counts as having asked. Waiting here
    * for a real answer would hold the whole tour hostage to Gemini being up;
@@ -120,10 +157,23 @@ export const COACH_STEPS: readonly Step[] = [
     awaits: ["word-answered", "word-unavailable"],
   },
   { key: "keep", chapter: "home", route: "/home", mode: STANDARD, awaits: ["word-saved"] },
+  /*
+   * Said straight after the save, while the "+1" card is in the corner and
+   * the new cookie is arriving on Home — the two things the word just earned.
+   */
+  { key: "earned", chapter: "home", route: "/home", mode: STANDARD, refresh: true },
   { key: "feed", chapter: "home", route: "/home", mode: STANDARD, awaits: ["word-fed"] },
 
   { key: "library", chapter: "pages", route: "/vocabulary", mode: STANDARD },
   { key: "review", chapter: "pages", route: "/review", mode: STANDARD },
+  /* On the dial since it replaced the ring, and never once in the tour. */
+  {
+    key: "pronunciation",
+    chapter: "pages",
+    route: "/pronunciation",
+    mode: STANDARD,
+    refresh: true,
+  },
   { key: "share", chapter: "pages", route: "/messages", mode: STANDARD },
   { key: "notes", chapter: "pages", route: "/notes", mode: STANDARD },
   { key: "discover", chapter: "pages", route: "/discover", mode: STANDARD },
@@ -136,7 +186,16 @@ export const COACH_STEPS: readonly Step[] = [
    * reader tries something on themselves, and is told how buying works
    * rather than made to spend.
    */
-  { key: "cookies", chapter: "shop", route: "/home", mode: STANDARD },
+  { key: "cookies", chapter: "shop", route: "/home", mode: STANDARD, refresh: true },
+  /* The balance in the shop's corner opens the wallet: how many, from where. */
+  {
+    key: "wallet",
+    chapter: "shop",
+    route: "/shop",
+    mode: STANDARD,
+    awaits: ["shop-wallet-opened"],
+    refresh: true,
+  },
   { key: "tryOn", chapter: "shop", route: "/shop", mode: STANDARD, awaits: ["shop-tried"] },
   { key: "buy", chapter: "shop", route: "/shop", mode: STANDARD },
 
@@ -160,6 +219,9 @@ export const COACH_STEPS: readonly Step[] = [
 ];
 
 const CHAPTER_NUMBER: Record<Chapter, number> = { home: 1, pages: 2, shop: 3, cosmic: 4 };
+
+/** What a reader who finished the last edition is shown, in tour order. */
+export const REFRESH_STEPS: readonly Step[] = COACH_STEPS.filter((step) => step.refresh);
 
 /** The screens the coach speaks on. Everything else, it steps aside. */
 const MAIN_SCREENS = new Set(
@@ -217,9 +279,16 @@ export default function TutorialCoach({
     getCoachStep,
     getServerCoachStep,
   );
+  const track = useSyncExternalStore(
+    subscribeToCoach,
+    getCoachTrack,
+    getServerCoachTrack,
+  );
+  const refreshing = track === "refresh";
+  const steps = refreshing ? REFRESH_STEPS : COACH_STEPS;
 
-  const index = stored >= 0 && stored < COACH_STEPS.length ? stored : COACH_FINISHED;
-  const current = index === COACH_FINISHED ? undefined : COACH_STEPS[index];
+  const index = stored >= 0 && stored < steps.length ? stored : COACH_FINISHED;
+  const current = index === COACH_FINISHED ? undefined : steps[index];
 
   const [satisfied, setSatisfied] = useState(false);
 
@@ -247,8 +316,8 @@ export default function TutorialCoach({
   const advance = useCallback(() => {
     setSatisfied(false);
     const next = index + 1;
-    setCoachStep(next >= COACH_STEPS.length ? COACH_FINISHED : next);
-  }, [index]);
+    setCoachStep(next >= steps.length ? COACH_FINISHED : next);
+  }, [index, steps]);
 
   /*
    * Watching the screen rather than the reader's patience.
@@ -329,7 +398,14 @@ export default function TutorialCoach({
    * word they just kept go into the library (Chi, 2026-10-03) — the same
    * way home a tap on Yumi takes, card fading and her gliding back.
    */
-  const feeding = current?.key === "feed" && pathname === "/home" && !wrongMode;
+  /*
+   * From the step after the save, not only the feed step: the earned step
+   * talks about the new cookie on Home, so Home should be showing it.
+   */
+  const feeding =
+    (current?.key === "earned" || current?.key === "feed") &&
+    pathname === "/home" &&
+    !wrongMode;
 
   useEffect(() => {
     if (!feeding) return;
@@ -345,14 +421,17 @@ export default function TutorialCoach({
   /* The deck waking up, or standing down, is the thing to watch. */
   if (switching || autoRoute) return null;
 
+  /* What's new waits for Standard rather than asking for a change of look. */
+  if (refreshing && wrongMode) return null;
+
   const stepCopy = copy.steps[current.key];
 
-  const chapterSteps = COACH_STEPS.filter(
-    (step) => step.chapter === current.chapter,
-  );
+  const chapterSteps = refreshing
+    ? REFRESH_STEPS
+    : COACH_STEPS.filter((step) => step.chapter === current.chapter);
   const position = chapterSteps.indexOf(current) + 1;
 
-  const label = copy.label
+  const label = (refreshing ? copy.whatsNew : copy.label)
     .replace("{chapter}", String(CHAPTER_NUMBER[current.chapter]))
     .replace("{name}", copy.chapters[current.chapter])
     .replace("{current}", String(position))
@@ -395,15 +474,21 @@ export default function TutorialCoach({
      switch and cookie steps go to the foot of Home, because the top corner
      they would cover on a phone holds the switch and the shop key they point
      at. The shop keeps it at the top too: its own bar stands where the dock
-     would. */
+     would. The earned step goes to the foot as well, so the "+1" card that
+     lands in the top corner as it appears is not underneath it; so do the
+     dial's two steps, which have to stay readable with the dial out. */
   const placement =
     pathname === "/shop"
       ? ""
       : pathname !== "/home"
         ? ` ${styles.docked}`
-        : current.key === "modeSwitch" || current.key === "cookies"
-          ? ` ${styles.switchStep}`
-          : "";
+        : current.key === "dial" || current.key === "ask"
+          ? ` ${styles.dialStep}`
+          : current.key === "modeSwitch" ||
+              current.key === "cookies" ||
+              current.key === "earned"
+            ? ` ${styles.switchStep}`
+            : "";
 
   const finish = (mode: InterfaceMode) => {
     setCoachStep(COACH_FINISHED);

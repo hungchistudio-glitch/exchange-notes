@@ -452,6 +452,7 @@ const spanish: TranslationDictionary = {
         shop: "La tienda de Yumi",
         cosmic: "El otro aspecto",
       },
+      whatsNew: "Novedades · {current}/{total}",
       needsStandard:
         "Esta parte del recorrido ocurre en {standard}. Cambia y seguimos desde ahí.",
       toStandard: "Cambiar a {standard}",
@@ -463,19 +464,27 @@ const spanish: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Soy Yumi. Esta pantalla no tiene menú: el menú soy yo. Tócame para abrirlo (o tira de mi ojo y suelta).",
+            "Soy Yumi. Esta pantalla no tiene menú: el menú soy yo. Tócame (o tira de mi ojo y suelta) y aparecerá un dial a mi alrededor.",
+        },
+        dial: {
+          body:
+            "Gira el dial arrastrándolo. La tecla que queda bajo la marca dorada de arriba se ilumina, pero no se abre hasta que la tocas; toca en cualquier otro sitio para cerrarlo. Si aún no está abierto, tócame primero.",
         },
         ask: {
           body:
-            "Busca algo. Escríbelo, dilo, fotografía lo que tengas delante o pásame una carta, un cartel, un formulario: las cuatro vuelven a la misma ficha.",
+            "Gira hasta «Buscar», tócalo y busca algo. Escríbelo, dilo, fotografía lo que tengas delante o pásame una carta, un cartel, un formulario: las cuatro vuelven a la misma ficha.",
         },
         keep: {
           body:
-            "Guárdala. Cada palabra que guardas se convierte en una de mis galletas de energía.",
+            "Guárdala. La primera vez que guardas una palabra, te da dos cosas.",
+        },
+        earned: {
+          body:
+            "Una palabra, dos usos. Guardar una palabra por primera vez pone en Inicio una galleta con su primera letra —esa es para alimentarme— y suma una galleta de energía a tu reserva de energía de la tienda: es la «Recompensa por guardar +1» de la esquina. Alimentarme nunca gasta tus galletas de energía.",
         },
         feed: {
           body:
-            "Te he traído de vuelta al inicio: la próxima vez que termines con una palabra, solo tócame. Dame una: arrastra una galleta hasta mí, o tócala para ver su palabra y pulsa «Alimentar a Yumi». Con una palabra nueva al día, nunca paso hambre.",
+            "Te he traído de vuelta al inicio: la próxima vez que termines con una palabra, solo tócame. Dame una: arrastra una galleta hasta mí, o tócala para ver su palabra y pulsa «Alimentar a Yumi». No gasta ninguna galleta de energía. Con una palabra nueva al día, nunca paso hambre.",
         },
         library: {
           body:
@@ -484,8 +493,13 @@ const spanish: TranslationDictionary = {
         },
         review: {
           body:
-            "Esto es Repasar. Cada palabra vuelve aquí hacia el día en que la olvidarías: unos minutos y se queda. Inicio te muestra cuántas te esperan.",
+            "Esto es Repasar. Cada palabra vuelve aquí hacia el día en que la olvidarías: unos minutos y se queda. Si superas todas las tarjetas de una ronda, ganas tres galletas de energía. Inicio te muestra cuántas te esperan.",
           action: "Abrir Repasar",
+        },
+        pronunciation: {
+          body:
+            "Este es el Laboratorio de pronunciación. Te enseño cómo se hace cada sonido, te grabas y comparo las dos versiones. Puedes practicar con las palabras que has guardado, y cada día hay una sesión corta.",
+          action: "Abrir el Laboratorio de pronunciación",
         },
         share: {
           body:
@@ -509,16 +523,21 @@ const spanish: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Guardar una palabra por primera vez te da una galleta de energía, y superar todas las tarjetas de un repaso te da tres más. La bolsa de arriba a la derecha lleva a mi tienda en órbita alrededor de la Tierra: gasta allí tus galletas en un estilo nuevo para mí.",
+            "Las galletas de energía son el dinero de mi tienda. Guardar una palabra por primera vez te da una galleta de energía, y superar todas las tarjetas de un repaso te da tres más. La bolsa de arriba a la derecha lleva a mi tienda en órbita alrededor de la Tierra: gasta allí tus galletas en un estilo nuevo para mí.",
+        },
+        wallet: {
+          body:
+            "El número de galletas de arriba es tu reserva de energía. Tócalo para ver cuántas tienes y de dónde salió cada una. La compra de energía aún no está abierta y, cuando lo esté, nunca contará como aprendizaje.",
+          action: "Abrir la tienda",
         },
         tryOn: {
           body:
-            "Esta es mi tienda: yo en el expositor y las piezas debajo. Toca cualquier pieza y me la pruebo gratis; tócala otra vez para quitármela.",
+            "Esta es mi tienda: yo en el expositor y las piezas debajo. Toca cualquier pieza y me la pruebo gratis; tócala otra vez para quitármela. Arrástrame para darme la vuelta entera.",
           action: "Abrir la tienda",
         },
         buy: {
           body:
-            "¿Te gusta? Toca Comprar. Las galletas solo se gastan cuando confirmas, y me la pongo enseguida: también la verás en el inicio. Lo que no compres se queda en el probador.",
+            "¿Te gusta? Toca Comprar. Las galletas solo se gastan cuando confirmas —antes te digo cuánto cuesta y cuántas te quedan— y tus palabras y tu progreso no cambian. Me la pongo enseguida: también la verás en el inicio. Lo que no compres se queda en el probador.",
           action: "Abrir la tienda",
         },
         modeSwitch: {

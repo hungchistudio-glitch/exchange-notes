@@ -18,6 +18,7 @@ import { reviewWords } from "./yumi/reviewWords";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
 import homeStyles from "./StandardHome.module.css";
 import { onHomeSearchDismiss } from "@/lib/home/homeMoments";
+import TutorialCoach from "@/components/tutorial/TutorialCoach";
 
 function ReviewSearch({ onAnswerChange }: { onAnswerChange: (value: boolean) => void }) {
   const [query, setQuery] = useState("");
@@ -64,8 +65,15 @@ function StandardPreview() {
 }
 
 function PreviewShell() {
-  const { isCosmic } = useInterfaceMode();
-  return <><HomeShopKey /><HomeModePortal />{isCosmic ? <CommandDeck /> : <StandardPreview />}<ModeTransitionStage /></>;
+  const { isCosmic, interfaceMode, setInterfaceMode, modeTransition } = useInterfaceMode();
+  return <>
+    <HomeShopKey /><HomeModePortal />{isCosmic ? <CommandDeck /> : <StandardPreview />}<ModeTransitionStage />
+    {/* The tour's card over this home, as if on /home. Draws nothing unless
+        this browser is mid-tour, so set `yumi-coach-step` (and
+        `yumi-coach-track`) in localStorage to review a step. */}
+    <TutorialCoach pathname="/home" interfaceMode={interfaceMode} switching={modeTransition !== null}
+      onSetMode={mode => setInterfaceMode(mode, { home: true })} onNavigate={() => {}} />
+  </>;
 }
 
 function Frame() {

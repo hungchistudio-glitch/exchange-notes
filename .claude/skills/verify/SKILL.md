@@ -79,6 +79,15 @@ npx next build      # ~20s with a warm cache, longer cold
 - **Google sign-in works only on registered origins:** the production alias
   and `http://localhost:3000`. Per-deployment `*.vercel.app` URLs fail with
   `origin_mismatch`. Port 3100 is not registered either.
+- **A browser that has opened a signed-in page may run stale code.** The
+  service worker (`public/sw.js`) serves `/_next/static/` cache-first, and
+  the dev server does not always change those filenames between edits. If
+  an edit doesn't show up, unregister the worker and delete the
+  `exchange-notes-v5` cache in that browser, then reload:
+  `(await navigator.serviceWorker.getRegistrations()).forEach(r => r.unregister())`.
+- **To review the tour's cards without signing in,** use
+  `/standard-home-review?frame=1`. It mounts the coach as if on `/home`; set
+  `yumi-coach-step` (and `yumi-coach-track`) in localStorage and reload.
 - **Use a production build for anything about timing.** The dev server's
   first cold paint takes several seconds. Run `npx next build && npx next start`.
   Measure in a separate headless Chrome over CDP with its own `--user-data-dir`:

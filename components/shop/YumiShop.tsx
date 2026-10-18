@@ -400,7 +400,11 @@ export default function YumiShop({
               className={styles.balance}
               aria-haspopup="dialog"
               aria-label={`${cookies(state.balance)}. ${copy.energy.open}`}
-              onClick={() => setSupplyOpen(true)}
+              onClick={() => {
+                setSupplyOpen(true);
+                /* The tour's wallet step waits for this (components/tutorial). */
+                announceHomeMoment("shop-wallet-opened");
+              }}
             >
               {landedKey > 0 && <span key={landedKey} className={styles.balancePulse} aria-hidden="true" />}
               <EnergyCookie className={styles.balanceCookie} />

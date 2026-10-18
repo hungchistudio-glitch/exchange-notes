@@ -71,8 +71,9 @@
 }
 
 /* Hidden whenever the switch is: something else has the screen. The tour's
-   cookie step points here, so under that card it stays. */
-:global(body:has([data-coach-card]:not([data-coach-step="modeSwitch"]):not([data-coach-step="cookies"]))) .key,
+   cookie step points here, so under that card it stays, and so does the
+   earned step, which tells the reader a cookie just went into the shop. */
+:global(body:has([data-coach-card]:not([data-coach-step="modeSwitch"]):not([data-coach-step="cookies"]):not([data-coach-step="earned"]))) .key,
 :global(body:has([aria-modal="true"])) .key,
 :global(body:has([data-yumi-ring-open="true"])) .key,
 :global(body:has([data-yumi-answering="true"])) .key,

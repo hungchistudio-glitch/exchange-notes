@@ -23,6 +23,8 @@ import { onHomeReturnRequest, onHomeSearchDismiss } from "@/lib/home/homeMoments
 import TutorialCoach, { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 
 const FEED = COACH_STEPS.findIndex(step => step.key === "feed");
+const EARNED = COACH_STEPS.findIndex(step => step.key === "earned");
+const KEEP = COACH_STEPS.findIndex(step => step.key === "keep");
 
 afterEach(() => {
   setCoachStep(COACH_FINISHED);
@@ -78,9 +80,25 @@ describe("the feed step", () => {
     stopDismiss();
   });
 
+  it("puts it away from the earned step on, which talks about the new cookie on Home", () => {
+    vi.useFakeTimers();
+    setCoachStep(EARNED);
+    const dismissed = vi.fn();
+    const stop = onHomeSearchDismiss(dismissed);
+
+    render(
+      <TutorialCoach pathname="/home" interfaceMode="standard" onSetMode={vi.fn()} onNavigate={vi.fn()} />,
+    );
+    act(() => vi.advanceTimersByTime(5_000));
+
+    expect(dismissed).toHaveBeenCalled();
+    stop();
+  });
+
   it("leaves the search alone on any other step", () => {
     vi.useFakeTimers();
-    setCoachStep(FEED - 1);
+    /* The keep step: the answer is still what the reader is saving. */
+    setCoachStep(KEEP);
     const dismissed = vi.fn();
     const stop = onHomeSearchDismiss(dismissed);
 

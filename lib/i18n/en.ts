@@ -452,6 +452,7 @@ const english: TranslationDictionary = {
         shop: "Yumi’s shop",
         cosmic: "The other look",
       },
+      whatsNew: "What’s new · {current}/{total}",
       needsStandard:
         "This part of the tour happens in {standard}. Switch over and we'll carry on from there.",
       toStandard: "Switch to {standard}",
@@ -463,19 +464,27 @@ const english: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "I'm Yumi. There is no menu on this screen — I am it. Tap me to open it (or pull my eye and let go).",
+            "I'm Yumi. There is no menu on this screen — I am it. Tap me (or pull my eye and let go) and a dial opens around me.",
+        },
+        dial: {
+          body:
+            "Turn the dial — drag it round. The key under the gold mark at the top lights up, but nothing opens until you tap it; tap anywhere else to close the dial. If it isn’t open yet, tap me first.",
         },
         ask: {
           body:
-            "Look something up. Type it, say it, photograph whatever is in front of you, or hand me a menu, a sign, a form — all four come back to the same card.",
+            "Turn to Search and tap it, then look something up. Type it, say it, photograph whatever is in front of you, or hand me a menu, a sign, a form — all four come back to the same card.",
         },
         keep: {
           body:
-            "Keep it. Every word you keep becomes one of my energy cookies.",
+            "Keep it. The first time you keep a word, it earns you two things.",
+        },
+        earned: {
+          body:
+            "One word, two uses. Keeping a word for the first time puts a cookie on Home with its first letter on it — that one is for feeding me — and adds one energy cookie to your shop’s energy supply: the “Saved-word reward +1” in the top corner. Feeding me never spends your energy cookies.",
         },
         feed: {
           body:
-            "I've brought you back home — next time you're done with a word, just tap me. Feed me one: drag a cookie onto me, or tap it to see its word and press “Feed Yumi”. One new word a day and I never go hungry.",
+            "I've brought you back home — next time you're done with a word, just tap me. Feed me one: drag a cookie onto me, or tap it to see its word and press “Feed Yumi”. It doesn’t cost a single energy cookie. One new word a day and I never go hungry.",
         },
         library: {
           body:
@@ -484,8 +493,13 @@ const english: TranslationDictionary = {
         },
         review: {
           body:
-            "This is Review. A word comes back here around the day you would forget it — a few minutes, and it stays. Home shows how many are waiting.",
+            "This is Review. A word comes back here around the day you would forget it — a few minutes, and it stays. Pass every card in a round and you earn three energy cookies. Home shows how many are waiting.",
           action: "Open Review",
+        },
+        pronunciation: {
+          body:
+            "This is the Pronunciation Lab. I show you how each sound is made, you record yourself, and I compare the two. You can practise with the words you’ve kept, and there’s a short session every day.",
+          action: "Open the Pronunciation Lab",
         },
         share: {
           body:
@@ -509,16 +523,21 @@ const english: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Saving a word for the first time earns an energy cookie, and passing every card in a review round earns three more. The bag at the top right leads to my shop in orbit above Earth — spend your cookies there on new looks for me.",
+            "Energy cookies are my shop’s money. Saving a word for the first time earns an energy cookie, and passing every card in a review round earns three more. The bag at the top right leads to my shop in orbit above Earth — spend your cookies there on new looks for me.",
+        },
+        wallet: {
+          body:
+            "The cookie count at the top is your energy supply. Tap it to see how many you have and where each one came from. Paid supply isn’t open yet — and even when it is, it never counts as learning.",
+          action: "Open the shop",
         },
         tryOn: {
           body:
-            "This is my shop: me on the stand, the pieces below. Tap any piece and I’ll try it on for free — tap it again to take it off.",
+            "This is my shop: me on the stand, the pieces below. Tap any piece and I’ll try it on for free — tap it again to take it off. Drag me to turn me all the way round.",
           action: "Open the shop",
         },
         buy: {
           body:
-            "Like it? Tap Buy. Cookies are only spent once you confirm, and I’ll put it on straight away — you’ll see it at home too. Anything you don’t buy stays in the fitting room.",
+            "Like it? Tap Buy. Cookies are only spent once you confirm — I’ll show you the price and what you’ll have left first — and your words and progress never change. I’ll put it on straight away; you’ll see it at home too. Anything you don’t buy stays in the fitting room.",
           action: "Open the shop",
         },
         modeSwitch: {

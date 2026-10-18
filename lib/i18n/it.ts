@@ -451,6 +451,7 @@ const italian: TranslationDictionary = {
         shop: "Il negozio di Yumi",
         cosmic: "L'altro aspetto",
       },
+      whatsNew: "Novità · {current}/{total}",
       needsStandard:
         "Questa parte del tour si svolge in {standard}. Passa lì e continuiamo da quel punto.",
       toStandard: "Passa a {standard}",
@@ -462,19 +463,27 @@ const italian: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Sono Yumi. Questa schermata non ha un menù — il menù sono io. Toccami per aprirlo (o tira il mio occhio e lascia).",
+            "Sono Yumi. Questa schermata non ha un menù — il menù sono io. Toccami (o tira il mio occhio e lascia) e intorno a me si apre una ghiera.",
+        },
+        dial: {
+          body:
+            "Gira la ghiera trascinandola. Il tasto sotto il segno dorato in alto si illumina, ma non si apre finché non lo tocchi; tocca altrove per chiudere la ghiera. Se non è ancora aperta, toccami prima.",
         },
         ask: {
           body:
-            "Cerca una parola. Scrivila, dilla, fotografa quello che hai davanti oppure passami un menù, un cartello, un modulo: tutte e quattro tornano sulla stessa scheda.",
+            "Gira fino a «Cerca», toccalo e cerca una parola. Scrivila, dilla, fotografa quello che hai davanti oppure passami un menù, un cartello, un modulo: tutte e quattro tornano sulla stessa scheda.",
         },
         keep: {
           body:
-            "Tienila. Ogni parola che tieni diventa uno dei miei biscotti di energia.",
+            "Tienila. La prima volta che tieni una parola, ti porta due cose.",
+        },
+        earned: {
+          body:
+            "Una parola, due usi. Salvare una parola per la prima volta mette nella Home un biscotto con la sua iniziale — quello serve a nutrirmi — e aggiunge un biscotto energia alla tua riserva di energia del negozio: è il «Premio salvataggio +1» nell'angolo. Nutrirmi non spende mai i tuoi biscotti energia.",
         },
         feed: {
           body:
-            "Di nuovo alla home: la prossima volta che hai finito con una parola, toccami e basta. Dammene uno: trascina un biscotto su di me, oppure toccalo per vedere la parola e premi «Nutri Yumi». Una parola nuova al giorno e non ho mai fame.",
+            "Di nuovo alla home: la prossima volta che hai finito con una parola, toccami e basta. Dammene uno: trascina un biscotto su di me, oppure toccalo per vedere la parola e premi «Nutri Yumi». Non costa nessun biscotto energia. Una parola nuova al giorno e non ho mai fame.",
         },
         library: {
           body:
@@ -483,8 +492,13 @@ const italian: TranslationDictionary = {
         },
         review: {
           body:
-            "Questo è Ripassa. Ogni parola torna qui verso il giorno in cui la dimenticheresti: pochi minuti e resta. La Home mostra quante ti aspettano.",
+            "Questo è Ripassa. Ogni parola torna qui verso il giorno in cui la dimenticheresti: pochi minuti e resta. Se superi tutte le carte di un giro guadagni tre biscotti energia. La Home mostra quante ti aspettano.",
           action: "Apri Ripassa",
+        },
+        pronunciation: {
+          body:
+            "Questo è il Laboratorio di pronuncia. Ti mostro come si forma ogni suono, tu ti registri e io confronto i due. Puoi esercitarti con le parole che hai tenuto, e ogni giorno c'è una breve sessione.",
+          action: "Apri il Laboratorio di pronuncia",
         },
         share: {
           body:
@@ -508,16 +522,21 @@ const italian: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Salvare una parola per la prima volta ti dà un biscotto energia, e superare tutte le carte di un ripasso te ne dà altri tre. La borsa in alto a destra porta al mio negozio in orbita attorno alla Terra: lì puoi spendere i biscotti per darmi un nuovo look.",
+            "I biscotti energia sono la moneta del mio negozio. Salvare una parola per la prima volta ti dà un biscotto energia, e superare tutte le carte di un ripasso te ne dà altri tre. La borsa in alto a destra porta al mio negozio in orbita attorno alla Terra: lì puoi spendere i biscotti per darmi un nuovo look.",
+        },
+        wallet: {
+          body:
+            "Il numero di biscotti in alto è la tua riserva di energia. Toccalo per vedere quanti ne hai e da dove arriva ciascuno. L'acquisto di energia non è ancora aperto e, anche quando lo sarà, non conterà mai come apprendimento.",
+          action: "Apri il negozio",
         },
         tryOn: {
           body:
-            "Questo è il mio negozio: io sul piedistallo, i pezzi qui sotto. Tocca un pezzo e lo provo gratis; toccalo di nuovo per toglierlo.",
+            "Questo è il mio negozio: io sul piedistallo, i pezzi qui sotto. Tocca un pezzo e lo provo gratis; toccalo di nuovo per toglierlo. Trascinami per farmi girare.",
           action: "Apri il negozio",
         },
         buy: {
           body:
-            "Ti piace? Tocca Acquista. I biscotti si spendono solo dopo la conferma, e lo indosso subito: lo vedrai anche nella home. Quello che non compri resta nel camerino.",
+            "Ti piace? Tocca Acquista. I biscotti si spendono solo dopo la conferma — prima ti dico quanto costa e quanti te ne restano — e le tue parole e i tuoi progressi non cambiano. Lo indosso subito: lo vedrai anche nella home. Quello che non compri resta nel camerino.",
           action: "Apri il negozio",
         },
         modeSwitch: {

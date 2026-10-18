@@ -1727,6 +1727,8 @@ export default function YumiRingOverlay({
             items={spokes}
             onChoose={index => choose(spokes[index])}
             onAim={(x, y) => { dialAim.current = { x, y }; }}
+            /* The tour's dial step waits for this (components/tutorial). */
+            onTurn={() => announceHomeMoment("dial-turned")}
           />
 
           {/*

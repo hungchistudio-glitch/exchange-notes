@@ -57,6 +57,9 @@
 */
 :global(body:has([data-yumi-typing="true"])) .coach {
   top: calc(env(safe-area-inset-top) + 0.25rem);
+  /* A step placed at the foot keeps its `bottom` otherwise, and a strip
+     fixed at both edges is the whole height of the screen. */
+  bottom: auto;
 }
 
 :global(body:has([data-yumi-typing="true"])) .card {
@@ -99,6 +102,24 @@
 .switchStep {
   top: auto;
   bottom: calc(env(safe-area-inset-bottom) + 1.25rem);
+}
+
+/*
+  The dial's steps, on Home: at the foot, and still there while it is out.
+
+  The rule near the top hides the strip while the ring is open, written when
+  the only step about the ring was over the moment it opened. The dial's two
+  steps are read with it open — turn it, then turn to Search — so they stand
+  at the foot, below its lowest key, and stay. Without this a reader opened
+  the dial and lost the sentence telling them what to do with it.
+*/
+.dialStep {
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + 1.25rem);
+}
+
+:global(body:has([data-yumi-mode="open"])) .coach.dialStep {
+  opacity: 1;
 }
 
 .card {

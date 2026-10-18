@@ -496,6 +496,11 @@ export type TranslationDictionary = {
        * {current} and {total}.
        */
       chapters: { home: string; pages: string; shop: string; cosmic: string };
+      /**
+       * The label on the steps shown to a reader who finished an earlier
+       * edition of the tour: only what is new. Takes {current} and {total}.
+       */
+      whatsNew: string;
       /** A step that needs the other interface mode, and the key that switches. */
       needsStandard: string;
       toStandard: string;
@@ -506,8 +511,16 @@ export type TranslationDictionary = {
       useCosmic: string;
       steps: {
         meet: { body: string };
+        /** Turning the dial, and that only a tap on a key goes in. */
+        dial: { body: string };
         ask: { body: string };
         keep: { body: string };
+        /**
+         * Straight after a save: the two things a word earns. A cookie on
+         * Home to feed Yumi, and an energy cookie in the shop's wallet.
+         * Feeding never spends the wallet.
+         */
+        earned: { body: string };
         feed: { body: string };
         /*
          * The page steps. `action` labels the door that takes the reader
@@ -516,6 +529,7 @@ export type TranslationDictionary = {
          */
         library: { body: string; action: string };
         review: { body: string; action: string };
+        pronunciation: { body: string; action: string };
         share: { body: string; action: string };
         notes: { body: string; action: string };
         discover: { body: string; action: string };
@@ -523,6 +537,8 @@ export type TranslationDictionary = {
         /* The shop: where cookies come from (on Home, pointing at the shop
            key), trying a piece on, and buying one. */
         cookies: { body: string };
+        /** The shop's cookie balance opens the energy supply sheet. */
+        wallet: { body: string; action: string };
         tryOn: { body: string; action: string };
         buy: { body: string; action: string };
         /*

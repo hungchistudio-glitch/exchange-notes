@@ -451,6 +451,7 @@ const french: TranslationDictionary = {
         shop: "La boutique de Yumi",
         cosmic: "L'autre visage",
       },
+      whatsNew: "Nouveautés · {current}/{total}",
       needsStandard:
         "Cette partie du tour se passe en {standard}. Bascule, et on reprend de là.",
       toStandard: "Passer en {standard}",
@@ -462,19 +463,27 @@ const french: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Je suis Yumi. Cet écran n'a pas de menu — le menu, c'est moi. Touche-moi pour l'ouvrir (ou tire sur mon œil, puis lâche).",
+            "Je suis Yumi. Cet écran n'a pas de menu — le menu, c'est moi. Touche-moi (ou tire sur mon œil, puis lâche) et un cadran s'ouvre autour de moi.",
+        },
+        dial: {
+          body:
+            "Fais tourner le cadran en le faisant glisser. La touche sous le repère doré, en haut, s'allume, mais rien ne s'ouvre tant que tu ne la touches pas ; touche ailleurs pour refermer le cadran. S'il n'est pas encore ouvert, touche-moi d'abord.",
         },
         ask: {
           body:
-            "Cherche un mot. Écris-le, dis-le, photographie ce que tu as devant toi, ou donne-moi une carte, un panneau, un formulaire : les quatre reviennent à la même fiche.",
+            "Tourne jusqu'à « Rechercher », touche-le et cherche un mot. Écris-le, dis-le, photographie ce que tu as devant toi, ou donne-moi une carte, un panneau, un formulaire : les quatre reviennent à la même fiche.",
         },
         keep: {
           body:
-            "Garde-le. Chaque mot que tu gardes devient un de mes biscuits d'énergie.",
+            "Garde-le. La première fois que tu gardes un mot, il te rapporte deux choses.",
+        },
+        earned: {
+          body:
+            "Un mot, deux usages. Garder un mot pour la première fois pose sur l'accueil un biscuit marqué de sa première lettre — celui-là, c'est pour me nourrir — et ajoute un cookie d'énergie à ta réserve d'énergie de la boutique : c'est la « Récompense d'enregistrement +1 » dans le coin. Me nourrir ne dépense jamais tes cookies d'énergie.",
         },
         feed: {
           body:
-            "Retour à l'accueil — la prochaine fois que tu as fini avec un mot, touche-moi, tout simplement. Donne-m'en un : glisse un biscuit jusqu'à moi, ou touche-le pour voir son mot et appuie sur « Nourrir Yumi ». Un mot nouveau par jour, et je n'ai jamais faim.",
+            "Retour à l'accueil — la prochaine fois que tu as fini avec un mot, touche-moi, tout simplement. Donne-m'en un : glisse un biscuit jusqu'à moi, ou touche-le pour voir son mot et appuie sur « Nourrir Yumi ». Ça ne coûte aucun cookie d'énergie. Un mot nouveau par jour, et je n'ai jamais faim.",
         },
         library: {
           body:
@@ -483,8 +492,13 @@ const french: TranslationDictionary = {
         },
         review: {
           body:
-            "Voici Réviser. Chaque mot revient ici vers le jour où tu l'oublierais — quelques minutes, et il reste. L'accueil montre combien t'attendent.",
+            "Voici Réviser. Chaque mot revient ici vers le jour où tu l'oublierais — quelques minutes, et il reste. Réussis toutes les cartes d'une série et tu gagnes trois cookies d'énergie. L'accueil montre combien t'attendent.",
           action: "Ouvrir Réviser",
+        },
+        pronunciation: {
+          body:
+            "Voici le Laboratoire de prononciation. Je te montre comment se forme chaque son, tu t'enregistres et je compare les deux. Tu peux t'entraîner avec les mots que tu as gardés, et une courte séance t'attend chaque jour.",
+          action: "Ouvrir le Laboratoire de prononciation",
         },
         share: {
           body:
@@ -508,16 +522,21 @@ const french: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Enregistrer un mot pour la première fois te rapporte un cookie d'énergie, et réussir toutes les cartes d'une révision t'en rapporte trois de plus. Le sac en haut à droite mène à ma boutique en orbite autour de la Terre : dépense-y tes cookies pour me trouver un nouveau look.",
+            "Les cookies d'énergie sont la monnaie de ma boutique. Enregistrer un mot pour la première fois te rapporte un cookie d'énergie, et réussir toutes les cartes d'une révision t'en rapporte trois de plus. Le sac en haut à droite mène à ma boutique en orbite autour de la Terre : dépense-y tes cookies pour me trouver un nouveau look.",
+        },
+        wallet: {
+          body:
+            "Le nombre de cookies, en haut, c'est ta réserve d'énergie. Touche-le pour voir combien tu en as et d'où vient chacun. L'achat d'énergie n'est pas encore ouvert — et même plus tard, il ne comptera jamais comme de l'apprentissage.",
+          action: "Ouvrir la boutique",
         },
         tryOn: {
           body:
-            "Voici ma boutique : moi sur le présentoir, les pièces en dessous. Touche une pièce et je l'essaie gratuitement — touche-la encore pour l'enlever.",
+            "Voici ma boutique : moi sur le présentoir, les pièces en dessous. Touche une pièce et je l'essaie gratuitement — touche-la encore pour l'enlever. Fais-moi glisser pour me faire tourner.",
           action: "Ouvrir la boutique",
         },
         buy: {
           body:
-            "Elle te plaît ? Touche Acheter. Les cookies ne sont dépensés qu'après confirmation, et je la porte aussitôt — tu la verras aussi sur l'accueil. Ce que tu n'achètes pas reste en cabine.",
+            "Elle te plaît ? Touche Acheter. Les cookies ne sont dépensés qu'après confirmation — je t'indique d'abord le prix et ce qu'il te restera — et tes mots comme ta progression ne changent pas. Je la porte aussitôt : tu la verras aussi sur l'accueil. Ce que tu n'achètes pas reste en cabine.",
           action: "Ouvrir la boutique",
         },
         modeSwitch: {
