@@ -107,6 +107,7 @@ export default function WordsModule() {
                 kind: "speech",
                 text: word.text,
                 language: pack.language,
+                hint: { phonetic: word.phonetic },
               };
 
               return (

@@ -5,6 +5,7 @@ import { useId, type CSSProperties } from "react";
 import { YumiBodyGloss } from "@/components/ui/ExchangeNotesMark";
 import useInView from "@/hooks/useInView";
 import useReducedMotion from "@/hooks/useReducedMotion";
+import type { StageKind } from "@/lib/pronunciation/articulationTimeline";
 import {
   YUMI_IDLE_POSE,
   isAirflowState,
@@ -30,7 +31,53 @@ type YumiFaceProps = {
    * begin with (their contrast is mostly in tongue placement, not mouth
    * shape), so the same default emphasis read as barely-there movement. */
   emphasisScale?: number;
+  /**
+   * The moment of a sound being shown, when Yumi is going through a word
+   * (lib/pronunciation/articulationTimeline.ts): shut and holding, letting
+   * go, hissing, and so on. Without it she shows the sound's one shape, as
+   * the sound cards always have.
+   */
+  stage?: StageKind;
+  /** How long this moment lasts, so she moves into it in time. */
+  stageMs?: number;
+  /** Changes with every moment, so a moment's animation starts afresh. */
+  stageKey?: string | number;
 };
+
+/* ── Moments ────────────────────────────────────────────────────────────
+   Where the sound is made lights up, and how it lights says what is
+   happening there: held under pressure while a stop is shut, popping as it
+   lets go, small and steady while air hisses through, a single blink for a
+   tap and a flutter for a trill. Lip sounds light at the lips and the
+   glottal stop at her throat — the joint where her arms meet — rather than
+   at the tongue, which is not what makes them. */
+const CONTACT_CLASS: Partial<Record<StageKind, string>> = {
+  closure: "contactHold",
+  burst: "contactRelease",
+  friction: "contactNarrow",
+  tap: "contactTap",
+  trill: "contactTrill",
+};
+
+/** Which moments move air, and which way. */
+function stageAirflow(stage: StageKind, pose: YumiRigPose): AirflowRig["path"] | null {
+  switch (stage) {
+    case "burst":
+    case "aspiration":
+      return "burst";
+    case "friction":
+      return pose.airflow.path === "burst" ? "friction" : pose.airflow.path;
+    case "trill":
+      return "friction";
+    case "shape":
+    case "glide":
+      return pose.airflow.path === "nasal" ? "nasal" : null;
+    default:
+      return null;
+  }
+}
+
+const LIP_ZONES = new Set(["upper_lip", "lower_lip"]);
 
 // Which states show the sound's TARGET mouth/tongue shape, which flash the
 // contact point, and which move air — all three now answered by
@@ -170,6 +217,9 @@ export default function YumiFace({
   size = 72,
   label,
   emphasisScale = DEFAULT_TEACHING_EMPHASIS,
+  stage,
+  stageMs,
+  stageKey,
 }: YumiFaceProps) {
   const reducedMotion = useReducedMotion();
   const isActive = isArticulatingState(phase);
@@ -182,10 +232,28 @@ export default function YumiFace({
   const mouth = mouthGeometry(activePose.mouth, isActive, emphasisScale);
   const tip = tongueTip(activePose);
   const showVoicing = activePose.voicing.voiced && isActive;
-  const showContact = activePose.contact.zone !== "none" && isContactState(phase);
-  const mouthSpeedMs = isActive ? MOUTH_SPEED_MS[activePose.airflow.path] : 320;
-  const showAirflow = isActive && activePose.airflow.enabled && isAirflowState(phase);
-  const airflowPath = activePose.airflow.path;
+
+  /* Going through a word: each moment says what lights and what moves.
+     Into each moment in a little less time than it lasts, so the shape is
+     reached while the sound is still there to be seen. */
+  const staged = isActive && stage !== undefined;
+  const stageSpeedMs = staged && stageMs ? Math.round(Math.min(240, Math.max(45, stageMs * 0.7))) : null;
+  const contactZone = activePose.contact.zone;
+  const contactClass = staged ? CONTACT_CLASS[stage] : undefined;
+  const showContact = staged
+    ? contactZone !== "none" && contactClass !== undefined
+    : contactZone !== "none" && isContactState(phase);
+  const contactPoint = LIP_ZONES.has(contactZone) ? { x: mouth.cx, y: mouth.cy } : tip;
+  const glottal = staged && stage === "glottal";
+  const trilling = staged && stage === "trill";
+
+  const mouthSpeedMs = stageSpeedMs ?? (isActive ? MOUTH_SPEED_MS[activePose.airflow.path] : 320);
+  const stagedAirflow = staged ? stageAirflow(stage, activePose) : null;
+  const showAirflow = staged
+    ? stagedAirflow !== null
+    : isActive && activePose.airflow.enabled && isAirflowState(phase);
+  const airflowPath = stagedAirflow ?? activePose.airflow.path;
+  const airflowStrength = staged && stage === "aspiration" ? 1 : activePose.airflow.intensity;
   const airflowOriginPoint = airflowPath === "nasal" ? NASAL_ORIGIN : airflowOrigin(mouth);
 
   /*
@@ -270,17 +338,35 @@ export default function YumiFace({
           stroke="#1c1a16"
           strokeWidth="58"
           strokeLinecap="round"
-          className={styles.tongueBar}
+          className={`${styles.tongueBar} ${trilling && !reducedMotion ? styles.tongueTrill : ""}`}
+          style={stageSpeedMs ? ({ "--tongue-speed": `${stageSpeedMs}ms` } as CSSProperties) : undefined}
         />
 
         {showContact ? (
           <circle
-            cx={tip.x}
-            cy={tip.y}
+            key={`contact-${stageKey ?? ""}`}
+            cx={contactPoint.x}
+            cy={contactPoint.y}
             r="11"
             fill="#c9962e"
-            className={reducedMotion ? styles.contactStatic : styles.contactPulse}
+            data-stage-contact={stage ?? ""}
+            className={
+              reducedMotion
+                ? styles.contactStatic
+                : contactClass
+                  ? styles[contactClass]
+                  : styles.contactPulse
+            }
           />
+        ) : null}
+
+        {/* The glottal stop: her throat — the joint the arms meet at —
+            shuts, two bars closing on it, and nothing sounds. */}
+        {glottal ? (
+          <g key={`glottal-${stageKey ?? ""}`} className={reducedMotion ? undefined : styles.glottalGate} data-stage-glottal="">
+            <rect className={styles.gateTop} x="80" y="166" width="40" height="9" rx="4.5" fill="#c9962e" />
+            <rect className={styles.gateBottom} x="80" y="185" width="40" height="9" rx="4.5" fill="#c9962e" />
+          </g>
         ) : null}
 
         {/* Voicing glow — a soft pulse behind the eye while the sound is
@@ -329,9 +415,13 @@ export default function YumiFace({
             airflow.intensity so aspirated sounds visibly puff harder. */}
         {showAirflow ? (
           <g
+            key={`airflow-${stageKey ?? ""}`}
             transform={`translate(${airflowOriginPoint.x}, ${airflowOriginPoint.y})`}
-            className={`${styles.airflow} ${styles[`airflow-${airflowPath}`] ?? ""}`}
-            style={{ opacity: 0.4 + activePose.airflow.intensity * 0.5 }}
+            className={`${styles.airflow} ${styles[`airflow-${airflowPath}`] ?? ""} ${
+              staged && stage === "aspiration" ? styles.airflowStrong : ""
+            }`}
+            style={{ opacity: 0.4 + airflowStrength * 0.5 }}
+            data-stage-airflow={airflowPath}
             aria-hidden="true"
           >
             <path d="M0,-9 Q14,-12 26,-10" className={styles.airflowLine} />

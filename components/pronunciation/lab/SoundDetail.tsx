@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 
 import AudioButton, { AudioGlyph } from "@/components/pronunciation/lab/AudioButton";
 import LabScreen from "@/components/pronunciation/lab/LabScreen";
@@ -24,6 +24,8 @@ import type { YumiAnimationState } from "@/lib/pronunciation/yumiRig";
 /** How long the pause between the two demonstrations of a sound is. */
 const REPEAT_GAP_MS = 320;
 
+const noSubscription = () => () => {};
+
 export default function SoundDetail({ unitId }: { unitId: string }) {
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.pronunciation.lab;
@@ -36,6 +38,15 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
   const [speakState, setSpeakState] = useState<YumiAnimationState | null>(null);
 
   const unit = useMemo(() => findUnit(pack, unitId), [pack, unitId]);
+
+  /*
+   * The voice exists only in the browser, so the server always finds the
+   * sound "unavailable". Saying so before hydration made the server's HTML
+   * disagree with the browser's on every sound card, and React threw it
+   * away and rebuilt the page; the note now waits until the browser has
+   * answered.
+   */
+  const hydrated = useSyncExternalStore(noSubscription, () => true, () => false);
 
   const pairs = useMemo(
     () =>
@@ -151,7 +162,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
             {copy.detail.replay}
           </button>
 
-          {source.kind === "unavailable" ? (
+          {hydrated && source.kind === "unavailable" ? (
             <p className="w-full text-xs text-ink-faint">
               {copy.states.audioUnavailable}
             </p>

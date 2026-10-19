@@ -1,6 +1,8 @@
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { getSpeechSettings, speak, speechSupported } from "@/lib/speech";
 
+import { isZhuyin, parseTranscription, parseZhuyin } from "../phones";
+import type { ArticulationHint } from "../speaking";
 import type {
   MinimalPairExample,
   PronunciationExample,
@@ -18,9 +20,14 @@ import type {
    as "no audio available" rather than as a button that does nothing.
    ========================================================= */
 
+/*
+ * A sound that can be played carries what is known about how it is said —
+ * its transcription, and on a sound card the sound it is about — so Yumi
+ * can show it as it plays (lib/pronunciation/speaking.ts).
+ */
 export type AudioSource =
-  | { kind: "recorded"; src: string; language: LanguageCode; text: string }
-  | { kind: "speech"; text: string; language: LanguageCode }
+  | { kind: "recorded"; src: string; language: LanguageCode; text: string; hint?: ArticulationHint }
+  | { kind: "speech"; text: string; language: LanguageCode; hint?: ArticulationHint }
   | { kind: "unavailable" };
 
 /** Playback speed. "slow" is for hearing where one sound ends and the next starts. */
@@ -34,34 +41,72 @@ function fromText(
   text: string | undefined,
   language: LanguageCode,
   audio?: string,
+  hint?: ArticulationHint,
 ): AudioSource {
   const trimmed = text?.trim();
 
   if (audio) {
-    return { kind: "recorded", src: audio, language, text: trimmed ?? "" };
+    return { kind: "recorded", src: audio, language, text: trimmed ?? "", hint };
   }
   if (trimmed && speechSupported()) {
-    return { kind: "speech", text: trimmed, language };
+    return { kind: "speech", text: trimmed, language, hint };
   }
   return { kind: "unavailable" };
 }
 
+const fold = (text: string) => text.normalize("NFC").trim().toLocaleLowerCase();
+
+/** The IPA symbols of a sound card's sound: "/e/ · /ɛ/" is e and ɛ. */
+function focusSymbols(unit: PronunciationUnit): string[] {
+  if (unit.language === "zh-TW") {
+    return isZhuyin(unit.symbol) ? parseZhuyin(unit.symbol).phones.map((phone) => phone.symbol) : [];
+  }
+  const written = unit.phoneticRepresentation ?? "";
+  return written
+    .split("·")
+    .flatMap((part) => parseTranscription(part, unit.language)?.phones ?? [])
+    .map((phone) => phone.symbol);
+}
+
+/**
+ * What a sound card's audio is known to say.
+ *
+ * A card plays a word with its sound in it — /iː/ is "see", tone one is
+ * 媽 — so the transcription is the example's that matches the word, and the
+ * card's own sound is marked as the focus. A card that speaks its own
+ * symbol uses its own transcription.
+ */
+function unitHint(unit: PronunciationUnit): ArticulationHint {
+  const spoken = fold(unit.speechText ?? unit.symbol);
+  const example = unit.examples.find((candidate) => fold(candidate.text) === spoken);
+  const own =
+    !unit.speechText && unit.phoneticRepresentation && !unit.phoneticRepresentation.includes("·")
+      ? unit.phoneticRepresentation
+      : undefined;
+  return {
+    phonetic: example?.phonetic ?? own,
+    focus: focusSymbols(unit),
+    features: unit.features,
+    symbol: unit.symbol,
+  };
+}
+
 export function unitAudio(unit: PronunciationUnit): AudioSource {
-  return fromText(unit.speechText ?? unit.symbol, unit.language, unit.audio);
+  return fromText(unit.speechText ?? unit.symbol, unit.language, unit.audio, unitHint(unit));
 }
 
 export function exampleAudio(
   example: PronunciationExample | MinimalPairExample,
   language: LanguageCode,
 ): AudioSource {
-  return fromText(example.text, language, example.audio);
+  return fromText(example.text, language, example.audio, { phonetic: example.phonetic });
 }
 
 export function phraseAudio(
   phrase: RhythmPhrase,
   language: LanguageCode,
 ): AudioSource {
-  return fromText(phrase.speechText ?? phrase.text, language, phrase.audio);
+  return fromText(phrase.speechText ?? phrase.text, language, phrase.audio, { beats: phrase.beats });
 }
 
 /* =========================================================
@@ -101,7 +146,8 @@ export function stopPronunciationAudio() {
   }
 }
 
-function speechRateFor(speed: PlaybackSpeed): number {
+/** The voice's rate for `speed` — what the animation's clock divides by. */
+export function speechRateFor(speed: PlaybackSpeed): number {
   const base = getSpeechSettings().rate;
   if (speed === "native") return base;
   return Math.max(MIN_SPEECH_RATE, base * SLOW_RATE_MULTIPLIER);
@@ -230,7 +276,15 @@ export function playPronunciation(
  */
 export function playSequence(
   steps: Array<{ source: AudioSource; speed?: PlaybackSpeed; gapMs?: number }>,
-  options: { onStep?: (index: number) => void; onEnd?: () => void; onError?: () => void } = {},
+  options: {
+    onStep?: (index: number) => void;
+    /** A step's audio has actually started sounding. */
+    onStepStart?: (index: number) => void;
+    /** A step's audio has finished (before its gap). */
+    onStepEnd?: (index: number) => void;
+    onEnd?: () => void;
+    onError?: () => void;
+  } = {},
 ): PlaybackHandle {
   let cancelled = false;
   let currentHandle: PlaybackHandle | null = null;
@@ -249,8 +303,12 @@ export function playSequence(
 
     currentHandle = playPronunciation(step.source, {
       speed: step.speed,
+      onStart: () => {
+        if (!cancelled) options.onStepStart?.(index);
+      },
       onEnd: () => {
         if (cancelled) return;
+        options.onStepEnd?.(index);
         const gap = step.gapMs ?? 0;
         if (gap > 0) {
           gapTimer = setTimeout(() => runStep(index + 1), gap);
