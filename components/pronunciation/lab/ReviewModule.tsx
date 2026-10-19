@@ -58,6 +58,7 @@ export default function ReviewModule() {
       <div className="space-y-5 pb-8">
         <YumiCoach
           pack={pack}
+          trace={false}
           state={due.length > 0 ? "waiting" : "idle"}
           size={92}
         />

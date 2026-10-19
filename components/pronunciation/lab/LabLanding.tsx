@@ -127,6 +127,7 @@ export default function LabLanding() {
       <div className="space-y-5 pb-6">
         <YumiCoach
           pack={pack}
+          trace={false}
           state={coachTapped ? "demonstrating" : "idle"}
           onTap={() => setCoachTapped((tapped) => !tapped)}
           tapLabel={copy.coach.eyebrow}

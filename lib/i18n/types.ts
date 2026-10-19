@@ -1314,6 +1314,27 @@ export type TranslationDictionary = {
         encouraging: string;
         waiting: string;
       };
+      /**
+       * Yumi's articulation timeline (lib/pronunciation/articulationTimeline.ts):
+       * what each moment of a word is, where it is made, and what to watch for.
+       * position: {current}, {total}.
+       */
+      timeline: {
+        title: string;
+        estimated: string;
+        empty: string;
+        tapHint: string;
+        previous: string;
+        next: string;
+        position: string;
+        focus: string;
+        legend: { voice: string; silence: string; burst: string; friction: string; pitch: string };
+        stages: { closure: string; burst: string; aspiration: string; friction: string; shape: string; glide: string; tap: string; trill: string; glottal: string; pause: string };
+        shapes: { vowel: string; nasal: string; lateral: string; approximant: string };
+        places: { bilabial: string; labiodental: string; dental: string; alveolar: string; postalveolar: string; retroflex: string; palatal: string; velar: string; uvular: string; glottal: string };
+        vowel: { close: string; mid: string; open: string; front: string; central: string; back: string };
+        notes: { unaspirated: string; aspirated: string; voicedClosure: string; voiced: string; voiceless: string; geminate: string; longVowel: string; shortVowel: string; reduced: string; rounded: string; spread: string; nasalVowel: string; nasalAir: string; lateral: string; noTouch: string; retroflexTip: string; apical: string; dentalTip: string; uvular: string; glide: string; tapOnce: string; trillRelax: string; glottalStop: string; linked: string; finalStop: string; stressed: string; tone1: string; tone2: string; tone3: string; tone4: string; tone5: string; halfThird: string; sandhi: string };
+      };
 
       modules: {
         sounds: { title: string; description: string };

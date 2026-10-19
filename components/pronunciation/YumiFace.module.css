@@ -34,9 +34,144 @@
    presentation attributes here, which modern browsers happily CSS-
    transition just like any other animatable property. */
 .tongueBar {
+  /* --tongue-speed is set per moment while Yumi goes through a word, so a
+     stop's tongue snaps to its closure and a vowel's eases in. */
   transition:
-    x2 340ms cubic-bezier(0.33, 1, 0.68, 1),
-    y2 340ms cubic-bezier(0.33, 1, 0.68, 1);
+    x2 var(--tongue-speed, 340ms) cubic-bezier(0.33, 1, 0.68, 1),
+    y2 var(--tongue-speed, 340ms) cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* A trill: the tongue fluttering in the airflow, about the rate a real one
+   does, swung from the joint it pivots on. */
+.tongueTrill {
+  transform-box: view-box;
+  transform-origin: 100px 180px;
+  animation: tongueTrill 90ms ease-in-out infinite alternate;
+}
+
+@keyframes tongueTrill {
+  from {
+    transform: rotate(-2.5deg);
+  }
+  to {
+    transform: rotate(2.5deg);
+  }
+}
+
+/* ── The point of contact, moment by moment ──────────────────────────── */
+
+/* Shut and holding: lit and swelling a little, the pressure behind it. */
+.contactHold {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: contactHold 520ms ease-in-out infinite;
+}
+
+@keyframes contactHold {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.22);
+  }
+}
+
+/* Letting go: one pop, outward, gone. */
+.contactRelease {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: contactRelease 240ms ease-out forwards;
+}
+
+@keyframes contactRelease {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.3);
+  }
+}
+
+/* A narrow gap the air hisses through: smaller, steady. */
+.contactNarrow {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.68);
+  opacity: 0.85;
+}
+
+/* A tap: a single blink of contact. */
+.contactTap {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: contactTap 180ms ease-out forwards;
+}
+
+@keyframes contactTap {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* A trill: contact made and broken, over and over. */
+.contactTrill {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: contactTrill 90ms ease-in-out infinite alternate;
+}
+
+@keyframes contactTrill {
+  from {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* The glottal stop: two bars close on her throat and stay shut. */
+.glottalGate .gateTop {
+  animation: gateTop 140ms ease-out forwards;
+}
+
+.glottalGate .gateBottom {
+  animation: gateBottom 140ms ease-out forwards;
+}
+
+/* Drawn shut; the animation only slides them there. */
+@keyframes gateTop {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes gateBottom {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+
+/* Aspiration: the same puff, harder and longer. */
+.airflowStrong .airflowLine {
+  stroke-width: 7;
 }
 
 .contactPulse {

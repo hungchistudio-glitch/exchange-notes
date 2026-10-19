@@ -451,7 +451,12 @@ function WordStep({
     <SpeakTrainer
       language={pack.language}
       targetText={word.text}
-      nativeSource={{ kind: "speech", text: word.text, language: pack.language }}
+      nativeSource={{
+        kind: "speech",
+        text: word.text,
+        language: pack.language,
+        hint: { phonetic: word.phonetic },
+      }}
       dimensions={pack.scoreDimensions}
       onCoachStateChange={onCoachStateChange}
       onAttempt={(outcome, score, analyzer) => {

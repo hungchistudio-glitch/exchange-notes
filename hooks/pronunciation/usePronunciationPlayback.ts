@@ -10,6 +10,7 @@ import {
   type PlaybackHandle,
   type PlaybackSpeed,
 } from "@/lib/pronunciation/lab/audio";
+import { announceSpeaking, announceSpeakingEnd } from "@/lib/pronunciation/speaking";
 
 export type PlaybackPhase = "loading" | "playing" | "done" | "error";
 
@@ -50,8 +51,28 @@ export default function usePronunciationPlayback(): PlaybackControls {
   const tokenRef = useRef(0);
   const handleRef = useRef<PlaybackHandle | null>(null);
   const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* What Yumi is being told is playing (lib/pronunciation/speaking.ts). */
+  const speakingRef = useRef<number | null>(null);
+
+  const tell = useCallback((source: AudioSource, speed: PlaybackSpeed) => {
+    /* The learner's own recording has no text: Yumi listens to it, she
+       does not mouth it. */
+    if (source.kind === "unavailable" || !source.text) return;
+    speakingRef.current = announceSpeaking({
+      text: source.text,
+      language: source.language,
+      speed,
+      hint: source.hint,
+    });
+  }, []);
+
+  const told = useCallback((cut = false) => {
+    if (speakingRef.current !== null) announceSpeakingEnd(speakingRef.current, { cut });
+    speakingRef.current = null;
+  }, []);
 
   const cancel = useCallback(() => {
+    told(true);
     tokenRef.current += 1;
     if (doneTimerRef.current) {
       clearTimeout(doneTimerRef.current);
@@ -60,7 +81,7 @@ export default function usePronunciationPlayback(): PlaybackControls {
     handleRef.current?.stop();
     handleRef.current = null;
     stopPronunciationAudio();
-  }, []);
+  }, [told]);
 
   const stop = useCallback(() => {
     cancel();
@@ -104,13 +125,21 @@ export default function usePronunciationPlayback(): PlaybackControls {
       handleRef.current = playPronunciation(source, {
         speed,
         onStart: () => {
-          if (tokenRef.current === token) setPlayback({ key, phase: "playing" });
+          if (tokenRef.current !== token) return;
+          setPlayback({ key, phase: "playing" });
+          tell(source, speed);
         },
-        onEnd: () => finish(token, key, "done"),
-        onError: () => finish(token, key, "error"),
+        onEnd: () => {
+          if (tokenRef.current === token) told();
+          finish(token, key, "done");
+        },
+        onError: () => {
+          if (tokenRef.current === token) told(true);
+          finish(token, key, "error");
+        },
       });
     },
-    [cancel, finish],
+    [cancel, finish, tell, told],
   );
 
   const playSteps = useCallback<PlaybackControls["playSteps"]>(
@@ -127,13 +156,19 @@ export default function usePronunciationPlayback(): PlaybackControls {
           setPlayback({ key, phase: "playing" });
           options?.onStep?.(index);
         },
+        onStepStart: (index) => {
+          if (tokenRef.current === token) tell(steps[index].source, steps[index].speed ?? "native");
+        },
+        onStepEnd: () => {
+          if (tokenRef.current === token) told();
+        },
         onError: () => {
           failed = true;
         },
         onEnd: () => finish(token, key, failed ? "error" : "done"),
       });
     },
-    [cancel, finish],
+    [cancel, finish, tell, told],
   );
 
   const phaseFor = useCallback(
