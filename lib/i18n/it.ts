@@ -473,10 +473,12 @@ const italian: TranslationDictionary = {
         keep: {
           body:
             "Salva una parola nuova e ricevi due cose: un biscotto nella Home per nutrirmi e +1 biscotto energia per il negozio.",
+          tag: "Salvala · +1 biscotto energia",
         },
         feed: {
           body:
             "Dopo una parola, toccami per tornare alla Home. Dammene uno: trascina un biscotto su di me, oppure toccalo e premi «Nutri Yumi». Non costa biscotti energia.",
+          tag: "Nutrimi · senza biscotti energia",
         },
         library: {
           body:

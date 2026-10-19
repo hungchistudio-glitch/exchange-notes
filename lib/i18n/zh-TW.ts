@@ -471,10 +471,12 @@ const traditionalChinese: TranslationDictionary = {
         keep: {
           body:
             "存下新字，就有兩樣收穫：首頁一塊餵我的餅乾，和商店 +1 能量餅乾。",
+          tag: "存起來 · +1 能量餅乾",
         },
         feed: {
           body:
             "查完字，點我就回首頁。餵我一塊：把餅乾拖到我身上，或點開它按「餵給 Yumi」，不會用掉能量餅乾。",
+          tag: "餵我 · 不花能量餅乾",
         },
         library: {
           body:

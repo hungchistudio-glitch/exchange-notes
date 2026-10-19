@@ -474,10 +474,12 @@ const english: TranslationDictionary = {
         keep: {
           body:
             "Save a new word and you get two things: a cookie on Home to feed me, and +1 energy cookie for the shop.",
+          tag: "Save it · +1 energy cookie",
         },
         feed: {
           body:
             "I've brought you back home — next time you're done with a word, just tap me. Feed me one: drag a cookie onto me, or tap it and press “Feed Yumi”. It costs no energy cookies.",
+          tag: "Feed me · no energy cookies spent",
         },
         library: {
           body:

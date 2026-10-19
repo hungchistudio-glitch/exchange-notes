@@ -17,6 +17,10 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: nav.push }),
 }));
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => "english" }));
+/* The coach reads whether the search sheet is open; here it never is. */
+vi.mock("@/contexts/LexiconSearchContext", () => ({
+  useLexiconSearchSheet: () => ({ open: false, openSearch: () => {}, closeSearch: () => {} }),
+}));
 
 const { setCoachStep, COACH_FINISHED } = await import("@/lib/home/tutorialCoach");
 const { InterfaceModeProvider } = await import("@/contexts/InterfaceModeContext");

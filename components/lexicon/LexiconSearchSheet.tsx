@@ -269,7 +269,9 @@ export default function LexiconSearchSheet({
 
           <div className="flex items-center gap-2">
             <form className="min-w-0 flex-1" onSubmit={handleSubmit}>
+              {/* Lit by the tour's look-up step while this sheet is open. */}
               <div
+                data-coach-target="sheet-search"
                 className={`flex h-12 items-center gap-2.5 rounded-full border px-4 ${
                   tone === "cosmic"
                     ? "border-[var(--cosmic-cyan-dim)] bg-transparent"
