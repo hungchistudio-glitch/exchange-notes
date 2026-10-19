@@ -518,7 +518,7 @@ const spanish: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Las galletas de energía son el dinero de mi tienda. La bolsa de arriba a la derecha es la entrada.",
+            "Las galletas de energía son el dinero de mi tienda; guardar una palabra por primera vez te da una. Toca la bolsa que brilla arriba a la derecha para entrar.",
         },
         tryOn: {
           body:

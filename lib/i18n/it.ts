@@ -517,7 +517,7 @@ const italian: TranslationDictionary = {
         },
         cookies: {
           body:
-            "I biscotti energia sono la moneta del mio negozio. La borsa in alto a destra è l'ingresso.",
+            "I biscotti energia sono la moneta del mio negozio; salvare una parola per la prima volta te ne fa guadagnare uno. Tocca la borsa che brilla in alto a destra per entrare.",
         },
         tryOn: {
           body:

@@ -518,7 +518,7 @@ const english: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Energy cookies are my shop's money. Saving a word for the first time earns an energy cookie; the bag at the top right is the way in.",
+            "Energy cookies are my shop's money. Saving a word for the first time earns an energy cookie. Tap the glowing bag at the top right to come in.",
         },
         tryOn: {
           body:
