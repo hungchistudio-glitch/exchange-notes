@@ -474,6 +474,7 @@ const spanish: TranslationDictionary = {
         keep: {
           body:
             "Guarda una palabra nueva y recibes dos cosas: una galleta en Inicio para alimentarme y +1 galleta de energía para la tienda.",
+          tag: "Guárdala · +1 galleta de energía",
         },
         feed: {
           body:

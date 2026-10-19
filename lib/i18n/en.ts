@@ -474,6 +474,7 @@ const english: TranslationDictionary = {
         keep: {
           body:
             "Save a new word and you get two things: a cookie on Home to feed me, and +1 energy cookie for the shop.",
+          tag: "Save it · +1 energy cookie",
         },
         feed: {
           body:

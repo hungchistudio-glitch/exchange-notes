@@ -46,6 +46,15 @@ import styles from "./CoachLight.module.css";
 
    It steps aside while the reader types, while the card is hidden, and when
    the key is under the card.
+
+   ── Over the search sheet ──────────────────────────────────────────────
+
+   The search sheet takes the screen and stands above the card. While it is
+   open the tour lights keys in the sheet, so the light is `raised` above it,
+   and the card, which it otherwise keeps clear of and goes dark with, is
+   left out of it. A `tag` beside the lock then says in a few words what the
+   card would: a heads-up label, on a leader line, above the key or below it
+   when there is no room above.
    ========================================================= */
 
 /** How far outside the key's edge the ring sits; the brackets sit beyond it. */
@@ -54,6 +63,8 @@ const PAD = 3;
 const MIN_RADIUS = 10;
 /** How often it looks again for where its target has gone. */
 const REFRESH_MS = 140;
+/** Room the tag needs above the key; with less, it goes below. */
+const TAG_ROOM = 44;
 
 /** A selector, or a place whose element may itself be hidden. */
 export type CoachTarget = string | { readonly selector: string; readonly anchor?: boolean };
@@ -130,9 +141,25 @@ type CoachLightProps = {
   avoid: RefObject<HTMLElement | null>;
   /** The step was just done: flash once and let go. */
   done?: boolean;
+  /** Above the search sheet, and free of the card under it. */
+  raised?: boolean;
+  /** A few words beside the lock, for when the card cannot be seen. */
+  tag?: string;
 };
 
-export default function CoachLight({ targets, avoid, done = false }: CoachLightProps) {
+/** A field the reader has started typing in. */
+function typedIn(element: Element) {
+  const field = element instanceof HTMLInputElement ? element : element.querySelector("input");
+  return Boolean(field?.value);
+}
+
+export default function CoachLight({
+  targets,
+  avoid,
+  done = false,
+  raised = false,
+  tag,
+}: CoachLightProps) {
   const ref = useRef<HTMLDivElement>(null);
   const key = JSON.stringify(targets);
 
@@ -154,13 +181,15 @@ export default function CoachLight({ targets, avoid, done = false }: CoachLightP
     };
 
     const update = () => {
-      const card = avoid.current;
+      /* Under the sheet the card is neither in the way nor a guide to
+         whether the reader can see the step. */
+      const card = raised ? null : avoid.current;
 
       /* The card collapses to a strip while the reader types, and is hidden
          while the dial is out for steps that are not about the dial. A
          light without its sentence is a stray light. */
       if (
-        document.querySelector('[data-yumi-typing="true"]') ||
+        (!raised && document.querySelector('[data-yumi-typing="true"]')) ||
         (card && !shown(card))
       ) {
         hide();
@@ -168,6 +197,13 @@ export default function CoachLight({ targets, avoid, done = false }: CoachLightP
       }
 
       const found = findTarget(wanted);
+
+      /* A field lit to say "type here" has done its job once they do. */
+      if (found && typedIn(found.element)) {
+        hide();
+        return;
+      }
+
       const radius = found
         ? found.anchor
           ? "ellipse"
@@ -194,6 +230,7 @@ export default function CoachLight({ targets, avoid, done = false }: CoachLightP
       element.style.width = `${halo.width}px`;
       element.style.height = `${halo.height}px`;
       element.style.setProperty("--light-radius", halo.radius);
+      element.dataset.tagSide = halo.top < TAG_ROOM ? "below" : "above";
       element.dataset.shown = "true";
       placedOnce = true;
     };
@@ -208,7 +245,7 @@ export default function CoachLight({ targets, avoid, done = false }: CoachLightP
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, { capture: true });
     };
-  }, [avoid, key]);
+  }, [avoid, key, raised]);
 
   return (
     <div
@@ -217,6 +254,7 @@ export default function CoachLight({ targets, avoid, done = false }: CoachLightP
       data-coach-light=""
       data-shown="false"
       data-done={done ? "true" : undefined}
+      data-raised={raised ? "true" : undefined}
       aria-hidden="true"
     >
       <span className={styles.ripple} />
@@ -225,6 +263,7 @@ export default function CoachLight({ targets, avoid, done = false }: CoachLightP
       <span className={styles.corner} data-corner="tr" />
       <span className={styles.corner} data-corner="bl" />
       <span className={styles.corner} data-corner="br" />
+      {tag ? <span className={styles.tag}>{tag}</span> : null}
     </div>
   );
 }

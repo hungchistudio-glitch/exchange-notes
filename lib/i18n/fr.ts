@@ -473,6 +473,7 @@ const french: TranslationDictionary = {
         keep: {
           body:
             "Garde un nouveau mot et tu reçois deux choses : un biscuit sur l'accueil pour me nourrir, et +1 cookie d'énergie pour la boutique.",
+          tag: "Garde-le · +1 cookie d'énergie",
         },
         feed: {
           body:
