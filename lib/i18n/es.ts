@@ -2909,6 +2909,8 @@ const spanish: TranslationDictionary = {
     recentHello: "Volver a la invitación de {name}",
     openHello: "Abrir",
     testShort: "Prueba",
+    settingsDescription: "Envía una palabra con Yumi y gestiona los enlaces que compartiste.",
+    createLimit: "Llegaste al límite de hoy. Inténtalo mañana.",
     scanCaption: "Escanea para visitar",
     fillOnCreate: "Los demás idiomas se completan al crearla.",
     chooseWord: "Primero elige una palabra.",

@@ -113,7 +113,7 @@ export default function HelloEditor({
   const pair: Slots = picked ?? stored ?? [null, null];
   const [slotA, slotB] = pair;
   const [me, setMe] = useState<{ name: string | null; exchangeId: string } | null>(null);
-  const [phase, setPhase] = useState<"editing" | "creating" | "failed">("editing");
+  const [phase, setPhase] = useState<"editing" | "creating" | "failed" | "limit">("editing");
   const [created, setCreated] = useState<Created | null>(null);
   /* One key per word chosen: pressing create twice makes one hello. */
   const requestKey = useRef(newKey());
@@ -199,6 +199,10 @@ export default function HelloEditor({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ requestKey: requestKey.current, mode: interfaceMode, pair: validPair, known: chosen.known }),
       });
+      if (response.status === 429) {
+        setPhase("limit");
+        return;
+      }
       if (!response.ok) throw new Error(String(response.status));
       const { url, test, hello } = (await response.json()) as { url: string; test: boolean; hello: HelloSnapshot | null };
       if (!hello) throw new Error("No hello");
@@ -385,9 +389,9 @@ export default function HelloEditor({
           {phase === "creating" ? <LoaderCircle size={18} className="animate-spin" aria-hidden="true" /> : null}
           {phase === "creating" ? copy.creating : copy.create}
         </button>
-        {phase === "failed" ? (
+        {phase === "failed" || phase === "limit" ? (
           <p role="status" className="text-center text-[0.875rem] text-ink-soft">
-            {copy.createFailed}
+            {phase === "limit" ? copy.createLimit : copy.createFailed}
           </p>
         ) : null}
       </div>

@@ -93,11 +93,14 @@ export async function POST(request: Request) {
 
   /* The same key again: the hello that already exists, not a second one,
      and no second charge. */
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from("yumi_hellos")
     .select("id")
     .eq("request_key", requestKey)
     .maybeSingle();
+  /* Hellos cannot be stored right now (the database is unreachable, or
+     not migrated yet): say so before anything is charged or translated. */
+  if (existingError) return NextResponse.json({ error: "Not available" }, { status: 503 });
   if (existing?.id) {
     const { data } = await service.rpc("get_yumi_hello", { p_id: existing.id });
     const lookup = lookupFromRpc(data);
@@ -140,7 +143,14 @@ export async function POST(request: Request) {
   }
   if (charged && completed.modelFailed) await refundDailyQuota(user.id, "hello_sense");
 
+  /* A hello that is not made is not paid for. */
+  const failed = async (status: number, error: string) => {
+    if (charged && !completed.modelFailed) await refundDailyQuota(user.id, "hello_sense");
+    return NextResponse.json({ error }, { status });
+  };
+
   let id = newHelloId();
+  let made = false;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const { data, error } = await service.rpc("create_yumi_hello", {
       p_owner: user.id,
@@ -154,18 +164,18 @@ export async function POST(request: Request) {
     if (!error) {
       const created = data as { id?: string } | null;
       id = created?.id ?? id;
+      made = true;
       break;
     }
-    if (error.code === "53400") {
-      return NextResponse.json({ error: "Too many hellos today" }, { status: 429 });
-    }
+    if (error.code === "53400") return failed(429, "Too many hellos today");
     /* Another hello already has this id — vanishingly rare: try a new one. */
     if (error.code === "23505" && attempt === 0) {
       id = newHelloId();
       continue;
     }
-    return NextResponse.json({ error: "Could not create" }, { status: 500 });
+    return failed(500, "Could not create");
   }
+  if (!made) return failed(500, "Could not create");
 
   const { data } = await service.rpc("get_yumi_hello", { p_id: id });
   const lookup = lookupFromRpc(data);

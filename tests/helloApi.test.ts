@@ -17,6 +17,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({
   user: { id: "owner-1" } as { id: string } | null,
   existing: null as { id: string } | null,
+  existingError: null as { code: string } | null,
   quotaOk: true,
   rpc: vi.fn(),
   consume: vi.fn(),
@@ -32,7 +33,7 @@ vi.mock("@/lib/supabase/server", () => ({
       const chain = {
         select: () => chain,
         eq: () => chain,
-        maybeSingle: async () => ({ data: state.existing, error: null }),
+        maybeSingle: async () => ({ data: state.existing, error: state.existingError }),
       };
       return chain;
     },
@@ -85,6 +86,7 @@ function post(body: unknown) {
 beforeEach(() => {
   state.user = { id: "owner-1" };
   state.existing = null;
+  state.existingError = null;
   state.rpc.mockReset();
   state.consume.mockReset();
   state.refund.mockReset();
@@ -173,11 +175,32 @@ describe("making a hello", () => {
     expect(state.rpc).not.toHaveBeenCalled();
   });
 
-  it("says when the reader has made too many today", async () => {
+  it("says when the reader has made too many today, and gives the charge back", async () => {
     state.rpc.mockImplementation(async (name: string) =>
       name === "create_yumi_hello" ? { data: null, error: { code: "53400" } } : { data: HELLO_ROW, error: null },
     );
     expect((await post(VALID)).status).toBe(429);
+    expect(state.refund).toHaveBeenCalledWith("owner-1", "hello_sense");
+  });
+
+  /* 2026-10-19, on the preview before the migration: the word was
+     translated and charged, then the database had nowhere to keep it. */
+  it("charges and translates nothing when hellos cannot be stored", async () => {
+    state.existingError = { code: "42P01" };
+    const response = await post(VALID);
+    expect(response.status).toBe(503);
+    expect(state.consume).not.toHaveBeenCalled();
+    expect(state.complete).not.toHaveBeenCalled();
+    expect(state.rpc).not.toHaveBeenCalled();
+  });
+
+  it("gives the charge back when the database refuses to make it", async () => {
+    state.rpc.mockImplementation(async (name: string) =>
+      name === "create_yumi_hello" ? { data: null, error: { code: "PGRST202" } } : { data: HELLO_ROW, error: null },
+    );
+    expect((await post(VALID)).status).toBe(500);
+    expect(state.refund).toHaveBeenCalledTimes(1);
+    expect(state.refund).toHaveBeenCalledWith("owner-1", "hello_sense");
   });
 });
 

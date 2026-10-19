@@ -2715,6 +2715,8 @@ const french: TranslationDictionary = {
     recentHello: "Revenir à l’invitation de {name}",
     openHello: "Ouvrir",
     testShort: "Test",
+    settingsDescription: "Envoie un mot avec Yumi et gère les liens que tu as partagés.",
+    createLimit: "Tu as atteint la limite du jour. Réessaie demain.",
     scanCaption: "Scanne pour visiter",
     fillOnCreate: "Les autres langues sont complétées à la création.",
     chooseWord: "Choisis d’abord un mot.",

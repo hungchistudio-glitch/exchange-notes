@@ -2817,6 +2817,10 @@ export type TranslationDictionary = {
     openHello: string;
     /** The short mark on a hello made on a test build. */
     testShort: string;
+    /** Under "My Yumi invitations" in Settings. */
+    settingsDescription: string;
+    /** Making a hello refused for today's limit. */
+    createLimit: string;
     scanCaption: string;
     fillOnCreate: string;
     chooseWord: string;

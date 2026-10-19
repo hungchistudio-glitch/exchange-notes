@@ -7,8 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
    The list is the reader's (the server reads it through their own row
    policy); each can be opened, copied or turned off, and turning off asks
    once and says what it cannot take back. A hello that is off stays in
-   the list, marked. On the friends screen, someone who arrived from a
-   hello finds the way back to it.
+   the list, marked. The list is found in Settings; on the friends
+   screen, someone who arrived from a hello finds the way back to it.
    ========================================================= */
 
 const { default: HelloManage } = await import("@/components/hello/HelloManage");
@@ -84,11 +84,21 @@ describe("the friends screen", () => {
       render(<HelloFriendsCard />);
     });
     expect(screen.getByRole("link", { name: /Chi/ }).getAttribute("href")).toBe("/hello/AbCdEfGhIjKl");
-    expect(screen.getByRole("link", { name: /My Yumi invitations/ }).getAttribute("href")).toBe("/invitations");
   });
 
-  it("offers only the reader's own list when there is none", () => {
-    render(<HelloFriendsCard />);
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+  it("shows nothing when this device opened no hello", () => {
+    const { container } = render(<HelloFriendsCard />);
+    expect(container.innerHTML).toBe("");
+  });
+});
+
+describe("Settings", () => {
+  it("is where the reader finds their invitations, and search finds it too", async () => {
+    const { buildSettingsSearchIndex } = await import("@/components/settings/settingsSearchIndex");
+    const { loadTranslations } = await import("@/lib/i18n");
+    const t = await loadTranslations("traditional-chinese");
+    const entry = buildSettingsSearchIndex(t).find((item) => item.id === "setting-yumi-hellos");
+    expect(entry).toMatchObject({ title: "我的 Yumi 邀請函", section: "Yumi" });
+    expect(entry?.keywords).toContain("invitation");
   });
 });

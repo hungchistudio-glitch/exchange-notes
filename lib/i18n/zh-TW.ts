@@ -2869,6 +2869,8 @@ const traditionalChinese: TranslationDictionary = {
     recentHello: "回到 {name} 的邀請",
     openHello: "打開",
     testShort: "測試",
+    settingsDescription: "用 Yumi 送字給朋友，並管理分享過的連結。",
+    createLimit: "今天的建立次數已用完，明天再試。",
     scanCaption: "掃描前往",
     fillOnCreate: "其他語言會在建立時翻好。",
     chooseWord: "先選一個字。",

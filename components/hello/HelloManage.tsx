@@ -12,7 +12,7 @@ import type { HelloSense } from "@/lib/hello/types";
 import { getLanguageName, type LanguageCode } from "@/lib/languages";
 
 /* =========================================================
-   My Yumi invitations (/invitations)
+   My Yumi invitations (/invitations), from Settings
 
    Every hello this reader has made, newest first, from GET /api/hello —
    which reads through the owner's own row policy, so this list can only
@@ -106,7 +106,7 @@ export default function HelloManage() {
   return (
     <LabScreen
       title={copy.manageTitle}
-      backHref="/friends"
+      backHref="/profile"
       backLabel={t.common.back}
       action={
         <Link
