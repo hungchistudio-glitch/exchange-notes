@@ -105,9 +105,9 @@ describe("the first links, /hello/<id>", () => {
     expect(response.headers.get("location")).toBe(`${ORIGIN}/a-word-to-invite-you/${ID}`);
   });
 
-  it("carry sign-in and its intent along, and nothing else", async () => {
+  it("carry sign-in along, and nothing from the query", async () => {
     const response = await go(`/hello/${ID}/join?intent=meet&next=https://evil.example`, [ID, "join"]);
-    expect(response.headers.get("location")).toBe(`${ORIGIN}/a-word-to-invite-you/${ID}/join?intent=meet`);
+    expect(response.headers.get("location")).toBe(`${ORIGIN}/a-word-to-invite-you/${ID}/join`);
   });
 
   it("go home for anything that is not a hello", async () => {

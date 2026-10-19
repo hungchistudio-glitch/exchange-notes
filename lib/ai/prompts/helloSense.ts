@@ -1,5 +1,6 @@
 import { promptLanguageName, whenScriptRuleApplies } from "@/lib/ai/languagePrompt";
 import type { LanguageCode } from "@/lib/languages";
+import { HELLO_TEXT_MAX } from "@/lib/hello/text";
 
 /*
  * One sense, in the languages it is missing — for Yumi's hello (lib/hello).
@@ -41,7 +42,7 @@ export const HELLO_SENSE_SCHEMA = {
         additionalProperties: false,
         properties: {
           language: { type: "string", enum: ["en", "zh-TW", "es", "fr", "it"] },
-          text: { type: "string", minLength: 1, maxLength: 80 },
+          text: { type: "string", minLength: 1, maxLength: HELLO_TEXT_MAX },
           partOfSpeech: { type: "string", enum: [...HELLO_PARTS_OF_SPEECH] },
         },
         required: ["language", "text", "partOfSpeech"],

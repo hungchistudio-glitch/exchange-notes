@@ -18,6 +18,7 @@ const state = vi.hoisted(() => ({
   user: { id: "owner-1" } as { id: string } | null,
   existing: null as { id: string } | null,
   existingError: null as { code: string } | null,
+  fillRow: { revoked_at: null, fill_attempts: 1, sense: {} } as Record<string, unknown> | null,
   quotaOk: true,
   rpc: vi.fn(),
   consume: vi.fn(),
@@ -41,7 +42,17 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("@/lib/supabase/service", () => ({
-  createServiceClient: () => ({ rpc: state.rpc }),
+  createServiceClient: () => ({
+    rpc: state.rpc,
+    from: () => {
+      const chain = {
+        select: () => chain,
+        eq: () => chain,
+        maybeSingle: async () => ({ data: state.fillRow, error: null }),
+      };
+      return chain;
+    },
+  }),
 }));
 
 vi.mock("@/lib/ai/dailyQuota", () => ({
@@ -87,6 +98,7 @@ beforeEach(() => {
   state.user = { id: "owner-1" };
   state.existing = null;
   state.existingError = null;
+  state.fillRow = { revoked_at: null, fill_attempts: 1, sense: {} };
   state.rpc.mockReset();
   state.consume.mockReset();
   state.refund.mockReset();
@@ -121,6 +133,9 @@ describe("making a hello", () => {
     for (const body of [
       { ...VALID, pair: ["en", "en"] },
       { ...VALID, known: [{ language: "en", text: "visit https://example.com" }] },
+      { ...VALID, known: [{ language: "en", text: "call 0912 345 678" }] },
+      { ...VALID, known: [{ language: "en", text: "LINE ID: scam" }] },
+      { ...VALID, known: [{ language: "en", text: "x".repeat(41) }] },
       { ...VALID, known: [] },
       { ...VALID, requestKey: "x" },
       { ...VALID, mode: "neon" },
@@ -219,6 +234,23 @@ describe("filling a missing language", () => {
     state.rpc.mockResolvedValue({ data: null, error: null });
     const response = await ask("AbCdEfGhIjKl", { language: "it" });
     expect(response.status).toBe(429);
+    expect(state.complete).not.toHaveBeenCalled();
+  });
+
+  it("says why a claim was refused: tries spent, filled meanwhile, or gone", async () => {
+    state.rpc.mockResolvedValue({ data: null, error: null });
+
+    state.fillRow = { revoked_at: null, fill_attempts: 3, sense: {} };
+    expect((await ask("AbCdEfGhIjKl", { language: "it" })).status).toBe(410);
+
+    state.fillRow = { revoked_at: null, fill_attempts: 2, sense: { it: { text: "biblioteca" } } };
+    const filled = await ask("AbCdEfGhIjKl", { language: "it" });
+    expect(filled.status).toBe(409);
+    expect(await filled.json()).toEqual({ language: "it", side: { text: "biblioteca" } });
+
+    state.fillRow = { revoked_at: "2026-10-19T00:00:00Z", fill_attempts: 0, sense: {} };
+    expect((await ask("AbCdEfGhIjKl", { language: "it" })).status).toBe(404);
+
     expect(state.complete).not.toHaveBeenCalled();
   });
 

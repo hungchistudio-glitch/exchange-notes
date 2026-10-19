@@ -2824,6 +2824,21 @@ export type TranslationDictionary = {
     createLimit: string;
     /** Beside the sharer's account QR code on their hello. */
     accountQr: string;
+    /** Above Create, for a reader with no nickname a hello would show: {id} is their @ID. */
+    nicknamePrompt: string;
+    nicknamePlaceholder: string;
+    nicknameSave: string;
+    nicknameSaving: string;
+    nicknameInvalid: string;
+    nicknameFailed: string;
+    /** The chosen word has nothing a hello may carry (lib/hello/text.ts). */
+    wordNotAllowed: string;
+    /** A visitor's ask for a missing language failed this time. */
+    fillFailed: string;
+    /** ...and its tries are spent. */
+    fillExhausted: string;
+    /** After a hello is made: start the next one. */
+    sendAnother: string;
     scanCaption: string;
     fillOnCreate: string;
     chooseWord: string;

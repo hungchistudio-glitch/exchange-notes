@@ -98,7 +98,8 @@ export async function helloOgImage(lookup: HelloLookup): Promise<ImageResponse> 
 
   const { hello } = lookup;
   const look = LOOKS[hello.yumi.mode];
-  const name = hello.sender.name ?? `@${hello.sender.exchangeId}`;
+  /* Who it is from, by the ID no one else can hold, beside any nickname. */
+  const name = hello.sender.name ? `${hello.sender.name} · @${hello.sender.exchangeId}` : `@${hello.sender.exchangeId}`;
   const sides = hello.pair.map((language) => ({
     language,
     label: getLanguage(language).endonym,
@@ -145,7 +146,9 @@ export async function helloOgImage(lookup: HelloLookup): Promise<ImageResponse> 
           ) : null}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
             <div style={{ display: "flex", color: look.brass, fontSize: 22, fontWeight: 500, letterSpacing: 4 }}>{header}</div>
-            <div style={{ display: "flex", marginTop: 14, color: look.soft, fontSize: 30, fontWeight: 500 }}>{name}</div>
+            <div style={{ display: "flex", marginTop: 14, color: look.soft, fontSize: 28, fontWeight: 500, wordBreak: "break-all" }}>
+              {name}
+            </div>
             {sides.map((side) => (
               <div key={side.language} style={{ display: "flex", flexDirection: "column", marginTop: 30 }}>
                 <div style={{ display: "flex", color: look.brass, fontSize: 22, fontWeight: 500 }}>{side.label}</div>

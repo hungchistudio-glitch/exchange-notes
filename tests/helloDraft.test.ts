@@ -44,7 +44,7 @@ describe("a draft read back", () => {
       { language: "en", text: " library ", partOfSpeech: "noun" },
       { language: "en", text: "again" },
       { language: "de", text: "Bibliothek" },
-      { language: "fr", text: "x".repeat(81) },
+      { language: "fr", text: "x".repeat(201) },
       { language: "zh-TW", text: "圖書館" },
     ]);
     expect(parseHelloDraft(raw)).toEqual([

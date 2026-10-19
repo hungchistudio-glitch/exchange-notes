@@ -7,7 +7,8 @@ import { helloJoinPath, helloPath, isHelloId } from "@/lib/hello/url";
  * hello lives at /a-word-to-invite-you/<id> (lib/hello/url.ts). Permanent,
  * so a link already sent keeps working and a preview fetched from it lands
  * on the new address. Built from the id alone — nothing else in the
- * request reaches the destination, so this cannot be pointed elsewhere.
+ * request, the query included, reaches the destination, so this cannot be
+ * pointed elsewhere.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ rest: string[] }> }) {
   const { rest } = await params;
@@ -16,9 +17,5 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!valid) return NextResponse.redirect(new URL("/", request.url), 308);
 
   const target = new URL(action === "join" ? helloJoinPath(id) : helloPath(id), request.url);
-  if (action === "join") {
-    const intent = request.nextUrl.searchParams.get("intent");
-    if (intent === "meet") target.searchParams.set("intent", "meet");
-  }
   return NextResponse.redirect(target, 308);
 }

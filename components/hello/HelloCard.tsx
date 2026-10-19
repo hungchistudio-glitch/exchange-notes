@@ -52,9 +52,19 @@ type HelloCardProps = {
   retrying?: ReadonlySet<LanguageCode>;
   /** Replaces "not ready yet" where a missing side is expected, as in the editor's preview. */
   missingNote?: string;
+  /** A visitor's ask for a missing language that did not come: this time, or for good. */
+  missingStatus?: Partial<Record<LanguageCode, "failed" | "exhausted">>;
 };
 
-export default function HelloCard({ sense, pair, onPair, onRetryMissing, retrying, missingNote }: HelloCardProps) {
+export default function HelloCard({
+  sense,
+  pair,
+  onPair,
+  onRetryMissing,
+  retrying,
+  missingNote,
+  missingStatus,
+}: HelloCardProps) {
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.hello;
   const speech = useHelloSpeech();
@@ -119,6 +129,7 @@ export default function HelloCard({ sense, pair, onPair, onRetryMissing, retryin
               onRetry={onRetryMissing ? () => onRetryMissing(language) : undefined}
               retrying={retrying?.has(language) ?? false}
               missingNote={missingNote}
+              missingStatus={missingStatus?.[language]}
             />
           );
         })}
@@ -179,6 +190,7 @@ function SideView({
   onRetry,
   retrying,
   missingNote,
+  missingStatus,
 }: {
   language: LanguageCode;
   languageName: string;
@@ -189,6 +201,7 @@ function SideView({
   onRetry?: () => void;
   retrying: boolean;
   missingNote?: string;
+  missingStatus?: "failed" | "exhausted";
 }) {
   const { t } = useTranslation();
   const copy = t.hello;
@@ -199,9 +212,12 @@ function SideView({
       <article className={styles.side} lang={meta.htmlLang} data-missing="">
         <p className={styles.sideLanguage}>{languageName}</p>
         <p className={styles.missing} role="status">
-          {missingNote ?? fill(copy.missing, { language: languageName })}
+          {missingStatus === "exhausted"
+            ? fill(copy.fillExhausted, { language: languageName })
+            : (missingNote ?? fill(copy.missing, { language: languageName }))}
+          {missingStatus === "failed" && !retrying ? ` ${copy.fillFailed}` : null}
         </p>
-        {onRetry ? (
+        {onRetry && missingStatus !== "exhausted" ? (
           <button type="button" className={styles.retry} onClick={onRetry} disabled={retrying}>
             {retrying ? copy.retrying : copy.retry}
           </button>
