@@ -1,0 +1,90 @@
+/*
+  The tour's halo (CoachLight.tsx).
+
+  An LED glow around the key the step asks for, in the key's own shape: a
+  hairline of electric cyan just outside its edge, glowing outward, and
+  brighter along the bottom, as if the light came from beneath the key.
+  The middle is empty — it rings the key and never covers what it says.
+
+  It flickers to life and settles, once every 1.3 s: a quick flare, a
+  second smaller one, a long fade. Under two changes a second, on a small
+  patch of screen — nothing like the three flashes a second WCAG 2.3.1 sets
+  as the limit. Under reduced motion it stays lit and still.
+
+  The same light in both looks: the cyan line and its white inner edge carry
+  it on Standard's cream, the glow on Cosmic's navy.
+*/
+
+.light {
+  position: fixed;
+  left: 0;
+  top: 0;
+  /* Over the tour's card (47) and the dial and scene (45); under the cookie
+     reward card (150) and any sheet. */
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease;
+  will-change: transform;
+}
+
+.light[data-shown="true"] {
+  opacity: 1;
+}
+
+.light[data-glide="true"] {
+  transition:
+    opacity 220ms ease,
+    transform 160ms linear,
+    width 160ms linear,
+    height 160ms linear;
+}
+
+.halo {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid rgb(31 242 200 / 0.95);
+  border-radius: var(--light-radius, 16px);
+  box-shadow:
+    /* A white inner edge: the LED itself, sharp against cream. */
+    inset 0 0 0 1px rgb(248 255 254 / 0.5),
+    /* The glow round the whole shape. */
+    0 0 7px 1px rgb(31 242 200 / 0.75),
+    0 0 18px 4px rgb(31 242 200 / 0.3),
+    /* And more of it underneath: lit from below. */
+    0 7px 16px 0 rgb(31 242 200 / 0.55);
+  animation: flicker 1.3s ease-out infinite;
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.5;
+  }
+
+  9% {
+    opacity: 1;
+  }
+
+  16% {
+    opacity: 0.7;
+  }
+
+  24% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo {
+    animation: none;
+    opacity: 1;
+  }
+
+  .light[data-glide="true"] {
+    transition: opacity 220ms ease;
+  }
+}

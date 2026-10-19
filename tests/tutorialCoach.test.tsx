@@ -255,8 +255,8 @@ describe("chapter three: Yumi's shop", () => {
 
     const { again, container } = coach("/home");
     expect(screen.getByText("Chapter 3 · Yumi’s shop · 1/4")).toBeInTheDocument();
-    /* The card names the step, which is what makes the shop key show itself
-       and breathe (HomeShopKey.module.css) while the card is up. */
+    /* The card names the step, which is what keeps the shop key in view
+       (HomeShopKey.module.css) while the tour's glow rings it. */
     expect(container.querySelector("[data-coach-card]")).toHaveAttribute("data-coach-step", "cookies");
     await act(async () => {
       screen.getByRole("button", { name: "Next" }).click();

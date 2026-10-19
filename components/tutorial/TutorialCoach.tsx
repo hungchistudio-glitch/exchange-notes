@@ -32,16 +32,16 @@ import {
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
 
-import type { CoachTarget } from "./CoachPointer";
+import type { CoachTarget } from "./CoachLight";
 import styles from "./TutorialCoach.module.css";
 
 /*
- * The arrow, fetched when a step first needs it. Home's tab loads this file,
- * and most readers finished the tour long ago, so the needle, its geometry
+ * The glow round the key, fetched when a step first needs it. Home's tab
+ * loads this file, and most readers finished the tour long ago, so the light
  * and its stylesheet stay out of home's static graph
  * (tests/routeImportWeight.test.ts).
  */
-const CoachPointer = lazy(() => import("./CoachPointer"));
+const CoachLight = lazy(() => import("./CoachLight"));
 
 /* =========================================================
    The tour you do — in three chapters, across both looks
@@ -142,9 +142,9 @@ type Step = {
   /** New in this edition: shown to readers who finished the last one. */
   refresh?: boolean;
   /**
-   * What the LED arrow points at (CoachPointer), as selectors in order of
-   * preference: the first with a visible element wins. Absent on steps that
-   * only show.
+   * The key the LED glow rings (CoachLight), as selectors in
+   * order of preference: the first with a visible element wins. Absent on
+   * steps that only show.
    */
   point?: readonly CoachTarget[];
 };
@@ -154,12 +154,7 @@ type Step = {
  * one, and `data-coach-target` where they did not.
  */
 /* Where she stands, not what draws her: hidden once the WebGL scene is live. */
-const YUMI = {
-  selector: "[data-yumi-figure]",
-  anchor: true,
-  /* Beside her: below is her voice line, above is the card. */
-  from: ["left", "right"],
-} as const;
+const YUMI = { selector: "[data-yumi-figure]", anchor: true } as const;
 const POINT = {
   yumi: [YUMI],
   /* The key under the gold mark while the dial is out; her, to open it. */
@@ -169,15 +164,18 @@ const POINT = {
   save: ['[data-coach-target="save-word"]'],
   /* The cookie Home is already nudging, else any cookie. */
   cookie: ['[data-floating-cookie][data-hint="feed"]', "[data-floating-cookie]"],
-  shopKey: ["[data-home-shop-key]"],
+  /* The bag and the switch's track, not their buttons: both buttons are
+     bigger than what they draw, for the finger, and the glow belongs round
+     the shape the reader can see. */
+  shopKey: ["[data-home-shop-key] > svg", "[data-home-shop-key]"],
   balance: ['[data-coach-target="shop-balance"]'],
   item: ['[data-coach-target="shop-item"]'],
   buy: ['[data-coach-target="shop-primary"]'],
-  modeSwitch: ["[data-home-mode-portal]"],
-  /* From above: below the field are its mode keys, which the arrow would hide. */
-  omni: [{ selector: '[data-coach-target="cosmic-omni"]', from: ["above"] }],
+  modeSwitch: ["[data-home-mode-portal] > span", "[data-home-mode-portal]"],
+  omni: ['[data-coach-target="cosmic-omni"]'],
   scanner: ['[data-cosmic-room="scanner"]'],
-  dock: ["[data-app-bottom-navigation]"],
+  /* The dock's pill, not the full-width strip it sits in. */
+  dock: ["[data-app-bottom-navigation] > div", "[data-app-bottom-navigation]"],
 } as const;
 
 const STANDARD: InterfaceMode = "standard";
@@ -384,7 +382,7 @@ export default function TutorialCoach({
 
   const [satisfied, setSatisfied] = useState(false);
 
-  /* The arrow keeps off this, and hides while it is hidden. */
+  /* The light keeps off this, and hides while it is hidden. */
   const cardRef = useRef<HTMLDivElement>(null);
 
   /*
@@ -646,7 +644,7 @@ export default function TutorialCoach({
   }
 
   /*
-   * The arrow, while there is something to press and the reader can press it
+   * The light, while there is something to press and the reader can press it
    * here: not during the "Good." beat, not on the wrong screen or look, and
    * not on a keep step with nothing to keep.
    */
@@ -702,10 +700,10 @@ export default function TutorialCoach({
       </aside>
 
       {/* Beside the card rather than in it: the card's stacking context would
-          keep the arrow under anything a screen layers above it. */}
+          keep the light under anything a screen layers above it. */}
       {pointAt ? (
         <Suspense fallback={null}>
-          <CoachPointer targets={pointAt} avoid={cardRef} />
+          <CoachLight targets={pointAt} avoid={cardRef} />
         </Suspense>
       ) : null}
     </>

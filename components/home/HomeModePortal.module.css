@@ -203,24 +203,11 @@
 :global(body:has([data-omni="typing"], [data-omni="listening"], [data-omni="scanning"])) .portal { visibility: hidden; }
 
 /*
-  The tour's switch step (TutorialCoach, chapter three) points here: a ring
-  breathes out from the slot, the way the feed step's cookie glows. Gone
-  with the card, which steps aside while the crossing plays.
+  The tour's switch step lights this with the tour's own glow
+  (components/tutorial/CoachLight), the one every step uses. It used to
+  breathe a ring of its own here as well, and the two together were a
+  double outline.
 */
-:global(body:has([data-coach-step="modeSwitch"]:not([data-coach-done]))) .track::after {
-  content: "";
-  position: absolute;
-  inset: -6px;
-  border: 1.5px solid var(--focus);
-  border-radius: 999px;
-  opacity: 0;
-  animation: switchHint 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-@keyframes switchHint {
-  0% { opacity: 0.55; scale: 0.92; }
-  70%, 100% { opacity: 0; scale: 1.18; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .track,
@@ -229,10 +216,5 @@
   .thumb::before,
   .lamp {
     transition: none;
-  }
-
-  :global(body:has([data-coach-step="modeSwitch"]:not([data-coach-done]))) .track::after {
-    animation: none;
-    opacity: 0.5;
   }
 }
