@@ -120,6 +120,8 @@ beforeEach(() => {
   });
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
   vi.stubGlobal("visualViewport", Object.assign(new EventTarget(), { height: 844, offsetTop: 0 }));
+  // tests/setup.ts provides one, but unstubAllGlobals below takes it away.
+  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.spyOn(document, "hidden", "get").mockReturnValue(false);
   scene.create.mockClear();
   scene.create.mockImplementation((): Partial<Record<string, unknown>> => ({
@@ -263,10 +265,11 @@ describe("the glide", () => {
     const placed = ringY(view);
 
     // The keyboard rises over ~300ms, reporting a new height every frame.
-    const viewport = window.visualViewport as unknown as { height: number };
+    const viewport = window.visualViewport as unknown as EventTarget & { height: number };
     const seen: number[] = [];
     for (let height = 844; height >= 470; height -= 20) {
       viewport.height = height;
+      viewport.dispatchEvent(new Event("resize"));
       frame();
       seen.push(ringY(view));
     }

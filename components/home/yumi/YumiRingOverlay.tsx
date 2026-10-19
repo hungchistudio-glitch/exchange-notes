@@ -25,6 +25,7 @@ import {
 } from "@/lib/home/homeMoments";
 import { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 import { getCoachStep } from "@/lib/home/tutorialCoach";
+import { onHomeFrame } from "@/lib/home/homeFrame";
 import { setYumiRingState } from "@/lib/home/yumiRing";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 import {
@@ -849,8 +850,30 @@ export default function YumiRingOverlay({
     document.addEventListener("visibilitychange", onHidden);
 
     let handle: YumiSceneHandle | null = parked?.handle ?? null;
-    let raf = 0;
+    let stopFrame: (() => void) | null = null;
     let cancelled = false;
+
+    /*
+     * Measured when they change, not every frame: reading either one from
+     * the frame loop forces a layout (lib/home/homeFrame.ts).
+     *
+     * The canvas fills a fixed, full-viewport layer, so its box moves only
+     * with the viewport. The visible part of that layer is what the visual
+     * viewport reports, and it says so by event — once per frame while a
+     * keyboard animates, which is as often as the loop ever read it.
+     */
+    let layer: DOMRect | null = null;
+    let viewportBottom = Number.POSITIVE_INFINITY;
+    const viewport = window.visualViewport;
+    const readViewport = () => {
+      viewportBottom = viewport ? viewport.offsetTop + viewport.height : Number.POSITIVE_INFINITY;
+    };
+    const layerWatch = new ResizeObserver(() => {
+      layer = canvas.getBoundingClientRect();
+      handle?.resize();
+    });
+    viewport?.addEventListener("resize", readViewport);
+    viewport?.addEventListener("scroll", readViewport);
 
     /* The dock is hidden on this screen on the strength of this ring
        existing, so every way of not existing has to say so. */
@@ -968,15 +991,23 @@ export default function YumiRingOverlay({
            way up reports a new height every frame, and following each one
            made the field drift for the length of the animation. */
         const viewportWatch = { value: Number.NaN, since: 0, settled: Number.NaN };
-        const loop = (now: number) => {
-          if (cancelled || !handle) return;
-          const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 1 / 30) : 0;
-          lastFrame = now;
+        /*
+         * Each frame in two halves (lib/home/homeFrame.ts): everything this
+         * loop measures is read before anything on the home screen writes,
+         * and kept here for the writing half.
+         */
+        let liveVisible = 0;
+        let answerY = 0;
+        let restPosition: { x: number; y: number } | null = null;
+        let offset = Number.NaN;
+
+        const read = (now: number) => {
+          if (cancelled || !handle || !layer) return;
 
           // --- where she should be this frame
-          const rect = canvas.getBoundingClientRect();
+          const rect = layer;
 
-          const liveVisible = visibleBottom(rect.height);
+          liveVisible = Math.min(rect.height, viewportBottom);
           if (liveVisible !== viewportWatch.value) {
             viewportWatch.value = liveVisible;
             viewportWatch.since = now;
@@ -1003,7 +1034,7 @@ export default function YumiRingOverlay({
            * a few pixels at most; with the answer up it is the card's full
            * height, and there is room for that once the keyboard has gone.
            */
-          let answerY = answerAnchorY(
+          answerY = answerAnchorY(
             rect.height,
             keyboardPending
               ? rect.height * KEYBOARD_VISIBLE_SHARE
@@ -1021,24 +1052,24 @@ export default function YumiRingOverlay({
             }
           }
 
-          let restPosition: { x: number; y: number } | null = null;
-          if (openRef.current) {
-            handle.setScreenAnchor(rect.width / 2, rect.height * 0.42, OPEN_RADIUS);
-          } else if (answeringRef.current) {
-            /* Up and smaller, so the answer has the page. */
-            handle.setScreenAnchor(rect.width / 2, answerY, ANSWER_RADIUS);
-          } else {
+          /*
+           * At rest she sits on the 2D figure's box, wherever the page has
+           * put it — its scroll, its roaming, its moods' bounces — so that
+           * box is read every frame. Read here, before anything has been
+           * written this frame, it is the page as it was last laid out.
+           */
+          restPosition = null;
+          if (!openRef.current && !answeringRef.current) {
             const figure = stageRef.current?.querySelector("[data-yumi-figure]");
             const anchor = figure?.getBoundingClientRect();
             if (anchor) {
               restPosition = { x: anchor.left + anchor.width / 2 - rect.left, y: anchor.top + anchor.height / 2 - rect.top };
-              handle.setScreenAnchor(
-                anchor.left + anchor.width / 2 - rect.left,
-                anchor.top + anchor.height / 2 - rect.top,
-                REST_RADIUS,
-              );
             }
           }
+
+          /* The field's place in its column (see the write below). Not
+             needed while the ring is out, which places the column outright. */
+          offset = openRef.current ? Number.NaN : fieldRef.current?.offsetTop ?? 0;
 
           /*
            * --- the occasional reach for a cookie
@@ -1056,34 +1087,50 @@ export default function YumiRingOverlay({
           }
 
           if (!openRef.current && !answeringRef.current && !reduced && now > lungeAt) {
-            const cookies = Array.from(
-              document.querySelectorAll<HTMLElement>("[data-yumi-cookie]"),
-            );
-            /* Only a cookie that is actually on screen and can still be
-               taken. Reaching for one scrolled out of view, or for a
-               disabled tray, is a reach into nothing. */
-            const reachable = cookies.filter(element => {
-              if (element.hasAttribute("disabled")) return false;
-              const box = element.getBoundingClientRect();
-              return box.width > 0 && box.bottom > 0 && box.top < window.innerHeight;
-            });
-
             if (somethingElseIsUp() || stageRef.current?.dataset.cookiesPaused === "true" || document.querySelector("[data-floating-field][data-dragging], [data-floating-field][data-gathering]") || getCoachStep() === FEED_STEP) {
               /* A sheet, a dialog, the app in the background, or the tour
                  asking the reader to do the feeding: not now. */
               lungeAt = now + SETTLE_MS;
-            } else if (reachable.length > 0) {
-              const pick = reachable[Math.floor(Math.random() * reachable.length)];
-              const box = pick.getBoundingClientRect();
-              const started = handle.lungeAt(
-                box.left + box.width / 2,
-                box.top + box.height / 2,
-              );
-              if (started) reachingFor.current = pick;
-              lungeAt = now + nextLungeDelay();
             } else {
+              /* Only a cookie that is actually on screen and can still be
+                 taken. Reaching for one scrolled out of view, or for a
+                 disabled tray, is a reach into nothing. */
+              const height = window.innerHeight;
+              const reachable = Array.from(
+                document.querySelectorAll<HTMLElement>("[data-yumi-cookie]"),
+              ).flatMap(element => {
+                if (element.hasAttribute("disabled")) return [];
+                const box = element.getBoundingClientRect();
+                return box.width > 0 && box.bottom > 0 && box.top < height ? [{ element, box }] : [];
+              });
+              if (reachable.length > 0) {
+                const pick = reachable[Math.floor(Math.random() * reachable.length)];
+                /* The scene measures its canvas for this (it is input, not
+                   a frame), which is why the reach starts in this half. */
+                const started = handle.lungeAt(
+                  pick.box.left + pick.box.width / 2,
+                  pick.box.top + pick.box.height / 2,
+                );
+                if (started) reachingFor.current = pick.element;
+              }
               lungeAt = now + nextLungeDelay();
             }
+          }
+        };
+
+        const write = (now: number) => {
+          if (cancelled || !handle || !layer) return;
+          const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 1 / 30) : 0;
+          lastFrame = now;
+          const rect = layer;
+
+          if (openRef.current) {
+            handle.setScreenAnchor(rect.width / 2, rect.height * 0.42, OPEN_RADIUS);
+          } else if (answeringRef.current) {
+            /* Up and smaller, so the answer has the page. */
+            handle.setScreenAnchor(rect.width / 2, answerY, ANSWER_RADIUS);
+          } else if (restPosition) {
+            handle.setScreenAnchor(restPosition.x, restPosition.y, REST_RADIUS);
           }
 
           // What she bought in the shop, put on before the frame that shows her.
@@ -1135,11 +1182,12 @@ export default function YumiRingOverlay({
              * amount in the same frame, and the glide below takes it from
              * there — one motion, not a jump and then a slide.
              */
-            const offset = fieldRef.current?.offsetTop ?? 0;
-            if (column && !Number.isNaN(fieldOffset) && offset !== fieldOffset) {
-              column.y += fieldOffset - offset;
+            if (!Number.isNaN(offset)) {
+              if (column && !Number.isNaN(fieldOffset) && offset !== fieldOffset) {
+                column.y += fieldOffset - offset;
+              }
+              fieldOffset = offset;
             }
-            fieldOffset = offset;
 
             let ringTransform: string;
             if (openRef.current) {
@@ -1239,10 +1287,12 @@ export default function YumiRingOverlay({
             setYumiRingState("live");
             setLive(true);
           }
-          raf = requestAnimationFrame(loop);
         };
 
-        raf = requestAnimationFrame(loop);
+        layer = canvas.getBoundingClientRect();
+        readViewport();
+        layerWatch.observe(canvas);
+        stopFrame = onHomeFrame({ read, write });
       })
       .catch(() => {
         /* No 3D on this device. The 2D stage underneath is already correct
@@ -1260,7 +1310,10 @@ export default function YumiRingOverlay({
 
     return () => {
       cancelled = true;
-      cancelAnimationFrame(raf);
+      stopFrame?.();
+      layerWatch.disconnect();
+      viewport?.removeEventListener("resize", readViewport);
+      viewport?.removeEventListener("scroll", readViewport);
       window.clearTimeout(giveUp);
       window.removeEventListener("resize", onResize);
       cancelCanvasGesture();
