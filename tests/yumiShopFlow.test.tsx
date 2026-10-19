@@ -51,20 +51,6 @@ function card(name: string) {
 }
 
 describe("the Yumi shop", () => {
-  it("tells the tour when the energy supply is opened from the balance", async () => {
-    const { subscribeToHomeMoments } = await import("@/lib/home/homeMoments");
-    const moments: string[] = [];
-    const stop = subscribeToHomeMoments((moment) => moments.push(moment));
-
-    render(<YumiShop wallet={createPreviewWallet(12)} isCosmic={false} onToggleMode={() => {}} preview />);
-    const balance = await screen.findByRole("button", { name: /Open energy supply/ }, { timeout: 5000 });
-
-    fireEvent.click(balance);
-
-    expect(moments).toContain("shop-wallet-opened");
-    stop();
-  });
-
   it("tries on for free, buys after confirming, and puts the piece on", async () => {
     render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
     // The preview wallet answers after a short pause; a busy machine stretches it.

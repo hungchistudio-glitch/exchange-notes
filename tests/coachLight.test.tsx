@@ -2,13 +2,14 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /* =========================================================
-   The tour's glow round the key
+   The tour's target lock on the key
 
-   Chi, 2026-10-18: an LED glow round the key each step asks for, in the
-   key's shape, flickering (after an arrow and a strip were set aside).
-   These pin its shape (a few pixels out, the key's own corners, an ellipse
-   for Yumi), that it stays dark under the tour's card, which element it
-   lights when a step names several, and when the tour shows it at all.
+   Chi, 2026-10-18: a light round the key each step asks for, in the key's
+   shape, with a tap-here ripple, and "高級科幻科技感" (after an arrow and a
+   strip were set aside). These pin its shape (a few pixels out, the key's
+   own corners, an ellipse for Yumi), that it stays dark under the tour's
+   card, which element it lights when a step names several, and when the
+   tour shows it at all.
    ========================================================= */
 
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
@@ -120,25 +121,36 @@ describe("when the tour shows it", () => {
     setCoachStep(stepOf("library"));
     coach("/vocabulary");
 
-    expect(screen.getByText(/This is your Vocabulary/)).toBeInTheDocument();
+    expect(screen.getByText(/Vocabulary: every word you keep/)).toBeInTheDocument();
     expect(light()).toBeNull();
   });
 
-  it("goes during the beat after the step is done", async () => {
+  it("confirms during the beat after the step is done, then moves on", async () => {
     setCoachStep(stepOf("meet"));
     coach();
     await waitFor(() => expect(light()).not.toBeNull());
+    expect(light()).not.toHaveAttribute("data-done");
 
+    vi.useFakeTimers();
     await act(async () => {
-      announceHomeMoment("ring-opened");
+      announceHomeMoment("dial-turned");
     });
 
+    /* The "Good." beat: it flashes and lets go, rather than vanishing. */
     expect(screen.getByText("Good.")).toBeInTheDocument();
-    expect(light()).toBeNull();
+    expect(light()).toHaveAttribute("data-done", "true");
+
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    vi.useRealTimers();
+
+    /* The next step locks on to its own key, afresh. */
+    expect(light()).not.toHaveAttribute("data-done");
   });
 
   it("is not up on the wrong screen, where the card's own button is the way on", () => {
-    setCoachStep(stepOf("wallet"));
+    setCoachStep(stepOf("tryOn"));
     coach("/home");
 
     expect(screen.getByRole("link", { name: "Open the shop" })).toBeInTheDocument();
@@ -150,18 +162,13 @@ describe("when the tour shows it", () => {
 
     expect(pointing).toEqual([
       "meet",
-      "dial",
       "ask",
       "keep",
       "feed",
       "cookies",
-      "wallet",
       "tryOn",
-      "buy",
       "modeSwitch",
-      "omni",
-      "scanner",
-      "dock",
+      "deck",
     ]);
   });
 });

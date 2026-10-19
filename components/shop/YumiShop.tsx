@@ -398,14 +398,9 @@ export default function YumiShop({
             <button
               type="button"
               className={styles.balance}
-              data-coach-target="shop-balance"
               aria-haspopup="dialog"
               aria-label={`${cookies(state.balance)}. ${copy.energy.open}`}
-              onClick={() => {
-                setSupplyOpen(true);
-                /* The tour's wallet step waits for this (components/tutorial). */
-                announceHomeMoment("shop-wallet-opened");
-              }}
+              onClick={() => setSupplyOpen(true)}
             >
               {landedKey > 0 && <span key={landedKey} className={styles.balancePulse} aria-hidden="true" />}
               <EnergyCookie className={styles.balanceCookie} />
@@ -551,7 +546,6 @@ export default function YumiShop({
             <button
               type="button"
               className={styles.primary}
-              data-coach-target="shop-primary"
               data-done={primary.done ? "true" : "false"}
               disabled={primary.disabled}
               onClick={primary.onClick}

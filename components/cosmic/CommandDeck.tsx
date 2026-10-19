@@ -353,7 +353,6 @@ export default function CommandDeck() {
                 <div className={styles.nodeInner}>
                   <Link
                     href={room.href}
-                    data-cosmic-room={room.key}
                     onPointerDown={() => lockRoom(room.key)}
                     onFocus={() => lockRoom(room.key)}
                     onBlur={() => setLockedRoom(null)}

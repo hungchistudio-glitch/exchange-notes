@@ -5,16 +5,24 @@ import { useEffect, useRef, type RefObject } from "react";
 import styles from "./CoachLight.module.css";
 
 /* =========================================================
-   The tour's light: a glow around the key to press
+   The tour's light: a target lock on the key to press
 
    The tour's card says what to do. On a busy screen that still leaves the
    reader hunting for the key it means, so each step that asks for a press
-   or a drag also names its target, and an LED glow rings it, following its
-   shape — round keys get a round glow, pills a pill, cards a rounded card —
-   brightest along the bottom, as if lit from beneath (Chi, 2026-10-18: "按鍵
-   底部光暈閃躍", "光暈應該環繞按鍵形狀" — after an arrow and a separate
-   strip were tried and set aside). It outlines the key and glows outward;
-   it never covers what the key says.
+   or a drag also names its target, and the key is locked on to, the way a
+   heads-up display marks one (Chi, 2026-10-18: "光暈應該環繞按鍵形狀",
+   "光圈加上「點這裡」漣漪", "高級科幻科技感" — after an arrow and a strip
+   were tried and set aside):
+
+     - four corner brackets close in from outside the key and settle round
+       it — the lock;
+     - an LED ring in the key's own shape, round keys round, pills a pill,
+       cards a rounded card, brighter along the bottom, humming gently;
+     - a ripple that leaves the ring every 1.8 s: tap here;
+     - when the step is done, the ring flashes white and the brackets let
+       go — confirmed.
+
+   It outlines the key and glows outward; it never covers what the key says.
 
    ── Finding and following the target ───────────────────────────────────
 
@@ -40,7 +48,7 @@ import styles from "./CoachLight.module.css";
    the key is under the card.
    ========================================================= */
 
-/** How far outside the key's edge the ring sits. */
+/** How far outside the key's edge the ring sits; the brackets sit beyond it. */
 const PAD = 3;
 /** A key with square corners still gets softened ones. */
 const MIN_RADIUS = 10;
@@ -120,9 +128,11 @@ type CoachLightProps = {
   targets: readonly CoachTarget[];
   /** The tour's card: never covered, and while it is hidden so is this. */
   avoid: RefObject<HTMLElement | null>;
+  /** The step was just done: flash once and let go. */
+  done?: boolean;
 };
 
-export default function CoachLight({ targets, avoid }: CoachLightProps) {
+export default function CoachLight({ targets, avoid, done = false }: CoachLightProps) {
   const ref = useRef<HTMLDivElement>(null);
   const key = JSON.stringify(targets);
 
@@ -132,6 +142,11 @@ export default function CoachLight({ targets, avoid }: CoachLightProps) {
 
     const wanted = JSON.parse(key) as CoachTarget[];
     let placedOnce = false;
+
+    /* A new target: start dark, so the lock plays again on it rather than
+       the old lock gliding across. The read in between restarts the CSS. */
+    element.dataset.shown = "false";
+    void element.offsetWidth;
 
     const hide = () => {
       element.dataset.shown = "false";
@@ -201,9 +216,15 @@ export default function CoachLight({ targets, avoid }: CoachLightProps) {
       className={styles.light}
       data-coach-light=""
       data-shown="false"
+      data-done={done ? "true" : undefined}
       aria-hidden="true"
     >
-      <span className={styles.halo} />
+      <span className={styles.ripple} />
+      <span className={styles.ring} />
+      <span className={styles.corner} data-corner="tl" />
+      <span className={styles.corner} data-corner="tr" />
+      <span className={styles.corner} data-corner="bl" />
+      <span className={styles.corner} data-corner="br" />
     </div>
   );
 }

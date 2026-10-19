@@ -199,6 +199,27 @@
 }
 
 /*
+  "Skip this step": a quiet outlined key beside the waiting dots, for a step
+  the reader cannot do right now — no cookie on Home to feed, a lookup that
+  will not come. Distinct from Skip, which ends the whole tour (Chi,
+  2026-10-18: "這一步應該可以跳過").
+*/
+.skipStep {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 0.75rem;
+  border: 1px solid rgb(0 0 0 / 0.16);
+  border-radius: 999px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(0 0 0 / 0.62);
+  cursor: pointer;
+}
+
+/*
   Three dots, while it waits for the reader to do the thing.
 
   Not a spinner. Nothing is loading — the app is waiting for a person, and a
@@ -280,6 +301,11 @@
 :global(html[data-interface-mode="yumi-cosmic"]) .door {
   background: var(--cosmic-cyan);
   color: var(--cosmic-on-mint);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .skipStep {
+  border-color: var(--cosmic-hairline);
+  color: var(--cosmic-ink);
 }
 
 :global(html[data-interface-mode="yumi-cosmic"]) .skip {

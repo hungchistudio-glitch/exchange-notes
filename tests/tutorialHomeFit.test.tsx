@@ -23,7 +23,6 @@ import { onHomeReturnRequest, onHomeSearchDismiss } from "@/lib/home/homeMoments
 import TutorialCoach, { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 
 const FEED = COACH_STEPS.findIndex(step => step.key === "feed");
-const EARNED = COACH_STEPS.findIndex(step => step.key === "earned");
 const KEEP = COACH_STEPS.findIndex(step => step.key === "keep");
 
 afterEach(() => {
@@ -40,7 +39,7 @@ describe("the feed step", () => {
 
   it("says that a tap on Yumi is the way home from a search (Chi, 2026-10-03)", () => {
     expect(english.tutorial.coach.steps.feed.body).toMatch(/back home — next time .* just tap me/);
-    expect(zhTW.tutorial.coach.steps.feed.body).toMatch(/^我先帶你回首頁了——之後查完字，點我一下就回來。/);
+    expect(zhTW.tutorial.coach.steps.feed.body).toMatch(/^查完字，點我就回首頁。/);
   });
 
   it("puts the search answer away after a beat, so the cookies are within reach", () => {
@@ -78,21 +77,6 @@ describe("the feed step", () => {
     expect(dismissed).not.toHaveBeenCalled();
     stopReturn();
     stopDismiss();
-  });
-
-  it("puts it away from the earned step on, which talks about the new cookie on Home", () => {
-    vi.useFakeTimers();
-    setCoachStep(EARNED);
-    const dismissed = vi.fn();
-    const stop = onHomeSearchDismiss(dismissed);
-
-    render(
-      <TutorialCoach pathname="/home" interfaceMode="standard" onSetMode={vi.fn()} onNavigate={vi.fn()} />,
-    );
-    act(() => vi.advanceTimersByTime(5_000));
-
-    expect(dismissed).toHaveBeenCalled();
-    stop();
   });
 
   it("leaves the search alone on any other step", () => {
