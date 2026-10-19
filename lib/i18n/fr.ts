@@ -517,7 +517,7 @@ const french: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Les cookies d'énergie sont la monnaie de ma boutique. Le sac en haut à droite y mène.",
+            "Les cookies d'énergie sont la monnaie de ma boutique ; garder un mot pour la première fois t'en rapporte un. Touche le sac qui brille en haut à droite pour entrer.",
         },
         tryOn: {
           body:

@@ -515,7 +515,7 @@ const traditionalChinese: TranslationDictionary = {
         },
         cookies: {
           body:
-            "能量餅乾是我商店的錢。點右上角的購物袋進商店。",
+            "能量餅乾是我商店的錢，第一次存下一個字就得到一塊。點右上角發光的購物袋，進來逛逛。",
         },
         tryOn: {
           body:
