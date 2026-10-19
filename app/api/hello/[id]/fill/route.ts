@@ -19,6 +19,10 @@ export const maxDuration = 20;
  * database must first grant a claim — a live hello, still missing that
  * language, at most three tries per hello and a minute apart
  * (claim_yumi_hello_fill). Without the claim, the model is never reached.
+ *
+ * Refused, it says why, so the page can: 409 with the side when someone
+ * else's try already filled it, 410 when the three tries are spent (the
+ * page stops offering one), 429 when it is only too soon.
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -34,7 +38,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const service = createServiceClient();
   const { data: claim } = await service.rpc("claim_yumi_hello_fill", { p_id: id, p_language: language });
-  if (!claim) return NextResponse.json({ error: "Not available" }, { status: 429 });
+  if (!claim) {
+    const { data: row } = await service
+      .from("yumi_hellos")
+      .select("revoked_at, fill_attempts, sense")
+      .eq("id", id)
+      .maybeSingle();
+    if (!row || row.revoked_at) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const filled = cleanSense(row.sense)[language];
+    if (filled) return NextResponse.json({ language, side: filled }, { status: 409 });
+    if ((row.fill_attempts ?? 0) >= 3) return NextResponse.json({ error: "No tries left" }, { status: 410 });
+    return NextResponse.json({ error: "Too soon" }, { status: 429 });
+  }
 
   const sense = cleanSense((claim as { sense?: unknown }).sense);
   const known: HelloSenseKnown[] = (Object.keys(sense) as LanguageCode[]).map((code) => ({

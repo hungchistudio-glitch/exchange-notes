@@ -123,6 +123,14 @@ export async function composeShareImage(input: ShareImageInput): Promise<Blob> {
   ctx.fillStyle = look.brass;
   ctx.font = `500 26px ${mono}`;
   ctx.fillText("STATION 33", 96, 130);
+  /* Who it is from, by the ID no one else can hold, beside any nickname. */
+  if (hello.sender.name) {
+    ctx.fillStyle = look.soft;
+    ctx.textAlign = "right";
+    const handle = wrapText((text) => ctx.measureText(text).width, `@${hello.sender.exchangeId}`, 560, 1)[0];
+    ctx.fillText(handle, 984, 130);
+    ctx.textAlign = "left";
+  }
 
   /* Greeting. */
   ctx.fillStyle = look.ink;

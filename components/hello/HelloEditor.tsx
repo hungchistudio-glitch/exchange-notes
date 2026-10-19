@@ -1,6 +1,7 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import LabScreen from "@/components/pronunciation/lab/LabScreen";
@@ -9,8 +10,9 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useLexiconSearch from "@/hooks/lexicon/useLexiconSearch";
 import type { HelloSenseKnown } from "@/lib/ai/prompts/helloSense";
-import { knownFromLookup } from "@/lib/hello/draft";
+import { clearHelloDraft, knownFromLookup } from "@/lib/hello/draft";
 import { defaultPair, isValidPair } from "@/lib/hello/pairs";
+import { cleanHelloText, cleanSenderName } from "@/lib/hello/text";
 import { captureYumiPoster } from "@/lib/hello/poster";
 import type { HelloPair, HelloSense, HelloSnapshot } from "@/lib/hello/types";
 import { LANGUAGE_CODES, getLanguageName, isLanguageCode, type LanguageCode } from "@/lib/languages";
@@ -23,6 +25,7 @@ import type { VocabularyItem } from "@/lib/types/app";
 import HelloInvitation from "./HelloInvitation";
 import HelloShareSheet from "./HelloShareSheet";
 import { LanguagePicker } from "./HelloCard";
+import HelloNicknamePrompt from "./HelloNicknamePrompt";
 
 /* =========================================================
    Making a hello (/invitations/new)
@@ -112,7 +115,9 @@ export default function HelloEditor({
   const [picked, setPicked] = useState<Slots | null>(null);
   const pair: Slots = picked ?? stored ?? [null, null];
   const [slotA, slotB] = pair;
-  const [me, setMe] = useState<{ name: string | null; exchangeId: string } | null>(null);
+  const [me, setMe] = useState<{ userId: string; name: string | null; exchangeId: string } | null>(null);
+  /* After one hello is made, "send another" starts clear of the word handed over. */
+  const [draftSpent, setDraftSpent] = useState(false);
   const [phase, setPhase] = useState<"editing" | "creating" | "failed" | "limit">("editing");
   const [created, setCreated] = useState<Created | null>(null);
   /* One key per word chosen: pressing create twice makes one hello. */
@@ -130,10 +135,25 @@ export default function HelloEditor({
   }, [items, savedId]);
   const lookupChosen = search.status === "ready" ? fromLookup(search.result?.entry) : null;
   const draftChosen = useMemo<Chosen | null>(
-    () => (draft?.length ? { key: `draft:${draft[0].language}:${draft[0].text}`, label: draft[0].text, known: draft } : null),
-    [draft],
+    () =>
+      draft?.length && !draftSpent
+        ? { key: `draft:${draft[0].language}:${draft[0].text}`, label: draft[0].text, known: draft }
+        : null,
+    [draft, draftSpent],
   );
   const chosen = source === "saved" ? savedChosen : (lookupChosen ?? (search.status === "idle" ? draftChosen : null));
+
+  /*
+   * The sides a hello may carry (lib/hello/text.ts). A saved translation
+   * too long for one, say, is left for the hello to fill in; a word that
+   * is itself a phone number or a contact line leaves nothing, and the
+   * editor says why rather than letting create fail.
+   */
+  const usable = useMemo(
+    () => (chosen ? chosen.known.filter((side) => cleanHelloText(side.text) !== null) : []),
+    [chosen],
+  );
+  const wordRefused = Boolean(chosen) && usable.length === 0;
 
   useEffect(() => {
     requestKey.current = newKey();
@@ -156,7 +176,9 @@ export default function HelloEditor({
           : supabase.from("profiles").select("learning_language, native_language").eq("id", user.id).maybeSingle(),
       ]);
       if (cancelled) return;
-      if (name?.exchange_id) setMe({ name: name.display_name?.trim() || null, exchangeId: name.exchange_id });
+      if (name?.exchange_id) {
+        setMe({ userId: user.id, name: cleanSenderName(name.display_name), exchangeId: name.exchange_id });
+      }
       const row = languages as { learning_language?: unknown; native_language?: unknown } | null;
       setStored((current) => current ?? startingSlots(row?.learning_language, row?.native_language));
     })();
@@ -175,29 +197,29 @@ export default function HelloEditor({
   const validPair = isValidPair(pair) ? (pair as unknown as HelloPair) : null;
 
   const preview: HelloSnapshot | null =
-    chosen && validPair
+    chosen && usable.length && validPair
       ? {
           id: "preview00000",
           version: 1,
           createdAt: new Date(0).toISOString(),
-          sender: me ?? { name: null, exchangeId: "…" },
+          sender: me ? { name: me.name, exchangeId: me.exchangeId } : { name: null, exchangeId: "…" },
           yumi: { outfit, mode: interfaceMode, posterUrl: null, complete: true },
           pair: validPair,
-          source: chosen.known[0].language,
+          source: usable[0].language,
           sense: Object.fromEntries(
-            chosen.known.map((side) => [side.language, { text: side.text, partOfSpeech: side.partOfSpeech ?? undefined }]),
+            usable.map((side) => [side.language, { text: side.text, partOfSpeech: side.partOfSpeech ?? undefined }]),
           ) as HelloSense,
         }
       : null;
 
   const create = async () => {
-    if (!chosen || !validPair || phase === "creating") return;
+    if (!chosen || !usable.length || !validPair || phase === "creating") return;
     setPhase("creating");
     try {
       const response = await fetch("/api/hello", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ requestKey: requestKey.current, mode: interfaceMode, pair: validPair, known: chosen.known }),
+        body: JSON.stringify({ requestKey: requestKey.current, mode: interfaceMode, pair: validPair, known: usable }),
       });
       if (response.status === 429) {
         setPhase("limit");
@@ -220,16 +242,39 @@ export default function HelloEditor({
       }
       setCreated({ hello: { ...hello, yumi: { ...hello.yumi, posterUrl } }, url, test, poster });
       setPhase("editing");
+      clearHelloDraft();
     } catch {
       setPhase("failed");
     }
   };
 
+  /* A fresh editor for the next word, keeping the two languages. */
+  const sendAnother = () => {
+    setCreated(null);
+    setDraftSpent(true);
+    setSavedId(null);
+    setFilter("");
+    search.setQuery("");
+    setSource("saved");
+    setPhase("editing");
+    window.scrollTo({ top: 0 });
+  };
+
   if (created) {
+    const after =
+      "inline-flex min-h-[48px] flex-1 items-center justify-center rounded-full px-4 text-[0.875rem] font-semibold";
     return (
       <LabScreen title={copy.editorTitle} backHref="/invitations" backLabel={copy.manageTitle}>
         <div className="space-y-5 pb-8">
           <HelloShareSheet hello={created.hello} url={created.url} test={created.test} poster={created.poster} />
+          <div className="flex gap-2">
+            <Link href="/invitations" className={`${after} bg-black text-white`}>
+              {copy.done}
+            </Link>
+            <button type="button" onClick={sendAnother} className={`${after} border border-black/[0.08] bg-white`}>
+              {copy.sendAnother}
+            </button>
+          </div>
           <HelloInvitation hello={created.hello} embedded />
         </div>
       </LabScreen>
@@ -333,7 +378,12 @@ export default function HelloEditor({
             <p className="font-cjk rounded-2xl bg-black/[0.04] px-4 py-3 text-[0.9375rem]">
               {chosen.known.map((side) => side.text).join(" · ")}
             </p>
-          ) : (
+          ) : null}
+          {wordRefused ? (
+            <p role="status" className="text-[0.8125rem] leading-5 text-ink-soft">
+              {copy.wordNotAllowed}
+            </p>
+          ) : chosen ? null : (
             <p className="text-[0.8125rem] text-ink-faint">{copy.chooseWord}</p>
           )}
         </section>
@@ -380,10 +430,18 @@ export default function HelloEditor({
           ) : null}
         </section>
 
+        {me && !me.name ? (
+          <HelloNicknamePrompt
+            userId={me.userId}
+            exchangeId={me.exchangeId}
+            onSaved={(name) => setMe((current) => (current ? { ...current, name } : current))}
+          />
+        ) : null}
+
         <button
           type="button"
           onClick={() => void create()}
-          disabled={!chosen || !validPair || phase === "creating"}
+          disabled={!chosen || wordRefused || !validPair || phase === "creating"}
           className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-black text-[0.9375rem] font-semibold text-white disabled:opacity-40"
         >
           {phase === "creating" ? <LoaderCircle size={18} className="animate-spin" aria-hidden="true" /> : null}

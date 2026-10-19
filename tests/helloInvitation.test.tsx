@@ -132,6 +132,22 @@ describe("a side not made yet", () => {
     expect(within(italian).queryByText("estrella")).toBeNull();
     expect(within(italian).getByRole("button", { name: "Try again" })).toBeTruthy();
   });
+
+  it("says when asking for it did not work, and keeps the button", () => {
+    render(<HelloInvitation hello={FIXTURE_STAR_COSMIC} onRetryMissing={() => {}} missingStatus={{ it: "failed" }} />);
+    fireEvent.change(selects()[1], { target: { value: "it" } });
+    const italian = sides()[1];
+    expect(within(italian).getByText(/try again in a minute/)).toBeTruthy();
+    expect(within(italian).getByRole("button", { name: "Try again" })).toBeTruthy();
+  });
+
+  it("stops offering once its tries are spent", () => {
+    render(<HelloInvitation hello={FIXTURE_STAR_COSMIC} onRetryMissing={() => {}} missingStatus={{ it: "exhausted" }} />);
+    fireEvent.change(selects()[1], { target: { value: "it" } });
+    const italian = sides()[1];
+    expect(within(italian).getByText("The Italian side can’t be added right now.")).toBeTruthy();
+    expect(within(italian).queryByRole("button")).toBeNull();
+  });
 });
 
 describe("the sharer's account code", () => {
@@ -140,7 +156,18 @@ describe("the sharer's account code", () => {
     const code = screen.getByTestId("account-qr");
     expect(code.getAttribute("data-value")).toMatch(/\/invite\/fixture_reader$/);
     expect(screen.getByText("Scan to add Fixture as a friend")).toBeTruthy();
-    expect(screen.getByText("@fixture_reader")).toBeTruthy();
+  });
+
+  it("shows the sender's ID beside a nickname, and lets a long one wrap", () => {
+    render(<HelloInvitation hello={FIXTURE_LIBRARY} />);
+    /* Under the greeting and beside the account code. */
+    expect(screen.getAllByText("@fixture_reader")).toHaveLength(2);
+  });
+
+  it("does not repeat the ID when it already is the name", () => {
+    render(<HelloInvitation hello={FIXTURE_STAR_COSMIC} />);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toContain("@fixture_cosmic");
+    expect(screen.queryAllByText("@fixture_cosmic")).toHaveLength(0);
   });
 
   it("is left out when there is no Exchange ID to point at", () => {
@@ -151,9 +178,9 @@ describe("the sharer's account code", () => {
 
 describe("what a visitor can do", () => {
   it("as a guest: make their own Yumi or meet the sender, both through sign-in", () => {
-    render(<HelloActions viewer={{ kind: "guest", startHref: "/hello/x/join", meetHref: "/hello/x/join?intent=meet" }} name="Chi" />);
-    expect(screen.getByRole("link", { name: "Make your own Yumi" }).getAttribute("href")).toBe("/hello/x/join");
-    expect(screen.getByRole("link", { name: "Meet Chi" }).getAttribute("href")).toBe("/hello/x/join?intent=meet");
+    render(<HelloActions viewer={{ kind: "guest", startHref: "/login", meetHref: "/a-word-to-invite-you/x/join" }} name="Chi" />);
+    expect(screen.getByRole("link", { name: "Make your own Yumi" }).getAttribute("href")).toBe("/login");
+    expect(screen.getByRole("link", { name: "Meet Chi" }).getAttribute("href")).toBe("/a-word-to-invite-you/x/join");
     expect(screen.queryByRole("button")).toBeNull();
   });
 

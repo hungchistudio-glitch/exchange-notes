@@ -20,6 +20,7 @@ import { transcribe } from "@/lib/pronunciation/ipaSource";
 import { cleanOutfit, sameOutfit, type YumiOutfit } from "@/lib/shop/catalog";
 
 import { isValidPair } from "./pairs";
+import { cleanHelloText, cleanSenderName, HELLO_TEXT_MAX } from "./text";
 import type { HelloLookup, HelloSense, HelloSide, HelloSnapshot } from "./types";
 import { isHelloId } from "./url";
 
@@ -33,7 +34,8 @@ import { isHelloId } from "./url";
 
    Cleaning is strict because whatever is stored here is shown to anyone
    with the link under the sharer's name: a side is a word or a short
-   gloss, never a sentence with a link or an address in it.
+   gloss, never a link, an address, a phone number or a way to be
+   contacted somewhere else (lib/hello/text.ts).
    ========================================================= */
 
 export const HELLO_POSTER_BUCKET = "yumi-hellos";
@@ -43,17 +45,10 @@ export function newHelloId(): string {
   return randomBytes(9).toString("base64url");
 }
 
-const MAX_TEXT = 80;
 const MAX_PHONETIC = 120;
-/* A link, a "www." or an email address: what turns a word card into a
-   message from a stranger. */
-const UNSAFE = /(https?:\/\/|www\.|[^\s@]+@[^\s@]+\.[a-z]{2,})/i;
 
-export function cleanText(value: unknown, max = MAX_TEXT): string | null {
-  if (typeof value !== "string") return null;
-  const text = value.normalize("NFC").replace(/\s+/g, " ").trim();
-  if (!text || text.length > max || UNSAFE.test(text)) return null;
-  return text;
+export function cleanText(value: unknown, max = HELLO_TEXT_MAX): string | null {
+  return cleanHelloText(value, max);
 }
 
 function cleanPhonetic(value: unknown): HelloSide["phonetic"] | undefined {
@@ -135,7 +130,7 @@ export function lookupFromRpc(value: unknown): HelloLookup {
     version: 1,
     createdAt: typeof hello.createdAt === "string" ? hello.createdAt : new Date(0).toISOString(),
     sender: {
-      name: typeof sender.name === "string" && sender.name.trim() ? sender.name.trim() : null,
+      name: cleanSenderName(sender.name),
       exchangeId,
     },
     yumi: {

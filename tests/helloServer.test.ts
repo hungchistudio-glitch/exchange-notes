@@ -30,7 +30,9 @@ describe("cleaning a side's text", () => {
     expect(cleanText("www.example.com")).toBeNull();
     expect(cleanText("write me at someone@example.com")).toBeNull();
     expect(cleanText("   ")).toBeNull();
-    expect(cleanText("x".repeat(81))).toBeNull();
+    expect(cleanText("x".repeat(41))).toBeNull();
+    expect(cleanText("call 0912345678")).toBeNull();
+    expect(cleanText("LINE ID: abc")).toBeNull();
     expect(cleanText(42)).toBeNull();
   });
 
@@ -88,6 +90,16 @@ describe("reading a hello back", () => {
     expect(lookup.hello.yumi).toMatchObject({ mode: "yumi-cosmic", complete: true, outfit: { material: "jade" } });
     expect(lookup.hello.yumi.posterUrl).toContain("/yumi-hellos/AbCdEfGhIjKl/");
     expect(Object.keys(lookup.hello)).not.toContain("owner");
+  });
+
+  it("shows a nickname only when it follows the rules, else names the sender by ID alone", () => {
+    const named = (name: unknown) => {
+      const lookup = lookupFromRpc({ ...ROW, hello: { ...ROW.hello, sender: { name, exchangeId: "chi" } } });
+      return lookup.status === "active" ? lookup.hello.sender : null;
+    };
+    expect(named("Exchange Notes Support 0800123456")).toEqual({ name: null, exchangeId: "chi" });
+    expect(named("visit www.example.com")).toEqual({ name: null, exchangeId: "chi" });
+    expect(named("A".repeat(30))?.name).toBe(`${"A".repeat(24)}…`);
   });
 
   it("says a hello is off, and nothing else about it", () => {

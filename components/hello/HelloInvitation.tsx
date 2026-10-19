@@ -39,6 +39,8 @@ type HelloInvitationProps = {
   retrying?: ReadonlySet<LanguageCode>;
   /** What a side not made yet says, where that is expected (the editor's preview). */
   missingNote?: string;
+  /** A visitor's ask for a missing language that did not come: this time, or for good. */
+  missingStatus?: Partial<Record<LanguageCode, "failed" | "exhausted">>;
   /** Inside another screen — the editor's preview — rather than a page. */
   embedded?: boolean;
 };
@@ -56,6 +58,7 @@ export default function HelloInvitation({
   onRetryMissing,
   retrying,
   missingNote,
+  missingStatus,
   embedded = false,
 }: HelloInvitationProps) {
   const { t } = useTranslation();
@@ -78,6 +81,8 @@ export default function HelloInvitation({
             <h1 id={`hello-${hello.id}`} className={styles.greetingLine}>
               {fill(copy.greeting, { name })}
             </h1>
+            {/* Who it is from, by the ID no one else can hold, beside any nickname (lib/hello/text.ts). */}
+            {hello.sender.name ? <p className={styles.handle}>@{hello.sender.exchangeId}</p> : null}
             <p className={styles.giftLine}>{copy.gift}</p>
           </div>
 
@@ -98,6 +103,7 @@ export default function HelloInvitation({
               onRetryMissing={onRetryMissing}
               retrying={retrying}
               missingNote={missingNote}
+              missingStatus={missingStatus}
             />
           </div>
 
@@ -115,16 +121,23 @@ export default function HelloInvitation({
 }
 
 /** An invitation that cannot be shown: turned off, or not there. */
-export function HelloGone({ status, action }: { status: "revoked" | "missing"; action: ReactNode }) {
+export function HelloGone({
+  status,
+  action,
+}: {
+  /** "checking" while the 404 page asks which of the two it is. */
+  status: "revoked" | "missing" | "checking";
+  action: ReactNode;
+}) {
   const { t } = useTranslation();
   const copy = t.hello;
   return (
     <main className={styles.look} data-look="standard">
       <div className={styles.pass}>
-        <section className={`${styles.sheet} ${styles.gone}`}>
+        <section className={`${styles.sheet} ${styles.gone}`} aria-busy={status === "checking" || undefined}>
           <span className={styles.mark}>Station 33</span>
-          <h1>{status === "revoked" ? copy.revokedTitle : copy.missingTitle}</h1>
-          <p>{status === "revoked" ? copy.revokedBody : copy.missingBody}</p>
+          <h1>{status === "revoked" ? copy.revokedTitle : status === "missing" ? copy.missingTitle : copy.loading}</h1>
+          {status === "checking" ? null : <p>{status === "revoked" ? copy.revokedBody : copy.missingBody}</p>}
           {action}
         </section>
       </div>

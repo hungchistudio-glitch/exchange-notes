@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 
 import HelloPage from "@/components/hello/HelloPage";
 import { getServerInterfaceLanguage } from "@/lib/preferences/serverPreferences";
@@ -14,7 +15,8 @@ import { fill } from "@/lib/i18n/format";
  * Outside the protected layout on purpose: a visitor reads it, hears it and
  * switches its languages before being asked for anything. Rendered on every
  * request, so a hello turned off stops showing at once, and never indexed:
- * "anyone with the link" is not "anyone searching".
+ * "anyone with the link" is not "anyone searching". One that is off or was
+ * never there answers 404 (./not-found.tsx says which).
  */
 export const dynamic = "force-dynamic";
 
@@ -25,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const robots = { index: false, follow: false };
 
   if (lookup.status !== "active") {
-    return { title: t.hello.missingTitle, robots };
+    return { title: lookup.status === "revoked" ? t.hello.revokedTitle : t.hello.missingTitle, robots };
   }
 
   const { hello } = lookup;
@@ -46,6 +48,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function HelloRoute({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [lookup, headerList] = await Promise.all([loadHello(id), headers()]);
+  /* Off or never there: a real 404, drawn by ./not-found.tsx. */
+  if (lookup.status !== "active") notFound();
   const host = headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "";
   const protocol = headerList.get("x-forwarded-proto") ?? "https";
   const test = !isLiveOrigin(`${protocol}://${host}`);

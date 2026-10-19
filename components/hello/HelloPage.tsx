@@ -115,25 +115,40 @@ function ActiveHello({ hello, test }: { hello: Extract<HelloLookup, { status: "a
     }
   }, [viewer]);
 
+  /* A language a visitor asked for that did not come: this time, or for good. */
+  const [missingStatus, setMissingStatus] = useState<Partial<Record<LanguageCode, "failed" | "exhausted">>>({});
+
   const retryMissing = useCallback(
     async (language: LanguageCode) => {
       setRetrying(new Set([language]));
+      let outcome: "filled" | "failed" | "exhausted" = "failed";
       try {
         const response = await fetch(`/api/hello/${encodeURIComponent(hello.id)}/fill`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ language }),
         });
-        if (response.ok) {
+        if (response.ok || response.status === 409) {
           const { side } = (await response.json()) as { side?: HelloSide };
-          /* Only into the language asked for, and only if it is still the
-             one missing: a late answer cannot overwrite anything. */
-          if (side?.text) setSense((current) => (current[language] ? current : { ...current, [language]: side }));
+          if (side?.text) {
+            outcome = "filled";
+            /* Only into the language asked for, and only if it is still the
+               one missing: a late answer cannot overwrite anything. */
+            setSense((current) => (current[language] ? current : { ...current, [language]: side }));
+          }
+        } else if (response.status === 410) {
+          outcome = "exhausted";
         }
       } catch {
         /* Still missing; the button stays. */
       } finally {
         setRetrying(new Set());
+        setMissingStatus((current) => {
+          const next = { ...current };
+          if (outcome === "filled") delete next[language];
+          else next[language] = outcome;
+          return next;
+        });
       }
     },
     [hello.id],
@@ -141,7 +156,10 @@ function ActiveHello({ hello, test }: { hello: Extract<HelloLookup, { status: "a
 
   const joinHref = helloJoinPath(hello.id);
   const actionsFor = (resolved: Resolved): HelloViewer => {
-    if (resolved.kind === "guest") return { kind: "guest", startHref: joinHref, meetHref: `${joinHref}?intent=meet` };
+    /* Making their own Yumi is the app's own way in — sign-in, then Home,
+       where a new reader is set up — not a trip back to this page. Meeting
+       the sender returns here, where the friend button is theirs to press. */
+    if (resolved.kind === "guest") return { kind: "guest", startHref: "/login", meetHref: joinHref };
     if (resolved.kind === "own") return { kind: "own", manageHref: "/invitations" };
     return {
       kind: "member",
@@ -159,6 +177,7 @@ function ActiveHello({ hello, test }: { hello: Extract<HelloLookup, { status: "a
       actions={viewer ? <HelloActions viewer={actionsFor(viewer)} name={name} /> : null}
       onRetryMissing={retryMissing}
       retrying={retrying}
+      missingStatus={missingStatus}
     />
   );
 }

@@ -5,8 +5,8 @@ import { helloPath, isHelloId } from "@/lib/hello/url";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * "Make your own Yumi" and "Meet …" on a hello, for a visitor not yet
- * signed in.
+ * "Meet …" on a hello, for a visitor not yet signed in. ("Make your own
+ * Yumi" goes straight to /login and on to Home instead.)
  *
  * Parks the hello's id for the trip through sign-in, then sends them to
  * /login; lib/auth/afterSignIn.ts brings them back to the hello, signed in,

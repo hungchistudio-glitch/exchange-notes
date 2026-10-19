@@ -41,6 +41,15 @@ export function saveHelloDraft(known: HelloSenseKnown[]): void {
   }
 }
 
+/** Once a hello is made from it, the handed-over word is spent. */
+export function clearHelloDraft(): void {
+  try {
+    window.sessionStorage.removeItem(KEY);
+  } catch {
+    /* Nothing to clear. */
+  }
+}
+
 export function readHelloDraftRaw(): string | null {
   try {
     return window.sessionStorage.getItem(KEY);
@@ -61,7 +70,9 @@ export function parseHelloDraft(raw: string | null): HelloSenseKnown[] | null {
       const text = (side as { text?: unknown })?.text;
       const partOfSpeech = (side as { partOfSpeech?: unknown })?.partOfSpeech;
       if (!LANGUAGE_CODES.includes(language as LanguageCode) || seen.has(language as LanguageCode)) continue;
-      if (typeof text !== "string" || !text.trim() || text.length > 80) continue;
+      /* A sanity cap only: what a hello may say is the editor's to check
+         (lib/hello/text.ts), which keeps that file off Home's first load. */
+      if (typeof text !== "string" || !text.trim() || text.length > 200) continue;
       seen.add(language as LanguageCode);
       known.push({
         language: language as LanguageCode,
