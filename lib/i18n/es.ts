@@ -2911,6 +2911,7 @@ const spanish: TranslationDictionary = {
     testShort: "Prueba",
     settingsDescription: "Envía una palabra con Yumi y gestiona los enlaces que compartiste.",
     createLimit: "Llegaste al límite de hoy. Inténtalo mañana.",
+    accountQr: "Escanea para añadir a {name} a tus amigos",
     scanCaption: "Escanea para visitar",
     fillOnCreate: "Los demás idiomas se completan al crearla.",
     chooseWord: "Primero elige una palabra.",

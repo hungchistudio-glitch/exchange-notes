@@ -2717,6 +2717,7 @@ const french: TranslationDictionary = {
     testShort: "Test",
     settingsDescription: "Envoie un mot avec Yumi et gère les liens que tu as partagés.",
     createLimit: "Tu as atteint la limite du jour. Réessaie demain.",
+    accountQr: "Scanne pour ajouter {name} à tes amis",
     scanCaption: "Scanne pour visiter",
     fillOnCreate: "Les autres langues sont complétées à la création.",
     chooseWord: "Choisis d’abord un mot.",

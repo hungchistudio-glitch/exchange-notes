@@ -8,6 +8,7 @@ import { initialViewerPair, viewerPairReducer } from "@/lib/hello/pairs";
 import type { HelloSnapshot } from "@/lib/hello/types";
 import type { LanguageCode } from "@/lib/languages";
 
+import HelloAccountQr from "./HelloAccountQr";
 import HelloCard from "./HelloCard";
 import HelloYumi from "./HelloYumi";
 import styles from "./Hello.module.css";
@@ -106,6 +107,8 @@ export default function HelloInvitation({
           {test ? <p className={styles.testBadge}>{copy.testLink}</p> : null}
 
           {actions ? <div className={styles.actions}>{actions}</div> : null}
+
+          <HelloAccountQr exchangeId={hello.sender.exchangeId} name={name} />
 
           <p className={styles.footnote}>{copy.privacyNote}</p>
         </article>

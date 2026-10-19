@@ -24,6 +24,11 @@ vi.mock("@/lib/speech", async (original) => ({
 /* Yumi herself is WebGL; the page around her is what is under test. */
 vi.mock("@/components/hello/HelloYumi", () => ({ default: () => null }));
 
+/* The account code's link, readable: what it encodes is the point. */
+vi.mock("qrcode.react", () => ({
+  QRCodeSVG: ({ value }: { value: string }) => <svg data-testid="account-qr" data-value={value} />,
+}));
+
 const { default: HelloInvitation } = await import("@/components/hello/HelloInvitation");
 const { default: HelloActions } = await import("@/components/hello/HelloActions");
 const { FIXTURE_LIBRARY, FIXTURE_STAR_COSMIC } = await import("@/lib/hello/fixtures");
@@ -126,6 +131,21 @@ describe("a side not made yet", () => {
     expect(within(italian).queryByText("étoile")).toBeNull();
     expect(within(italian).queryByText("estrella")).toBeNull();
     expect(within(italian).getByRole("button", { name: "Try again" })).toBeTruthy();
+  });
+});
+
+describe("the sharer's account code", () => {
+  it("is their friend code, by their Exchange ID, and sends nothing by itself", () => {
+    render(<HelloInvitation hello={FIXTURE_LIBRARY} />);
+    const code = screen.getByTestId("account-qr");
+    expect(code.getAttribute("data-value")).toMatch(/\/invite\/fixture_reader$/);
+    expect(screen.getByText("Scan to add Fixture as a friend")).toBeTruthy();
+    expect(screen.getByText("@fixture_reader")).toBeTruthy();
+  });
+
+  it("is left out when there is no Exchange ID to point at", () => {
+    render(<HelloInvitation hello={{ ...FIXTURE_LIBRARY, sender: { name: null, exchangeId: "…" } }} />);
+    expect(screen.queryByTestId("account-qr")).toBeNull();
   });
 });
 

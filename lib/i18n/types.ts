@@ -2821,6 +2821,8 @@ export type TranslationDictionary = {
     settingsDescription: string;
     /** Making a hello refused for today's limit. */
     createLimit: string;
+    /** Beside the sharer's account QR code on their hello. */
+    accountQr: string;
     scanCaption: string;
     fillOnCreate: string;
     chooseWord: string;

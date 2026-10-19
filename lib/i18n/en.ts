@@ -2915,6 +2915,7 @@ const english: TranslationDictionary = {
     testShort: "Test",
     settingsDescription: "Send a word with Yumi, and manage the links you’ve shared.",
     createLimit: "You’ve reached today’s limit. Try again tomorrow.",
+    accountQr: "Scan to add {name} as a friend",
     scanCaption: "Scan to visit",
     fillOnCreate: "The other languages are filled in when you create it.",
     chooseWord: "Choose a word first.",

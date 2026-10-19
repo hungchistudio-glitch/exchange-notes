@@ -77,9 +77,14 @@ as $$
         'id', hello.id,
         'version', hello.version,
         'createdAt', hello.created_at,
+        -- The name as it was sent; the Exchange ID as it is now. An Exchange
+        -- ID can be changed and then taken by someone else, and the page's
+        -- friend button and account QR must reach the sharer, not whoever
+        -- holds their old ID. No profile, no ID: the page shows the hello as
+        -- missing rather than pointing anywhere.
         'sender', pg_catalog.jsonb_build_object(
           'name', hello.sender_name,
-          'exchangeId', hello.sender_exchange_id
+          'exchangeId', owner.exchange_id
         ),
         'yumi', pg_catalog.jsonb_build_object(
           'outfit', hello.outfit,
@@ -93,7 +98,8 @@ as $$
     )
   end
   from (select 1) as one
-  left join public.yumi_hellos as hello on hello.id = p_id;
+  left join public.yumi_hellos as hello on hello.id = p_id
+  left join public.profiles as owner on owner.id = hello.owner_id;
 $$;
 
 revoke all on function public.get_yumi_hello(text) from public;
