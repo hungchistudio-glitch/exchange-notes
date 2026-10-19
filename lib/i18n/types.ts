@@ -520,8 +520,10 @@ export type TranslationDictionary = {
          * Saving, and the two things a new word earns: a cookie on Home to
          * feed Yumi, and an energy cookie for the shop.
          */
-        keep: { body: string };
-        feed: { body: string };
+        /** tag: the few words on the light over the search sheet's Save. */
+        keep: { body: string; tag: string };
+        /** tag: the few words on the light over a cookie card's "Feed Yumi". */
+        feed: { body: string; tag: string };
         /*
          * The page steps. `action` labels the door that takes the reader
          * there when they are not on that page yet; the body is what is said

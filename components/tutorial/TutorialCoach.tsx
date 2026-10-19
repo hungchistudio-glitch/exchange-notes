@@ -13,6 +13,7 @@ import {
 } from "react";
 
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { InterfaceMode } from "@/lib/appPreferences";
 import {
@@ -94,6 +95,18 @@ const CoachLight = lazy(() => import("./CoachLight"));
    only those, labelled as new, and only in Standard: the refresh track keeps
    quiet in Cosmic rather than asking someone to change looks for it.
 
+   ── Dialogs over the screen ────────────────────────────────────────────
+
+   Some steps are done in a dialog that stands above the card: the dial's
+   Search key opens the search as a full-screen sheet, and a tapped cookie
+   opens its card. So a step's targets name the keys in those dialogs too,
+   and while one is open the light lights the key inside it, from over it,
+   with a short tag saying what the card would (Chi, 2026-10-18: "這裡教學
+   應該要亮 save to vocabulary 燈", "feed yumi 應該要亮底光"; CoachLight.tsx).
+   A word saved in the sheet closes it after the "Good." beat, so feeding
+   follows on Home. A reader who closes it without saving finds Home's
+   search lit.
+
    ── What it leaves alone ───────────────────────────────────────────────
 
    Anything that is not one of the main screens a step names, and the mode-switch
@@ -144,18 +157,35 @@ type Step = {
 
 /*
  * The targets, by the attributes the screens already carry where they had
- * one, and `data-coach-target` where they did not.
+ * one, and `data-coach-target` where they did not. While a dialog is open
+ * only the targets inside it count (CoachLight.tsx), so a list can name a
+ * key on the screen and the same key's place in the dialog over it.
  */
 /* Where she stands, not what draws her: hidden once the WebGL scene is live. */
 const YUMI = { selector: "[data-yumi-figure]", anchor: true } as const;
 const POINT = {
   /* The key under the gold mark while the dial is out; her, to open it. */
   dial: ['[data-dial-item][data-selected="true"]', YUMI],
-  /* The dial's Search key while it is out; the search field when it is not. */
-  search: ['[data-dial-key="search"]', '[data-coach-target="search-field"]'],
-  save: ['[data-coach-target="save-word"]'],
-  /* The cookie Home is already nudging, else any cookie. */
-  cookie: ['[data-floating-cookie][data-hint="feed"]', "[data-floating-cookie]"],
+  /* The dial's Search key while it is out; the search field when it is not;
+     the search sheet's field once it is open. */
+  search: [
+    '[data-dial-key="search"]',
+    '[data-coach-target="search-field"]',
+    '[data-coach-target="sheet-search"]',
+  ],
+  /* Save on the answer; with no answer up, the search, to get one. */
+  save: [
+    '[data-coach-target="save-word"]',
+    '[data-coach-target="search-field"]',
+    '[data-coach-target="sheet-search"]',
+  ],
+  /* The cookie Home is already nudging, else any cookie; "Feed Yumi" once a
+     cookie's card is open over them. */
+  cookie: [
+    '[data-floating-cookie][data-hint="feed"]',
+    "[data-floating-cookie]",
+    '[data-coach-target="feed-yumi"]',
+  ],
   /* The bag and the switch's track, not their buttons: both buttons are
      bigger than what they draw, for the finger, and the light belongs round
      the shape the reader can see. */
@@ -320,16 +350,22 @@ export type TutorialCoachProps = {
   interfaceMode: InterfaceMode;
   /** The switch animation is running; the card waits it out. */
   switching?: boolean;
+  /** The search sheet is open, over the card. */
+  searchOpen?: boolean;
   onSetMode: (mode: InterfaceMode) => void;
   onNavigate: (href: string) => void;
+  /** Puts the search sheet away. */
+  onCloseSearch?: () => void;
 };
 
 export default function TutorialCoach({
   pathname,
   interfaceMode,
   switching = false,
+  searchOpen = false,
   onSetMode,
   onNavigate,
+  onCloseSearch,
 }: TutorialCoachProps) {
   const { t } = useTranslation();
   const copy = t.tutorial.coach;
@@ -450,12 +486,22 @@ export default function TutorialCoach({
   /* Derived rather than stored: the switch is a fact about the props. */
   const done = satisfied || switched;
 
-  /* The beat between doing it and being asked for the next thing. */
+  /*
+   * The beat between doing it and being asked for the next thing.
+   *
+   * A word kept in the search sheet puts the sheet away at the end of it:
+   * the next step is feeding, on Home, and the sheet covers Home.
+   */
+  const closeSheet = done && current?.key === "keep" && searchOpen;
+
   useEffect(() => {
     if (!done) return;
-    const timer = window.setTimeout(advance, DONE_BEAT_MS);
+    const timer = window.setTimeout(() => {
+      if (closeSheet) onCloseSearch?.();
+      advance();
+    }, DONE_BEAT_MS);
     return () => window.clearTimeout(timer);
-  }, [advance, done]);
+  }, [advance, closeSheet, done, onCloseSearch]);
 
   /*
    * Straight to the deck after the switch. The reader has just done the one
@@ -638,9 +684,13 @@ export default function TutorialCoach({
    * here: not on the wrong screen or look, and not on a keep step with
    * nothing to keep. It stays through the "Good." beat, to flash its
    * confirmation and let go.
+   *
+   * Its tag, for when a dialog hides the card, says the step's gist, then
+   * "Good." on the beat.
    */
   const pointAt =
     current.point && onRoute && !wrongMode && !keepBlocked ? current.point : null;
+  const tag = done ? copy.done : "tag" in stepCopy ? stepCopy.tag : undefined;
 
   return (
     <>
@@ -692,7 +742,7 @@ export default function TutorialCoach({
           keep the light under anything a screen layers above it. */}
       {pointAt ? (
         <Suspense fallback={null}>
-          <CoachLight targets={pointAt} avoid={cardRef} done={done} />
+          <CoachLight targets={pointAt} avoid={cardRef} done={done} tag={tag} />
         </Suspense>
       ) : null}
     </>
@@ -709,6 +759,7 @@ export function AppTutorialCoach() {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const { interfaceMode, setInterfaceMode, modeTransition } = useInterfaceMode();
+  const { open: searchOpen, closeSearch } = useLexiconSearchSheet();
 
   const navigate = useCallback((href: string) => router.push(href), [router]);
 
@@ -725,8 +776,10 @@ export function AppTutorialCoach() {
       pathname={pathname}
       interfaceMode={interfaceMode}
       switching={modeTransition !== null}
+      searchOpen={searchOpen}
       onSetMode={setMode}
       onNavigate={navigate}
+      onCloseSearch={closeSearch}
     />
   );
 }

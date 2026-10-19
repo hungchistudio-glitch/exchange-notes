@@ -9,7 +9,7 @@ import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
 import HomeModePortal from "./HomeModePortal";
 import HomeShopKey from "./HomeShopKey";
 import { InterfaceModeProvider, useInterfaceMode } from "@/contexts/InterfaceModeContext";
-import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
+import { LexiconSearchProvider, useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 
 import FloatingCookieField from "./yumi/FloatingCookieField";
@@ -42,11 +42,14 @@ function StandardPreview() {
   const stageRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState("");
   const [fed, setFed] = useState<string[]>([]);
+  /* Search opens the real sheet, as on Home, so the tour's steps in it can
+     be reviewed; the other keys only say what was chosen. */
+  const { openSearch } = useLexiconSearchSheet();
   const cookies = useMemo(() => buildAvailableCookies(reviewWords, fed), [fed]);
   return <>
         <div ref={stageRef} className={`${homeStyles.surface} ${homeStyles.centre}`} style={{ position: "relative", minHeight: "100svh" }}>
           <YumiRingOverlay stageRef={stageRef}
-            onChooseDestination={destination => setSelected(destination.label)}
+            onChooseDestination={destination => destination.action === "search" ? openSearch() : setSelected(destination.label)}
             meta={{ greeting: "Good afternoon", place: "New York", date: "Thu, October 1", time: "4:05 PM" }}
             notices={{ unread: 0, friendRequests: 0, reviewDue: 12 }}
             field={({ onAnswerChange }) => <ReviewSearch onAnswerChange={onAnswerChange} />}
@@ -66,12 +69,14 @@ function StandardPreview() {
 
 function PreviewShell() {
   const { isCosmic, interfaceMode, setInterfaceMode, modeTransition } = useInterfaceMode();
+  const { open: searchOpen, closeSearch } = useLexiconSearchSheet();
   return <>
     <HomeShopKey /><HomeModePortal />{isCosmic ? <CommandDeck /> : <StandardPreview />}<ModeTransitionStage />
     {/* The tour's card over this home, as if on /home. Draws nothing unless
         this browser is mid-tour, so set `yumi-coach-step` (and
         `yumi-coach-track`) in localStorage to review a step. */}
     <TutorialCoach pathname="/home" interfaceMode={interfaceMode} switching={modeTransition !== null}
+      searchOpen={searchOpen} onCloseSearch={closeSearch}
       onSetMode={mode => setInterfaceMode(mode, { home: true })} onNavigate={() => {}} />
   </>;
 }

@@ -11,6 +11,8 @@
     ripple   every 1.8 s a ring of light leaves it and fades: tap here
     confirm  when the step is done the ring flashes white and the brackets
              let go
+    tag      over a dialog, where the card cannot be seen, a few words on a
+             heads-up label, drawn in after the lock settles
 
   The middle stays empty: it marks the key and never covers what it says.
   Nothing here strobes — a swell, a ripple, one flash on success — far from
@@ -39,6 +41,13 @@
 
 .light[data-shown="true"] {
   opacity: 1;
+}
+
+/* Over the dialog it lights a key in — a cookie's card (90), the search
+   sheet (130) — which covers the card; under the friend picker (300) that
+   the sheet's Send opens. */
+.light[data-raised="true"] {
+  z-index: 140;
 }
 
 .light[data-glide="true"] {
@@ -139,6 +148,58 @@
   animation: lock 520ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 
+/* ── The tag ──────────────────────────────────────────────────────────── */
+
+.tag {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 13px);
+  padding: 4px 9px 4px 10px;
+  border: 1px solid rgb(31 242 200 / 0.72);
+  border-radius: 3px;
+  background: rgb(5 22 24 / 0.88);
+  box-shadow:
+    0 0 10px rgb(31 242 200 / 0.32),
+    inset 0 0 6px rgb(31 242 200 / 0.14);
+  color: #cffff2;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  white-space: nowrap;
+  /* Slid in from the screen's edge when centring would cross it. */
+  transform: translateX(calc(-50% + var(--tag-shift, 0px)));
+}
+
+/* The leader line, from the tag to the ring — at the key's centre, wherever
+   the tag has slid to. */
+.tag::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - var(--tag-shift, 0px));
+  top: 100%;
+  width: 1px;
+  height: 10px;
+  background: linear-gradient(var(--led), rgb(31 242 200 / 0.15));
+}
+
+.light[data-tag-side="below"] .tag {
+  top: calc(100% + 13px);
+  bottom: auto;
+}
+
+.light[data-tag-side="below"] .tag::after {
+  top: auto;
+  bottom: 100%;
+  background: linear-gradient(rgb(31 242 200 / 0.15), var(--led));
+}
+
+/* Drawn in left to right once the brackets have closed. */
+.light[data-shown="true"] .tag {
+  animation: tag-in 380ms cubic-bezier(0.2, 0.8, 0.2, 1) 360ms both;
+}
+
 /* ── Confirmed ────────────────────────────────────────────────────────── */
 
 .light[data-done="true"] .ring {
@@ -150,6 +211,13 @@
 }
 
 .light[data-done="true"] .ripple {
+  animation: none;
+}
+
+/* The tag says "Good." in the flash's white, and stays for the beat. */
+.light[data-done="true"] .tag {
+  border-color: var(--led-hot);
+  color: #ffffff;
   animation: none;
 }
 
@@ -222,6 +290,20 @@
   }
 }
 
+/* The insets reach past the box so the leader line and the glow, which
+   are outside it, are not clipped once it is drawn. */
+@keyframes tag-in {
+  from {
+    opacity: 0;
+    clip-path: inset(-16px 100% -16px -16px);
+  }
+
+  to {
+    opacity: 1;
+    clip-path: inset(-16px -16px -16px -16px);
+  }
+}
+
 @keyframes release {
   to {
     opacity: 0;
@@ -233,6 +315,7 @@
   .light[data-shown="true"] .ring,
   .light[data-shown="true"] .corner,
   .light[data-shown="true"] .ripple,
+  .light[data-shown="true"] .tag,
   .light[data-done="true"] .ring,
   .light[data-done="true"] .corner {
     animation: none;
