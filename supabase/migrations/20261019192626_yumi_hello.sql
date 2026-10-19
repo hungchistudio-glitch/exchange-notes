@@ -1,7 +1,9 @@
 -- Yumi's bilingual hello (lib/hello): a reader's own Yumi, dressed as she is,
 -- carrying one word in two languages to anyone holding the link (Chi,
--- 2026-10-19). Additive only: a new table, new functions and a new bucket;
--- nothing that exists is changed.
+-- 2026-10-19). A new table, new functions and a new bucket; the one thing
+-- that exists and changes is prepare_account_deletion, which now also lists
+-- a reader's hello posters (at the end of this file), so deleting an account
+-- leaves none of them behind.
 --
 -- Who can do what:
 --   anyone     read one hello by id, through get_yumi_hello, which returns
@@ -300,3 +302,61 @@ grant execute on function public.fill_yumi_hello_language(text, text, jsonb) to 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('yumi-hellos', 'yumi-hellos', true, 2097152, array['image/png'])
 on conflict (id) do nothing;
+
+-- ── Account deletion takes the posters too ───────────────────────────────
+--
+-- prepare_account_deletion (20261015120000) lists what a reader owns for the
+-- Storage API to remove. Posters are uploaded by the server, so they have no
+-- owner_id, and their folder is the hello's id rather than the reader's: they
+-- are found through the reader's hellos instead. Must run before the user is
+-- deleted, while the hellos still name their owner — which is the order
+-- app/api/account/route.ts already keeps. Otherwise as it was, line for line.
+
+create or replace function public.prepare_account_deletion(p_user_id uuid)
+returns table (bucket_id text, object_name text)
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+begin
+  -- The caller is service_role, so there is no auth.uid() to fall back on
+  -- and a missing id must not quietly match nothing or everything.
+  if p_user_id is null then
+    raise exception 'A user id is required' using errcode = '22023';
+  end if;
+
+  -- Made by hand and outside this chain, so it may not exist everywhere.
+  if to_regclass('public.vocabulary_examples_backup_20260831') is not null then
+    execute 'delete from public.vocabulary_examples_backup_20260831 where user_id = $1'
+      using p_user_id;
+  end if;
+
+  -- Every file is uploaded by its reader's own session, so owner_id names
+  -- them; the folder is checked too for the two buckets keyed by user, in
+  -- case a file ever arrives there through the service role, ownerless.
+  -- Hello posters are always ownerless, and filed under the hello's id.
+  return query
+    select o.bucket_id, o.name
+      from storage.objects o
+     where o.owner_id = p_user_id::text
+        or (
+          o.bucket_id in ('avatars', 'vocabulary-images')
+          and split_part(o.name, '/', 1) = p_user_id::text
+        )
+        or (
+          o.bucket_id = 'yumi-hellos'
+          and exists (
+            select 1
+              from public.yumi_hellos h
+             where h.id = split_part(o.name, '/', 1)
+               and h.owner_id = p_user_id
+          )
+        );
+end;
+$function$;
+
+revoke all on function public.prepare_account_deletion(uuid)
+  from public, anon, authenticated;
+
+grant execute on function public.prepare_account_deletion(uuid)
+  to service_role;
