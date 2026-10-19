@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 
 import Avatar from "@/components/foundation/media/Avatar";
 import FriendQrScanner from "@/components/friends/FriendQrScanner";
+import HelloFriendsCard from "@/components/hello/HelloFriendsCard";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -25,6 +26,7 @@ import {
   type FriendProfile,
   type IncomingRequest,
 } from "@/lib/friends";
+import { helloPath } from "@/lib/hello/url";
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { insertValues, normalizeExchangeId } from "@/lib/utils";
@@ -355,7 +357,10 @@ function FriendsPageContent() {
             </div>
           ) : (
             <div className="mt-5">
-              <FriendQrScanner onDetected={handleScannedExchangeId} />
+              <FriendQrScanner
+                onDetected={handleScannedExchangeId}
+                onHello={(id) => router.push(helloPath(id))}
+              />
 
               <div className="mt-6 flex flex-col items-center border-t border-line pt-5">
                 <h3 className="text-sm font-semibold text-black">
@@ -398,6 +403,8 @@ function FriendsPageContent() {
             </p>
           )}
         </section>
+
+        <HelloFriendsCard />
 
         {incoming.length > 0 && (
           <section className="mt-7">
