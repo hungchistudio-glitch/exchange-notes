@@ -477,7 +477,10 @@ export type TranslationDictionary = {
      */
     coach: {
       label: string;
+      /** Ends the whole tour. */
       skip: string;
+      /** Moves past one step that waits for something the reader cannot do now. */
+      skipStep: string;
       next: string;
       finish: string;
       /** Said once, briefly, when a step is satisfied. */
@@ -496,6 +499,11 @@ export type TranslationDictionary = {
        * {current} and {total}.
        */
       chapters: { home: string; pages: string; shop: string; cosmic: string };
+      /**
+       * The label on the steps shown to a reader who finished an earlier
+       * edition of the tour: only what is new. Takes {current} and {total}.
+       */
+      whatsNew: string;
       /** A step that needs the other interface mode, and the key that switches. */
       needsStandard: string;
       toStandard: string;
@@ -505,8 +513,13 @@ export type TranslationDictionary = {
       useStandard: string;
       useCosmic: string;
       steps: {
+        /** Opening the dial and turning it; only a tap on a key goes in. */
         meet: { body: string };
         ask: { body: string };
+        /**
+         * Saving, and the two things a new word earns: a cookie on Home to
+         * feed Yumi, and an energy cookie for the shop.
+         */
         keep: { body: string };
         feed: { body: string };
         /*
@@ -516,15 +529,15 @@ export type TranslationDictionary = {
          */
         library: { body: string; action: string };
         review: { body: string; action: string };
+        pronunciation: { body: string; action: string };
         share: { body: string; action: string };
         notes: { body: string; action: string };
         discover: { body: string; action: string };
         settings: { body: string; action: string };
-        /* The shop: where cookies come from (on Home, pointing at the shop
-           key), trying a piece on, and buying one. */
+        /* The shop: what cookies are for (on Home, at the shop key), then
+           trying a piece on and how buying works, together. */
         cookies: { body: string };
         tryOn: { body: string; action: string };
-        buy: { body: string; action: string };
         /*
          * Chapter four. Bodies may name things with {standard}, {cosmic},
          * {omni}, {lexicon}, {mission}, {scanner}, {comms}, {earth} and
@@ -532,10 +545,8 @@ export type TranslationDictionary = {
          * calls a thing what the screen calls it.
          */
         modeSwitch: { body: string };
+        /** The whole deck in one card. */
         deck: { body: string };
-        omni: { body: string };
-        scanner: { body: string };
-        dock: { body: string };
         choose: { body: string };
       };
     };

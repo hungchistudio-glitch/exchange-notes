@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -15,17 +23,28 @@ import {
 import {
   COACH_FINISHED,
   getCoachStep,
+  getCoachTrack,
   getServerCoachStep,
+  getServerCoachTrack,
   setCoachStep,
   subscribeToCoach,
 } from "@/lib/home/tutorialCoach";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
 
+import type { CoachTarget } from "./CoachLight";
 import styles from "./TutorialCoach.module.css";
 
+/*
+ * The glow round the key, fetched when a step first needs it. Home's tab
+ * loads this file, and most readers finished the tour long ago, so the light
+ * and its stylesheet stay out of home's static graph
+ * (tests/routeImportWeight.test.ts).
+ */
+const CoachLight = lazy(() => import("./CoachLight"));
+
 /* =========================================================
-   The tour you do — in three chapters, across both looks
+   The tour you do — in four chapters, across both looks
 
    The old one was seven pages of description, and the page about navigation
    described a dock that no longer exists. This one asks: each step names one
@@ -42,26 +61,42 @@ import styles from "./TutorialCoach.module.css";
 
    So there is one tour, in one order, and it teaches both:
 
-     1. Home            — Standard: pull her eye, look up, keep, feed.
-     2. Around the app  — Vocabulary, Review, Messages, Notes, Discover,
-                          Settings.
-     3. Yumi's shop     — where cookies come from, trying a piece on, and
-                          how buying works.
+     1. Home            — Standard: open the dial and turn it, look up,
+                          keep (and hear what a kept word earns), feed.
+     2. Around the app  — Vocabulary, Review, the Pronunciation Lab,
+                          Messages, Notes, Discover, Settings.
+     3. Yumi's shop     — where cookies come from, and trying a piece on,
+                          with how buying works said in the same breath.
      4. The other look  — the reader switches to Cosmic themselves, with
                           the switch at the top of Home (the one they will
-                          use from then on), and is shown what is different:
-                          the six systems, OmniLexicon, Menu Translator,
-                          the dock. Nothing both looks share is taught twice.
+                          use from then on), and is shown in one card what
+                          is different. Nothing both looks share is taught
+                          twice.
 
    and ends by asking which look to start in, and taking them there.
 
-   Chapters rather than one count, because nineteen steps in a row is a tour
-   people skip at step four. "Chapter 2 · 3/5" is a short thing to finish;
-   "9 of 15" is not.
+   Chapters rather than one count, because sixteen steps in a row is a tour
+   people skip at step four. "Chapter 2 · 3/7" is a short thing to finish;
+   "7 of 16" is not.
+
+   ── One word, two things ───────────────────────────────────────────────
+
+   A saved word earns two different cookies, and the tour says so at the
+   moment it happens (Chi, 2026-10-18: "一個字，兩種用途"). One is on Home,
+   with the word's first letter on it, for feeding Yumi. The other is an
+   energy cookie in the shop's wallet. Feeding her never spends the wallet,
+   which is what the old copy left a reader to guess.
+
+   ── What's new, for readers who had finished ───────────────────────────
+
+   Steps marked `refresh` are the ones the current edition added
+   (lib/home/tutorialCoach.ts). A reader who finished an earlier edition gets
+   only those, labelled as new, and only in Standard: the refresh track keeps
+   quiet in Cosmic rather than asking someone to change looks for it.
 
    ── What it leaves alone ───────────────────────────────────────────────
 
-   Anything that is not one of the six main screens, and the mode-switch
+   Anything that is not one of the main screens a step names, and the mode-switch
    animation itself: a card over a message composer, or over the deck
    waking up, is in the way of the very thing it wants the reader to see.
    ========================================================= */
@@ -75,18 +110,15 @@ type StepKey =
   | "feed"
   | "library"
   | "review"
+  | "pronunciation"
   | "share"
   | "notes"
   | "discover"
   | "settings"
   | "cookies"
   | "tryOn"
-  | "buy"
   | "modeSwitch"
   | "deck"
-  | "omni"
-  | "scanner"
-  | "dock"
   | "choose";
 
 type Step = {
@@ -100,13 +132,64 @@ type Step = {
   awaits?: ReadonlyArray<HomeMoment | "word-saved">;
   /** Take the reader to `route` without asking — used right after a switch. */
   autoGo?: boolean;
+  /** New in this edition: shown to readers who finished the last one. */
+  refresh?: boolean;
+  /**
+   * The key the LED glow rings (CoachLight), as selectors in
+   * order of preference: the first with a visible element wins. Absent on
+   * steps that only show.
+   */
+  point?: readonly CoachTarget[];
 };
+
+/*
+ * The targets, by the attributes the screens already carry where they had
+ * one, and `data-coach-target` where they did not.
+ */
+/* Where she stands, not what draws her: hidden once the WebGL scene is live. */
+const YUMI = { selector: "[data-yumi-figure]", anchor: true } as const;
+const POINT = {
+  /* The key under the gold mark while the dial is out; her, to open it. */
+  dial: ['[data-dial-item][data-selected="true"]', YUMI],
+  /* The dial's Search key while it is out; the search field when it is not. */
+  search: ['[data-dial-key="search"]', '[data-coach-target="search-field"]'],
+  save: ['[data-coach-target="save-word"]'],
+  /* The cookie Home is already nudging, else any cookie. */
+  cookie: ['[data-floating-cookie][data-hint="feed"]', "[data-floating-cookie]"],
+  /* The bag and the switch's track, not their buttons: both buttons are
+     bigger than what they draw, for the finger, and the light belongs round
+     the shape the reader can see. */
+  shopKey: ["[data-home-shop-key] > svg", "[data-home-shop-key]"],
+  item: ['[data-coach-target="shop-item"]'],
+  modeSwitch: ["[data-home-mode-portal] > span", "[data-home-mode-portal]"],
+  omni: ['[data-coach-target="cosmic-omni"]'],
+} as const;
 
 const STANDARD: InterfaceMode = "standard";
 const COSMIC: InterfaceMode = "yumi-cosmic";
 
+/*
+ * Sixteen steps, one point each (Chi, 2026-10-18: "更簡潔重點帶過"). What
+ * used to be separate steps is said together where it happens together:
+ * opening the dial and turning it; saving a word and what it earns; trying
+ * a piece on, buying, and the balance; the whole of the deck in one card.
+ * The page walk stays one screen at a time, in a line each.
+ */
 export const COACH_STEPS: readonly Step[] = [
-  { key: "meet", chapter: "home", route: "/home", mode: STANDARD, awaits: ["ring-opened"] },
+  /*
+   * The dial (Chi, 2026-10-16) turns, and only a tap goes in. A reader who
+   * drags expecting the key under their finger to open is left wondering why
+   * nothing did, so they open it and turn it once while being told.
+   */
+  {
+    key: "meet",
+    chapter: "home",
+    route: "/home",
+    mode: STANDARD,
+    awaits: ["dial-turned"],
+    refresh: true,
+    point: POINT.dial,
+  },
   /*
    * A lookup that came back empty still counts as having asked. Waiting here
    * for a real answer would hold the whole tour hostage to Gemini being up;
@@ -118,12 +201,37 @@ export const COACH_STEPS: readonly Step[] = [
     route: "/home",
     mode: STANDARD,
     awaits: ["word-answered", "word-unavailable"],
+    point: POINT.search,
   },
-  { key: "keep", chapter: "home", route: "/home", mode: STANDARD, awaits: ["word-saved"] },
-  { key: "feed", chapter: "home", route: "/home", mode: STANDARD, awaits: ["word-fed"] },
+  /* Saving, and the two things a new word earns (one word, two uses). */
+  {
+    key: "keep",
+    chapter: "home",
+    route: "/home",
+    mode: STANDARD,
+    awaits: ["word-saved"],
+    refresh: true,
+    point: POINT.save,
+  },
+  {
+    key: "feed",
+    chapter: "home",
+    route: "/home",
+    mode: STANDARD,
+    awaits: ["word-fed"],
+    point: POINT.cookie,
+  },
 
   { key: "library", chapter: "pages", route: "/vocabulary", mode: STANDARD },
   { key: "review", chapter: "pages", route: "/review", mode: STANDARD },
+  /* On the dial since it replaced the ring, and never once in the tour. */
+  {
+    key: "pronunciation",
+    chapter: "pages",
+    route: "/pronunciation",
+    mode: STANDARD,
+    refresh: true,
+  },
   { key: "share", chapter: "pages", route: "/messages", mode: STANDARD },
   { key: "notes", chapter: "pages", route: "/notes", mode: STANDARD },
   { key: "discover", chapter: "pages", route: "/discover", mode: STANDARD },
@@ -131,35 +239,49 @@ export const COACH_STEPS: readonly Step[] = [
 
   /*
    * The shop, before the other look (Chi, 2026-10-12: "在最後的模式切換教學前
-   * 教商店及如何賺取 cookie 及購買"). Where cookies come from is said on
-   * Home, pointing at the shop key in the corner; then, in the shop, the
-   * reader tries something on themselves, and is told how buying works
-   * rather than made to spend.
+   * 教商店及如何賺取 cookie 及購買"). Where cookies go is said on Home, at the
+   * shop key; then, in the shop, the reader tries something on themselves and
+   * is told in the same breath how buying works, rather than made to spend.
    */
-  { key: "cookies", chapter: "shop", route: "/home", mode: STANDARD },
-  { key: "tryOn", chapter: "shop", route: "/shop", mode: STANDARD, awaits: ["shop-tried"] },
-  { key: "buy", chapter: "shop", route: "/shop", mode: STANDARD },
+  {
+    key: "cookies",
+    chapter: "shop",
+    route: "/home",
+    mode: STANDARD,
+    refresh: true,
+    point: POINT.shopKey,
+  },
+  {
+    key: "tryOn",
+    chapter: "shop",
+    route: "/shop",
+    mode: STANDARD,
+    awaits: ["shop-tried"],
+    point: POINT.item,
+  },
 
   /*
    * The reader makes the switch, with the real control, and the step waits
-   * for the mode to actually change. It is the one thing in chapter three
-   * worth remembering: where the switch is, for the next time they want it.
-   *
-   * On Home, with the switch beside the star (Chi, 2026-10-09: "在首頁教").
-   * It was Interface mode in Settings, written before Home had a switch —
-   * so the switch every reader would actually use was never taught, and was
-   * hidden for the whole tour besides. Settings still has the choice; the
-   * last step says so.
+   * for the mode to actually change: where the switch is is the one thing
+   * worth remembering from this chapter (Chi, 2026-10-09: "在首頁教").
    */
-  { key: "modeSwitch", chapter: "cosmic", route: "/home" },
-  { key: "deck", chapter: "cosmic", route: "/home", mode: COSMIC, autoGo: true },
-  { key: "omni", chapter: "cosmic", route: "/home", mode: COSMIC },
-  { key: "scanner", chapter: "cosmic", route: "/home", mode: COSMIC },
-  { key: "dock", chapter: "cosmic", route: "/home", mode: COSMIC },
+  { key: "modeSwitch", chapter: "cosmic", route: "/home", point: POINT.modeSwitch },
+  /* The whole deck in one card, lighting the search it shares with Standard. */
+  {
+    key: "deck",
+    chapter: "cosmic",
+    route: "/home",
+    mode: COSMIC,
+    autoGo: true,
+    point: POINT.omni,
+  },
   { key: "choose", chapter: "cosmic" },
 ];
 
 const CHAPTER_NUMBER: Record<Chapter, number> = { home: 1, pages: 2, shop: 3, cosmic: 4 };
+
+/** What a reader who finished the last edition is shown, in tour order. */
+export const REFRESH_STEPS: readonly Step[] = COACH_STEPS.filter((step) => step.refresh);
 
 /** The screens the coach speaks on. Everything else, it steps aside. */
 const MAIN_SCREENS = new Set(
@@ -217,11 +339,21 @@ export default function TutorialCoach({
     getCoachStep,
     getServerCoachStep,
   );
+  const track = useSyncExternalStore(
+    subscribeToCoach,
+    getCoachTrack,
+    getServerCoachTrack,
+  );
+  const refreshing = track === "refresh";
+  const steps = refreshing ? REFRESH_STEPS : COACH_STEPS;
 
-  const index = stored >= 0 && stored < COACH_STEPS.length ? stored : COACH_FINISHED;
-  const current = index === COACH_FINISHED ? undefined : COACH_STEPS[index];
+  const index = stored >= 0 && stored < steps.length ? stored : COACH_FINISHED;
+  const current = index === COACH_FINISHED ? undefined : steps[index];
 
   const [satisfied, setSatisfied] = useState(false);
+
+  /* The light keeps off this, and hides while it is hidden. */
+  const cardRef = useRef<HTMLDivElement>(null);
 
   /*
    * Whether the last lookup came back without a meaning.
@@ -240,15 +372,34 @@ export default function TutorialCoach({
     });
   }, []);
 
-  const awaiting = current?.awaits;
+  /*
+   * A returning reader is told what a kept word earns rather than asked to
+   * keep one there and then: there is no answer on their screen to keep
+   * from, and they know how to get one.
+   */
+  const awaiting = refreshing && current?.key === "keep" ? undefined : current?.awaits;
   const onRoute = current?.route ? pathname === current.route : true;
   const wrongMode = Boolean(current?.mode && current.mode !== interfaceMode);
 
   const advance = useCallback(() => {
     setSatisfied(false);
     const next = index + 1;
-    setCoachStep(next >= COACH_STEPS.length ? COACH_FINISHED : next);
-  }, [index]);
+    setCoachStep(next >= steps.length ? COACH_FINISHED : next);
+  }, [index, steps]);
+
+  /*
+   * Past a step the reader cannot do now. The switch is the exception:
+   * passing it means not changing looks, so the Cosmic steps that follow
+   * would only ask for the switch again — it goes straight to the choice.
+   */
+  const skipStep = useCallback(() => {
+    if (steps[index]?.key === "modeSwitch") {
+      setSatisfied(false);
+      setCoachStep(steps.findIndex((step) => step.key === "choose"));
+      return;
+    }
+    advance();
+  }, [advance, index, steps]);
 
   /*
    * Watching the screen rather than the reader's patience.
@@ -345,14 +496,17 @@ export default function TutorialCoach({
   /* The deck waking up, or standing down, is the thing to watch. */
   if (switching || autoRoute) return null;
 
+  /* What's new waits for Standard rather than asking for a change of look. */
+  if (refreshing && wrongMode) return null;
+
   const stepCopy = copy.steps[current.key];
 
-  const chapterSteps = COACH_STEPS.filter(
-    (step) => step.chapter === current.chapter,
-  );
+  const chapterSteps = refreshing
+    ? REFRESH_STEPS
+    : COACH_STEPS.filter((step) => step.chapter === current.chapter);
   const position = chapterSteps.indexOf(current) + 1;
 
-  const label = copy.label
+  const label = (refreshing ? copy.whatsNew : copy.label)
     .replace("{chapter}", String(CHAPTER_NUMBER[current.chapter]))
     .replace("{name}", copy.chapters[current.chapter])
     .replace("{current}", String(position))
@@ -367,7 +521,12 @@ export default function TutorialCoach({
    * Skip. Say what happened, and let them either try another word or move on.
    */
   const keepBlocked =
-    current.key === "keep" && lastLookupEmpty && !done && onRoute && !wrongMode;
+    current.key === "keep" &&
+    Boolean(awaiting) &&
+    lastLookupEmpty &&
+    !done &&
+    onRoute &&
+    !wrongMode;
 
   const body = done
     ? copy.done
@@ -395,15 +554,18 @@ export default function TutorialCoach({
      switch and cookie steps go to the foot of Home, because the top corner
      they would cover on a phone holds the switch and the shop key they point
      at. The shop keeps it at the top too: its own bar stands where the dock
-     would. */
+     would. The dial's two steps go to the foot as well: they have to stay
+     readable with the dial out. */
   const placement =
     pathname === "/shop"
       ? ""
       : pathname !== "/home"
         ? ` ${styles.docked}`
-        : current.key === "modeSwitch" || current.key === "cookies"
-          ? ` ${styles.switchStep}`
-          : "";
+        : current.key === "meet" || current.key === "ask"
+          ? ` ${styles.dialStep}`
+          : current.key === "modeSwitch" || current.key === "cookies"
+            ? ` ${styles.switchStep}`
+            : "";
 
   const finish = (mode: InterfaceMode) => {
     setCoachStep(COACH_FINISHED);
@@ -443,19 +605,25 @@ export default function TutorialCoach({
     );
   } else if ((awaiting && !keepBlocked) || current.key === "modeSwitch") {
     /*
-     * A waiting step has no "next".
+     * A waiting step has no "Next", only "Skip this step".
      *
-     * Offering one would make every instruction optional, and an instruction
-     * the reader can dismiss is a sentence rather than a step. Skip is always
-     * there, because a tour nobody can leave is a worse thing than a tour
-     * nobody finishes.
+     * "Next" would read as the way on, and make every instruction optional.
+     * But a step can be impossible right now — no cookie on Home to feed, a
+     * lookup that will not come — and the reader stuck on it used to have
+     * only Skip, which ends the whole tour (Chi, 2026-10-18). So a quieter
+     * key passes the one step; Skip still ends the tour.
      */
     keys = (
-      <span className={styles.waiting} aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </span>
+      <>
+        <span className={styles.waiting} aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+        <button type="button" className={styles.skipStep} onClick={skipStep}>
+          {copy.skipStep}
+        </button>
+      </>
     );
   } else {
     keys = (
@@ -465,49 +633,69 @@ export default function TutorialCoach({
     );
   }
 
+  /*
+   * The light, while there is something to press and the reader can press it
+   * here: not on the wrong screen or look, and not on a keep step with
+   * nothing to keep. It stays through the "Good." beat, to flash its
+   * confirmation and let go.
+   */
+  const pointAt =
+    current.point && onRoute && !wrongMode && !keepBlocked ? current.point : null;
+
   return (
-    <aside
-      className={`${styles.coach}${placement}`}
-      /* Announced as a live region rather than as a dialog: it interrupts
-         nothing, takes no focus, and the reader is meant to keep using the
-         screen while it is up. */
-      role="status"
-      aria-live="polite"
-    >
-      {/*
-        Marked for the home screen's two other layers: the cookies float
-        around it rather than under it (data-yumi-protected), and Yumi's
-        answer position keeps clear of its bottom edge (data-coach-card).
-      */}
-      <div
-        className={styles.card}
-        data-coach-card=""
-        /* The home switch reads this: it stays hidden under every other
-           step, and is the thing pointed at under this one — until it has
-           been used, when the "Good." beat should not still be pointing. */
-        data-coach-step={current.key}
-        data-coach-done={done ? "" : undefined}
-        data-yumi-protected=""
+    <>
+      <aside
+        className={`${styles.coach}${placement}`}
+        /* Announced as a live region rather than as a dialog: it interrupts
+           nothing, takes no focus, and the reader is meant to keep using the
+           screen while it is up. */
+        role="status"
+        aria-live="polite"
       >
-        <p className={styles.label}>{label}</p>
+        {/*
+          Marked for the home screen's two other layers: the cookies float
+          around it rather than under it (data-yumi-protected), and Yumi's
+          answer position keeps clear of its bottom edge (data-coach-card).
+        */}
+        <div
+          ref={cardRef}
+          className={styles.card}
+          data-coach-card=""
+          /* The home switch reads this: it stays hidden under every other
+             step, and is the thing pointed at under this one — until it has
+             been used, when the "Good." beat should not still be pointing. */
+          data-coach-step={current.key}
+          data-coach-done={done ? "" : undefined}
+          data-yumi-protected=""
+        >
+          <p className={styles.label}>{label}</p>
 
-        <p className={styles.body}>{fill(body, t)}</p>
+          <p className={styles.body}>{fill(body, t)}</p>
 
-        <div className={styles.keys}>
-          {keys}
+          <div className={styles.keys}>
+            {keys}
 
-          {current.key === "choose" ? null : (
-            <button
-              type="button"
-              className={styles.skip}
-              onClick={() => setCoachStep(COACH_FINISHED)}
-            >
-              {copy.skip}
-            </button>
-          )}
+            {current.key === "choose" ? null : (
+              <button
+                type="button"
+                className={styles.skip}
+                onClick={() => setCoachStep(COACH_FINISHED)}
+              >
+                {copy.skip}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+
+      {/* Beside the card rather than in it: the card's stacking context would
+          keep the light under anything a screen layers above it. */}
+      {pointAt ? (
+        <Suspense fallback={null}>
+          <CoachLight targets={pointAt} avoid={cardRef} done={done} />
+        </Suspense>
+      ) : null}
+    </>
   );
 }
 

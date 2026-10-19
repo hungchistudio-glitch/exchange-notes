@@ -7,10 +7,18 @@ export const dialIndex = (angle: number, count: number) => ((Math.round(-angle /
 export const dialDelta = (from: number, to: number) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 
 type Item = { key: string; label: string; icon: ReactNode; badge?: number };
-type Props = { enabled: boolean; radius: number; items: Item[]; onChoose: (index: number) => void; onAim: (x: number, y: number) => void };
+type Props = {
+  enabled: boolean;
+  radius: number;
+  items: Item[];
+  onChoose: (index: number) => void;
+  onAim: (x: number, y: number) => void;
+  /** The key at the index changed. Fires once per detent crossed, not per frame. */
+  onTurn?: (index: number) => void;
+};
 
 /** Keep angular motion out of React. Geometry is sampled only when a gesture starts. */
-export default function PrecisionDial({ enabled, radius, items, onChoose, onAim }: Props) {
+export default function PrecisionDial({ enabled, radius, items, onChoose, onAim, onTurn }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const buttons = useRef<Array<HTMLButtonElement | null>>([]);
   const angle = useRef(0);
@@ -20,8 +28,8 @@ export default function PrecisionDial({ enabled, radius, items, onChoose, onAim 
   const suppressClick = useRef(false);
   const hapticAt = useRef(0);
   const drag = useRef<{ id: number; source: Element; cx: number; cy: number; last: number; x: number; y: number; moved: boolean } | null>(null);
-  const callbacks = useRef({ onAim, onChoose });
-  useEffect(() => { callbacks.current = { onAim, onChoose }; }, [onAim, onChoose]);
+  const callbacks = useRef({ onAim, onChoose, onTurn });
+  useEffect(() => { callbacks.current = { onAim, onChoose, onTurn }; }, [onAim, onChoose, onTurn]);
 
   useEffect(() => {
     const el = root.current;
@@ -36,6 +44,7 @@ export default function PrecisionDial({ enabled, radius, items, onChoose, onAim 
         hapticAt.current = performance.now();
         navigator.vibrate?.(5);
       }
+      if (index !== active.current) callbacks.current.onTurn?.(index);
       active.current = index;
       buttons.current.forEach((button, i) => {
         if (!button) return;
@@ -164,7 +173,7 @@ export default function PrecisionDial({ enabled, radius, items, onChoose, onAim 
       </svg>
       <i className={styles.index} />
     </div>
-    {items.map((item, i) => <button ref={el => { buttons.current[i] = el; }} key={item.key} type="button" data-dial-item={i} aria-label={item.label}
+    {items.map((item, i) => <button ref={el => { buttons.current[i] = el; }} key={item.key} type="button" data-dial-item={i} data-dial-key={item.key} aria-label={item.label}
       onClick={event => { if (enabled && event.detail === 0) { event.stopPropagation(); callbacks.current.onChoose(i); } }}>
       <span className={styles.disc}><small>{String(i + 1).padStart(2, "0")}</small><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{item.icon}</svg>{!!item.badge && <b>{item.badge > 9 ? "9+" : item.badge}</b>}</span>
       <span className={styles.label}>{item.label}</span>

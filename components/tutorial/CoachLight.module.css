@@ -1,0 +1,244 @@
+/*
+  The tour's target lock (CoachLight.tsx).
+
+  A heads-up display marking the key the step asks for:
+
+    lock     four corner brackets close in from outside the key and settle,
+             a hair past their mark and back, 0.5 s
+    ring     an LED ring in the key's own shape, a hairline of cyan with a
+             white inner edge, glowing outward and brighter below; it hums,
+             a slow 2.4 s swell
+    ripple   every 1.8 s a ring of light leaves it and fades: tap here
+    confirm  when the step is done the ring flashes white and the brackets
+             let go
+
+  The middle stays empty: it marks the key and never covers what it says.
+  Nothing here strobes — a swell, a ripple, one flash on success — far from
+  the three flashes a second WCAG 2.3.1 sets as the limit. Under reduced
+  motion the brackets and ring simply appear, still.
+
+  The same light in both looks: the cyan and its white edge carry it on
+  Standard's cream, the glow on Cosmic's navy.
+*/
+
+.light {
+  --led: #1ff2c8;
+  --led-hot: #f2fffc;
+
+  position: fixed;
+  left: 0;
+  top: 0;
+  /* Over the tour's card (47) and the dial and scene (45); under the cookie
+     reward card (150) and any sheet. */
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  will-change: transform;
+}
+
+.light[data-shown="true"] {
+  opacity: 1;
+}
+
+.light[data-glide="true"] {
+  transition:
+    opacity 200ms ease,
+    transform 160ms linear,
+    width 160ms linear,
+    height 160ms linear;
+}
+
+/* ── The ring ─────────────────────────────────────────────────────────── */
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(31 242 200 / 0.92);
+  border-radius: var(--light-radius, 16px);
+  box-shadow:
+    /* The LED itself: a white edge, sharp against cream. */
+    inset 0 0 0 1px rgb(242 255 252 / 0.4),
+    /* Its glow, all the way round. */
+    0 0 6px rgb(31 242 200 / 0.75),
+    0 0 16px 2px rgb(31 242 200 / 0.28),
+    /* And more of it underneath, as if lit from below. */
+    0 6px 14px rgb(31 242 200 / 0.32);
+}
+
+.light[data-shown="true"] .ring {
+  animation:
+    ring-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both,
+    hum 2.4s ease-in-out 540ms infinite;
+}
+
+/* ── Tap here ─────────────────────────────────────────────────────────── */
+
+.ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--light-radius, 16px);
+}
+
+.light[data-shown="true"] .ripple {
+  animation: ping 1.8s cubic-bezier(0.2, 0.6, 0.35, 1) 520ms infinite;
+}
+
+/* ── The lock ─────────────────────────────────────────────────────────── */
+
+.corner {
+  --dx: -1;
+  --dy: -1;
+
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 0 solid var(--led);
+  /* The glow, and under it a hair of deep teal that gives the bracket an
+     edge on Standard's cream; on Cosmic's navy it disappears. */
+  filter: drop-shadow(0 0 0.5px rgb(0 70 58 / 0.45)) drop-shadow(0 0 2.5px var(--led));
+}
+
+.corner[data-corner="tl"] {
+  left: -7px;
+  top: -7px;
+  border-top-width: 1.5px;
+  border-left-width: 1.5px;
+  border-top-left-radius: 3px;
+}
+
+.corner[data-corner="tr"] {
+  --dx: 1;
+  right: -7px;
+  top: -7px;
+  border-top-width: 1.5px;
+  border-right-width: 1.5px;
+  border-top-right-radius: 3px;
+}
+
+.corner[data-corner="bl"] {
+  --dy: 1;
+  left: -7px;
+  bottom: -7px;
+  border-bottom-width: 1.5px;
+  border-left-width: 1.5px;
+  border-bottom-left-radius: 3px;
+}
+
+.corner[data-corner="br"] {
+  --dx: 1;
+  --dy: 1;
+  right: -7px;
+  bottom: -7px;
+  border-bottom-width: 1.5px;
+  border-right-width: 1.5px;
+  border-bottom-right-radius: 3px;
+}
+
+.light[data-shown="true"] .corner {
+  animation: lock 520ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+/* ── Confirmed ────────────────────────────────────────────────────────── */
+
+.light[data-done="true"] .ring {
+  animation: confirm 720ms ease-out both;
+}
+
+.light[data-done="true"] .corner {
+  animation: release 480ms ease-in both;
+}
+
+.light[data-done="true"] .ripple {
+  animation: none;
+}
+
+/* ── Timing ───────────────────────────────────────────────────────────── */
+
+@keyframes lock {
+  0% {
+    opacity: 0;
+    transform: translate(calc(var(--dx) * 12px), calc(var(--dy) * 12px));
+  }
+
+  55% {
+    opacity: 1;
+  }
+
+  78% {
+    transform: translate(calc(var(--dx) * -1.5px), calc(var(--dy) * -1.5px));
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ring-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes hum {
+  0%,
+  100% {
+    opacity: 0.78;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes ping {
+  0% {
+    box-shadow: 0 0 0 0 rgb(31 242 200 / 0.55);
+  }
+
+  75%,
+  100% {
+    box-shadow: 0 0 0 14px rgb(31 242 200 / 0);
+  }
+}
+
+@keyframes confirm {
+  0% {
+    opacity: 1;
+    border-color: var(--led-hot);
+    box-shadow:
+      0 0 0 2px rgb(242 255 252 / 0.9),
+      0 0 18px 6px rgb(31 242 200 / 0.85);
+  }
+
+  100% {
+    opacity: 0;
+    border-color: var(--led-hot);
+    box-shadow:
+      0 0 0 10px rgb(31 242 200 / 0),
+      0 0 24px 8px rgb(31 242 200 / 0);
+  }
+}
+
+@keyframes release {
+  to {
+    opacity: 0;
+    transform: translate(calc(var(--dx) * 8px), calc(var(--dy) * 8px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .light[data-shown="true"] .ring,
+  .light[data-shown="true"] .corner,
+  .light[data-shown="true"] .ripple,
+  .light[data-done="true"] .ring,
+  .light[data-done="true"] .corner {
+    animation: none;
+  }
+
+  .light[data-glide="true"] {
+    transition: opacity 200ms ease;
+  }
+}

@@ -82,3 +82,14 @@ it('releases the original button capture when disabled during a drag', () => {
   disable();
   expect(button.releasePointerCapture).toHaveBeenCalledWith(1);
 });
+it('tells the tour once per detent the index crosses, and not on opening', () => {
+  const onTurn = vi.fn();
+  render(<PrecisionDial enabled radius={100} items={items} onChoose={() => {}} onAim={() => {}} onTurn={onTurn} />);
+  flush();
+  /* Opening paints the dial where it already is: nothing turned. */
+  expect(onTurn).not.toHaveBeenCalled();
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Destination 0' }), { key: 'ArrowRight' });
+  flush();
+  /* The snap animates over many frames; the key at the index changed once. */
+  expect(onTurn).toHaveBeenCalledExactlyOnceWith(1);
+});

@@ -859,6 +859,7 @@ function SaveRow({
   return (
     <button
       type="button"
+      data-coach-target="save-word"
       onClick={() => void save.save(variant)}
       disabled={disabled || state === "saving" || state === "saved"}
       className={`mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-[0.8125rem] font-semibold transition-transform active:scale-[0.99] disabled:opacity-40 ${

@@ -230,7 +230,7 @@ export default function OmniLexiconConsole({
           ))}
         </div>
       ) : (
-        <form ref={formRef} className={styles.field} onSubmit={handleSubmit}>
+        <form ref={formRef} className={styles.field} data-coach-target="cosmic-omni" onSubmit={handleSubmit}>
           <Radar
             size={17}
             strokeWidth={1.8}

@@ -439,7 +439,8 @@ const spanish: TranslationDictionary = {
 
     coach: {
       label: "Capítulo {chapter} · {name} · {current}/{total}",
-      skip: "Saltar",
+      skip: "Saltar el recorrido",
+      skipStep: "Saltar este paso",
       next: "Siguiente",
       finish: "Empezar",
       done: "Bien.",
@@ -452,6 +453,7 @@ const spanish: TranslationDictionary = {
         shop: "La tienda de Yumi",
         cosmic: "El otro aspecto",
       },
+      whatsNew: "Novedades · {current}/{total}",
       needsStandard:
         "Esta parte del recorrido ocurre en {standard}. Cambia y seguimos desde ahí.",
       toStandard: "Cambiar a {standard}",
@@ -463,87 +465,75 @@ const spanish: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Soy Yumi. Esta pantalla no tiene menú: el menú soy yo. Tócame para abrirlo (o tira de mi ojo y suelta).",
+            "Soy Yumi, y también el menú. Tócame para abrir el dial, gíralo hasta un sitio y toca esa tecla para entrar.",
         },
         ask: {
           body:
-            "Busca algo. Escríbelo, dilo, fotografía lo que tengas delante o pásame una carta, un cartel, un formulario: las cuatro vuelven a la misma ficha.",
+            "Gira hasta «Buscar», tócalo y busca una palabra: escríbela, dila o fotografíala.",
         },
         keep: {
           body:
-            "Guárdala. Cada palabra que guardas se convierte en una de mis galletas de energía.",
+            "Guarda una palabra nueva y recibes dos cosas: una galleta en Inicio para alimentarme y +1 galleta de energía para la tienda.",
         },
         feed: {
           body:
-            "Te he traído de vuelta al inicio: la próxima vez que termines con una palabra, solo tócame. Dame una: arrastra una galleta hasta mí, o tócala para ver su palabra y pulsa «Alimentar a Yumi». Con una palabra nueva al día, nunca paso hambre.",
+            "Después de una palabra, tócame para volver a Inicio. Dame una: arrastra una galleta hasta mí, o tócala y pulsa «Alimentar a Yumi». No gasta galletas de energía.",
         },
         library: {
           body:
-            "Este es tu Vocabulario. Aquí vive cada palabra que guardas: vuelve a escucharla, lee sus ejemplos y empieza un repaso desde aquí.",
+            "Vocabulario: todas las palabras que guardas, con su sonido y ejemplos.",
           action: "Abrir Vocabulario",
         },
         review: {
           body:
-            "Esto es Repasar. Cada palabra vuelve aquí hacia el día en que la olvidarías: unos minutos y se queda. Inicio te muestra cuántas te esperan.",
+            "Repasar: las palabras vuelven justo antes de que las olvides. Una ronda perfecta da 3 galletas de energía.",
           action: "Abrir Repasar",
+        },
+        pronunciation: {
+          body:
+            "Laboratorio de pronunciación: mira cómo formo cada sonido y grábate para comparar.",
+          action: "Abrir el Laboratorio de pronunciación",
         },
         share: {
           body:
-            "Estos son tus Mensajes. Añade a un amigo y podrás mandarle cualquier palabra que busques. Una palabra que buscas sola es información; una palabra que le mandas a alguien se vuelve recuerdo.",
+            "Mensajes: añade a un amigo y envíale cualquier palabra que busques.",
           action: "Abrir Mensajes",
         },
         notes: {
           body:
-            "Estas son tus Notas. Hay cosas que no caben en una palabra: por qué lo dijeron así, qué pasó ese día, cuánto incomodaba esa frase en esa sala. Eso va aquí.",
+            "Notas: para lo que no cabe en una palabra.",
           action: "Abrir Notas",
         },
         discover: {
           body:
-            "Esto es Descubrir. Cada día llegan unas cuantas noticias escritas en el idioma que estudias, con las palabras que vale la pena guardar ya marcadas.",
+            "Descubrir: unas cuantas noticias al día, en el idioma que aprendes.",
           action: "Abrir Descubrir",
         },
         settings: {
           body:
-            "Estos son los Ajustes. Aquí cambias el idioma de la app y los idiomas que estudias. Para ver este recorrido otra vez, búscalo en Ayuda e información.",
+            "Ajustes: cambia los idiomas o repite este recorrido desde Ayuda e información.",
           action: "Abrir Ajustes",
         },
         cookies: {
           body:
-            "Guardar una palabra por primera vez te da una galleta de energía, y superar todas las tarjetas de un repaso te da tres más. La bolsa de arriba a la derecha lleva a mi tienda en órbita alrededor de la Tierra: gasta allí tus galletas en un estilo nuevo para mí.",
+            "Las galletas de energía son el dinero de mi tienda. La bolsa de arriba a la derecha es la entrada.",
         },
         tryOn: {
           body:
-            "Esta es mi tienda: yo en el expositor y las piezas debajo. Toca cualquier pieza y me la pruebo gratis; tócala otra vez para quitármela.",
-          action: "Abrir la tienda",
-        },
-        buy: {
-          body:
-            "¿Te gusta? Toca Comprar. Las galletas solo se gastan cuando confirmas, y me la pongo enseguida: también la verás en el inicio. Lo que no compres se queda en el probador.",
+            "Toca cualquier pieza y me la pruebo gratis. ¿Te gusta? Compra: solo se gasta al confirmar.",
           action: "Abrir la tienda",
         },
         modeSwitch: {
           body:
-            "Exchange Notes tiene dos aspectos. Toca el interruptor de arriba a la derecha, junto a la estrella, para pasar a {cosmic}. Tus palabras y tu progreso no cambian; tócalo otra vez cuando quieras volver.",
+            "Toca el interruptor de arriba a la derecha para ir a {cosmic}. Tus palabras y tu progreso no cambian.",
         },
         deck: {
           body:
-            "Este es el inicio de {cosmic}. Sigo en el centro, con seis sistemas a mi alrededor: {lexicon}, {mission}, {scanner}, {comms}, {earth} y {memory}. Toca cualquiera para entrar.",
-        },
-        omni: {
-          body:
-            "{omni}, arriba, es la misma búsqueda que en {standard}: escribe, habla o haz una foto. Las mismas respuestas, y lo que guardas va al mismo vocabulario.",
-        },
-        scanner: {
-          body:
-            "{scanner} es la herramienta que más usarás aquí: fotografía una carta o un cartel y te traduzco la página entera, precios incluidos.",
-        },
-        dock: {
-          body:
-            "La fila de abajo es la barra de {cosmic}: cada sistema a un toque. {mission} es tu repaso diario; vuelve a él.",
+            "Esto es {cosmic}: seis sistemas a mi alrededor, {omni} arriba, {scanner} para cartas y carteles, y la barra abajo.",
         },
         choose: {
           body:
-            "Ya has visto los dos aspectos. Elige uno para empezar; puedes cambiarlo cuando quieras con el interruptor de arriba en Inicio, o en Ajustes.",
+            "Ya has visto los dos aspectos. Elige uno para empezar; puedes cambiar cuando quieras.",
         },
       },
     },

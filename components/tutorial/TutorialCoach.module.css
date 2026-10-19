@@ -57,6 +57,9 @@
 */
 :global(body:has([data-yumi-typing="true"])) .coach {
   top: calc(env(safe-area-inset-top) + 0.25rem);
+  /* A step placed at the foot keeps its `bottom` otherwise, and a strip
+     fixed at both edges is the whole height of the screen. */
+  bottom: auto;
 }
 
 :global(body:has([data-yumi-typing="true"])) .card {
@@ -99,6 +102,24 @@
 .switchStep {
   top: auto;
   bottom: calc(env(safe-area-inset-bottom) + 1.25rem);
+}
+
+/*
+  The dial's steps, on Home: at the foot, and still there while it is out.
+
+  The rule near the top hides the strip while the ring is open, written when
+  the only step about the ring was over the moment it opened. The dial's two
+  steps are read with it open — turn it, then turn to Search — so they stand
+  at the foot, below its lowest key, and stay. Without this a reader opened
+  the dial and lost the sentence telling them what to do with it.
+*/
+.dialStep {
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + 1.25rem);
+}
+
+:global(body:has([data-yumi-mode="open"])) .coach.dialStep {
+  opacity: 1;
 }
 
 .card {
@@ -174,6 +195,27 @@
   font-size: 0.8125rem;
   font-weight: 600;
   color: rgb(0 0 0 / 0.42);
+  cursor: pointer;
+}
+
+/*
+  "Skip this step": a quiet outlined key beside the waiting dots, for a step
+  the reader cannot do right now — no cookie on Home to feed, a lookup that
+  will not come. Distinct from Skip, which ends the whole tour (Chi,
+  2026-10-18: "這一步應該可以跳過").
+*/
+.skipStep {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 0.75rem;
+  border: 1px solid rgb(0 0 0 / 0.16);
+  border-radius: 999px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(0 0 0 / 0.62);
   cursor: pointer;
 }
 
@@ -259,6 +301,11 @@
 :global(html[data-interface-mode="yumi-cosmic"]) .door {
   background: var(--cosmic-cyan);
   color: var(--cosmic-on-mint);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .skipStep {
+  border-color: var(--cosmic-hairline);
+  color: var(--cosmic-ink);
 }
 
 :global(html[data-interface-mode="yumi-cosmic"]) .skip {

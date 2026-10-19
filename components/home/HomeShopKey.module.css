@@ -81,30 +81,12 @@
   visibility: hidden;
 }
 
-/* The tour's cookie step (TutorialCoach) points here, the way the switch
-   step breathes a ring out of the switch. */
-:global(body:has([data-coach-step="cookies"]:not([data-coach-done]))) .key::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border: 1.5px solid currentColor;
-  border-radius: 50%;
-  opacity: 0;
-  animation: shopHint 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-@keyframes shopHint {
-  0% { opacity: 0.55; scale: 0.92; }
-  70%, 100% { opacity: 0; scale: 1.25; }
-}
+/* The tour's cookie step lights this with the tour's own glow
+   (components/tutorial/CoachLight); its ring of its own here is gone, so
+   the key is not outlined twice. */
 
 @media (prefers-reduced-motion: reduce) {
   .key {
     transition: none;
-  }
-
-  :global(body:has([data-coach-step="cookies"]:not([data-coach-done]))) .key::after {
-    animation: none;
-    opacity: 0.5;
   }
 }

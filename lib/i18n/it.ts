@@ -438,7 +438,8 @@ const italian: TranslationDictionary = {
 
     coach: {
       label: "Capitolo {chapter} · {name} · {current}/{total}",
-      skip: "Salta",
+      skip: "Salta il tour",
+      skipStep: "Salta questo passo",
       next: "Avanti",
       finish: "Inizia",
       done: "Bene.",
@@ -451,6 +452,7 @@ const italian: TranslationDictionary = {
         shop: "Il negozio di Yumi",
         cosmic: "L'altro aspetto",
       },
+      whatsNew: "Novità · {current}/{total}",
       needsStandard:
         "Questa parte del tour si svolge in {standard}. Passa lì e continuiamo da quel punto.",
       toStandard: "Passa a {standard}",
@@ -462,87 +464,75 @@ const italian: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Sono Yumi. Questa schermata non ha un menù — il menù sono io. Toccami per aprirlo (o tira il mio occhio e lascia).",
+            "Sono Yumi, e anche il menù. Toccami per aprire la ghiera, girala verso un posto e tocca quel tasto per entrare.",
         },
         ask: {
           body:
-            "Cerca una parola. Scrivila, dilla, fotografa quello che hai davanti oppure passami un menù, un cartello, un modulo: tutte e quattro tornano sulla stessa scheda.",
+            "Gira fino a «Cerca», toccalo e cerca una parola: scrivila, dilla o fotografala.",
         },
         keep: {
           body:
-            "Tienila. Ogni parola che tieni diventa uno dei miei biscotti di energia.",
+            "Salva una parola nuova e ricevi due cose: un biscotto nella Home per nutrirmi e +1 biscotto energia per il negozio.",
         },
         feed: {
           body:
-            "Di nuovo alla home: la prossima volta che hai finito con una parola, toccami e basta. Dammene uno: trascina un biscotto su di me, oppure toccalo per vedere la parola e premi «Nutri Yumi». Una parola nuova al giorno e non ho mai fame.",
+            "Dopo una parola, toccami per tornare alla Home. Dammene uno: trascina un biscotto su di me, oppure toccalo e premi «Nutri Yumi». Non costa biscotti energia.",
         },
         library: {
           body:
-            "Questo è il tuo Vocabolario. Qui vive ogni parola che tieni: riascoltala, leggi i suoi esempi e inizia un ripasso da qui.",
+            "Vocabolario: tutte le parole che tieni, con il loro suono e gli esempi.",
           action: "Apri il Vocabolario",
         },
         review: {
           body:
-            "Questo è Ripassa. Ogni parola torna qui verso il giorno in cui la dimenticheresti: pochi minuti e resta. La Home mostra quante ti aspettano.",
+            "Ripassa: le parole tornano poco prima che tu le dimentichi. Un giro perfetto dà 3 biscotti energia.",
           action: "Apri Ripassa",
+        },
+        pronunciation: {
+          body:
+            "Laboratorio di pronuncia: guarda come formo ogni suono, poi registrati per confrontare.",
+          action: "Apri il Laboratorio di pronuncia",
         },
         share: {
           body:
-            "Questi sono i tuoi Messaggi. Aggiungi un amico e potrai mandargli qualsiasi parola cerchi. Una parola cercata da soli è un'informazione; una parola mandata a qualcuno diventa un ricordo.",
+            "Messaggi: aggiungi un amico e mandagli qualsiasi parola che cerchi.",
           action: "Apri Messaggi",
         },
         notes: {
           body:
-            "Queste sono le tue Note. Certe cose non stanno in una parola: perché l'hanno detto così, cosa è successo quel giorno, quanto era scortese in quella stanza. Quelle vanno qui.",
+            "Note: per ciò che una sola parola non basta a contenere.",
           action: "Apri le Note",
         },
         discover: {
           body:
-            "Questo è Scopri. Ogni giorno arrivano alcune notizie scritte nella lingua che stai imparando, con le parole da tenere già segnate.",
+            "Scopri: qualche notizia al giorno, nella lingua che stai imparando.",
           action: "Apri Scopri",
         },
         settings: {
           body:
-            "Queste sono le Impostazioni. Qui cambi la lingua dell'app e le lingue che stai imparando. Per rivedere questo tour, cercalo in Aiuto e informazioni.",
+            "Impostazioni: cambia le lingue o rivedi questo tour da Aiuto e informazioni.",
           action: "Apri le Impostazioni",
         },
         cookies: {
           body:
-            "Salvare una parola per la prima volta ti dà un biscotto energia, e superare tutte le carte di un ripasso te ne dà altri tre. La borsa in alto a destra porta al mio negozio in orbita attorno alla Terra: lì puoi spendere i biscotti per darmi un nuovo look.",
+            "I biscotti energia sono la moneta del mio negozio. La borsa in alto a destra è l'ingresso.",
         },
         tryOn: {
           body:
-            "Questo è il mio negozio: io sul piedistallo, i pezzi qui sotto. Tocca un pezzo e lo provo gratis; toccalo di nuovo per toglierlo.",
-          action: "Apri il negozio",
-        },
-        buy: {
-          body:
-            "Ti piace? Tocca Acquista. I biscotti si spendono solo dopo la conferma, e lo indosso subito: lo vedrai anche nella home. Quello che non compri resta nel camerino.",
+            "Tocca un pezzo e lo provo gratis. Ti piace? Acquista: si spende solo alla conferma.",
           action: "Apri il negozio",
         },
         modeSwitch: {
           body:
-            "Exchange Notes ha due aspetti. Tocca l'interruttore in alto a destra, accanto alla stella, per passare a {cosmic}. Le tue parole e i tuoi progressi restano uguali: toccalo di nuovo quando vuoi tornare.",
+            "Tocca l'interruttore in alto a destra per passare a {cosmic}. Le tue parole e i tuoi progressi non cambiano.",
         },
         deck: {
           body:
-            "Questa è la home di {cosmic}. Sono sempre al centro, con sei sistemi intorno: {lexicon}, {mission}, {scanner}, {comms}, {earth} e {memory}. Tocca uno qualsiasi per entrare.",
-        },
-        omni: {
-          body:
-            "{omni}, in alto, è la stessa ricerca di {standard}: scrivi, parla o scatta una foto. Stesse risposte, e le parole che tieni finiscono nello stesso vocabolario.",
-        },
-        scanner: {
-          body:
-            "{scanner} è lo strumento che userai di più qui: fotografa un menù o un cartello e ti traduco l'intera pagina, prezzi compresi.",
-        },
-        dock: {
-          body:
-            "La fila in basso è la barra di {cosmic}: ogni sistema a un tocco. {mission} è il tuo ripasso quotidiano; torna a trovarlo.",
+            "Questo è {cosmic}: sei sistemi intorno a me, {omni} in alto, {scanner} per menù e cartelli, e la barra in basso.",
         },
         choose: {
           body:
-            "Hai visto entrambi gli aspetti. Scegline uno per iniziare — puoi cambiarlo quando vuoi con l'interruttore in alto nella Home, o nelle Impostazioni.",
+            "Hai visto entrambi gli aspetti. Scegline uno per iniziare; puoi cambiare quando vuoi.",
         },
       },
     },

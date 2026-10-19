@@ -439,7 +439,8 @@ const english: TranslationDictionary = {
 
     coach: {
       label: "Chapter {chapter} · {name} · {current}/{total}",
-      skip: "Skip",
+      skip: "Skip tour",
+      skipStep: "Skip this step",
       next: "Next",
       finish: "Start",
       done: "Good.",
@@ -452,6 +453,7 @@ const english: TranslationDictionary = {
         shop: "Yumi’s shop",
         cosmic: "The other look",
       },
+      whatsNew: "What’s new · {current}/{total}",
       needsStandard:
         "This part of the tour happens in {standard}. Switch over and we'll carry on from there.",
       toStandard: "Switch to {standard}",
@@ -463,87 +465,75 @@ const english: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "I'm Yumi. There is no menu on this screen — I am it. Tap me to open it (or pull my eye and let go).",
+            "I'm Yumi — and the menu. Tap me to open the dial, turn it to a place, then tap that key to go in.",
         },
         ask: {
           body:
-            "Look something up. Type it, say it, photograph whatever is in front of you, or hand me a menu, a sign, a form — all four come back to the same card.",
+            "Turn to Search, tap it, and look a word up — type it, say it or photograph it.",
         },
         keep: {
           body:
-            "Keep it. Every word you keep becomes one of my energy cookies.",
+            "Save a new word and you get two things: a cookie on Home to feed me, and +1 energy cookie for the shop.",
         },
         feed: {
           body:
-            "I've brought you back home — next time you're done with a word, just tap me. Feed me one: drag a cookie onto me, or tap it to see its word and press “Feed Yumi”. One new word a day and I never go hungry.",
+            "I've brought you back home — next time you're done with a word, just tap me. Feed me one: drag a cookie onto me, or tap it and press “Feed Yumi”. It costs no energy cookies.",
         },
         library: {
           body:
-            "This is your Vocabulary. Every word you keep lives here — play it again, read its examples, and start a review from here.",
+            "Vocabulary: every word you keep, with its sound and examples.",
           action: "Open Vocabulary",
         },
         review: {
           body:
-            "This is Review. A word comes back here around the day you would forget it — a few minutes, and it stays. Home shows how many are waiting.",
+            "Review: words come back just before you'd forget them. A perfect round earns 3 energy cookies.",
           action: "Open Review",
+        },
+        pronunciation: {
+          body:
+            "Pronunciation Lab: watch how I shape each sound, then record yours to compare.",
+          action: "Open the Pronunciation Lab",
         },
         share: {
           body:
-            "These are your Messages. Add a friend and you can send them any word you look up. A word you looked up alone is information; a word you sent someone becomes a memory.",
+            "Messages: add a friend and send them any word you look up.",
           action: "Open Messages",
         },
         notes: {
           body:
-            "These are your Notes. Some things do not fit in a word: why they said it that way, what happened that day, how rude that phrase was in that room. Those go here.",
+            "Notes: for what a single word can't hold.",
           action: "Open Notes",
         },
         discover: {
           body:
-            "This is Discover. A few news stories arrive every day, written in the language you are learning, with the words worth keeping already marked.",
+            "Discover: a few news stories a day, in the language you're learning.",
           action: "Open Discover",
         },
         settings: {
           body:
-            "This is Settings. App language and the languages you are learning change here. To see this tour again, look in Help & About.",
+            "Settings: change languages, or replay this tour from Help & About.",
           action: "Open Settings",
         },
         cookies: {
           body:
-            "Saving a word for the first time earns an energy cookie, and passing every card in a review round earns three more. The bag at the top right leads to my shop in orbit above Earth — spend your cookies there on new looks for me.",
+            "Energy cookies are my shop's money. Saving a word for the first time earns an energy cookie; the bag at the top right is the way in.",
         },
         tryOn: {
           body:
-            "This is my shop: me on the stand, the pieces below. Tap any piece and I’ll try it on for free — tap it again to take it off.",
-          action: "Open the shop",
-        },
-        buy: {
-          body:
-            "Like it? Tap Buy. Cookies are only spent once you confirm, and I’ll put it on straight away — you’ll see it at home too. Anything you don’t buy stays in the fitting room.",
+            "Tap any piece and I’ll try it on for free. Like it? Buy — cookies are only spent once you confirm.",
           action: "Open the shop",
         },
         modeSwitch: {
           body:
-            "Exchange Notes has two looks. Tap the switch at the top right, beside the star, to go to {cosmic}. Your words and progress stay exactly the same — tap it again any time to come back.",
+            "Tap the switch at the top right to go to {cosmic}. Your words and progress stay the same.",
         },
         deck: {
           body:
-            "This is the {cosmic} home. I'm still in the middle, with six systems around me: {lexicon}, {mission}, {scanner}, {comms}, {earth} and {memory}. Tap any of them to go in.",
-        },
-        omni: {
-          body:
-            "{omni} up top is the same search as in {standard}: type, speak or take a photo. Same answers, and the words you keep go to the same library.",
-        },
-        scanner: {
-          body:
-            "{scanner} is the tool you'll reach for most here: photograph a menu or a sign and get the whole page translated, prices included.",
-        },
-        dock: {
-          body:
-            "The row at the bottom is the {cosmic} dock — every system is one tap away. {mission} is your daily review; come back to it.",
+            "This is {cosmic}: six systems around me, {omni} at the top, {scanner} for menus and signs, the dock below.",
         },
         choose: {
           body:
-            "You've seen both looks. Pick one to start with — you can change it any time with the switch at the top of Home, or in Settings.",
+            "You've seen both looks. Pick one to start — you can switch any time.",
         },
       },
     },

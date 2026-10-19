@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /* =========================================================
-   A tour that waits for the reader — in three chapters
+   A tour that waits for the reader — in four chapters
 
    The old one advanced when a button was pressed, which meant it could be
    finished without touching the app — and the page it spent describing the
@@ -20,10 +20,16 @@ vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
 
 const { announceHomeMoment } = await import("@/lib/home/homeMoments");
 const { announceWordSaved } = await import("@/lib/pet/wordSaved");
-const { COACH_FINISHED, getCoachStep, setCoachStep } = await import(
-  "@/lib/home/tutorialCoach"
-);
-const { default: TutorialCoach, COACH_STEPS } = await import(
+const {
+  COACH_EDITION,
+  COACH_FINISHED,
+  armCoach,
+  getCoachStep,
+  getCoachTrack,
+  resetCoachCacheForTests,
+  setCoachStep,
+} = await import("@/lib/home/tutorialCoach");
+const { default: TutorialCoach, COACH_STEPS, REFRESH_STEPS } = await import(
   "@/components/tutorial/TutorialCoach"
 );
 
@@ -88,48 +94,59 @@ describe("chapter one: doing it on the home screen", () => {
     expect(screen.getByText("Chapter 1 · Home · 1/4")).toBeInTheDocument();
   });
 
-  it("waits for the ring to actually open before moving on", async () => {
+  it("waits for the dial to be turned, not merely opened", async () => {
     coach();
 
-    expect(screen.getByText(/Tap me to open it/)).toBeInTheDocument();
+    expect(screen.getByText(/Tap me to open the dial, turn it/)).toBeInTheDocument();
 
-    /* The wrong event must do nothing: a reader who looked a word up without
-       ever opening the ring has not done step one. */
+    /* The wrong events must do nothing: a reader who looked a word up, or
+       opened the dial and never turned it, has not done step one. */
     await act(async () => {
       announceHomeMoment("word-answered");
     });
-
-    expect(screen.getByText(/Tap me to open it/)).toBeInTheDocument();
-
     await act(async () => {
       announceHomeMoment("ring-opened");
+    });
+
+    expect(screen.queryByText("Good.")).toBeNull();
+
+    await act(async () => {
+      announceHomeMoment("dial-turned");
     });
 
     expect(screen.getByText("Good.")).toBeInTheDocument();
   });
 
-  it("offers no way to press past a step that is waiting", () => {
+  it("offers no Next on a step that is waiting, only a way past that one step", async () => {
     coach();
 
-    /* Skip is always there — a tour nobody can leave is worse than one
-       nobody finishes — but "Next" is not, because an instruction you can
-       dismiss is a sentence rather than a step. */
-    expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument();
+    /* "Next" would read as the way on and make every instruction optional.
+       Skip tour is always there — a tour nobody can leave is worse than one
+       nobody finishes — and so is a quieter key past the one step, for a
+       step that cannot be done right now (Chi, 2026-10-18). */
     expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Skip tour" })).toBeInTheDocument();
+
+    await act(async () => {
+      screen.getByRole("button", { name: "Skip this step" }).click();
+    });
+
+    expect(getCoachStep()).toBe(stepOf("ask"));
+    expect(screen.getByText(/Turn to Search, tap it/)).toBeInTheDocument();
   });
 
   it("does not count a word the reader already had as keeping one", async () => {
-    setCoachStep(2); // keep
+    setCoachStep(stepOf("keep"));
 
     coach();
 
-    expect(screen.getByText(/Every word you keep/)).toBeInTheDocument();
+    expect(screen.getByText(/you get two things/)).toBeInTheDocument();
 
     await act(async () => {
       announceWordSaved({ term: "lamp", duplicate: true });
     });
 
-    expect(screen.getByText(/Every word you keep/)).toBeInTheDocument();
+    expect(screen.getByText(/you get two things/)).toBeInTheDocument();
 
     await act(async () => {
       announceWordSaved({ term: "biblioteca", duplicate: false });
@@ -139,7 +156,7 @@ describe("chapter one: doing it on the home screen", () => {
   });
 
   it("does not leave the reader stuck on keep when there was nothing to keep", async () => {
-    setCoachStep(1); // ask
+    setCoachStep(stepOf("ask"));
 
     coach();
 
@@ -159,7 +176,7 @@ describe("chapter one: doing it on the home screen", () => {
       announceHomeMoment("word-answered");
     });
 
-    expect(screen.getByText(/Every word you keep/)).toBeInTheDocument();
+    expect(screen.getByText(/you get two things/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
   });
 
@@ -214,12 +231,13 @@ describe("chapter two: around the app", () => {
     const { again } = coach("/vocabulary");
 
     for (const [pathname, text, position] of [
-      ["/vocabulary", /This is your Vocabulary/, "1/6"],
-      ["/review", /This is Review/, "2/6"],
-      ["/messages", /These are your Messages/, "3/6"],
-      ["/notes", /These are your Notes/, "4/6"],
-      ["/discover", /This is Discover/, "5/6"],
-      ["/profile", /This is Settings/, "6/6"],
+      ["/vocabulary", /Vocabulary: every word you keep/, "1/7"],
+      ["/review", /A perfect round earns 3 energy cookies/, "2/7"],
+      ["/pronunciation", /Pronunciation Lab: watch how I shape each sound/, "3/7"],
+      ["/messages", /Messages: add a friend/, "4/7"],
+      ["/notes", /Notes: for what a single word can't hold/, "5/7"],
+      ["/discover", /Discover: a few news stories a day/, "6/7"],
+      ["/profile", /Settings: change languages/, "7/7"],
     ] as const) {
       again(pathname);
       expect(screen.getByText(text)).toBeInTheDocument();
@@ -247,9 +265,9 @@ describe("chapter three: Yumi's shop", () => {
     setCoachStep(stepOf("cookies"));
 
     const { again, container } = coach("/home");
-    expect(screen.getByText("Chapter 3 · Yumi’s shop · 1/3")).toBeInTheDocument();
-    /* The card names the step, which is what makes the shop key show itself
-       and breathe (HomeShopKey.module.css) while the card is up. */
+    expect(screen.getByText("Chapter 3 · Yumi’s shop · 1/2")).toBeInTheDocument();
+    /* The card names the step, which is what keeps the shop key in view
+       (HomeShopKey.module.css) while the tour's glow rings it. */
     expect(container.querySelector("[data-coach-card]")).toHaveAttribute("data-coach-step", "cookies");
     await act(async () => {
       screen.getByRole("button", { name: "Next" }).click();
@@ -259,8 +277,11 @@ describe("chapter three: Yumi's shop", () => {
     again("/home");
     expect(screen.getByRole("link", { name: "Open the shop" })).toHaveAttribute("href", "/shop");
 
+    /* In the shop: a try-on, told in the same breath how buying works,
+       rather than made to spend. */
     again("/shop");
     expect(screen.getByText(/Tap any piece and I’ll try it on for free/)).toBeInTheDocument();
+    expect(screen.getByText(/cookies are only spent once you confirm/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
 
     vi.useFakeTimers();
@@ -271,11 +292,6 @@ describe("chapter three: Yumi's shop", () => {
     });
     vi.useRealTimers();
 
-    expect(getCoachStep()).toBe(stepOf("buy"));
-    expect(screen.getByText(/Cookies are only spent once you confirm/)).toBeInTheDocument();
-    await act(async () => {
-      screen.getByRole("button", { name: "Next" }).click();
-    });
     expect(getCoachStep()).toBe(stepOf("modeSwitch"));
   });
 });
@@ -286,12 +302,12 @@ describe("chapter four: the other look", () => {
 
     const { again, container } = coach("/home");
 
-    expect(screen.getByText("Chapter 4 · The other look · 1/6")).toBeInTheDocument();
-    expect(screen.getByText(/Tap the switch at the top right, beside the star/)).toBeInTheDocument();
+    expect(screen.getByText("Chapter 4 · The other look · 1/3")).toBeInTheDocument();
+    expect(screen.getByText(/Tap the switch at the top right to go to Yumi Cosmic Mode/)).toBeInTheDocument();
     /* The card names the step, which is what lets the switch show itself
        (HomeModePortal.module.css) while every other step keeps it hidden. */
     expect(container.querySelector("[data-coach-card]")).toHaveAttribute("data-coach-step", "modeSwitch");
-    /* The only way on is the switch itself. */
+    /* The way on is the switch itself; there is no Next and no door. */
     expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
     expect(screen.queryByRole("link")).toBeNull();
 
@@ -311,6 +327,21 @@ describe("chapter four: the other look", () => {
     vi.useRealTimers();
 
     expect(getCoachStep()).toBe(stepOf("deck"));
+  });
+
+  it("goes straight to the choice when the switch is passed, not to the Cosmic steps", async () => {
+    setCoachStep(stepOf("modeSwitch"));
+
+    coach("/home");
+
+    await act(async () => {
+      screen.getByRole("button", { name: "Skip this step" }).click();
+    });
+
+    /* Passing the switch means staying in Standard: the deck step would
+       only ask for the switch again. */
+    expect(getCoachStep()).toBe(stepOf("choose"));
+    expect(screen.getByRole("button", { name: "Start in Standard Mode" })).toBeInTheDocument();
   });
 
   it("sends a reader who is elsewhere back to Home for the switch, not to Settings", () => {
@@ -341,13 +372,13 @@ describe("chapter four: the other look", () => {
     expect(onNavigate).toHaveBeenCalledWith("/home");
   });
 
-  it("names the deck's systems exactly as the deck does", () => {
+  it("names the deck's parts exactly as the deck does", () => {
     setCoachStep(stepOf("deck"));
 
     coach("/home", "yumi-cosmic");
 
     expect(
-      screen.getByText(/Lexicon Core, Mission Control, Menu Translator, Comms, Earth Signal and Memory Deck/),
+      screen.getByText(/Yumi OmniLexicon at the top, Menu Translator for menus and signs/),
     ).toBeInTheDocument();
   });
 
@@ -356,11 +387,157 @@ describe("chapter four: the other look", () => {
 
     const { onSetMode } = coach("/home", "yumi-cosmic");
 
-    expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Skip tour" })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Start in Standard Mode" }));
 
     expect(onSetMode).toHaveBeenCalledWith("standard");
     expect(getCoachStep()).toBe(COACH_FINISHED);
+  });
+});
+
+describe("one word, two cookies (2026-10-18)", () => {
+  it("says, at the save, that one word earns two different cookies", async () => {
+    setCoachStep(stepOf("keep"));
+
+    coach();
+
+    expect(screen.getByText(/a cookie on Home to feed me, and \+1 energy cookie for the shop/)).toBeInTheDocument();
+
+    vi.useFakeTimers();
+    await act(async () => {
+      announceWordSaved({ term: "biblioteca", duplicate: false });
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    vi.useRealTimers();
+
+    /* Then feeding, which says it spends none of the shop's. */
+    expect(getCoachStep()).toBe(stepOf("feed"));
+    expect(screen.getByText(/It costs no energy cookies/)).toBeInTheDocument();
+  });
+});
+
+describe("what's new, for a reader who had finished the tour", () => {
+  /* The device a reader brings from the last edition: a finished tour, and
+     no edition recorded, because the last edition did not record one. */
+  function finishedLastEdition() {
+    window.localStorage.clear();
+    window.localStorage.setItem("yumi-coach-step", String(COACH_FINISHED));
+    resetCoachCacheForTests();
+  }
+
+  afterEach(() => {
+    window.localStorage.clear();
+    resetCoachCacheForTests();
+  });
+
+  it("is only the steps this edition added, in tour order", () => {
+    expect(REFRESH_STEPS.map((step) => step.key)).toEqual([
+      "meet",
+      "keep",
+      "pronunciation",
+      "cookies",
+    ]);
+  });
+
+  it("shows them, labelled as new, and then is done for good", async () => {
+    finishedLastEdition();
+
+    const { again, container } = coach("/home");
+
+    expect(getCoachTrack()).toBe("refresh");
+    expect(screen.getByText("What’s new · 1/4")).toBeInTheDocument();
+
+    vi.useFakeTimers();
+    await act(async () => {
+      announceHomeMoment("dial-turned");
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    vi.useRealTimers();
+
+    /* What a kept word earns, told rather than waited for: a returning
+       reader has no answer up to keep from. */
+    expect(screen.getByText("What’s new · 2/4")).toBeInTheDocument();
+    expect(screen.getByText(/you get two things/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Skip this step" })).toBeNull();
+    await act(async () => {
+      screen.getByRole("button", { name: "Next" }).click();
+    });
+
+    /* The lab is somewhere else: a door, then the step on arrival. */
+    expect(screen.getByRole("link", { name: "Open the Pronunciation Lab" })).toHaveAttribute(
+      "href",
+      "/pronunciation",
+    );
+    again("/pronunciation");
+    expect(screen.getByText("What’s new · 3/4")).toBeInTheDocument();
+    await act(async () => {
+      screen.getByRole("button", { name: "Next" }).click();
+    });
+
+    expect(screen.getByRole("link", { name: "Back to Home" })).toHaveAttribute("href", "/home");
+    again("/home");
+    expect(screen.getByText("What’s new · 4/4")).toBeInTheDocument();
+    expect(screen.getByText(/Energy cookies are my shop's money/)).toBeInTheDocument();
+    await act(async () => {
+      screen.getByRole("button", { name: "Next" }).click();
+    });
+
+    expect(container).toBeEmptyDOMElement();
+    expect(getCoachStep()).toBe(COACH_FINISHED);
+    expect(getCoachTrack()).toBe("full");
+
+    /* Read fresh, as the next visit would: it does not come back. */
+    resetCoachCacheForTests();
+    expect(getCoachStep()).toBe(COACH_FINISHED);
+    expect(getCoachTrack()).toBe("full");
+  });
+
+  it("does not come back after being skipped", async () => {
+    finishedLastEdition();
+
+    coach("/home");
+    await act(async () => {
+      screen.getByRole("button", { name: "Skip tour" }).click();
+    });
+
+    resetCoachCacheForTests();
+    expect(getCoachStep()).toBe(COACH_FINISHED);
+    expect(window.localStorage.getItem("yumi-coach-edition")).toBe(String(COACH_EDITION));
+  });
+
+  it("waits quietly in Cosmic instead of asking for a change of look", () => {
+    finishedLastEdition();
+
+    const { container } = coach("/home", "yumi-cosmic");
+
+    expect(getCoachTrack()).toBe("refresh");
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("is not shown to a reader who never began a tour", () => {
+    window.localStorage.clear();
+    resetCoachCacheForTests();
+
+    const { container } = coach("/home");
+
+    expect(getCoachStep()).toBe(COACH_FINISHED);
+    expect(getCoachTrack()).toBe("full");
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("gives a reader who starts the tour now the whole of it", () => {
+    finishedLastEdition();
+    expect(getCoachTrack()).toBe("refresh");
+
+    act(() => armCoach());
+    coach("/home");
+
+    expect(getCoachTrack()).toBe("full");
+    expect(screen.getByText("Chapter 1 · Home · 1/4")).toBeInTheDocument();
   });
 });

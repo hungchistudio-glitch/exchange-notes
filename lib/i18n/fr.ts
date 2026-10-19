@@ -438,7 +438,8 @@ const french: TranslationDictionary = {
 
     coach: {
       label: "Chapitre {chapter} · {name} · {current}/{total}",
-      skip: "Passer",
+      skip: "Passer la visite",
+      skipStep: "Passer cette étape",
       next: "Suivant",
       finish: "Commencer",
       done: "Bien.",
@@ -451,6 +452,7 @@ const french: TranslationDictionary = {
         shop: "La boutique de Yumi",
         cosmic: "L'autre visage",
       },
+      whatsNew: "Nouveautés · {current}/{total}",
       needsStandard:
         "Cette partie du tour se passe en {standard}. Bascule, et on reprend de là.",
       toStandard: "Passer en {standard}",
@@ -462,87 +464,75 @@ const french: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Je suis Yumi. Cet écran n'a pas de menu — le menu, c'est moi. Touche-moi pour l'ouvrir (ou tire sur mon œil, puis lâche).",
+            "Je suis Yumi, et aussi le menu. Touche-moi pour ouvrir le cadran, tourne-le vers un endroit, puis touche cette touche pour entrer.",
         },
         ask: {
           body:
-            "Cherche un mot. Écris-le, dis-le, photographie ce que tu as devant toi, ou donne-moi une carte, un panneau, un formulaire : les quatre reviennent à la même fiche.",
+            "Tourne jusqu'à « Rechercher », touche-le et cherche un mot : écris-le, dis-le ou photographie-le.",
         },
         keep: {
           body:
-            "Garde-le. Chaque mot que tu gardes devient un de mes biscuits d'énergie.",
+            "Garde un nouveau mot et tu reçois deux choses : un biscuit sur l'accueil pour me nourrir, et +1 cookie d'énergie pour la boutique.",
         },
         feed: {
           body:
-            "Retour à l'accueil — la prochaine fois que tu as fini avec un mot, touche-moi, tout simplement. Donne-m'en un : glisse un biscuit jusqu'à moi, ou touche-le pour voir son mot et appuie sur « Nourrir Yumi ». Un mot nouveau par jour, et je n'ai jamais faim.",
+            "Après un mot, touche-moi pour revenir à l'accueil. Donne-m'en un : glisse un biscuit jusqu'à moi, ou touche-le et appuie sur « Nourrir Yumi ». Ça ne coûte aucun cookie d'énergie.",
         },
         library: {
           body:
-            "Voici ton Vocabulaire. Chaque mot que tu gardes vit ici : réécoute-le, lis ses exemples et lance une révision d'ici.",
+            "Vocabulaire : tous les mots que tu gardes, avec leur son et leurs exemples.",
           action: "Ouvrir le Vocabulaire",
         },
         review: {
           body:
-            "Voici Réviser. Chaque mot revient ici vers le jour où tu l'oublierais — quelques minutes, et il reste. L'accueil montre combien t'attendent.",
+            "Réviser : les mots reviennent juste avant que tu les oublies. Une série parfaite rapporte 3 cookies d'énergie.",
           action: "Ouvrir Réviser",
+        },
+        pronunciation: {
+          body:
+            "Laboratoire de prononciation : regarde comment je forme chaque son, puis enregistre-toi pour comparer.",
+          action: "Ouvrir le Laboratoire de prononciation",
         },
         share: {
           body:
-            "Voici tes Messages. Ajoute un ami et tu pourras lui envoyer n'importe quel mot que tu cherches. Un mot cherché seul est une information ; un mot envoyé à quelqu'un devient un souvenir.",
+            "Messages : ajoute un ami et envoie-lui n'importe quel mot que tu cherches.",
           action: "Ouvrir Messages",
         },
         notes: {
           body:
-            "Voici tes Notes. Certaines choses n'entrent pas dans un mot : pourquoi ils l'ont dit comme ça, ce qui s'est passé ce jour-là, à quel point c'était impoli dans cette pièce. Ça va ici.",
+            "Notes : pour ce qu'un seul mot ne peut pas contenir.",
           action: "Ouvrir les Notes",
         },
         discover: {
           body:
-            "Voici Découvrir. Quelques articles arrivent chaque jour, écrits dans la langue que tu apprends, avec les mots à garder déjà repérés.",
+            "Découvrir : quelques actualités par jour, dans la langue que tu apprends.",
           action: "Ouvrir Découvrir",
         },
         settings: {
           body:
-            "Voici les Réglages. La langue de l'app et les langues que tu apprends se changent ici. Pour revoir ce tour, regarde dans Aide et à propos.",
+            "Réglages : change de langue, ou revois cette visite depuis Aide et à propos.",
           action: "Ouvrir les Réglages",
         },
         cookies: {
           body:
-            "Enregistrer un mot pour la première fois te rapporte un cookie d'énergie, et réussir toutes les cartes d'une révision t'en rapporte trois de plus. Le sac en haut à droite mène à ma boutique en orbite autour de la Terre : dépense-y tes cookies pour me trouver un nouveau look.",
+            "Les cookies d'énergie sont la monnaie de ma boutique. Le sac en haut à droite y mène.",
         },
         tryOn: {
           body:
-            "Voici ma boutique : moi sur le présentoir, les pièces en dessous. Touche une pièce et je l'essaie gratuitement — touche-la encore pour l'enlever.",
-          action: "Ouvrir la boutique",
-        },
-        buy: {
-          body:
-            "Elle te plaît ? Touche Acheter. Les cookies ne sont dépensés qu'après confirmation, et je la porte aussitôt — tu la verras aussi sur l'accueil. Ce que tu n'achètes pas reste en cabine.",
+            "Touche une pièce et je l'essaie gratuitement. Elle te plaît ? Achète : rien n'est dépensé avant confirmation.",
           action: "Ouvrir la boutique",
         },
         modeSwitch: {
           body:
-            "Exchange Notes a deux visages. Touche l'interrupteur en haut à droite, à côté de l'étoile, pour passer à {cosmic}. Tes mots et ta progression ne bougent pas — touche-le à nouveau quand tu veux revenir.",
+            "Touche l'interrupteur en haut à droite pour passer à {cosmic}. Tes mots et ta progression ne changent pas.",
         },
         deck: {
           body:
-            "Voici l'accueil de {cosmic}. Je suis toujours au centre, entourée de six systèmes : {lexicon}, {mission}, {scanner}, {comms}, {earth} et {memory}. Touche l'un d'eux pour y entrer.",
-        },
-        omni: {
-          body:
-            "{omni}, en haut, c'est la même recherche qu'en {standard} : écris, parle ou prends une photo. Mêmes réponses, et les mots gardés vont dans le même vocabulaire.",
-        },
-        scanner: {
-          body:
-            "{scanner} est l'outil que tu utiliseras le plus ici : photographie une carte ou un panneau et je traduis toute la page, prix compris.",
-        },
-        dock: {
-          body:
-            "La rangée du bas, c'est la barre de {cosmic} : chaque système à un geste. {mission}, c'est ta révision du jour ; reviens-y.",
+            "Voici {cosmic} : six systèmes autour de moi, {omni} en haut, {scanner} pour les cartes et les panneaux, et la barre en bas.",
         },
         choose: {
           body:
-            "Tu as vu les deux visages. Choisis-en un pour commencer — tu pourras changer quand tu veux avec l'interrupteur en haut de l'Accueil, ou dans les Réglages.",
+            "Tu as vu les deux looks. Choisis-en un pour commencer ; tu peux changer quand tu veux.",
         },
       },
     },

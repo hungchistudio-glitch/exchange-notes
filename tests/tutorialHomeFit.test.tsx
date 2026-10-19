@@ -23,6 +23,7 @@ import { onHomeReturnRequest, onHomeSearchDismiss } from "@/lib/home/homeMoments
 import TutorialCoach, { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 
 const FEED = COACH_STEPS.findIndex(step => step.key === "feed");
+const KEEP = COACH_STEPS.findIndex(step => step.key === "keep");
 
 afterEach(() => {
   setCoachStep(COACH_FINISHED);
@@ -38,7 +39,7 @@ describe("the feed step", () => {
 
   it("says that a tap on Yumi is the way home from a search (Chi, 2026-10-03)", () => {
     expect(english.tutorial.coach.steps.feed.body).toMatch(/back home — next time .* just tap me/);
-    expect(zhTW.tutorial.coach.steps.feed.body).toMatch(/^我先帶你回首頁了——之後查完字，點我一下就回來。/);
+    expect(zhTW.tutorial.coach.steps.feed.body).toMatch(/^查完字，點我就回首頁。/);
   });
 
   it("puts the search answer away after a beat, so the cookies are within reach", () => {
@@ -80,7 +81,8 @@ describe("the feed step", () => {
 
   it("leaves the search alone on any other step", () => {
     vi.useFakeTimers();
-    setCoachStep(FEED - 1);
+    /* The keep step: the answer is still what the reader is saving. */
+    setCoachStep(KEEP);
     const dismissed = vi.fn();
     const stop = onHomeSearchDismiss(dismissed);
 
