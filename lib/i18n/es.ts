@@ -2836,7 +2836,8 @@ const spanish: TranslationDictionary = {
     yumiAlt: "La Yumi de {name}, vestida como estaba cuando se creó",
     dragHint: "Arrastra para girar a Yumi",
     privacyNote: "Cualquiera con este enlace puede ver esta invitación.",
-    testLink: "Este es un enlace de prueba. Solo funciona en esta versión de prueba.",
+    testLink: "Creado en una versión de prueba. El enlace usa la dirección oficial y se abrirá cuando esta versión esté publicada.",
+    testPage: "Estás viendo esto en una versión de prueba.",
     languageA: "Idioma A",
     languageB: "Idioma B",
     swap: "Intercambiar los dos idiomas",
@@ -2908,7 +2909,6 @@ const spanish: TranslationDictionary = {
     sendWithYumi: "Enviar con Yumi",
     recentHello: "Volver a la invitación de {name}",
     openHello: "Abrir",
-    testShort: "Prueba",
     settingsDescription: "Envía una palabra con Yumi y gestiona los enlaces que compartiste.",
     createLimit: "Llegaste al límite de hoy. Inténtalo mañana.",
     accountQr: "Escanea para añadir a {name} a tus amigos",
@@ -2917,7 +2917,7 @@ const spanish: TranslationDictionary = {
     chooseWord: "Primero elige una palabra.",
     previewBadge: "Vista previa: aún no es pública",
     imageAlt: "La invitación como imagen",
-    shareText: "La Yumi de {name} quiere regalarte una palabra.",
+    shareText: "La Yumi de {name} quiere regalarte una palabra: {word}",
   },
 };
 

@@ -2742,7 +2742,10 @@ export type TranslationDictionary = {
     yumiAlt: string;
     dragHint: string;
     privacyNote: string;
+    /** On the share screen, for a hello made on a test build: why its link may not open yet. */
     testLink: string;
+    /** On the hello page itself, when it is a test build serving it. */
+    testPage: string;
     languageA: string;
     languageB: string;
     swap: string;
@@ -2815,8 +2818,6 @@ export type TranslationDictionary = {
     recentHello: string;
     /** Opens one of my hellos from the list. */
     openHello: string;
-    /** The short mark on a hello made on a test build. */
-    testShort: string;
     /** Under "My Yumi invitations" in Settings. */
     settingsDescription: string;
     /** Making a hello refused for today's limit. */
@@ -2828,6 +2829,7 @@ export type TranslationDictionary = {
     chooseWord: string;
     previewBadge: string;
     imageAlt: string;
+    /** Sent with the link: who it is from and the word itself. */
     shareText: string;
   };
 };

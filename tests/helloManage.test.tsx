@@ -21,8 +21,7 @@ const ROW = {
   revoked: false,
   pair: ["en", "zh-TW"],
   sense: { en: { text: "library" }, "zh-TW": { text: "圖書館" } },
-  url: "https://exchange-notes-app.vercel.app/hello/AbCdEfGhIjKl",
-  test: false,
+  url: "https://exchange-notes-app.vercel.app/a-word-to-invite-you/AbCdEfGhIjKl",
 };
 
 const fetchMock = vi.fn();
@@ -47,7 +46,7 @@ describe("my Yumi invitations", () => {
     );
     render(<HelloManage />);
     expect(await screen.findByText("library · 圖書館")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Open/ }).getAttribute("href")).toBe("/hello/AbCdEfGhIjKl");
+    expect(screen.getByRole("link", { name: /Open/ }).getAttribute("href")).toBe("/a-word-to-invite-you/AbCdEfGhIjKl");
 
     fireEvent.click(screen.getByRole("button", { name: "Turn off" }));
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
@@ -83,7 +82,7 @@ describe("the friends screen", () => {
     await act(async () => {
       render(<HelloFriendsCard />);
     });
-    expect(screen.getByRole("link", { name: /Chi/ }).getAttribute("href")).toBe("/hello/AbCdEfGhIjKl");
+    expect(screen.getByRole("link", { name: /Chi/ }).getAttribute("href")).toBe("/a-word-to-invite-you/AbCdEfGhIjKl");
   });
 
   it("shows nothing when this device opened no hello", () => {

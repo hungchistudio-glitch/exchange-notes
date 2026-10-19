@@ -3,11 +3,9 @@
 import { QRCodeSVG } from "qrcode.react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
-import usePageOrigin from "@/hooks/usePageOrigin";
 import { APP_ORIGIN } from "@/lib/auth/canonicalOrigin";
 import { friendInviteUrl } from "@/lib/friends";
 import { fill } from "@/lib/i18n/format";
-import { isLiveOrigin } from "@/lib/hello/url";
 import { normalizeExchangeId } from "@/lib/utils";
 
 import styles from "./Hello.module.css";
@@ -24,16 +22,15 @@ import styles from "./Hello.module.css";
  * The Exchange ID is the sharer's current one (get_yumi_hello reads it
  * from their profile), so an ID they have since given up never sends
  * anyone to whoever took it. A standard code on its own white panel in
- * both looks, drawn only once the page knows its address: the live site's
- * one domain, or a test build's own.
+ * both looks, always to the live site's one domain, like the hello's own
+ * link (lib/hello/url.ts).
  */
 export default function HelloAccountQr({ exchangeId, name }: { exchangeId: string; name: string }) {
   const { t } = useTranslation();
-  const origin = usePageOrigin();
   const id = normalizeExchangeId(exchangeId);
-  if (!id || !origin) return null;
+  if (!id) return null;
 
-  const url = friendInviteUrl(id, isLiveOrigin(origin) ? APP_ORIGIN : origin);
+  const url = friendInviteUrl(id, APP_ORIGIN);
   const caption = fill(t.hello.accountQr, { name });
 
   return (

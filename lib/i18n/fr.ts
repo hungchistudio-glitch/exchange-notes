@@ -2642,7 +2642,8 @@ const french: TranslationDictionary = {
     yumiAlt: "La Yumi de {name}, habillée comme au moment du partage",
     dragHint: "Fais glisser pour tourner Yumi",
     privacyNote: "Toute personne ayant ce lien peut voir cette invitation.",
-    testLink: "Ceci est un lien de test. Il ne fonctionne que sur cette version de test.",
+    testLink: "Créé sur une version de test. Le lien utilise l’adresse officielle et s’ouvrira quand cette version sera en ligne.",
+    testPage: "Tu regardes ceci sur une version de test.",
     languageA: "Langue A",
     languageB: "Langue B",
     swap: "Échanger les deux langues",
@@ -2714,7 +2715,6 @@ const french: TranslationDictionary = {
     sendWithYumi: "Envoyer avec Yumi",
     recentHello: "Revenir à l’invitation de {name}",
     openHello: "Ouvrir",
-    testShort: "Test",
     settingsDescription: "Envoie un mot avec Yumi et gère les liens que tu as partagés.",
     createLimit: "Tu as atteint la limite du jour. Réessaie demain.",
     accountQr: "Scanne pour ajouter {name} à tes amis",
@@ -2723,7 +2723,7 @@ const french: TranslationDictionary = {
     chooseWord: "Choisis d’abord un mot.",
     previewBadge: "Aperçu — pas encore public",
     imageAlt: "L’invitation en image",
-    shareText: "La Yumi de {name} aimerait t’offrir un mot.",
+    shareText: "La Yumi de {name} veut t’offrir un mot : {word}",
   },
 };
 

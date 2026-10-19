@@ -123,10 +123,6 @@ export async function composeShareImage(input: ShareImageInput): Promise<Blob> {
   ctx.fillStyle = look.brass;
   ctx.font = `500 26px ${mono}`;
   ctx.fillText("STATION 33", 96, 130);
-  ctx.fillStyle = look.faint;
-  ctx.textAlign = "right";
-  ctx.fillText(`№ ${hello.id.slice(0, 6).toUpperCase()}`, 984, 130);
-  ctx.textAlign = "left";
 
   /* Greeting. */
   ctx.fillStyle = look.ink;
@@ -226,10 +222,22 @@ export async function composeShareImage(input: ShareImageInput): Promise<Blob> {
   ctx.fillText(input.scanCaption, qrX + qrSize / 2, qrTop + qrSize + 48);
   ctx.textAlign = "left";
 
-  /* The link, written out, for anyone who cannot scan. */
+  /*
+   * The link, written out, for anyone who cannot scan — a picture opened
+   * on the phone that would scan it. Across the foot of the sheet, below
+   * both columns, at the largest size that fits the sheet's width.
+   */
+  const link = input.url.replace(/^https?:\/\//, "");
+  let linkSize = 22;
+  ctx.font = `400 ${linkSize}px ${mono}`;
+  while (linkSize > 14 && ctx.measureText(link).width > 888) {
+    linkSize -= 1;
+    ctx.font = `400 ${linkSize}px ${mono}`;
+  }
   ctx.fillStyle = look.faint;
-  ctx.font = `400 22px ${mono}`;
-  ctx.fillText(input.url.replace(/^https?:\/\//, ""), 96, 1270);
+  ctx.textAlign = "center";
+  ctx.fillText(link, 540, 1284);
+  ctx.textAlign = "left";
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("No image"))), "image/png");

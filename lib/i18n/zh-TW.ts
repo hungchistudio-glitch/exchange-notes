@@ -2796,7 +2796,8 @@ const traditionalChinese: TranslationDictionary = {
     yumiAlt: "{name} 的 Yumi，穿著分享時的造型",
     dragHint: "拖曳可以轉動 Yumi",
     privacyNote: "持有這個連結的人都能看到這張邀請。",
-    testLink: "這是測試連結，只在這個測試環境有效。",
+    testLink: "這是在測試版建立的：連結用正式網址，等這個版本上線後才打得開。",
+    testPage: "你正在測試版上看這張邀請。",
     languageA: "語言 A",
     languageB: "語言 B",
     swap: "交換兩種語言",
@@ -2868,7 +2869,6 @@ const traditionalChinese: TranslationDictionary = {
     sendWithYumi: "用 Yumi 送這個字",
     recentHello: "回到 {name} 的邀請",
     openHello: "打開",
-    testShort: "測試",
     settingsDescription: "用 Yumi 送字給朋友，並管理分享過的連結。",
     createLimit: "今天的建立次數已用完，明天再試。",
     accountQr: "掃描加 {name} 為好友",
@@ -2877,7 +2877,7 @@ const traditionalChinese: TranslationDictionary = {
     chooseWord: "先選一個字。",
     previewBadge: "預覽・尚未公開",
     imageAlt: "邀請函圖片",
-    shareText: "{name} 的 Yumi 想送你一個字。",
+    shareText: "{name} 的 Yumi 想送你一個字：{word}",
   },
 };
 

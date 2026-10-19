@@ -8,6 +8,7 @@ import { findProfileByExchangeId } from "@/lib/friends";
 import { friendStanding, requestFriendship } from "@/lib/hello/friendState";
 import { rememberRecentHello } from "@/lib/hello/recent";
 import type { HelloLookup, HelloSense, HelloSide } from "@/lib/hello/types";
+import { helloJoinPath } from "@/lib/hello/url";
 import type { LanguageCode } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/client";
 
@@ -138,7 +139,7 @@ function ActiveHello({ hello, test }: { hello: Extract<HelloLookup, { status: "a
     [hello.id],
   );
 
-  const joinHref = `/hello/${encodeURIComponent(hello.id)}/join`;
+  const joinHref = helloJoinPath(hello.id);
   const actionsFor = (resolved: Resolved): HelloViewer => {
     if (resolved.kind === "guest") return { kind: "guest", startHref: joinHref, meetHref: `${joinHref}?intent=meet` };
     if (resolved.kind === "own") return { kind: "own", manageHref: "/invitations" };

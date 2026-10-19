@@ -135,7 +135,11 @@ describe("making a hello", () => {
     const response = await post({ ...VALID, sender: { name: "Someone Else" }, outfit: { head: "crown" }, owner: "x" });
     expect(response.status).toBe(200);
     const body = (await response.json()) as { url: string; test: boolean; hello: { id: string } };
-    expect(body).toMatchObject({ url: `${ORIGIN}/hello/AbCdEfGhIjKl`, test: false, hello: { id: "AbCdEfGhIjKl" } });
+    expect(body).toMatchObject({
+      url: `${ORIGIN}/a-word-to-invite-you/AbCdEfGhIjKl`,
+      test: false,
+      hello: { id: "AbCdEfGhIjKl" },
+    });
 
     expect(state.consume).toHaveBeenCalledWith("owner-1", "hello_sense", expect.any(Number));
     expect(state.consume.mock.calls.filter(([, operation]) => operation === "hello_sense")).toHaveLength(1);

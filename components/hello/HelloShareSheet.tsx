@@ -19,6 +19,11 @@ import { senderName } from "./HelloInvitation";
    same Yumi picture, words and name as the page (lib/hello/shareImage.ts),
    with the QR code drawn below at a size its modules can be read at.
 
+   The link itself is not written out on this screen (Chi: a long address
+   reads like a scam): the QR, the buttons and the picture carry it. When
+   it goes out it goes with who it is from and the word it brings, so the
+   person receiving it knows what it is before they open it.
+
      share link     the system sheet where there is one, else copy
      share image    only where this device can share a file; elsewhere
                     the picture is downloaded and the link copied instead
@@ -55,6 +60,8 @@ export default function HelloShareSheet({
   const { t, language } = useTranslation();
   const copy = t.hello;
   const name = senderName(hello);
+  const word = [hello.sense[hello.pair[0]]?.text, hello.sense[hello.pair[1]]?.text].filter(Boolean).join(" · ");
+  const message = fill(copy.shareText, { name, word });
   const qrRef = useRef<HTMLCanvasElement>(null);
   const [image, setImage] = useState<ImageState>({ status: "preparing" });
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
@@ -118,7 +125,7 @@ export default function HelloShareSheet({
   const shareLink = async () => {
     if (!navigator.share) return copyLink();
     try {
-      await navigator.share({ title: fill(copy.pageTitle, { name }), text: fill(copy.shareText, { name }), url });
+      await navigator.share({ title: fill(copy.pageTitle, { name }), text: message, url });
     } catch (error) {
       if (!isCancel(error)) await copyLink();
     }
@@ -127,7 +134,7 @@ export default function HelloShareSheet({
   const shareImage = async () => {
     if (!file) return;
     try {
-      await navigator.share({ files: [file], title: fill(copy.pageTitle, { name }), text: url });
+      await navigator.share({ files: [file], title: fill(copy.pageTitle, { name }), text: `${message}\n${url}` });
     } catch {
       /* Cancelled, or the sheet would not take it: download and copy remain. */
     }
@@ -142,7 +149,7 @@ export default function HelloShareSheet({
 
       {test ? <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[0.8125rem] text-amber-900">{copy.testLink}</p> : null}
 
-      <div className="flex items-center gap-4">
+      <div className="flex justify-center">
         <div className="rounded-2xl bg-white p-2 ring-1 ring-black/[0.08]">
           {/* Standard QR: dark on white, the full four-module quiet zone, never tinted. */}
           <QRCodeCanvas
@@ -153,11 +160,10 @@ export default function HelloShareSheet({
             level="M"
             bgColor="#ffffff"
             fgColor="#111111"
-            style={{ width: 120, height: 120 }}
+            style={{ width: 148, height: 148 }}
             aria-hidden="true"
           />
         </div>
-        <p className="min-w-0 flex-1 break-all font-mono text-[0.75rem] text-ink-soft">{url}</p>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">

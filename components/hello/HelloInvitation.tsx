@@ -72,9 +72,6 @@ export default function HelloInvitation({
         <article className={styles.sheet} aria-labelledby={`hello-${hello.id}`}>
           <header className={styles.header}>
             <span className={styles.mark}>Station 33</span>
-            <span className={styles.serial} aria-hidden="true">
-              № {hello.id.slice(0, 6).toUpperCase()}
-            </span>
           </header>
 
           <div className={styles.greeting}>
@@ -104,7 +101,7 @@ export default function HelloInvitation({
             />
           </div>
 
-          {test ? <p className={styles.testBadge}>{copy.testLink}</p> : null}
+          {test ? <p className={styles.testBadge}>{copy.testPage}</p> : null}
 
           {actions ? <div className={styles.actions}>{actions}</div> : null}
 

@@ -30,7 +30,6 @@ type Row = {
   pair: LanguageCode[];
   sense: HelloSense;
   url: string;
-  test: boolean;
 };
 
 type Load = { status: "loading" } | { status: "ready"; rows: Row[] } | { status: "failed" };
@@ -171,10 +170,6 @@ export default function HelloManage() {
                     {row.revoked ? (
                       <span className="shrink-0 rounded-full bg-black/[0.06] px-2.5 py-1 text-[0.6875rem] font-semibold text-ink-soft">
                         {copy.revoked}
-                      </span>
-                    ) : row.test ? (
-                      <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-[0.6875rem] font-semibold text-amber-900">
-                        {copy.testShort}
                       </span>
                     ) : null}
                   </div>

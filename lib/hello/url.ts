@@ -3,11 +3,17 @@ import { APP_ORIGIN } from "@/lib/auth/canonicalOrigin";
 /* =========================================================
    Where a hello lives
 
-   /hello/<id>, on the app's one real domain. A hello made on the live site
-   always says so, whatever address the sharer happened to open the app
-   from; a hello made on a development machine or a preview build points
-   back there, and is marked as a test link, so a random deployment
-   address is never handed out as the real one.
+   /a-word-to-invite-you/<id> (Chi's wording, 2026-10-19: a link that says
+   what it is reads as an invitation, not as a scam), always on the app's
+   one real domain — from a preview build or a development machine too.
+   Those share the live database, so a hello made there is real and opens
+   at the real address once the code serving it is live; a long deployment
+   address is never what a friend receives. `test` only says the hello was
+   made somewhere that is not the live site, so the screen can say why its
+   link may not open yet.
+
+   The first links said /hello/<id>; those redirect here (app/hello), and
+   a scanned code in either shape opens the hello.
 
    The id is twelve characters from a 64-letter alphabet — 72 bits —
    which is what "anyone holding the link can see it" rests on: it cannot
@@ -20,8 +26,15 @@ export function isHelloId(value: unknown): value is string {
   return typeof value === "string" && HELLO_ID_PATTERN.test(value);
 }
 
+export const HELLO_SEGMENT = "a-word-to-invite-you";
+
 export function helloPath(id: string): string {
-  return `/hello/${encodeURIComponent(id)}`;
+  return `/${HELLO_SEGMENT}/${encodeURIComponent(id)}`;
+}
+
+/** Signing in from a hello, and back (app/a-word-to-invite-you/[id]/join). */
+export function helloJoinPath(id: string): string {
+  return `${helloPath(id)}/join`;
 }
 
 /** Whether `origin` is the live site, as opposed to a test of it. */
@@ -34,25 +47,22 @@ export function isLiveOrigin(origin: string): boolean {
 }
 
 /**
- * The link a hello is shared with.
- *
- * Built from the canonical origin on the live site. Elsewhere — localhost,
- * a Vercel preview — from the origin it was made on, because that is the
- * only database it exists in; `test` says so, and the screen shows it.
+ * The link a hello is shared with: always the live site's address.
+ * `test` is true when it was made anywhere else, where the screen says the
+ * link opens once this version is live.
  */
 export function helloShareUrl(id: string, currentOrigin: string): { url: string; test: boolean } {
-  const live = isLiveOrigin(currentOrigin);
-  const origin = live ? APP_ORIGIN : currentOrigin.replace(/\/$/, "");
-  return { url: `${origin}${helloPath(id)}`, test: !live };
+  return { url: `${APP_ORIGIN}${helloPath(id)}`, test: !isLiveOrigin(currentOrigin) };
 }
 
 /**
  * The hello id in whatever a QR code decoded to, or "" if it is not one.
  *
- * Only http(s), only a /hello/<id> path, only an id of the exact shape: a
- * code from somewhere else is "not ours", which the scanner tells apart
- * from "ours, unreadable". The host is not checked, so a test link scanned
- * on its own test build still works; the id alone decides what opens.
+ * Only http(s), only an /a-word-to-invite-you/<id> or older /hello/<id>
+ * path, only an id of the exact shape: a code from somewhere else is "not
+ * ours", which the scanner tells apart from "ours, unreadable". The host is
+ * not checked, so a code scanned on a test build opens there; the id alone
+ * decides what opens, and it opens in this app, never at the scanned host.
  */
 export function helloIdFromUrl(value: string): string {
   let url: URL;
@@ -62,7 +72,7 @@ export function helloIdFromUrl(value: string): string {
     return "";
   }
   if (url.protocol !== "https:" && url.protocol !== "http:") return "";
-  const match = url.pathname.match(/^\/hello\/([^/]+)\/?$/);
+  const match = url.pathname.match(/^\/(?:a-word-to-invite-you|hello)\/([^/]+)\/?$/);
   if (!match) return "";
   const id = decodeURIComponent(match[1]);
   return isHelloId(id) ? id : "";

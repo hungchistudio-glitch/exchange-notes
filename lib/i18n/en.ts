@@ -2840,7 +2840,8 @@ const english: TranslationDictionary = {
     yumiAlt: "{name}’s Yumi, dressed as she was when this was made",
     dragHint: "Drag to turn Yumi",
     privacyNote: "Anyone with this link can see this invitation.",
-    testLink: "This is a test link. It only works on this test build.",
+    testLink: "Made on a test build. The link uses the live address and opens once this version is live.",
+    testPage: "You’re viewing this on a test build.",
     languageA: "Language A",
     languageB: "Language B",
     swap: "Swap the two languages",
@@ -2912,7 +2913,6 @@ const english: TranslationDictionary = {
     sendWithYumi: "Send with Yumi",
     recentHello: "Back to {name}’s invitation",
     openHello: "Open",
-    testShort: "Test",
     settingsDescription: "Send a word with Yumi, and manage the links you’ve shared.",
     createLimit: "You’ve reached today’s limit. Try again tomorrow.",
     accountQr: "Scan to add {name} as a friend",
@@ -2921,7 +2921,7 @@ const english: TranslationDictionary = {
     chooseWord: "Choose a word first.",
     previewBadge: "Preview — not public yet",
     imageAlt: "The invitation as an image",
-    shareText: "{name}’s Yumi would like to give you a word.",
+    shareText: "{name}’s Yumi has a word for you: {word}",
   },
 };
 

@@ -15,8 +15,8 @@ import { createClient } from "@/lib/supabase/server";
  *
  * A day rather than the friend invite's fifteen minutes, because signing
  * up is longer than signing in. And the destination is never taken from
- * the request: it is always /hello/<id>, for an id of the exact shape, so
- * there is no open redirect here.
+ * the request: it is always the hello's own path, for an id of the exact
+ * shape, so there is no open redirect here.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
