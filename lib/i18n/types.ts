@@ -2728,4 +2728,108 @@ export type TranslationDictionary = {
     categories: { featured: string; jewelry: string; eyes: string; materials: string; wear: string; small: string; owned: string };
     countries: { all: string; basic: string; tw: string; us: string; fr: string; it: string; es: string };
   };
+
+  /**
+   * Yumi's bilingual hello (lib/hello): the public invitation page, its
+   * card, the sharer's editor and their list of invitations.
+   * {name}: the sender's nickname or Exchange ID. {language}: a language's
+   * name in the reader's interface language. {date}: a formatted date.
+   */
+  hello: {
+    pageTitle: string;
+    greeting: string;
+    gift: string;
+    yumiAlt: string;
+    dragHint: string;
+    privacyNote: string;
+    /** On the share screen, for a hello made on a test build: why its link may not open yet. */
+    testLink: string;
+    /** On the hello page itself, when it is a test build serving it. */
+    testPage: string;
+    languageA: string;
+    languageB: string;
+    swap: string;
+    restore: string;
+    play: string;
+    playFailed: string;
+    missing: string;
+    retry: string;
+    retrying: string;
+    voiceMenu: string;
+    voiceFor: string;
+    createYours: string;
+    meet: string;
+    signInToAdd: string;
+    addFriend: string;
+    adding: string;
+    requestSent: string;
+    requestIncoming: string;
+    respond: string;
+    alreadyFriends: string;
+    openChat: string;
+    own: string;
+    openApp: string;
+    friendFailed: string;
+    tryAgain: string;
+    loading: string;
+    revokedTitle: string;
+    revokedBody: string;
+    missingTitle: string;
+    missingBody: string;
+    editorTitle: string;
+    editorIntro: string;
+    stepWord: string;
+    sourceSaved: string;
+    sourceLookup: string;
+    searchSaved: string;
+    noSaved: string;
+    lookupPlaceholder: string;
+    lookupButton: string;
+    lookingUp: string;
+    lookupFailed: string;
+    notSaved: string;
+    stepLanguages: string;
+    pickBoth: string;
+    stepPreview: string;
+    publicFields: string;
+    create: string;
+    creating: string;
+    createFailed: string;
+    created: string;
+    shareLink: string;
+    shareImage: string;
+    downloadImage: string;
+    copyLink: string;
+    copied: string;
+    copyFailed: string;
+    imagePreparing: string;
+    imageFailed: string;
+    retryImage: string;
+    done: string;
+    manageTitle: string;
+    manageEmpty: string;
+    newHello: string;
+    revoke: string;
+    revokeConfirm: string;
+    revoked: string;
+    revokeNote: string;
+    createdOn: string;
+    sendWithYumi: string;
+    recentHello: string;
+    /** Opens one of my hellos from the list. */
+    openHello: string;
+    /** Under "My Yumi invitations" in Settings. */
+    settingsDescription: string;
+    /** Making a hello refused for today's limit. */
+    createLimit: string;
+    /** Beside the sharer's account QR code on their hello. */
+    accountQr: string;
+    scanCaption: string;
+    fillOnCreate: string;
+    chooseWord: string;
+    previewBadge: string;
+    imageAlt: string;
+    /** Sent with the link: who it is from and the word itself. */
+    shareText: string;
+  };
 };

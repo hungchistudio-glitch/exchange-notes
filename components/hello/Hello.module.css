@@ -1,0 +1,518 @@
+/*
+  Yumi's hello: a boarding pass, not a scorecard (Chi's hello brief, §8).
+
+  Its look is the one it was shared in, kept on the hello itself, not the
+  visitor's: a Standard hello is cream paper with fine brass rules wherever
+  it is opened, and a Cosmic one deep ink-blue with a restrained edge light.
+  The two looks are the same layout, the same order and the same controls
+  in the same places; only these tokens change.
+
+  Sizes are in rem so the reader's text size setting still moves them, and
+  nothing has a fixed height: a long French word or a large text setting
+  wraps instead of being cut off.
+*/
+
+.look {
+  --page: #efe8da;
+  --paper: #fbf7ee;
+  --surface: #fffdf8;
+  --ink: #1c1a16;
+  --soft: rgb(28 26 22 / 0.66);
+  --faint: rgb(28 26 22 / 0.46);
+  --line: rgb(28 26 22 / 0.1);
+  --brass: #a8843c;
+  --brass-soft: rgb(168 132 60 / 0.16);
+  --accent: #1c1a16;
+  --on-accent: #fbf7ee;
+  --shadow: 0 1.25rem 3rem -1.5rem rgb(60 48 24 / 0.35);
+
+  min-height: 100dvh;
+  background: var(--page);
+  color: var(--ink);
+}
+
+.look[data-look="yumi-cosmic"] {
+  --page: #0a0f1f;
+  --paper: #121a33;
+  --surface: #172042;
+  --ink: #f2efe8;
+  --soft: rgb(242 239 232 / 0.72);
+  --faint: rgb(242 239 232 / 0.5);
+  --line: rgb(150 190 255 / 0.16);
+  --brass: #d6b26a;
+  --brass-soft: rgb(214 178 106 / 0.16);
+  --accent: #e9e3d6;
+  --on-accent: #0a0f1f;
+  --shadow: 0 0 0 1px rgb(150 190 255 / 0.18), 0 1.5rem 3rem -1.5rem rgb(0 0 0 / 0.6);
+}
+
+/* The editor's preview: the same pass, without a page around it. */
+.look[data-embedded] {
+  min-height: 0;
+  background: transparent;
+}
+
+.look[data-embedded] .pass {
+  padding: 0;
+}
+
+/* ── The pass ──────────────────────────────────────────────────────── */
+
+.pass {
+  margin-inline: auto;
+  max-width: 44rem;
+  padding: 1rem;
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+.sheet {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.75rem;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+/* Fine orbital rules across the top: the one ornament. */
+.sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 0.375rem;
+  background: repeating-linear-gradient(90deg, var(--brass) 0 1px, transparent 1px 0.5rem);
+  opacity: 0.55;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.5rem 1.5rem 0;
+}
+
+.mark {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.greeting {
+  padding: 0.75rem 1.5rem 0;
+}
+
+.greetingLine {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.giftLine {
+  margin: 0.375rem 0 0;
+  font-size: 1rem;
+  color: var(--soft);
+}
+
+/* ── Yumi ─────────────────────────────────────────────────────────── */
+
+.yumiFrame {
+  position: relative;
+  margin: 1rem 1.5rem 0;
+  aspect-ratio: 1 / 1;
+  max-height: 22rem;
+  margin-inline: auto;
+  width: calc(100% - 3rem);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(ellipse at 50% 85%, var(--brass-soft), transparent 62%),
+    var(--surface);
+  overflow: hidden;
+  /* A drag across her turns her; a drag up or down still scrolls the page. */
+  touch-action: pan-y;
+}
+
+.poster,
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.poster {
+  object-fit: contain;
+  transition: opacity 280ms ease;
+}
+
+.canvas {
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+
+.yumiFrame[data-live="true"] .canvas {
+  opacity: 1;
+}
+
+.yumiFrame[data-live="true"] .poster {
+  opacity: 0;
+}
+
+.dragHint {
+  position: absolute;
+  inset: auto 0 0.625rem;
+  text-align: center;
+  font-size: 0.6875rem;
+  color: var(--faint);
+  pointer-events: none;
+}
+
+/* ── The word ─────────────────────────────────────────────────────── */
+
+.card {
+  margin: 1.25rem 1.5rem 0;
+}
+
+.pickers {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.picker {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.pickerLabel {
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+}
+
+.select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.875rem;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.9375rem;
+}
+
+/* On a phone the two names would be cut off side by side ("Traditional
+   Chi…"), and a language must always be named in full: stacked, with the
+   swap turned to point between them. */
+@media (max-width: 29.99rem) {
+  .pickers {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .swap {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+}
+
+.swap {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.restore {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.625rem;
+  padding: 0.375rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--brass-soft);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.sides {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.875rem;
+}
+
+/* Side by side once there is room; stacked on a phone, the same weight. */
+@media (min-width: 36rem) {
+  .sides {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.side {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 1rem 3.75rem 1rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1.125rem;
+  background: var(--surface);
+}
+
+.sideLanguage {
+  margin: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.word {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.partOfSpeech {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--faint);
+}
+
+.readings {
+  display: grid;
+  gap: 0.125rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--soft);
+  overflow-wrap: anywhere;
+}
+
+.speaker {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.speaker[data-phase="playing"] {
+  border-color: var(--brass);
+  background: var(--brass-soft);
+}
+
+.speaker:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.speakerError,
+.missing {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--soft);
+}
+
+.side[data-missing] {
+  padding-right: 1rem;
+  border-style: dashed;
+}
+
+.retry {
+  justify-self: start;
+  margin-top: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.voices {
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--soft);
+}
+
+.voices summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.voiceRow {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+/* ── What the visitor can do ──────────────────────────────────────── */
+
+.actions {
+  display: grid;
+  gap: 0.625rem;
+  margin: 1.5rem 1.5rem 0;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0 1.25rem;
+  border-radius: 999px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary {
+  border: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.secondary {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.875rem;
+  text-align: center;
+  color: var(--soft);
+}
+
+.footnote {
+  margin: 1.25rem 1.5rem 1.5rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--faint);
+}
+
+.testBadge {
+  margin: 1rem 1.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--brass-soft);
+  font-size: 0.75rem;
+  color: var(--ink);
+}
+
+/* ── An invitation that cannot be shown ───────────────────────────── */
+
+.gone {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.gone h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.gone p {
+  margin: 0;
+  color: var(--soft);
+}
+
+/* ── Arriving ─────────────────────────────────────────────────────── */
+
+/* The card and its words are readable from the first frame — they start
+   most of the way in and settle, rather than appearing from nothing — and
+   finish settling by about 600ms. Transform and opacity only, and none of
+   it under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .arrive {
+    animation: arrive 420ms cubic-bezier(0.2, 0.8, 0.2, 1) 150ms both;
+  }
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0.6;
+    transform: translateY(0.375rem);
+  }
+}
+
+/* ── The sharer's account code ───────────────────────────────────────────
+   Always a white panel with the code's own quiet zone, in both looks, so
+   a camera reads it the same on paper and on the deck. */
+
+.accountQr {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 1.5rem 0;
+  padding: 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: var(--surface);
+}
+
+.accountQrCode {
+  flex: none;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  line-height: 0;
+}
+
+.accountQrText {
+  min-width: 0;
+}
+
+.accountQrCaption {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.accountQrId {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  color: var(--soft);
+}

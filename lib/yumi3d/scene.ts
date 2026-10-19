@@ -180,6 +180,12 @@ export type YumiSceneHandle = {
   /** What she has on (lib/shop/catalog.ts). An empty outfit is Yumi as she ships. */
   setOutfit?(outfit: YumiOutfit): void;
   /**
+   * Resolves once every piece of the outfit last set has compiled and is
+   * drawn. A piece is hidden while it compiles, so a picture taken before
+   * this would show her half dressed (lib/hello/poster.ts).
+   */
+  outfitReady?(): Promise<void>;
+  /**
    * Pose YU and MI apart, or null to make her one again. While parts are
    * set, pointer input is ignored and the outfit is hidden: a hat belongs on
    * Yumi, not on half of her.
@@ -896,6 +902,9 @@ export function createYumiScene(
         compiles.set(piece, compile);
         piece.visible = false;
       }
+    },
+    outfitReady() {
+      return Promise.all([...compiles.values()]).then(() => undefined);
     },
     setView(view, immediate = false) {
       const euler = {

@@ -102,7 +102,9 @@ export type AiOperation =
   /** /api/voice-lookup — model fallback after on-device recognition misses. */
   | "voice_lookup"
   /** IPA model call after the shared pronunciation cache misses. */
-  | "phonetic_transcription";
+  | "phonetic_transcription"
+  /** /api/hello — one word put into the five languages for a Yumi hello. */
+  | "hello_sense";
 
 type Window = { count: number; resetsAt: number };
 

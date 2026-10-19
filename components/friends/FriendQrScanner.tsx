@@ -7,9 +7,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import { exchangeIdFromInviteUrl } from "@/lib/friends";
+import { helloIdFromUrl } from "@/lib/hello/url";
 
 type FriendQrScannerProps = {
   onDetected: (exchangeId: string) => void;
+  /**
+   * A Yumi hello's code (/hello/<id>). Opens the hello and nothing more:
+   * adding its sender stays a button on that page, pressed by the reader.
+   * Absent, a hello code is "not ours" here, as before.
+   */
+  onHello?: (helloId: string) => void;
 };
 
 /*
@@ -30,6 +37,7 @@ const DECODE_INTERVAL_MS = 125;
 
 export default function FriendQrScanner({
   onDetected,
+  onHello,
 }: FriendQrScannerProps) {
   const { t } = useTranslation();
   const copy = t.friends.scanner;
@@ -128,6 +136,14 @@ export default function FriendQrScanner({
         return;
       }
 
+      const helloId = onHello ? helloIdFromUrl(result.data) : "";
+
+      if (helloId) {
+        stopCamera();
+        onHello?.(helloId);
+        return;
+      }
+
       const exchangeId = exchangeIdFromInviteUrl(result.data);
 
       if (!exchangeId) {
@@ -145,7 +161,7 @@ export default function FriendQrScanner({
 
     lastDecodeRef.current = 0;
     tick();
-  }, [errorCopy.invalidQr, onDetected, stopCamera]);
+  }, [errorCopy.invalidQr, onDetected, onHello, stopCamera]);
 
   const startCamera = useCallback(async () => {
     setError("");

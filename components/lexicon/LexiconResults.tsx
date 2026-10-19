@@ -3,6 +3,7 @@
 import {
   BookmarkCheck,
   BookmarkPlus,
+  Gift,
   LoaderCircle,
   Send,
   Share2,
@@ -11,6 +12,7 @@ import {
   WifiOff,
 } from "lucide-react";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
@@ -23,6 +25,7 @@ import type {
   LexiconLookupError,
   LexiconSearch,
 } from "@/hooks/lexicon/useLexiconSearch";
+import { knownFromLookup, saveHelloDraft } from "@/lib/hello/draft";
 import { peekImageCapture } from "@/lib/lexicon/pendingImageCapture";
 import type useLexiconSave from "@/hooks/lexicon/useLexiconSave";
 import type { LexiconEntry, LexiconLanguages } from "@/lib/lexicon/types";
@@ -208,6 +211,7 @@ export default function LexiconResults({
   const capturedImage = entry ? peekImageCapture(entry.term) : null;
   const languages = result?.languages ?? null;
   const isSentence = result?.kind === "sentence";
+  const helloKnown = knownFromLookup(entry);
 
   /*
    * The picker shows itself when the app is unsure, and on request when it is
@@ -774,6 +778,18 @@ export default function LexiconResults({
                     </button>
                   )}
                 </div>
+              )}
+
+              {/* A public hello made from this word, without saving it (components/hello/HelloEditor.tsx). */}
+              {helloKnown && (
+                <Link
+                  href="/invitations/new?from=lookup"
+                  onClick={() => saveHelloDraft(helloKnown)}
+                  className="mt-2 flex h-11 items-center justify-center gap-2 rounded-full bg-surface text-[0.75rem] font-semibold transition-transform active:scale-[0.98]"
+                >
+                  <Gift size={15} aria-hidden="true" />
+                  {t.hello.sendWithYumi}
+                </Link>
               )}
             </div>
           </article>

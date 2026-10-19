@@ -6,6 +6,8 @@ import {
   friendInvitePath,
   PENDING_FRIEND_INVITE_COOKIE,
 } from "@/lib/friends";
+import { PENDING_HELLO_COOKIE } from "@/lib/hello/pending";
+import { helloPath, isHelloId } from "@/lib/hello/url";
 import { normalizeExchangeId } from "@/lib/utils";
 
 type CookieReader = {
@@ -36,10 +38,17 @@ export function redirectAfterSignIn(
 ): NextResponse {
   const pendingCookie = cookieStore.get(PENDING_FRIEND_INVITE_COOKIE);
   const pendingInvite = normalizeExchangeId(pendingCookie?.value ?? "");
+  /* A Yumi hello the visitor left to sign in (app/hello/[id]/join): back to
+     it, where anything further is theirs to press. Checked for its exact
+     shape, like the invite, before it goes into a redirect. */
+  const helloCookie = cookieStore.get(PENDING_HELLO_COOKIE);
+  const pendingHello = isHelloId(helloCookie?.value) ? helloCookie.value : null;
 
-  const destination = pendingInvite
-    ? friendInvitePath(pendingInvite)
-    : "/home";
+  const destination = pendingHello
+    ? helloPath(pendingHello)
+    : pendingInvite
+      ? friendInvitePath(pendingInvite)
+      : "/home";
 
   const response = NextResponse.redirect(
     new URL(destination, requestUrl),
@@ -50,6 +59,9 @@ export function redirectAfterSignIn(
   // fails normalization cannot sit around redirecting later sign-ins.
   if (pendingCookie) {
     response.cookies.delete(PENDING_FRIEND_INVITE_COOKIE);
+  }
+  if (helloCookie) {
+    response.cookies.delete(PENDING_HELLO_COOKIE);
   }
 
   return response;
