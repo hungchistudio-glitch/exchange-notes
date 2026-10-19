@@ -479,6 +479,7 @@ const english: TranslationDictionary = {
         feed: {
           body:
             "I've brought you back home — next time you're done with a word, just tap me. Feed me one: drag a cookie onto me, or tap it and press “Feed Yumi”. It costs no energy cookies.",
+          tag: "Feed me · no energy cookies spent",
         },
         library: {
           body:

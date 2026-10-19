@@ -234,13 +234,10 @@ export default function LexiconSearchSheet({
         {...motion.backdropProps}
       />
 
-      {/* Marked for the tour, which lights its field and its Save key from
-          over the sheet (components/tutorial/TutorialCoach.tsx). */}
       <section
         role="dialog"
         aria-modal="true"
         aria-label={copy.open}
-        data-lexicon-sheet=""
         {...motion.panelProps}
         className={`${motion.panelClassName} relative z-10 flex h-full w-full max-w-xl flex-col overflow-hidden bg-white shadow-2xl sm:my-6 sm:h-auto sm:max-h-[92dvh] sm:rounded-[30px]`}
         style={motion.panelProps.style}
@@ -272,6 +269,7 @@ export default function LexiconSearchSheet({
 
           <div className="flex items-center gap-2">
             <form className="min-w-0 flex-1" onSubmit={handleSubmit}>
+              {/* Lit by the tour's look-up step while this sheet is open. */}
               <div
                 data-coach-target="sheet-search"
                 className={`flex h-12 items-center gap-2.5 rounded-full border px-4 ${

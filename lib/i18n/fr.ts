@@ -478,6 +478,7 @@ const french: TranslationDictionary = {
         feed: {
           body:
             "Après un mot, touche-moi pour revenir à l'accueil. Donne-m'en un : glisse un biscuit jusqu'à moi, ou touche-le et appuie sur « Nourrir Yumi ». Ça ne coûte aucun cookie d'énergie.",
+          tag: "Nourris-moi · sans cookie d'énergie",
         },
         library: {
           body:

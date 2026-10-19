@@ -522,7 +522,8 @@ export type TranslationDictionary = {
          */
         /** tag: the few words on the light over the search sheet's Save. */
         keep: { body: string; tag: string };
-        feed: { body: string };
+        /** tag: the few words on the light over a cookie card's "Feed Yumi". */
+        feed: { body: string; tag: string };
         /*
          * The page steps. `action` labels the door that takes the reader
          * there when they are not on that page yet; the body is what is said

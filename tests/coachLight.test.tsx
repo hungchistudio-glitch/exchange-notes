@@ -190,7 +190,7 @@ describe("over the search sheet (Chi, 2026-10-18)", () => {
     document.body.appendChild(homeField);
 
     const sheet = document.createElement("section");
-    sheet.setAttribute("data-lexicon-sheet", "");
+    sheet.setAttribute("aria-modal", "true");
     const field = place(document.createElement("div"), rect(16, 40, 300, 48));
     field.setAttribute("data-coach-target", "sheet-search");
     const input = document.createElement("input");
@@ -301,7 +301,7 @@ describe("over the search sheet (Chi, 2026-10-18)", () => {
 
   it("lights Home's search on the save step when there is nothing up to save", async () => {
     screenWithSheet();
-    document.querySelector("[data-lexicon-sheet]")?.remove();
+    document.querySelector('[aria-modal="true"]')?.remove();
     setCoachStep(stepOf("keep"));
     coachOver(false);
 
@@ -310,5 +310,69 @@ describe("over the search sheet (Chi, 2026-10-18)", () => {
     expect(light()?.style.transform).toBe("translate3d(17px, 397px, 0)");
     /* The card can be seen, so the light carries no tag. */
     expect(light()).toHaveTextContent("");
+  });
+});
+
+describe("over a cookie's card (Chi, 2026-10-18)", () => {
+  /* Tapping a cookie opens its card over Home, and the light stayed on the
+     cookie behind the backdrop while "Feed Yumi" went unlit. */
+
+  function placed(tag: string, attributes: Record<string, string>, box: DOMRect, parent: Element = document.body) {
+    const node = document.createElement(tag);
+    for (const [name, value] of Object.entries(attributes)) node.setAttribute(name, value);
+    node.getBoundingClientRect = () => box;
+    parent.appendChild(node);
+    return node;
+  }
+
+  const light = () => document.querySelector<HTMLElement>("[data-coach-light]");
+
+  function feedStep() {
+    placed("button", { "data-floating-cookie": "c1", "data-hint": "feed" }, rect(40, 300, 48, 48));
+    setCoachStep(stepOf("feed"));
+    render(
+      <TutorialCoach pathname="/home" interfaceMode="standard" onSetMode={vi.fn()} onNavigate={vi.fn()} />,
+    );
+  }
+
+  it("moves from the cookie to “Feed Yumi” when the card opens, with a tag", async () => {
+    feedStep();
+    await waitFor(() => expect(light()?.style.transform).toBe("translate3d(37px, 297px, 0)"));
+    expect(light()).not.toHaveAttribute("data-raised");
+
+    const card = placed("section", { "aria-modal": "true" }, rect(16, 360, 343, 420));
+    placed("button", { "data-coach-target": "feed-yumi" }, rect(220, 700, 120, 44), card);
+
+    await waitFor(() => expect(light()?.style.transform).toBe("translate3d(217px, 697px, 0)"));
+    expect(light()).toHaveAttribute("data-raised", "true");
+    expect(light()).toHaveTextContent("Feed me · no energy cookies spent");
+  });
+
+  it("slides the tag in from the screen's edge, its line still on the key", async () => {
+    feedStep();
+    const card = placed("section", { "aria-modal": "true" }, rect(16, 360, 343, 420));
+    /* "Feed Yumi" sits at the card's right edge. */
+    placed("button", { "data-coach-target": "feed-yumi" }, rect(240, 700, 100, 44), card);
+    const width = vi
+      .spyOn(HTMLElement.prototype, "offsetWidth", "get")
+      .mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute("data-coach-tag") ? 240 : 0;
+      });
+
+    await waitFor(() => expect(light()).toHaveAttribute("data-raised", "true"));
+    /* Centred on the key (290), 240 wide, it would end at 410; on a 375
+       screen with 8 to spare it ends at 367, so it slides 43 left. */
+    await waitFor(() => expect(light()?.style.getPropertyValue("--tag-shift")).toBe("-43px"));
+    width.mockRestore();
+  });
+
+  it("goes dark under a dialog with nothing of the step's in it", async () => {
+    feedStep();
+    await waitFor(() => expect(light()).toHaveAttribute("data-shown", "true"));
+
+    placed("section", { "aria-modal": "true" }, rect(16, 360, 343, 420));
+
+    /* Not glowing through the backdrop at a cookie that cannot be reached. */
+    await waitFor(() => expect(light()).toHaveAttribute("data-shown", "false"));
   });
 });

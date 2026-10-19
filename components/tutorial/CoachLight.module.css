@@ -11,8 +11,8 @@
     ripple   every 1.8 s a ring of light leaves it and fades: tap here
     confirm  when the step is done the ring flashes white and the brackets
              let go
-    tag      over the search sheet, where the card cannot be seen, a few
-             words on a heads-up label, drawn in after the lock settles
+    tag      over a dialog, where the card cannot be seen, a few words on a
+             heads-up label, drawn in after the lock settles
 
   The middle stays empty: it marks the key and never covers what it says.
   Nothing here strobes — a swell, a ripple, one flash on success — far from
@@ -43,8 +43,9 @@
   opacity: 1;
 }
 
-/* Over the search sheet (130), which covers the card; under the friend
-   picker (300) that the sheet's Send opens. */
+/* Over the dialog it lights a key in — a cookie's card (90), the search
+   sheet (130) — which covers the card; under the friend picker (300) that
+   the sheet's Send opens. */
 .light[data-raised="true"] {
   z-index: 140;
 }
@@ -167,14 +168,16 @@
   letter-spacing: 0.06em;
   line-height: 1.35;
   white-space: nowrap;
-  transform: translateX(-50%);
+  /* Slid in from the screen's edge when centring would cross it. */
+  transform: translateX(calc(-50% + var(--tag-shift, 0px)));
 }
 
-/* The leader line, from the tag to the ring. */
+/* The leader line, from the tag to the ring — at the key's centre, wherever
+   the tag has slid to. */
 .tag::after {
   content: "";
   position: absolute;
-  left: 50%;
+  left: calc(50% - var(--tag-shift, 0px));
   top: 100%;
   width: 1px;
   height: 10px;

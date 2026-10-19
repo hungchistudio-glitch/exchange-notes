@@ -479,6 +479,7 @@ const spanish: TranslationDictionary = {
         feed: {
           body:
             "Después de una palabra, tócame para volver a Inicio. Dame una: arrastra una galleta hasta mí, o tócala y pulsa «Alimentar a Yumi». No gasta galletas de energía.",
+          tag: "Aliméntame · sin gastar galletas de energía",
         },
         library: {
           body:

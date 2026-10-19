@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 import styles from "./CoachLight.module.css";
 
@@ -47,14 +47,17 @@ import styles from "./CoachLight.module.css";
    It steps aside while the reader types, while the card is hidden, and when
    the key is under the card.
 
-   ── Over the search sheet ──────────────────────────────────────────────
+   ── Over a dialog ───────────────────────────────────────────────────────
 
-   The search sheet takes the screen and stands above the card. While it is
-   open the tour lights keys in the sheet, so the light is `raised` above it,
-   and the card, which it otherwise keeps clear of and goes dark with, is
-   left out of it. A `tag` beside the lock then says in a few words what the
-   card would: a heads-up label, on a leader line, above the key or below it
-   when there is no room above.
+   A dialog — the search sheet, a cookie's card — stands above the card and
+   above every key outside it, and a key under it cannot be pressed. So
+   while one is open only the targets inside it count, and the light rises
+   over it; with none inside, it goes dark rather than glow through the
+   backdrop (Chi, 2026-10-18: Save in the search sheet, "Feed Yumi" on a
+   cookie's card). The card, which it otherwise keeps clear of and goes
+   dark with, is under the dialog and left out of it. A `tag` beside the
+   lock then says in a few words what the card would: a heads-up label, on
+   a leader line, above the key or below it when there is no room above.
    ========================================================= */
 
 /** How far outside the key's edge the ring sits; the brackets sit beyond it. */
@@ -65,6 +68,8 @@ const MIN_RADIUS = 10;
 const REFRESH_MS = 140;
 /** Room the tag needs above the key; with less, it goes below. */
 const TAG_ROOM = 44;
+/** The least gap between the tag and either side of the screen. */
+const TAG_EDGE = 8;
 
 /** A selector, or a place whose element may itself be hidden. */
 export type CoachTarget = string | { readonly selector: string; readonly anchor?: boolean };
@@ -76,15 +81,29 @@ function shown(element: Element) {
     : true;
 }
 
-/** The first element any of the targets finds on screen. */
+/**
+ * The dialog on top, if one is open. Dialogs are portalled to the end of
+ * the body as they open, so the last one showing is the one in front.
+ */
+export function topDialog(): Element | null {
+  const dialogs = document.querySelectorAll('[aria-modal="true"]');
+  for (let index = dialogs.length - 1; index >= 0; index -= 1) {
+    if (shown(dialogs[index])) return dialogs[index];
+  }
+  return null;
+}
+
+/** The first element any of the targets finds on screen, inside `within`. */
 export function findTarget(
   targets: readonly CoachTarget[],
+  within: Element | null = null,
 ): { element: Element; rect: DOMRect; anchor: boolean } | null {
   for (const target of targets) {
     const selector = typeof target === "string" ? target : target.selector;
     const anchor = typeof target !== "string" && Boolean(target.anchor);
 
     for (const element of document.querySelectorAll(selector)) {
+      if (within && !within.contains(element)) continue;
       const rect = element.getBoundingClientRect();
       if (rect.width === 0 && rect.height === 0) continue;
       if (rect.bottom <= 0 || rect.right <= 0) continue;
@@ -141,9 +160,7 @@ type CoachLightProps = {
   avoid: RefObject<HTMLElement | null>;
   /** The step was just done: flash once and let go. */
   done?: boolean;
-  /** Above the search sheet, and free of the card under it. */
-  raised?: boolean;
-  /** A few words beside the lock, for when the card cannot be seen. */
+  /** A few words beside the lock, shown when a dialog hides the card. */
   tag?: string;
 };
 
@@ -153,15 +170,12 @@ function typedIn(element: Element) {
   return Boolean(field?.value);
 }
 
-export default function CoachLight({
-  targets,
-  avoid,
-  done = false,
-  raised = false,
-  tag,
-}: CoachLightProps) {
+export default function CoachLight({ targets, avoid, done = false, tag }: CoachLightProps) {
   const ref = useRef<HTMLDivElement>(null);
   const key = JSON.stringify(targets);
+  /* Over a dialog: read from the page on each look, kept here because the
+     tag is drawn only then. */
+  const [raised, setRaised] = useState(false);
 
   useEffect(() => {
     const element = ref.current;
@@ -181,22 +195,25 @@ export default function CoachLight({
     };
 
     const update = () => {
-      /* Under the sheet the card is neither in the way nor a guide to
-         whether the reader can see the step. */
-      const card = raised ? null : avoid.current;
+      const dialog = topDialog();
+      setRaised(dialog !== null);
+
+      /* Under a dialog the card is neither in the way nor a guide to whether
+         the reader can see the step. */
+      const card = dialog ? null : avoid.current;
 
       /* The card collapses to a strip while the reader types, and is hidden
          while the dial is out for steps that are not about the dial. A
          light without its sentence is a stray light. */
       if (
-        (!raised && document.querySelector('[data-yumi-typing="true"]')) ||
+        (!dialog && document.querySelector('[data-yumi-typing="true"]')) ||
         (card && !shown(card))
       ) {
         hide();
         return;
       }
 
-      const found = findTarget(wanted);
+      const found = findTarget(wanted, dialog);
 
       /* A field lit to say "type here" has done its job once they do. */
       if (found && typedIn(found.element)) {
@@ -231,6 +248,23 @@ export default function CoachLight({
       element.style.height = `${halo.height}px`;
       element.style.setProperty("--light-radius", halo.radius);
       element.dataset.tagSide = halo.top < TAG_ROOM ? "below" : "above";
+
+      /* Centred over the key, unless that would run it off the screen — a
+         key near the edge, like "Feed Yumi" in a cookie's card. Then it
+         slides in, and its leader line still meets the key. */
+      const label = element.querySelector<HTMLElement>("[data-coach-tag]");
+      if (label) {
+        const centre = halo.left + halo.width / 2;
+        const left = centre - label.offsetWidth / 2;
+        const right = centre + label.offsetWidth / 2;
+        const shift =
+          left < TAG_EDGE
+            ? TAG_EDGE - left
+            : right > window.innerWidth - TAG_EDGE
+              ? window.innerWidth - TAG_EDGE - right
+              : 0;
+        element.style.setProperty("--tag-shift", `${shift}px`);
+      }
       element.dataset.shown = "true";
       placedOnce = true;
     };
@@ -245,7 +279,7 @@ export default function CoachLight({
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, { capture: true });
     };
-  }, [avoid, key, raised]);
+  }, [avoid, key]);
 
   return (
     <div
@@ -263,7 +297,11 @@ export default function CoachLight({
       <span className={styles.corner} data-corner="tr" />
       <span className={styles.corner} data-corner="bl" />
       <span className={styles.corner} data-corner="br" />
-      {tag ? <span className={styles.tag}>{tag}</span> : null}
+      {tag && raised ? (
+        <span className={styles.tag} data-coach-tag="">
+          {tag}
+        </span>
+      ) : null}
     </div>
   );
 }

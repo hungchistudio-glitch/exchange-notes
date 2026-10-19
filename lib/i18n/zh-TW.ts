@@ -476,6 +476,7 @@ const traditionalChinese: TranslationDictionary = {
         feed: {
           body:
             "查完字，點我就回首頁。餵我一塊：把餅乾拖到我身上，或點開它按「餵給 Yumi」，不會用掉能量餅乾。",
+          tag: "餵我 · 不花能量餅乾",
         },
         library: {
           body:

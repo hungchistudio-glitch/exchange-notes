@@ -95,15 +95,17 @@ const CoachLight = lazy(() => import("./CoachLight"));
    only those, labelled as new, and only in Standard: the refresh track keeps
    quiet in Cosmic rather than asking someone to change looks for it.
 
-   ── The search sheet ───────────────────────────────────────────────────
+   ── Dialogs over the screen ────────────────────────────────────────────
 
-   The dial's Search key opens the search as a sheet, which takes the whole
-   screen and stands above the card. So the two steps done in it, look up
-   and save, light their keys in the sheet from over it instead: the field,
-   then Save, with a short tag beside the light saying what the card would
-   (Chi, 2026-10-18: "這裡教學應該要亮 save to vocabulary 燈"). A word saved
-   there closes the sheet after the "Good." beat, so feeding follows on
-   Home. A reader who closes it without saving finds Home's search lit.
+   Some steps are done in a dialog that stands above the card: the dial's
+   Search key opens the search as a full-screen sheet, and a tapped cookie
+   opens its card. So a step's targets name the keys in those dialogs too,
+   and while one is open the light lights the key inside it, from over it,
+   with a short tag saying what the card would (Chi, 2026-10-18: "這裡教學
+   應該要亮 save to vocabulary 燈", "feed yumi 應該要亮底光"; CoachLight.tsx).
+   A word saved in the sheet closes it after the "Good." beat, so feeding
+   follows on Home. A reader who closes it without saving finds Home's
+   search lit.
 
    ── What it leaves alone ───────────────────────────────────────────────
 
@@ -151,28 +153,39 @@ type Step = {
    * steps that only show.
    */
   point?: readonly CoachTarget[];
-  /** What it lights instead while the search sheet covers the screen. */
-  sheetPoint?: readonly CoachTarget[];
 };
 
 /*
  * The targets, by the attributes the screens already carry where they had
- * one, and `data-coach-target` where they did not.
+ * one, and `data-coach-target` where they did not. While a dialog is open
+ * only the targets inside it count (CoachLight.tsx), so a list can name a
+ * key on the screen and the same key's place in the dialog over it.
  */
 /* Where she stands, not what draws her: hidden once the WebGL scene is live. */
 const YUMI = { selector: "[data-yumi-figure]", anchor: true } as const;
 const POINT = {
   /* The key under the gold mark while the dial is out; her, to open it. */
   dial: ['[data-dial-item][data-selected="true"]', YUMI],
-  /* The dial's Search key while it is out; the search field when it is not. */
-  search: ['[data-dial-key="search"]', '[data-coach-target="search-field"]'],
-  /* Save on Home's answer; with no answer up, Home's search, to get one. */
-  save: ['[data-coach-target="save-word"]', '[data-coach-target="search-field"]'],
-  /* The same two, in the search sheet. */
-  sheetSearch: ['[data-lexicon-sheet] [data-coach-target="sheet-search"]'],
-  sheetSave: ['[data-lexicon-sheet] [data-coach-target="save-word"]'],
-  /* The cookie Home is already nudging, else any cookie. */
-  cookie: ['[data-floating-cookie][data-hint="feed"]', "[data-floating-cookie]"],
+  /* The dial's Search key while it is out; the search field when it is not;
+     the search sheet's field once it is open. */
+  search: [
+    '[data-dial-key="search"]',
+    '[data-coach-target="search-field"]',
+    '[data-coach-target="sheet-search"]',
+  ],
+  /* Save on the answer; with no answer up, the search, to get one. */
+  save: [
+    '[data-coach-target="save-word"]',
+    '[data-coach-target="search-field"]',
+    '[data-coach-target="sheet-search"]',
+  ],
+  /* The cookie Home is already nudging, else any cookie; "Feed Yumi" once a
+     cookie's card is open over them. */
+  cookie: [
+    '[data-floating-cookie][data-hint="feed"]',
+    "[data-floating-cookie]",
+    '[data-coach-target="feed-yumi"]',
+  ],
   /* The bag and the switch's track, not their buttons: both buttons are
      bigger than what they draw, for the finger, and the light belongs round
      the shape the reader can see. */
@@ -219,7 +232,6 @@ export const COACH_STEPS: readonly Step[] = [
     mode: STANDARD,
     awaits: ["word-answered", "word-unavailable"],
     point: POINT.search,
-    sheetPoint: POINT.sheetSearch,
   },
   /* Saving, and the two things a new word earns (one word, two uses). */
   {
@@ -230,7 +242,6 @@ export const COACH_STEPS: readonly Step[] = [
     awaits: ["word-saved"],
     refresh: true,
     point: POINT.save,
-    sheetPoint: POINT.sheetSave,
   },
   {
     key: "feed",
@@ -674,20 +685,12 @@ export default function TutorialCoach({
    * nothing to keep. It stays through the "Good." beat, to flash its
    * confirmation and let go.
    *
-   * With the search sheet open it lights the step's key in the sheet, from
-   * over it, or nothing; and since the card is under the sheet, a tag on
-   * the light says what the card would.
+   * Its tag, for when a dialog hides the card, says the step's gist, then
+   * "Good." on the beat.
    */
-  const target = searchOpen ? current.sheetPoint : current.point;
-  const pointAt = target && onRoute && !wrongMode && !keepBlocked ? target : null;
-  const tag =
-    searchOpen && pointAt
-      ? done
-        ? copy.done
-        : "tag" in stepCopy
-          ? stepCopy.tag
-          : undefined
-      : undefined;
+  const pointAt =
+    current.point && onRoute && !wrongMode && !keepBlocked ? current.point : null;
+  const tag = done ? copy.done : "tag" in stepCopy ? stepCopy.tag : undefined;
 
   return (
     <>
@@ -739,13 +742,7 @@ export default function TutorialCoach({
           keep the light under anything a screen layers above it. */}
       {pointAt ? (
         <Suspense fallback={null}>
-          <CoachLight
-            targets={pointAt}
-            avoid={cardRef}
-            done={done}
-            raised={searchOpen}
-            tag={tag}
-          />
+          <CoachLight targets={pointAt} avoid={cardRef} done={done} tag={tag} />
         </Suspense>
       ) : null}
     </>

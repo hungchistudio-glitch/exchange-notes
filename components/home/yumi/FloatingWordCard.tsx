@@ -126,7 +126,8 @@ export default function FloatingWordCard({ item, onClose, onFeed, canFeed }: {
         <Link onClick={cancel} href={`/vocabulary?widgetAction=open-word&widgetWordId=${encodeURIComponent(item.id)}`}>
           {copy.library}<ArrowUpRight size={16} />
         </Link>
-        <button type="button" disabled={!canFeed} onClick={() => { cancel(); onFeed(); motion.requestClose(); }}>{copy.feed} <span aria-hidden="true">↗</span></button>
+        {/* Lit by the tour's feed step while this card covers the cookies. */}
+        <button type="button" data-coach-target="feed-yumi" disabled={!canFeed} onClick={() => { cancel(); onFeed(); motion.requestClose(); }}>{copy.feed} <span aria-hidden="true">↗</span></button>
       </footer>
     </section>
   </div></OverlayPortal>;

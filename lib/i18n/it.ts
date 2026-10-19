@@ -478,6 +478,7 @@ const italian: TranslationDictionary = {
         feed: {
           body:
             "Dopo una parola, toccami per tornare alla Home. Dammene uno: trascina un biscotto su di me, oppure toccalo e premi «Nutri Yumi». Non costa biscotti energia.",
+          tag: "Nutrimi · senza biscotti energia",
         },
         library: {
           body:
