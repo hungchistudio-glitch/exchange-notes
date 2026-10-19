@@ -2,12 +2,16 @@
   The pronunciation trace (PronunciationTrace.tsx). Ink for the sound,
   Yumi's gold for what to look at: the pitch, a burst, the throat shutting,
   the moment being shown.
+
+  The ink is the theme's, not a fixed colour: Cosmic swaps --color-black for
+  a light ink on its dark cards, and a trace drawn in fixed dark ink would
+  all but vanish there.
 */
 
 .trace {
-  --ink: #1c1a16;
+  --ink: var(--color-black, #1c1a16);
   --gold: #c9962e;
-  --faint: rgb(28 26 22 / 0.28);
+  --faint: color-mix(in oklab, var(--ink) 28%, transparent);
 
   position: relative;
   width: 100%;
@@ -59,17 +63,17 @@
 }
 
 .voice {
-  fill: rgb(28 26 22 / 0.82);
+  fill: color-mix(in oklab, var(--ink) 82%, transparent);
   stroke: none;
 }
 
 .glide {
-  fill: rgb(28 26 22 / 0.55);
+  fill: color-mix(in oklab, var(--ink) 55%, transparent);
   stroke: none;
 }
 
 .nasal {
-  fill: rgb(28 26 22 / 0.4);
+  fill: color-mix(in oklab, var(--ink) 40%, transparent);
   stroke: var(--ink);
   stroke-width: 0.8;
   stroke-dasharray: 1.5 1.5;
@@ -118,7 +122,7 @@
 }
 
 .label {
-  fill: rgb(28 26 22 / 0.62);
+  fill: color-mix(in oklab, var(--ink) 62%, transparent);
   font-family: var(--font-phonetic, var(--font-mono)), ui-monospace, monospace;
   /* In viewBox units, and in rem so the reader's text size still moves it. */
   font-size: 0.5625rem;
