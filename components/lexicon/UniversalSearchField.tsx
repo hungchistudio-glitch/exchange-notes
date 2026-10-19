@@ -192,7 +192,11 @@ export default function UniversalSearchField({
   return (
     <div className="min-w-0">
       <form onSubmit={handleSubmit}>
-        <div className="flex min-w-0 items-center gap-1.5 rounded-full border border-[#eadfc4] bg-white px-2 py-2 shadow-[0_8px_28px_rgba(35,28,12,0.07)]">
+        {/* data-coach-target: where the tour's arrow points (TutorialCoach). */}
+        <div
+          data-coach-target="search-field"
+          className="flex min-w-0 items-center gap-1.5 rounded-full border border-[#eadfc4] bg-white px-2 py-2 shadow-[0_8px_28px_rgba(35,28,12,0.07)]"
+        >
           <Search
             size={18}
             strokeWidth={2}

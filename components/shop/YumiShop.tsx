@@ -398,6 +398,7 @@ export default function YumiShop({
             <button
               type="button"
               className={styles.balance}
+              data-coach-target="shop-balance"
               aria-haspopup="dialog"
               aria-label={`${cookies(state.balance)}. ${copy.energy.open}`}
               onClick={() => {
@@ -496,7 +497,7 @@ export default function YumiShop({
               const wearing = worn[item.slot] === item.id;
               return (
                 <li key={item.id}>
-                  <button type="button" className={styles.card} aria-pressed={trying} onClick={() => tryOn(item)}>
+                  <button type="button" className={styles.card} data-coach-target="shop-item" aria-pressed={trying} onClick={() => tryOn(item)}>
                     <ShopThumb item={item} className={styles.thumb} />
                     {(trying || wearing) && (
                       <span className={styles.tag} data-wearing={wearing && trying ? "true" : "false"}>
@@ -550,6 +551,7 @@ export default function YumiShop({
             <button
               type="button"
               className={styles.primary}
+              data-coach-target="shop-primary"
               data-done={primary.done ? "true" : "false"}
               disabled={primary.disabled}
               onClick={primary.onClick}

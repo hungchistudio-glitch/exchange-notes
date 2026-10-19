@@ -173,7 +173,7 @@ export default function PrecisionDial({ enabled, radius, items, onChoose, onAim,
       </svg>
       <i className={styles.index} />
     </div>
-    {items.map((item, i) => <button ref={el => { buttons.current[i] = el; }} key={item.key} type="button" data-dial-item={i} aria-label={item.label}
+    {items.map((item, i) => <button ref={el => { buttons.current[i] = el; }} key={item.key} type="button" data-dial-item={i} data-dial-key={item.key} aria-label={item.label}
       onClick={event => { if (enabled && event.detail === 0) { event.stopPropagation(); callbacks.current.onChoose(i); } }}>
       <span className={styles.disc}><small>{String(i + 1).padStart(2, "0")}</small><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{item.icon}</svg>{!!item.badge && <b>{item.badge > 9 ? "9+" : item.badge}</b>}</span>
       <span className={styles.label}>{item.label}</span>

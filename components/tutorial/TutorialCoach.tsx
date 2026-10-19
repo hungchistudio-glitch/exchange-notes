@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -24,7 +32,16 @@ import {
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
 
+import type { CoachTarget } from "./CoachPointer";
 import styles from "./TutorialCoach.module.css";
+
+/*
+ * The arrow, fetched when a step first needs it. Home's tab loads this file,
+ * and most readers finished the tour long ago, so the needle, its geometry
+ * and its stylesheet stay out of home's static graph
+ * (tests/routeImportWeight.test.ts).
+ */
+const CoachPointer = lazy(() => import("./CoachPointer"));
 
 /* =========================================================
    The tour you do — in three chapters, across both looks
@@ -124,13 +141,57 @@ type Step = {
   autoGo?: boolean;
   /** New in this edition: shown to readers who finished the last one. */
   refresh?: boolean;
+  /**
+   * What the LED arrow points at (CoachPointer), as selectors in order of
+   * preference: the first with a visible element wins. Absent on steps that
+   * only show.
+   */
+  point?: readonly CoachTarget[];
 };
+
+/*
+ * The targets, by the attributes the screens already carry where they had
+ * one, and `data-coach-target` where they did not.
+ */
+/* Where she stands, not what draws her: hidden once the WebGL scene is live. */
+const YUMI = {
+  selector: "[data-yumi-figure]",
+  anchor: true,
+  /* Beside her: below is her voice line, above is the card. */
+  from: ["left", "right"],
+} as const;
+const POINT = {
+  yumi: [YUMI],
+  /* The key under the gold mark while the dial is out; her, to open it. */
+  dial: ['[data-dial-item][data-selected="true"]', YUMI],
+  /* The dial's Search key while it is out; the search field when it is not. */
+  search: ['[data-dial-key="search"]', '[data-coach-target="search-field"]'],
+  save: ['[data-coach-target="save-word"]'],
+  /* The cookie Home is already nudging, else any cookie. */
+  cookie: ['[data-floating-cookie][data-hint="feed"]', "[data-floating-cookie]"],
+  shopKey: ["[data-home-shop-key]"],
+  balance: ['[data-coach-target="shop-balance"]'],
+  item: ['[data-coach-target="shop-item"]'],
+  buy: ['[data-coach-target="shop-primary"]'],
+  modeSwitch: ["[data-home-mode-portal]"],
+  /* From above: below the field are its mode keys, which the arrow would hide. */
+  omni: [{ selector: '[data-coach-target="cosmic-omni"]', from: ["above"] }],
+  scanner: ['[data-cosmic-room="scanner"]'],
+  dock: ["[data-app-bottom-navigation]"],
+} as const;
 
 const STANDARD: InterfaceMode = "standard";
 const COSMIC: InterfaceMode = "yumi-cosmic";
 
 export const COACH_STEPS: readonly Step[] = [
-  { key: "meet", chapter: "home", route: "/home", mode: STANDARD, awaits: ["ring-opened"] },
+  {
+    key: "meet",
+    chapter: "home",
+    route: "/home",
+    mode: STANDARD,
+    awaits: ["ring-opened"],
+    point: POINT.yumi,
+  },
   /*
    * The dial (Chi, 2026-10-16) turns, and only a tap goes in. A reader who
    * drags expecting the key under their finger to open is left wondering why
@@ -143,6 +204,7 @@ export const COACH_STEPS: readonly Step[] = [
     mode: STANDARD,
     awaits: ["dial-turned"],
     refresh: true,
+    point: POINT.dial,
   },
   /*
    * A lookup that came back empty still counts as having asked. Waiting here
@@ -155,14 +217,29 @@ export const COACH_STEPS: readonly Step[] = [
     route: "/home",
     mode: STANDARD,
     awaits: ["word-answered", "word-unavailable"],
+    point: POINT.search,
   },
-  { key: "keep", chapter: "home", route: "/home", mode: STANDARD, awaits: ["word-saved"] },
+  {
+    key: "keep",
+    chapter: "home",
+    route: "/home",
+    mode: STANDARD,
+    awaits: ["word-saved"],
+    point: POINT.save,
+  },
   /*
    * Said straight after the save, while the "+1" card is in the corner and
    * the new cookie is arriving on Home — the two things the word just earned.
    */
   { key: "earned", chapter: "home", route: "/home", mode: STANDARD, refresh: true },
-  { key: "feed", chapter: "home", route: "/home", mode: STANDARD, awaits: ["word-fed"] },
+  {
+    key: "feed",
+    chapter: "home",
+    route: "/home",
+    mode: STANDARD,
+    awaits: ["word-fed"],
+    point: POINT.cookie,
+  },
 
   { key: "library", chapter: "pages", route: "/vocabulary", mode: STANDARD },
   { key: "review", chapter: "pages", route: "/review", mode: STANDARD },
@@ -186,7 +263,14 @@ export const COACH_STEPS: readonly Step[] = [
    * reader tries something on themselves, and is told how buying works
    * rather than made to spend.
    */
-  { key: "cookies", chapter: "shop", route: "/home", mode: STANDARD, refresh: true },
+  {
+    key: "cookies",
+    chapter: "shop",
+    route: "/home",
+    mode: STANDARD,
+    refresh: true,
+    point: POINT.shopKey,
+  },
   /* The balance in the shop's corner opens the wallet: how many, from where. */
   {
     key: "wallet",
@@ -195,9 +279,17 @@ export const COACH_STEPS: readonly Step[] = [
     mode: STANDARD,
     awaits: ["shop-wallet-opened"],
     refresh: true,
+    point: POINT.balance,
   },
-  { key: "tryOn", chapter: "shop", route: "/shop", mode: STANDARD, awaits: ["shop-tried"] },
-  { key: "buy", chapter: "shop", route: "/shop", mode: STANDARD },
+  {
+    key: "tryOn",
+    chapter: "shop",
+    route: "/shop",
+    mode: STANDARD,
+    awaits: ["shop-tried"],
+    point: POINT.item,
+  },
+  { key: "buy", chapter: "shop", route: "/shop", mode: STANDARD, point: POINT.buy },
 
   /*
    * The reader makes the switch, with the real control, and the step waits
@@ -210,11 +302,11 @@ export const COACH_STEPS: readonly Step[] = [
    * hidden for the whole tour besides. Settings still has the choice; the
    * last step says so.
    */
-  { key: "modeSwitch", chapter: "cosmic", route: "/home" },
+  { key: "modeSwitch", chapter: "cosmic", route: "/home", point: POINT.modeSwitch },
   { key: "deck", chapter: "cosmic", route: "/home", mode: COSMIC, autoGo: true },
-  { key: "omni", chapter: "cosmic", route: "/home", mode: COSMIC },
-  { key: "scanner", chapter: "cosmic", route: "/home", mode: COSMIC },
-  { key: "dock", chapter: "cosmic", route: "/home", mode: COSMIC },
+  { key: "omni", chapter: "cosmic", route: "/home", mode: COSMIC, point: POINT.omni },
+  { key: "scanner", chapter: "cosmic", route: "/home", mode: COSMIC, point: POINT.scanner },
+  { key: "dock", chapter: "cosmic", route: "/home", mode: COSMIC, point: POINT.dock },
   { key: "choose", chapter: "cosmic" },
 ];
 
@@ -291,6 +383,9 @@ export default function TutorialCoach({
   const current = index === COACH_FINISHED ? undefined : steps[index];
 
   const [satisfied, setSatisfied] = useState(false);
+
+  /* The arrow keeps off this, and hides while it is hidden. */
+  const cardRef = useRef<HTMLDivElement>(null);
 
   /*
    * Whether the last lookup came back without a meaning.
@@ -550,49 +645,70 @@ export default function TutorialCoach({
     );
   }
 
+  /*
+   * The arrow, while there is something to press and the reader can press it
+   * here: not during the "Good." beat, not on the wrong screen or look, and
+   * not on a keep step with nothing to keep.
+   */
+  const pointAt =
+    current.point && !done && onRoute && !wrongMode && !keepBlocked
+      ? current.point
+      : null;
+
   return (
-    <aside
-      className={`${styles.coach}${placement}`}
-      /* Announced as a live region rather than as a dialog: it interrupts
-         nothing, takes no focus, and the reader is meant to keep using the
-         screen while it is up. */
-      role="status"
-      aria-live="polite"
-    >
-      {/*
-        Marked for the home screen's two other layers: the cookies float
-        around it rather than under it (data-yumi-protected), and Yumi's
-        answer position keeps clear of its bottom edge (data-coach-card).
-      */}
-      <div
-        className={styles.card}
-        data-coach-card=""
-        /* The home switch reads this: it stays hidden under every other
-           step, and is the thing pointed at under this one — until it has
-           been used, when the "Good." beat should not still be pointing. */
-        data-coach-step={current.key}
-        data-coach-done={done ? "" : undefined}
-        data-yumi-protected=""
+    <>
+      <aside
+        className={`${styles.coach}${placement}`}
+        /* Announced as a live region rather than as a dialog: it interrupts
+           nothing, takes no focus, and the reader is meant to keep using the
+           screen while it is up. */
+        role="status"
+        aria-live="polite"
       >
-        <p className={styles.label}>{label}</p>
+        {/*
+          Marked for the home screen's two other layers: the cookies float
+          around it rather than under it (data-yumi-protected), and Yumi's
+          answer position keeps clear of its bottom edge (data-coach-card).
+        */}
+        <div
+          ref={cardRef}
+          className={styles.card}
+          data-coach-card=""
+          /* The home switch reads this: it stays hidden under every other
+             step, and is the thing pointed at under this one — until it has
+             been used, when the "Good." beat should not still be pointing. */
+          data-coach-step={current.key}
+          data-coach-done={done ? "" : undefined}
+          data-yumi-protected=""
+        >
+          <p className={styles.label}>{label}</p>
 
-        <p className={styles.body}>{fill(body, t)}</p>
+          <p className={styles.body}>{fill(body, t)}</p>
 
-        <div className={styles.keys}>
-          {keys}
+          <div className={styles.keys}>
+            {keys}
 
-          {current.key === "choose" ? null : (
-            <button
-              type="button"
-              className={styles.skip}
-              onClick={() => setCoachStep(COACH_FINISHED)}
-            >
-              {copy.skip}
-            </button>
-          )}
+            {current.key === "choose" ? null : (
+              <button
+                type="button"
+                className={styles.skip}
+                onClick={() => setCoachStep(COACH_FINISHED)}
+              >
+                {copy.skip}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+
+      {/* Beside the card rather than in it: the card's stacking context would
+          keep the arrow under anything a screen layers above it. */}
+      {pointAt ? (
+        <Suspense fallback={null}>
+          <CoachPointer targets={pointAt} avoid={cardRef} />
+        </Suspense>
+      ) : null}
+    </>
   );
 }
 

@@ -1,0 +1,332 @@
+/*
+  The tour's needle (CoachPointer.tsx, shape in coachNeedle.ts).
+
+  A swash of a needle with a four-point star at its back, drawn pointing
+  down in a 44 × 96 box and turned to face its target. Ink with a hairline
+  of polish on Standard's cream, after Chi's reference; pale light with a
+  cyan haze on Cosmic's navy, where ink would vanish.
+
+  One cycle, 1.8 s:
+    0%        the star flares and a cyan comet leaves it
+    0–70%     the comet runs down the needle, head first, tail fading
+    ~72%      it reaches the point: the needle dips once towards the
+              target, and a fine ring opens where it touches
+    to 100%   rest
+  And once, when the needle appears, it draws itself from the star to the
+  point.
+
+  Nothing here strobes: one flare and one ring per cycle, far under the
+  three flashes a second WCAG 2.3.1 allows. Under reduced motion the needle
+  simply appears, still, with its star softly lit.
+
+  Pixels rather than rem: it is a mark, not text, and should be the same
+  size whatever text size the reader has chosen.
+*/
+
+.pointer {
+  --needle-ink: #1c1f1b;
+  --needle-sheen: rgb(255 255 255 / 0.4);
+  --needle-haze: transparent;
+  --led: #1ff2c8;
+  --led-hot: #effffb;
+
+  position: fixed;
+  left: 0;
+  top: 0;
+  /* Over the tour's card (47) and the dial and scene (45); under the cookie
+     reward card (150) and any sheet. */
+  z-index: 60;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  will-change: transform;
+}
+
+/* The attribute InterfaceModeProvider keeps on <html>. */
+:global(html[data-interface-mode="yumi-cosmic"]) .pointer {
+  --needle-ink: #eafcff;
+  --needle-sheen: rgb(31 242 200 / 0.7);
+  --needle-haze: rgb(31 242 200 / 0.55);
+}
+
+.pointer[data-shown="true"] {
+  opacity: 1;
+}
+
+.pointer[data-glide="true"] {
+  transition:
+    opacity 200ms ease,
+    transform 160ms linear;
+}
+
+.needle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+  transform: translate(-50%, -50%) rotate(var(--turn, 0deg));
+}
+
+/* ── The needle ──────────────────────────────────────────────────────── */
+
+.body {
+  fill: var(--needle-ink);
+  filter: drop-shadow(0 0 2px var(--needle-haze));
+}
+
+.sheen {
+  fill: none;
+  stroke: var(--needle-sheen);
+  stroke-width: 0.6;
+  stroke-linecap: round;
+}
+
+.star {
+  fill: var(--needle-ink);
+  transform-box: view-box;
+  transform-origin: var(--star-x) var(--star-y);
+  animation: flare 1.8s ease-out infinite;
+}
+
+.core {
+  fill: var(--led-hot);
+  filter: drop-shadow(0 0 2.5px var(--led));
+  transform-box: view-box;
+  transform-origin: var(--star-x) var(--star-y);
+  animation: kindle 1.8s ease-out infinite;
+}
+
+/* The dip towards the target as the light arrives. Local +y is towards the
+   point, whichever way the needle has been turned. */
+.nudge {
+  animation: nudge 1.8s ease-in-out infinite;
+}
+
+/* ── The draw-in ─────────────────────────────────────────────────────── */
+
+.reveal {
+  fill: none;
+  stroke: white;
+  stroke-width: 12;
+  stroke-linecap: round;
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 0;
+}
+
+.pointer[data-shown="true"] .reveal {
+  animation: draw 560ms cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+
+/* ── The comet ───────────────────────────────────────────────────────── */
+
+.light {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 0 200;
+}
+
+.tail {
+  stroke: var(--led);
+  stroke-width: 3.2;
+  stroke-dasharray: 22 200;
+  opacity: 0.22;
+  animation: comet-tail 1.8s infinite;
+}
+
+.trail {
+  stroke: var(--led);
+  stroke-width: 2.4;
+  stroke-dasharray: 10 200;
+  opacity: 0.55;
+  filter: drop-shadow(0 0 2px var(--led));
+  animation: comet-trail 1.8s infinite;
+}
+
+.head {
+  stroke: var(--led-hot);
+  stroke-width: 1.9;
+  stroke-dasharray: 3 200;
+  filter: drop-shadow(0 0 2px var(--led)) drop-shadow(0 0 5px var(--led));
+  animation: comet-head 1.8s infinite;
+}
+
+/* ── Where it lands ──────────────────────────────────────────────────── */
+
+.ripple {
+  fill: none;
+  stroke: var(--led);
+  stroke-width: 1;
+  opacity: 0;
+  transform-box: view-box;
+  transform-origin: var(--tip-x) var(--tip-y);
+  animation: ripple 1.8s ease-out infinite;
+}
+
+/* ── Timing ──────────────────────────────────────────────────────────── */
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 100;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/*
+  Each comet layer's dash has its leading edge at the same place at every
+  moment: offset = dash length − distance travelled. From 0 to 112, so the
+  whole dash has left the point by 70%.
+*/
+@keyframes comet-head {
+  0% {
+    stroke-dashoffset: 3;
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.3, 1);
+  }
+
+  6% {
+    opacity: 1;
+  }
+
+  64% {
+    opacity: 1;
+  }
+
+  70%,
+  100% {
+    stroke-dashoffset: -109;
+    opacity: 0;
+  }
+}
+
+@keyframes comet-trail {
+  0% {
+    stroke-dashoffset: 10;
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.3, 1);
+  }
+
+  8% {
+    opacity: 0.55;
+  }
+
+  62% {
+    opacity: 0.55;
+  }
+
+  70%,
+  100% {
+    stroke-dashoffset: -102;
+    opacity: 0;
+  }
+}
+
+@keyframes comet-tail {
+  0% {
+    stroke-dashoffset: 22;
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.3, 1);
+  }
+
+  10% {
+    opacity: 0.22;
+  }
+
+  60% {
+    opacity: 0.22;
+  }
+
+  70%,
+  100% {
+    stroke-dashoffset: -90;
+    opacity: 0;
+  }
+}
+
+@keyframes flare {
+  0% {
+    transform: scale(1.35) rotate(8deg);
+    fill: var(--led);
+    filter: drop-shadow(0 0 4px var(--led));
+  }
+
+  20%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    fill: var(--needle-ink);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+
+@keyframes kindle {
+  0% {
+    transform: scale(1.6);
+    opacity: 1;
+  }
+
+  24%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+}
+
+@keyframes nudge {
+  0%,
+  62% {
+    transform: translateY(0);
+  }
+
+  72% {
+    transform: translateY(3px);
+  }
+
+  86%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes ripple {
+  0%,
+  66% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+
+  72% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .light,
+  .ripple {
+    display: none;
+  }
+
+  .star,
+  .core,
+  .nudge,
+  .pointer[data-shown="true"] .reveal {
+    animation: none;
+  }
+
+  .core {
+    opacity: 1;
+  }
+
+  .pointer[data-glide="true"] {
+    transition: opacity 200ms ease;
+  }
+}
