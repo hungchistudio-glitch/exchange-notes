@@ -2804,6 +2804,7 @@ const traditionalChinese: TranslationDictionary = {
     restore: "回到原始雙語",
     play: "播放{language}發音",
     playFailed: "沒有發出聲音，請再試一次。",
+    silentHint: "沒聽到聲音？請確認 iPhone 沒有開靜音模式。",
     missing: "{language}的譯文還沒準備好。",
     retry: "再試一次",
     retrying: "準備中…",

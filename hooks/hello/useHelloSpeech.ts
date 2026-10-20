@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
+import { isAppleTouchDevice, preferPlaybackAudio } from "@/lib/hello/audioSession";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { speak, speechSupported, stopSpeech } from "@/lib/speech";
 
@@ -23,12 +24,18 @@ import { speak, speechSupported, stopSpeech } from "@/lib/speech";
    Nothing plays by itself. The voice is the device's own, chosen per
    language by the reader's speech settings (lib/speech.ts), never a voice
    of another language reading this one.
+
+   On an iPhone or iPad, the silent switch mutes it: each tap first asks
+   for playback audio (lib/hello/audioSession.ts), and after the first one
+   the card says, once, to check the switch.
    ========================================================= */
 
 export type SpeakerPhase = "idle" | "loading" | "playing" | "error";
 
 export type HelloSpeech = {
   supported: boolean;
+  /** An iPhone or iPad has been tapped: say to check its silent switch. */
+  silentHint: boolean;
   phaseFor: (side: 0 | 1) => SpeakerPhase;
   play: (side: 0 | 1, text: string, language: LanguageCode) => void;
   stop: () => void;
@@ -47,6 +54,8 @@ export default function useHelloSpeech(): HelloSpeech {
   /* The voice exists only in the browser: false on the server and on the
      first render, so the two agree. */
   const supported = useSyncExternalStore(noSubscription, speechSupported, () => false);
+  const appleTouch = useSyncExternalStore(noSubscription, isAppleTouchDevice, () => false);
+  const [silentHint, setSilentHint] = useState(false);
 
   const stop = useCallback(() => {
     token.current += 1;
@@ -64,12 +73,17 @@ export default function useHelloSpeech(): HelloSpeech {
       setState(phase ? { side, phase } : null);
     };
     setState({ side, phase: "loading" });
+    if (appleTouch) {
+      /* In the tap itself, before speaking: see lib/hello/audioSession.ts. */
+      preferPlaybackAudio();
+      setSilentHint(true);
+    }
     speak(trimmed, getLanguage(language).speechTag, {
       onStart: () => own("playing"),
       onEnd: () => own(null),
       onError: () => own("error"),
     });
-  }, []);
+  }, [appleTouch]);
 
   useEffect(() => {
     const hidden = () => {
@@ -89,5 +103,5 @@ export default function useHelloSpeech(): HelloSpeech {
     [state],
   );
 
-  return { supported, phaseFor, play, stop };
+  return { supported, silentHint, phaseFor, play, stop };
 }

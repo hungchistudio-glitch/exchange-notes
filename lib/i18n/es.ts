@@ -2844,6 +2844,7 @@ const spanish: TranslationDictionary = {
     restore: "Volver al par original",
     play: "Escuchar la pronunciación en {language}",
     playFailed: "No se oyó nada. Inténtalo de nuevo.",
+    silentHint: "¿No se oye nada? Comprueba que tu iPhone no esté en silencio.",
     missing: "La parte en {language} aún no está lista.",
     retry: "Reintentar",
     retrying: "Preparándola…",

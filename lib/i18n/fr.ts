@@ -2650,6 +2650,7 @@ const french: TranslationDictionary = {
     restore: "Revenir à la paire d’origine",
     play: "Écouter la prononciation en {language}",
     playFailed: "Aucun son. Réessaie.",
+    silentHint: "Pas de son ? Vérifie que ton iPhone n’est pas en mode silencieux.",
     missing: "La version en {language} n’est pas encore prête.",
     retry: "Réessayer",
     retrying: "Préparation…",
