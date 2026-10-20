@@ -2650,6 +2650,7 @@ const italian: TranslationDictionary = {
     restore: "Torna alla coppia originale",
     play: "Ascolta la pronuncia in {language}",
     playFailed: "Nessun suono. Riprova.",
+    silentHint: "Nessun suono? Controlla che l’iPhone non sia in modalità silenziosa.",
     missing: "La parte in {language} non è ancora pronta.",
     retry: "Riprova",
     retrying: "Preparazione…",

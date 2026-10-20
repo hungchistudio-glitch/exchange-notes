@@ -364,6 +364,14 @@
   cursor: pointer;
 }
 
+/* The silent switch, once a speaker on an iPhone or iPad has been tapped. */
+.silentHint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--soft);
+}
+
 .voices {
   margin-top: 0.75rem;
   font-size: 0.8125rem;

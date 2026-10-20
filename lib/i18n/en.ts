@@ -2848,6 +2848,7 @@ const english: TranslationDictionary = {
     restore: "Back to the original pair",
     play: "Play the {language} pronunciation",
     playFailed: "No sound came out. Try again.",
+    silentHint: "No sound? Check that your iPhone isn’t on silent.",
     missing: "The {language} side isn’t ready yet.",
     retry: "Try again",
     retrying: "Getting it ready…",

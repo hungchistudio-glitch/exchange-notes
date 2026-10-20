@@ -2752,6 +2752,8 @@ export type TranslationDictionary = {
     restore: string;
     play: string;
     playFailed: string;
+    /** Under the speakers on an iPhone or iPad, once one has been tapped: the silent switch mutes speech. */
+    silentHint: string;
     missing: string;
     retry: string;
     retrying: string;

@@ -135,6 +135,8 @@ export default function HelloCard({
         })}
       </div>
 
+      {speech.silentHint ? <p className={styles.silentHint}>{copy.silentHint}</p> : null}
+
       <VoiceMenu languages={pair.current} nameOf={nameOf} />
     </section>
   );
