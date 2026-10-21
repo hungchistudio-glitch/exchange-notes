@@ -16,8 +16,8 @@ import YumiShop from "./YumiShop";
  * CosmicYumiReview for why a review page must not write the reader's real
  * mode).
  */
-export default function YumiShopReview({ startCosmic, sky = null }: { startCosmic: boolean; sky?: SceneChoice | null }) {
-  const wallet = useMemo(() => createPreviewWallet(240), []);
+export default function YumiShopReview({ startCosmic, sky = null, collection03 = false }: { startCosmic: boolean; sky?: SceneChoice | null; collection03?: boolean }) {
+  const wallet = useMemo(() => createPreviewWallet(collection03 ? 3300 : 240), [collection03]);
   const [isCosmic, setCosmic] = useState(startCosmic);
 
   useEffect(() => {
@@ -44,6 +44,7 @@ export default function YumiShopReview({ startCosmic, sky = null }: { startCosmi
       isCosmic={isCosmic}
       onToggleMode={() => setCosmic(value => !value)}
       preview
+      startCollection={collection03 ? "collection03" : "all"}
     />
   );
 }

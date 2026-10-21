@@ -346,6 +346,10 @@ export type ShellFinish = {
   clearcoatRoughness?: number;
   envMapIntensity?: number;
   opacity?: number;
+  iridescence?: number;
+  sheen?: number;
+  sheenColor?: THREE.ColorRepresentation;
+  sheenRoughness?: number;
   emissive?: THREE.ColorRepresentation;
   emissiveIntensity?: number;
   map?: () => THREE.Texture;

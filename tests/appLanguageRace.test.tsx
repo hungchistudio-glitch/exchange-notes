@@ -1,7 +1,7 @@
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
+import { StrictMode, type ReactNode } from "react";
 
 import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettingsButton";
 import english from "@/lib/i18n/en";
@@ -42,6 +42,20 @@ describe("interface language requests", () => {
     await act(async () => { french.resolve(english); });
     await act(async () => { spanish.resolve(english); });
     expect(mocks.setLanguage).toHaveBeenCalledExactlyOnceWith("french");
+  });
+
+  it("clears the pending indicator after a language loads in Strict Mode", async () => {
+    const user = userEvent.setup();
+    const pending = deferred();
+    mocks.load.mockReturnValue(pending.promise);
+    render(<StrictMode><AppLanguageSettingsButton /></StrictMode>);
+    await user.click(screen.getByRole("button"));
+    const french = screen.getByRole("button", { name: /Français/ });
+    await user.click(french);
+    expect(french).toHaveAttribute("aria-busy", "true");
+    await act(async () => { pending.resolve(english); });
+    expect(mocks.setLanguage).toHaveBeenCalledExactlyOnceWith("french");
+    expect(french).not.toHaveAttribute("aria-busy");
   });
 
   it("cancels a pending switch when the user reselects their current language", async () => {

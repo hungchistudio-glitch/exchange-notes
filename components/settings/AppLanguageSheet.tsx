@@ -78,12 +78,11 @@ export default function AppLanguageSheet({
   // Only for the two setState calls below; the switch itself is deliberately
   // not cancelled on unmount — see handleSelect.
   const mounted = useRef(true);
-  useEffect(
-    () => () => {
-      mounted.current = false;
-    },
-    [],
-  );
+  useEffect(() => {
+    // Strict Mode replays setup after cleanup; the sheet is mounted again.
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   async function handleSelect(value: InterfaceLanguage) {
     /*

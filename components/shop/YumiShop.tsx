@@ -14,6 +14,7 @@ import { fill, plural } from "@/lib/i18n/format";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
 import {
   SHOP_COUNTRIES,
+  SHOP_ITEMS,
   itemsFor,
   ownedOnly,
   sameOutfit,
@@ -25,6 +26,8 @@ import {
   type ShopItem,
   type YumiOutfit,
 } from "@/lib/shop/catalog";
+import { COLLECTION03_COPY, SHOP_COLLECTIONS, inShopCollection, type ShopCollection } from "@/lib/shop/collection03Presentation";
+import { isCollection03 } from "@/lib/shop/collection03";
 import { getDeviceTimeZone } from "@/lib/push/deviceTimeZone";
 import { QUIET_SCENE, dayPartAt, formatTemperature, sceneFor, seasonAt } from "@/lib/shop/atmosphere";
 import {
@@ -85,14 +88,18 @@ export default function YumiShop({
   isCosmic,
   onToggleMode,
   preview = false,
+  startCollection = "all",
 }: {
   wallet: ShopWallet;
   isCosmic: boolean;
   onToggleMode: () => void;
   preview?: boolean;
+  startCollection?: ShopCollection;
 }) {
   const { t, language, locale } = useTranslation();
   const copy = t.shop;
+  const collectionCopy = COLLECTION03_COPY[language];
+  const [collection, setCollection] = useState<ShopCollection>(startCollection);
   const router = useRouter();
   const online = useOnline();
 
@@ -217,8 +224,13 @@ export default function YumiShop({
 
   // --------------------------------------------------------- catalogue
   const shown = useMemo(
-    () => itemsFor(category, country, new Set(state.owned)),
-    [category, country, state.owned],
+    () => {
+      const base = category === "featured" && collection !== "all"
+        ? SHOP_ITEMS.filter(item => country === "all" || item.country === country)
+        : itemsFor(category, country, new Set(state.owned));
+      return base.filter(item => inShopCollection(item, collection));
+    },
+    [category, country, state.owned, collection],
   );
 
 
@@ -451,7 +463,10 @@ export default function YumiShop({
       </div>
 
       <section className={styles.catalog} aria-label={copy.title}>
-        {preview && <p className={styles.previewBadge}>{copy.preview}</p>}
+        {preview && <p className={styles.previewBadge}>{startCollection !== "all" ? collectionCopy.preview : copy.preview}</p>}
+        <div className={styles.tabs}>
+          {SHOP_COLLECTIONS.map(key => <button key={key} type="button" className={styles.chip} aria-pressed={collection === key} onClick={() => { setCollection(key); setCountry("all"); setCategory("featured"); }}>{collectionCopy.labels[key]}</button>)}
+        </div>
 
         <div className={styles.tabs}>
           {CATEGORIES.map(key => (
@@ -499,6 +514,7 @@ export default function YumiShop({
                         {wearing && trying ? copy.wearing : copy.tryingOn}
                       </span>
                     )}
+                    {isCollection03(item.id) && <span className={styles.collectionNew}>{collectionCopy.newItem} · 03</span>}
                     <span className={styles.cardName}>{name(item)}</span>
                     <span className={styles.price}>
                       {owned.has(item.id)

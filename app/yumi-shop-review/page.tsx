@@ -17,11 +17,11 @@ export const metadata = {
 };
 
 export default async function YumiShopReviewPage({ searchParams }: {
-  searchParams: Promise<{ sky?: string; mode?: string }>;
+  searchParams: Promise<{ sky?: string; mode?: string; collection?: string }>;
 }) {
   reviewRouteOnly();
   const [storedMode, params] = await Promise.all([getServerInterfaceMode(), searchParams]);
   const sky = SCENE_CHOICES.includes(params.sky as SceneChoice) ? (params.sky as SceneChoice) : null;
   const cosmic = params.mode ? params.mode === "cosmic" : storedMode === "yumi-cosmic";
-  return <YumiShopReview startCosmic={cosmic} sky={sky} />;
+  return <YumiShopReview startCosmic={cosmic} sky={sky} collection03={params.collection === "collection03"} />;
 }

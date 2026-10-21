@@ -1,3 +1,4 @@
+import { COLLECTION03_ITEMS } from "./collection03";
 import { CULTURAL_ITEMS } from "./culturalCollection";
 
 import type { InterfaceLanguage } from "@/lib/appPreferences";
@@ -224,7 +225,7 @@ export const SHOP_ITEMS: readonly ShopItem[] = [...SHOP_COUNTRIES.flatMap(countr
     id, country, slot, price, tone,
     names: { "traditional-chinese": zh, english: en, french: fr, italian: it, spanish: es },
   })),
-), ...CULTURAL_ITEMS];
+), ...CULTURAL_ITEMS, ...COLLECTION03_ITEMS];
 
 const BY_ID = new Map(SHOP_ITEMS.map(item => [item.id, item]));
 

@@ -819,7 +819,7 @@ export function createYumiScene(
       integrateSpring(dt);
       poseRig();
       poseIris();
-      outfit.sync();
+      outfit.sync(dt, options.reducedMotion);
 
       navigationLean += (navigationLeanTarget - navigationLean) * Math.min(1, dt * 10);
       yuGroup.position.set(parts?.yu.x ?? 0, parts?.yu.y ?? 0, 0);

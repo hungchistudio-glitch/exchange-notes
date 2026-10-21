@@ -24,7 +24,8 @@ export default function ShopThumbnailsReview() {
         const items = collection === "earrings" ? CULTURAL_ITEMS.filter(item => item.slot === "earrings")
           : collection === "cultural" ? CULTURAL_ITEMS
             : collection === "station33" ? SHOP_ITEMS.filter(item => item.id.startsWith("s33-"))
-              : SHOP_ITEMS;
+              : collection === "collection03" ? SHOP_ITEMS.filter(item => item.id.startsWith("s33v3-"))
+                : SHOP_ITEMS;
         return renderThumbnailSet(items.map(item => item.id), 256, "image/webp", .9, () => cancelled, (done, total) => { if (!cancelled) setProgress(`${done} / ${total}`); });
       })
       .then(rendered => {

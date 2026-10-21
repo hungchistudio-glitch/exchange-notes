@@ -1399,3 +1399,5 @@
     transition: none;
   }
 }
+
+.collectionNew { display: block; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted, #8b8578); margin-bottom: 0.25rem; }
