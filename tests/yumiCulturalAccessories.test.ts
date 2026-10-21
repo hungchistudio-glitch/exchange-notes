@@ -17,7 +17,7 @@ describe('cultural accessories',()=>{
     expect(ownedOnly(outfit,new Set(Object.values(outfit)))).toEqual(outfit);
     expect(Object.keys(outfit)).toHaveLength(6);
     // Twenty from the cultural collection, nine more from Station 33.
-    expect(itemsFor('jewelry','all',new Set())).toHaveLength(29);
+    expect(itemsFor('jewelry','all',new Set())).toHaveLength(44); // 29 existing + 15 Collection 03 pieces
   });
   it('builds finite, bounded geometry for every new item and disposes it',()=>{
     canvas();

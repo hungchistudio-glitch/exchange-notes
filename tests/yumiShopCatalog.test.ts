@@ -28,14 +28,14 @@ import { buildableIds } from "@/lib/yumi3d/outfit";
 
 describe("the catalogue", () => {
   it("has 23 pieces per country, including 10 new cultural pieces, and 12 basics", () => {
-    const first = SHOP_ITEMS.filter(item => !item.id.startsWith("s33-"));
+    const first = SHOP_ITEMS.filter(item => !item.id.startsWith("s33-") && !item.id.startsWith("s33v3-"));
     expect(first).toHaveLength(127);
     for (const country of SHOP_COUNTRIES.filter(c => c !== "basic")) {
       const pieces = first.filter(item => item.country === country);
       expect(pieces).toHaveLength(23);
       expect(pieces.filter(item => item.slot === "material")).toHaveLength(5);
     }
-    const basics = SHOP_ITEMS.filter(item => item.country === "basic");
+    const basics = first.filter(item => item.country === "basic");
     expect(basics).toHaveLength(12);
     // Chi asked for more eyes: every basic is one.
     expect(basics.every(item => ["pupil", "iris", "eyewear"].includes(item.slot))).toBe(true);
@@ -45,7 +45,7 @@ describe("the catalogue", () => {
   it("adds Station 33: three new pieces for every slot, from the five countries", () => {
     const station = SHOP_ITEMS.filter(item => item.id.startsWith("s33-"));
     expect(station).toHaveLength(36);
-    expect(SHOP_ITEMS).toHaveLength(163);
+    expect(SHOP_ITEMS).toHaveLength(220);
     for (const slot of SHOP_SLOTS) expect(station.filter(item => item.slot === slot), slot).toHaveLength(3);
     expect(station.every(item => item.country !== "basic")).toBe(true);
   });
