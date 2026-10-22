@@ -2814,6 +2814,53 @@ const english: TranslationDictionary = {
     freeTryOn: "Try-on is free",
     preview: "Preview · no real cookies are spent",
     selectPrompt: "Tap a piece to try it on",
+    boutique: {
+      openStory: "Turn the coin. Discover our story.",
+      closeStory: "Close the station’s story",
+      overview: "Three collections, one journey: Earth’s keepsakes, the orbital workshop and the wonders beyond.",
+      "title": "Objects with a story.",
+      "intro": "A little station between the stars and Earth. Choose a destination to explore its collection.",
+      "map": "Explore the collections",
+      "curator": "A note from Yumi",
+      "welcome": "Take your time. Your next little treasure is waiting.",
+      "trying": "Try {item}. Turn me around to see every detail.",
+      "wearing": "{item} is saved. I’ll wear it on our next adventure.",
+      "removed": "There are more little treasures to discover. Shall we try another?",
+      "saving": "One moment — I’m keeping this look for you.",
+      "pieces": "{count} pieces",
+      "all": "Explore all collections",
+      "stories": {
+            "original": "The colours, flavours and everyday wonders I found on Earth, collected into little keepsakes.",
+            "station33": "Between journeys, the station’s workshop turns brass, glass and a little curiosity into things to wear.",
+            "collection03": "Beyond the familiar orbits: dark technology, unexpected textures and treasures for a different kind of traveller."
+      }
+},
+    browse: {
+      "shopView": "Shop",
+      "wardrobe": "My wardrobe",
+      "notWorn": "Not worn",
+      "all": "All pieces",
+      "filters": "Filters",
+      "country": "Country",
+      "collection": "Collection",
+      "ownedOnly": "Owned only",
+      "clear": "Clear filters",
+      "saving": "Saving outfit…",
+      "autoSave": "Owned pieces save automatically. Unbought trials stay here.",
+      "departments": {
+            "eyes": "Eyes",
+            "eyewear": "Eyewear",
+            "earrings": "Earrings",
+            "brow": "Brow cuffs",
+            "necklace": "Necklaces",
+            "head": "Hats",
+            "neck": "Scarves & capes",
+            "pin": "Pins",
+            "mouth": "Mouth accessories",
+            "charm": "Charms",
+            "material": "Body finishes"
+      }
+},
     categories: {
       jewelry: "Jewelry",
       featured: "Featured",

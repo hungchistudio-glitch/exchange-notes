@@ -279,6 +279,15 @@ export default function ShopStage({
           was dropped: copying each 3D frame back for it was the costliest
           thing an iPhone did here. */}
       <StationDock />
+      <div className={styles.astrolabe} aria-hidden="true">
+        <svg viewBox="0 0 400 400" fill="none">
+          <circle cx="200" cy="200" r="174" />
+          <circle cx="200" cy="200" r="164" strokeDasharray="1 12" />
+          <ellipse cx="200" cy="200" rx="174" ry="58" transform="rotate(-32 200 200)" />
+          <path d="M200 17v18M17 200h18M365 200h18M200 365v18" />
+          <path d="m77 65 3 9 9 3-9 3-3 9-3-9-9-3 9-3ZM323 311l3 9 9 3-9 3-3 9-3-9-9-3 9-3Z" />
+        </svg>
+      </div>
 
       {/* Only the 3D Yumi stands here. Until she draws the loader holds
           her place, and on a device without WebGL it stays, still, with the

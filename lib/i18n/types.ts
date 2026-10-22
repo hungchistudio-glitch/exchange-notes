@@ -2725,6 +2725,17 @@ export type TranslationDictionary = {
     freeTryOn: string;
     preview: string;
     selectPrompt: string;
+    boutique: {
+      openStory: string; closeStory: string;
+      title: string; intro: string; map: string; curator: string; welcome: string; overview: string;
+      trying: string; wearing: string; removed: string; saving: string; pieces: string; all: string;
+      stories: { original: string; station33: string; collection03: string };
+    };
+    browse: {
+      all: string; shopView: string; wardrobe: string; filters: string; country: string; collection: string; ownedOnly: string;
+      clear: string; saving: string; autoSave: string; notWorn: string;
+      departments: { eyes: string; eyewear: string; earrings: string; brow: string; necklace: string; head: string; neck: string; pin: string; mouth: string; charm: string; material: string };
+    };
     categories: { featured: string; jewelry: string; eyes: string; materials: string; wear: string; small: string; owned: string };
     countries: { all: string; basic: string; tw: string; us: string; fr: string; it: string; es: string };
   };

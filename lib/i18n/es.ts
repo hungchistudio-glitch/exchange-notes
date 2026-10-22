@@ -2810,6 +2810,53 @@ const spanish: TranslationDictionary = {
     freeTryOn: "Probar es gratis",
     preview: "Vista previa · no se gastan galletas reales",
     selectPrompt: "Toca una pieza para probarla",
+    boutique: {
+      openStory: "Gira la moneda y descubre nuestra historia.",
+      closeStory: "Cerrar la historia de la estación",
+      overview: "Tres colecciones, un viaje: recuerdos de la Tierra, el taller orbital y las maravillas del más allá.",
+      "title": "Objetos con historia.",
+      "intro": "Una pequeña estación entre las estrellas y la Tierra. Elige un destino para explorar su colección.",
+      "map": "Explorar las colecciones",
+      "curator": "Una nota de Yumi",
+      "welcome": "Tómate tu tiempo. Tu próximo pequeño tesoro te espera.",
+      "trying": "Prueba {item}. Gírame para ver cada detalle.",
+      "wearing": "{item} ya está guardado. Lo llevaré en nuestra próxima aventura.",
+      "removed": "Quedan pequeños tesoros por descubrir. ¿Probamos otro?",
+      "saving": "Un momento: estoy guardando este conjunto para ti.",
+      "pieces": "{count} piezas",
+      "all": "Explorar todas las colecciones",
+      "stories": {
+            "original": "Los colores, sabores y pequeñas maravillas que encontré en la Tierra, convertidos en recuerdos para llevar.",
+            "station33": "Entre viajes, el taller de la estación transforma latón, vidrio y un poco de curiosidad en accesorios.",
+            "collection03": "Más allá de las órbitas conocidas: tecnología oscura, texturas inesperadas y tesoros para viajeros diferentes."
+      }
+},
+    browse: {
+      "shopView": "Tienda",
+      "wardrobe": "Mi armario",
+      "notWorn": "Sin llevar",
+      "all": "Todos los artículos",
+      "filters": "Filtros",
+      "country": "País",
+      "collection": "Colección",
+      "ownedOnly": "Solo adquiridos",
+      "clear": "Borrar filtros",
+      "saving": "Guardando el conjunto…",
+      "autoSave": "Los artículos adquiridos se guardan automáticamente. Las pruebas sin comprar se quedan aquí.",
+      "departments": {
+            "eyes": "Ojos",
+            "eyewear": "Gafas",
+            "earrings": "Pendientes individuales",
+            "brow": "Aros de ceja",
+            "necklace": "Collares",
+            "head": "Sombreros",
+            "neck": "Bufandas y capas",
+            "pin": "Broches",
+            "mouth": "Accesorios de boca",
+            "charm": "Colgantes",
+            "material": "Materiales del cuerpo"
+      }
+},
     categories: {
       jewelry: "Joyería",
       featured: "Destacados",

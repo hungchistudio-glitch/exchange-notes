@@ -29,6 +29,7 @@ const SLOTS: readonly ShopSlot[] = ["material", "pupil", "iris", "eyewear", "hea
 let outfit: YumiOutfit = {};
 let hydrated = false;
 let fetched = false;
+let revision = 0;
 const listeners = new Set<() => void>();
 
 /** Slots and strings only; whether a piece exists is the 3D chunk's to check. */
@@ -74,6 +75,7 @@ function subscribe(listener: () => void) {
 
 export function setWornOutfit(next: YumiOutfit) {
   hydrate();
+  revision += 1;
   const clean = readOutfit(next);
   if (same(clean, outfit)) return;
   outfit = clean;
@@ -89,9 +91,13 @@ export function setWornOutfit(next: YumiOutfit) {
 function refreshWornOutfit() {
   if (fetched || typeof window === "undefined") return;
   fetched = true;
+  const startedAt = revision;
   void Promise.all([import("./wallet"), import("@/lib/supabase/client")])
     .then(([{ createSupabaseWallet }, { createClient }]) => createSupabaseWallet(createClient()).load())
-    .then(state => setWornOutfit(state.outfit))
+    .then(state => {
+      // A home request started before a shop save must not undress Yumi.
+      if (revision === startedAt) setWornOutfit(state.outfit);
+    })
     .catch(() => {
       // The shop is not open yet, the network is away, or there is no
       // session (a review screen, a test): she wears what the device kept.

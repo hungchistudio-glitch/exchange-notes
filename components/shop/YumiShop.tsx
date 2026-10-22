@@ -14,20 +14,16 @@ import { fill, plural } from "@/lib/i18n/format";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
 import {
   SHOP_COUNTRIES,
-  SHOP_ITEMS,
-  itemsFor,
-  ownedOnly,
   sameOutfit,
   shopItem,
   toggleInOutfit,
   unownedIn,
-  type ShopCategory,
   type ShopCountry,
   type ShopItem,
   type YumiOutfit,
 } from "@/lib/shop/catalog";
-import { COLLECTION03_COPY, SHOP_COLLECTIONS, inShopCollection, type ShopCollection } from "@/lib/shop/collection03Presentation";
-import { isCollection03 } from "@/lib/shop/collection03";
+import { COLLECTION03_COPY, SHOP_COLLECTIONS, type ShopCollection } from "@/lib/shop/collection03Presentation";
+import { SHOP_DEPARTMENTS, browseShop, outfitToKeep, type ShopDepartment } from "@/lib/shop/browsing";
 import { getDeviceTimeZone } from "@/lib/push/deviceTimeZone";
 import { QUIET_SCENE, dayPartAt, formatTemperature, sceneFor, seasonAt } from "@/lib/shop/atmosphere";
 import {
@@ -49,6 +45,8 @@ import EnergyCookie from "./EnergyCookie";
 import EnergyReward from "./EnergyReward";
 import ShopScenePicker, { ORBIT_CHOICES } from "./ShopScenePicker";
 import ShopStage from "./ShopStage";
+import ShopCollectionMap from "./ShopCollectionMap";
+import ShopIntroduction from "./ShopIntroduction";
 import ShopThumb from "./ShopThumb";
 import styles from "./YumiShop.module.css";
 
@@ -67,13 +65,11 @@ import styles from "./YumiShop.module.css";
      draft   what she has on here, while the reader tries things
      owned   what the reader may save into `worn`
 
-   "Reset outfit" puts the draft back to what is worn. Buying a piece puts
-   it on and saves the outfit straight away, because that is why it was
-   bought. "Put on" saves the owned part of the draft; anything not yet
-   bought stays in the fitting room and is said to.
+   Owned pieces save when tapped, including an explicit removal. Unbought
+   trials never replace saved clothing. Writes are single-flight, and the
+   back key waits for an active save. A failed save leaves the trial visible
+   with a retry action instead of pretending it was persisted.
    ========================================================= */
-
-const CATEGORIES: ShopCategory[] = ["featured", "jewelry", "eyes", "materials", "wear", "small", "owned"];
 
 /** How small the stand gets as the catalogue scrolls; YumiShop.module.css agrees. */
 const STAND_SMALLEST = 0.6;
@@ -107,8 +103,13 @@ export default function YumiShop({
   const [availability, setAvailability] = useState<Availability>("loading");
   const [draft, setDraft] = useState<YumiOutfit>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [category, setCategory] = useState<ShopCategory>("featured");
+  const [category, setCategory] = useState<ShopDepartment | "all">("all");
   const [country, setCountry] = useState<ShopCountry | "all">("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const leaving = useRef(false);
+  const [onlyOwned, setOnlyOwned] = useState(false);
+  const pendingWrite = useRef<Promise<boolean> | null>(null);
+  const wardrobeRevision = useRef(0);
   const [confirming, setConfirming] = useState<ShopItem | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -145,45 +146,17 @@ export default function YumiShop({
   const topRef = useRef<HTMLDivElement>(null);
   const signRef = useRef<HTMLHeadingElement>(null);
 
-  /* The signboard swings in a breath of wind (Chi, 2026-10-13): once on
-     arrival, when the page is scrolled, and now and then on its own. A
-     transform on its own layer, a damped swing about the rods — nothing the
-     stand or the scroll has to wait for. */
+  // The brass sign responds to collection choices only; no idle timer or
+  // scroll listener. Its animation never changes the stage's dimensions.
   useEffect(() => {
     const sign = signRef.current;
-    if (!sign || typeof sign.animate !== "function") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let current: Animation | null = null;
-    let lastSwing = 0;
-    const swing = (strength: number) => {
-      const now = performance.now();
-      if (now - lastSwing < 1400) return;
-      lastSwing = now;
-      current?.cancel();
-      const a = 3.2 * strength;
-      current = sign.animate(
-        [-1.2, -1.2 + a, -1.2 - a * 0.6, -1.2 + a * 0.32, -1.2 - a * 0.14, -1.2]
-          .map(deg => ({ transform: `rotate(${deg}deg)` })),
-        { duration: 1900, easing: "ease-in-out" },
-      );
-    };
-    const arrive = window.setTimeout(() => swing(1), 350);
-    let breeze = 0;
-    const nextBreeze = () => {
-      breeze = window.setTimeout(() => { swing(0.45 + Math.random() * 0.35); nextBreeze(); }, 9000 + Math.random() * 12000);
-    };
-    nextBreeze();
-    const scroller: HTMLElement | Window =
-      document.querySelector<HTMLElement>("[data-app-scroll-viewport]") ?? window;
-    const onScroll = () => swing(0.55);
-    scroller.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.clearTimeout(arrive);
-      window.clearTimeout(breeze);
-      scroller.removeEventListener("scroll", onScroll);
-      current?.cancel();
-    };
-  }, []);
+    if (!sign?.animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const animation = sign.animate(
+      [{ transform: "rotate(-1.2deg)" }, { transform: "rotate(1deg)" }, { transform: "rotate(-1.2deg)" }],
+      { duration: 650, easing: "cubic-bezier(.22,.7,.3,1)" },
+    );
+    return () => animation.cancel();
+  }, [collection]);
 
   // ----------------------------------------------------------- loading
   useEffect(() => {
@@ -210,7 +183,10 @@ export default function YumiShop({
     const landed = () => {
       setLandedKey(key => key + 1);
       if (preview) return;
-      void wallet.load().then(setState).catch(() => {});
+      const revision = wardrobeRevision.current;
+      void wallet.load().then(loaded => {
+        if (revision === wardrobeRevision.current && !pendingWrite.current) setState(loaded);
+      }).catch(() => {});
     };
     window.addEventListener(ENERGY_LANDED_EVENT, landed);
     return () => window.removeEventListener(ENERGY_LANDED_EVENT, landed);
@@ -223,16 +199,11 @@ export default function YumiShop({
   }, [demoReward]);
 
   // --------------------------------------------------------- catalogue
-  const shown = useMemo(
-    () => {
-      const base = category === "featured" && collection !== "all"
-        ? SHOP_ITEMS.filter(item => country === "all" || item.country === country)
-        : itemsFor(category, country, new Set(state.owned));
-      return base.filter(item => inShopCollection(item, collection));
-    },
-    [category, country, state.owned, collection],
-  );
-
+  const groups = useMemo(() => browseShop({
+    department: category, country, collection, ownedOnly: onlyOwned, owned: new Set(state.owned),
+  }), [category, country, collection, onlyOwned, state.owned]);
+  const shownCount = groups.reduce((count, group) => count + group.items.length, 0);
+  const filterCount = Number(country !== "all") + Number(collection !== "all");
 
   // ------------------------------------------------- the stand shrinking
   /* The stand shrinks as one picture (Chi, 2026-10-13: "原比例縮放"): a
@@ -288,11 +259,44 @@ export default function YumiShop({
   const cookies = (count: number) => plural(count, locale, copy.cookiesOne, copy.cookiesOther, { count });
 
   // ------------------------------------------------------------ actions
+  function runWrite(work: () => Promise<void>) {
+    if (pendingWrite.current) return pendingWrite.current;
+    wardrobeRevision.current += 1;
+    setBusy(true);
+    const task = (async () => {
+      try {
+        await work();
+        return true;
+      } catch {
+        setNotice(copy.failed);
+        return false;
+      } finally {
+        wardrobeRevision.current += 1;
+        pendingWrite.current = null;
+        setBusy(false);
+      }
+    })();
+    pendingWrite.current = task;
+    return task;
+  }
+
   function tryOn(item: ShopItem) {
+    if (pendingWrite.current || availability !== "open") return;
     setSelectedId(item.id);
-    // The tour's try-on step waits for a piece going on, not coming off.
     if (draft[item.slot] !== item.id) announceHomeMoment("shop-tried");
-    setDraft(current => toggleInOutfit(current, item));
+    const next = toggleInOutfit(draft, item);
+    if (!owned.has(item.id)) {
+      // Taking a trial off reveals the saved item underneath, if there was one.
+      if (draft[item.slot] === item.id && worn[item.slot]) next[item.slot] = worn[item.slot];
+      setDraft(next);
+      return;
+    }
+    setDraft(next);
+    if (!online) { setNotice(copy.offline); return; }
+    const keep = { ...worn };
+    if (next[item.slot]) keep[item.slot] = next[item.slot];
+    else delete keep[item.slot];
+    void runWrite(() => save(keep, state, copy.saved));
   }
 
   function resetOutfit() {
@@ -300,29 +304,21 @@ export default function YumiShop({
   }
 
   async function save(outfit: YumiOutfit, after: WardrobeState, message: string) {
-    const saved = await wallet.wear(ownedOnly(outfit, new Set(after.owned)));
+    const saved = await wallet.wear(outfitToKeep(outfit, after.outfit, new Set(after.owned)));
     setState(saved);
     if (!preview) setWornOutfit(saved.outfit);
     setNotice(message);
   }
 
-  async function putOn() {
+  function putOn() {
     if (!canTrade) return;
-    setBusy(true);
-    try {
-      await save(draft, state, copy.saved);
-    } catch {
-      setNotice(copy.failed);
-    } finally {
-      setBusy(false);
-    }
+    void runWrite(() => save(draft, state, copy.saved));
   }
 
-  async function buy(item: ShopItem) {
+  function buy(item: ShopItem) {
     setConfirming(null);
-    if (!canTrade) return;
-    setBusy(true);
-    try {
+    if (!canTrade || pendingWrite.current) return;
+    void runWrite(async () => {
       const result = await wallet.buy(item.id);
       setState(result.state);
       if (result.status === "insufficient") {
@@ -335,11 +331,7 @@ export default function YumiShop({
       setDraft(withItem);
       setCelebrateKey(key => key + 1);
       await save(withItem, result.state, fill(copy.bought, { item: name(item) }));
-    } catch {
-      setNotice(copy.failed);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   /* The display language is one setting with Settings' (Chi, 2026-10-12):
@@ -349,26 +341,35 @@ export default function YumiShop({
     setLanguageOpen(true);
   }
 
-  function goBack() {
+  async function goBack() {
+    if (leaving.current) return;
+    leaving.current = true;
+    if (pendingWrite.current && !(await pendingWrite.current)) { leaving.current = false; return; }
     if (window.history.length > 1) router.back();
     else router.push("/home");
   }
 
   // -------------------------------------------------------- bottom bar
-  let primary: { label: string; onClick?: () => void; disabled: boolean; done?: boolean };
+  let primary: { label: string; action?: "buy" | "save"; disabled: boolean; done?: boolean };
   let shortBy = 0;
   if (selected && !owned.has(selected.id) && draft[selected.slot] === selected.id) {
     shortBy = Math.max(0, selected.price - state.balance);
     primary = {
       label: copy.buy,
-      onClick: () => setConfirming(selected),
+      action: "buy",
       disabled: !canTrade || shortBy > 0,
     };
-  } else if (draftChanged) {
-    primary = { label: copy.putOn, onClick: putOn, disabled: !canTrade || sameOutfit(ownedOnly(draft, owned), worn) };
+  } else if (!sameOutfit(outfitToKeep(draft, worn, owned), worn)) {
+    primary = { label: copy.putOn, action: "save", disabled: !canTrade || sameOutfit(outfitToKeep(draft, worn, owned), worn) };
   } else {
-    primary = { label: copy.wearingNow, disabled: true, done: true };
+    const isWearing = !!selected && worn[selected.slot] === selected.id;
+    primary = { label: isWearing ? copy.wearingNow : copy.browse.notWorn, disabled: true, done: isWearing };
   }
+
+  const keeperMessage = busy ? copy.boutique.saving
+    : selected && draft[selected.slot] === selected.id
+      ? fill(worn[selected.slot] === selected.id ? copy.boutique.wearing : copy.boutique.trying, { item: name(selected) })
+      : selected ? copy.boutique.removed : copy.boutique.welcome;
 
   const status =
     availability === "closed" ? copy.closed
@@ -380,7 +381,7 @@ export default function YumiShop({
     <div ref={pageRef} className={styles.page}>
       <div ref={topRef} className={styles.top} data-shrunk="false">
         <header className={styles.header}>
-          <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={goBack}>
+          <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={() => void goBack()}>
             <ArrowLeft size={20} strokeWidth={1.9} aria-hidden="true" />
           </button>
           {/* The shop's signboard (Chi, 2026-10-13: "商店招牌的設計感"), since
@@ -463,25 +464,29 @@ export default function YumiShop({
       </div>
 
       <section className={styles.catalog} aria-label={copy.title}>
-        {preview && <p className={styles.previewBadge}>{startCollection !== "all" ? collectionCopy.preview : copy.preview}</p>}
-        <div className={styles.tabs}>
-          {SHOP_COLLECTIONS.map(key => <button key={key} type="button" className={styles.chip} aria-pressed={collection === key} onClick={() => { setCollection(key); setCountry("all"); setCategory("featured"); }}>{collectionCopy.labels[key]}</button>)}
+        {preview && <p className={styles.previewBadge}>{copy.preview}</p>}
+        <ShopIntroduction openLabel={copy.boutique.openStory} closeLabel={copy.boutique.closeStory}>
+        <aside className={styles.keeperNote} aria-label={copy.boutique.curator}>
+          <div><span className={styles.keeperLabel}>{copy.boutique.curator}</span><p role="status">{keeperMessage}</p></div>
+        </aside>
+        <ShopCollectionMap collection={collection} onChoose={setCollection} copy={copy.boutique} labels={collectionCopy.labels} locale={locale} />
+        </ShopIntroduction>
+        <div className={styles.wardrobeSwitch} role="group" aria-label={copy.title}>
+          <button type="button" aria-pressed={!onlyOwned} onClick={() => { setOnlyOwned(false); setCategory("all"); setCountry("all"); setCollection("all"); }}>{copy.browse.shopView}</button>
+          <button type="button" aria-pressed={onlyOwned} onClick={() => { setOnlyOwned(true); setCategory("all"); setCountry("all"); setCollection("all"); }}>{copy.browse.wardrobe}<span>{state.owned.length}</span></button>
         </div>
-
-        <div className={styles.tabs}>
-          {CATEGORIES.map(key => (
+        <div className={styles.catalogHeading}>
+          <h2>{category === "all" ? (onlyOwned ? copy.browse.wardrobe : copy.browse.all) : copy.browse.departments[category]} <span>{shownCount}</span></h2>
+          <button type="button" className={styles.chip} aria-haspopup="dialog" onClick={() => setFiltersOpen(true)}>{copy.browse.filters}{filterCount > 0 ? ` · ${filterCount}` : ""}</button>
+        </div>
+        <div className={styles.tabs} role="group" aria-label={copy.browse.all}>
+          {(["all", ...SHOP_DEPARTMENTS] as const).map(key => (
             <button key={key} type="button" className={styles.tab} aria-pressed={category === key} onClick={() => setCategory(key)}>
-              {copy.categories[key]}
+              {key === "all" ? copy.browse.all : copy.browse.departments[key]}
             </button>
           ))}
         </div>
-        <div className={`${styles.tabs} ${styles.countries}`}>
-          {(["all", ...SHOP_COUNTRIES] as const).map(key => (
-            <button key={key} type="button" className={styles.chip} aria-pressed={country === key} onClick={() => setCountry(key)}>
-              {copy.countries[key]}
-            </button>
-          ))}
-        </div>
+        <p className={styles.wearHint} role="status">{busy ? copy.browse.saving : copy.browse.autoSave}</p>
 
         {status && (
           <p className={styles.status} role="status">
@@ -498,23 +503,24 @@ export default function YumiShop({
           </p>
         )}
 
-        {shown.length === 0 ? (
-          <p className={styles.empty}>{category === "owned" ? copy.emptyOwned : copy.empty}</p>
+        {shownCount === 0 ? (
+          <p className={styles.empty}>{onlyOwned ? copy.emptyOwned : copy.empty}</p>
         ) : (
+          groups.map(group => <section key={group.key} aria-labelledby={`shop-department-${group.key}`} className={styles.department}>
+          <h3 id={`shop-department-${group.key}`} className={styles.departmentHeading}>{copy.browse.departments[group.key]} <span>{group.items.length}</span></h3>
           <ul className={styles.grid}>
-            {shown.map(item => {
+            {group.items.map(item => {
               const trying = draft[item.slot] === item.id;
               const wearing = worn[item.slot] === item.id;
               return (
                 <li key={item.id}>
-                  <button type="button" className={styles.card} data-coach-target="shop-item" aria-pressed={trying} onClick={() => tryOn(item)}>
+                  <button type="button" className={styles.card} data-coach-target="shop-item" aria-pressed={trying} disabled={busy || availability !== "open"} onClick={() => tryOn(item)}>
                     <ShopThumb item={item} className={styles.thumb} />
                     {(trying || wearing) && (
-                      <span className={styles.tag} data-wearing={wearing && trying ? "true" : "false"}>
-                        {wearing && trying ? copy.wearing : copy.tryingOn}
+                      <span className={styles.tag} data-wearing={wearing ? "true" : "false"}>
+                        {wearing ? copy.wearing : copy.tryingOn}
                       </span>
                     )}
-                    {isCollection03(item.id) && <span className={styles.collectionNew}>{collectionCopy.newItem} · 03</span>}
                     <span className={styles.cardName}>{name(item)}</span>
                     <span className={styles.price}>
                       {owned.has(item.id)
@@ -526,6 +532,7 @@ export default function YumiShop({
               );
             })}
           </ul>
+          </section>)
         )}
 
         <p className={styles.footnote}>{copy.howEarned}</p>
@@ -551,7 +558,7 @@ export default function YumiShop({
             <span className={styles.barPrompt}>{copy.selectPrompt}</span>
           )}
         </div>
-        <div className={styles.barActions}>
+        {(selected || draftChanged) && <div className={styles.barActions}>
           <button type="button" className={styles.secondary} disabled={!draftChanged || busy} onClick={resetOutfit}>
             {copy.resetOutfit}
           </button>
@@ -564,14 +571,14 @@ export default function YumiShop({
               className={styles.primary}
               data-done={primary.done ? "true" : "false"}
               disabled={primary.disabled}
-              onClick={primary.onClick}
+              onClick={() => { if (primary.action === "buy" && selected) setConfirming(selected); else if (primary.action === "save") putOn(); }}
               aria-busy={busy}
             >
               {primary.done && <Check size={16} strokeWidth={2.2} aria-hidden="true" />}
-              {primary.label}
+              {busy ? copy.browse.saving : primary.label}
             </button>
           )}
-        </div>
+        </div>}
         {draftChanged && unowned.length > 0 && !(selected && unowned.length === 1 && unowned[0].id === selected.id) && (
           <p className={styles.barNote}>{copy.unownedNote}</p>
         )}
@@ -649,6 +656,22 @@ export default function YumiShop({
         </div>
       </BottomSheet>
       {demoReward > 0 && <EnergyReward key={demoReward} amount={ENERGY_PER_USD} label={copy.energy.rewardPaid} />}
+
+      <BottomSheet open={filtersOpen} onClose={() => setFiltersOpen(false)} title={copy.browse.filters}>
+            <div className={`${styles.supply} ${styles.filterPanel}`}>
+              <label>{copy.browse.country}
+                <select value={country} onChange={event => setCountry(event.target.value as ShopCountry | "all")}>
+                  {(["all", ...SHOP_COUNTRIES] as const).map(key => <option key={key} value={key}>{copy.countries[key]}</option>)}
+                </select>
+              </label>
+              <label>{copy.browse.collection}
+                <select value={collection} onChange={event => setCollection(event.target.value as ShopCollection)}>
+                  {SHOP_COLLECTIONS.map(key => <option key={key} value={key}>{collectionCopy.labels[key]}</option>)}
+                </select>
+              </label>
+              <button type="button" className={styles.secondary} disabled={!filterCount} onClick={() => {setCountry("all");setCollection("all");}}>{copy.browse.clear}</button>
+            </div>
+      </BottomSheet>
 
       <AppLanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />
 
