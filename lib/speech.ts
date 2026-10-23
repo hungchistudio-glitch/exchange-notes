@@ -547,6 +547,90 @@ export function listClearVoicesForLanguage(
   return listVoicesForLanguage(lang).filter((voice) => !isNoveltyVoice(voice));
 }
 
+/* =========================================================
+   Speech through an iPhone's silent switch
+
+   With the ringer on silent, iOS mutes Safari's speech synthesis: a
+   speaker turns, finishes, and nothing is heard, and the page cannot tell
+   (Chi, 2026-10-19, on a hello opened from Messages). Two things are done
+   in the tap itself, before speaking, both asking WebKit to treat this
+   page's sound as playback — which the silent switch leaves alone — rather
+   than ambient sound, which it mutes:
+
+     - the Audio Session API (Safari 17 and later): navigator.audioSession
+       .type = "playback";
+     - a twentieth of a second of silence through an <audio> element, which
+       older versions put into the playback category.
+
+   Tried on the hello page first (PR #190) and confirmed on a real iPhone in
+   silent mode before every speaker in the app was given it. Only on Apple
+   touch devices: a Mac would show the silent clip in Now Playing.
+   ========================================================= */
+
+/** An iPhone or iPad, including an iPad that reports itself as a Mac. */
+export function isAppleTouchDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const agent = navigator.userAgent;
+  return /iPhone|iPad|iPod/.test(agent) || (/Macintosh/.test(agent) && navigator.maxTouchPoints > 1);
+}
+
+/** 400 samples of 8-bit silence at 8 kHz, as a WAV file. */
+function silentWav(): Blob {
+  const samples = 400;
+  const bytes = new Uint8Array(44 + samples);
+  const view = new DataView(bytes.buffer);
+  const text = (offset: number, value: string) => {
+    for (let index = 0; index < value.length; index += 1) bytes[offset + index] = value.charCodeAt(index);
+  };
+  text(0, "RIFF");
+  view.setUint32(4, 36 + samples, true);
+  text(8, "WAVE");
+  text(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); /* PCM */
+  view.setUint16(22, 1, true); /* mono */
+  view.setUint32(24, 8000, true);
+  view.setUint32(28, 8000, true);
+  view.setUint16(32, 1, true);
+  view.setUint16(34, 8, true);
+  text(36, "data");
+  view.setUint32(40, samples, true);
+  bytes.fill(0x80, 44);
+  return new Blob([bytes], { type: "audio/wav" });
+}
+
+let silence: HTMLAudioElement | null = null;
+
+/**
+ * Ask for playback audio on an iPhone or iPad; nothing anywhere else. Call
+ * in the tap, before speechSynthesis.speak — an <audio> element may only
+ * start from a user gesture. Never throws; at worst it changes nothing.
+ */
+export function preferPlaybackAudio(): void {
+  if (!isAppleTouchDevice()) return;
+  try {
+    const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+    if (session && session.type !== "playback") session.type = "playback";
+  } catch {
+    /* An older Safari: the clip below is the other way in. */
+  }
+  try {
+    if (!silence) {
+      silence = new Audio(URL.createObjectURL(silentWav()));
+      silence.setAttribute("playsinline", "");
+      silence.preload = "auto";
+    }
+    try {
+      silence.currentTime = 0;
+    } catch {
+      /* Not seekable yet: it plays from the start anyway. */
+    }
+    void silence.play()?.catch(() => undefined);
+  } catch {
+    /* No media playback here: nothing to change. */
+  }
+}
+
 export type SpeechCallbacks = {
   onStart?: () => void;
   onEnd?: () => void;
@@ -571,6 +655,9 @@ export function speak(
   }
 
   const sequence = ++speakSequence;
+
+  /* Before anything is queued, while this is still the tap's own task. */
+  preferPlaybackAudio();
 
   /*
    * Whether anything is actually in the queue right now.

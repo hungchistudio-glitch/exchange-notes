@@ -21,7 +21,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { createNote } from "@/lib/notes/clientRepository";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
-import { getVoiceForLanguage , type SpeechLanguage } from "@/lib/speech";
+import { getVoiceForLanguage, preferPlaybackAudio, type SpeechLanguage } from "@/lib/speech";
 import { encodeNewsCardMessage } from "@/lib/messages/newsCard";
 import { listFriends, getOrCreateConversationWithFriend, type FriendProfile } from "@/lib/friends";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -526,6 +526,8 @@ export default function DailyNews() {
     utterance.onend = () => setSpeakingKey(null);
     utterance.onerror = () => setSpeakingKey(null);
 
+    /* The silent switch would mute it on an iPhone otherwise (lib/speech.ts). */
+    preferPlaybackAudio();
     window.speechSynthesis.speak(utterance);
   }
 
@@ -613,6 +615,8 @@ export default function DailyNews() {
       window.speechSynthesis.speak(utterance);
     }
 
+    /* Once, in the tap: the later segments follow from each one's end. */
+    preferPlaybackAudio();
     speakSegment(0);
   }
 

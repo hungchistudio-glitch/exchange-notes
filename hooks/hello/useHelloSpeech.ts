@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { isAppleTouchDevice, preferPlaybackAudio } from "@/lib/hello/audioSession";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
-import { speak, speechSupported, stopSpeech } from "@/lib/speech";
+import { isAppleTouchDevice, speak, speechSupported, stopSpeech } from "@/lib/speech";
 
 /* =========================================================
    The hello card's two speakers
@@ -25,9 +24,10 @@ import { speak, speechSupported, stopSpeech } from "@/lib/speech";
    language by the reader's speech settings (lib/speech.ts), never a voice
    of another language reading this one.
 
-   On an iPhone or iPad, the silent switch mutes it: each tap first asks
-   for playback audio (lib/hello/audioSession.ts), and after the first one
-   the card says, once, to check the switch.
+   On an iPhone or iPad, the silent switch would mute it: speak() asks for
+   playback audio first (lib/speech.ts), and after the first tap the card
+   still says, once, to check the switch, for a phone where that is not
+   enough.
    ========================================================= */
 
 export type SpeakerPhase = "idle" | "loading" | "playing" | "error";
@@ -73,11 +73,7 @@ export default function useHelloSpeech(): HelloSpeech {
       setState(phase ? { side, phase } : null);
     };
     setState({ side, phase: "loading" });
-    if (appleTouch) {
-      /* In the tap itself, before speaking: see lib/hello/audioSession.ts. */
-      preferPlaybackAudio();
-      setSilentHint(true);
-    }
+    if (appleTouch) setSilentHint(true);
     speak(trimmed, getLanguage(language).speechTag, {
       onStart: () => own("playing"),
       onEnd: () => own(null),
