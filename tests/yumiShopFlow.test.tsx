@@ -194,7 +194,8 @@ it("uses the star chart to filter real collections without losing other filters"
   fireEvent.click(screen.getByRole("button", { name: /Turn the coin/ }));
   const chart = screen.getByRole("group", { name: "Explore the collections" });
   fireEvent.click(within(chart).getByRole("button", { name: /Deep Space Treasures/ }));
-  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(57);
+  /* Collection 03's 57 and Collection 04's 55 deep-space pieces. */
+  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(112);
   expect(document.getElementById("shop-collection-story")).toHaveTextContent("dark technology");
   fireEvent.click(screen.getByRole("button", { name: "Earrings" }));
   const filtered = document.querySelectorAll('[data-coach-target="shop-item"]').length;
@@ -216,6 +217,6 @@ it("opens the personal wardrobe with all owned items and saves dressing from it"
   fireEvent.click(card("Brass monocle"));
   await waitFor(() => expect(wallet.wear).toHaveBeenCalledWith({ eyewear: "monocle" }));
   fireEvent.click(screen.getByRole("button", { name: "Shop" }));
-  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(220);
+  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(333);
   expect(stand()).toEqual({ eyewear: "monocle" });
 });
