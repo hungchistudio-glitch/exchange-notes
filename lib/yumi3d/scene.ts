@@ -5,7 +5,7 @@ import type { YumiOutfit } from "@/lib/shop/catalog";
 import {
   ARM_RADIUS, EYE_RADIUS, GAP_HALF, SHELL_DEPTH, SHELL_RADIUS, TUBE_RADIUS,
 } from "./anatomy";
-import { createOutfitRig } from "./outfit";
+import { createOutfitRig, type OutfitPreviewCollection } from "./outfit";
 import { createYumiRotation } from "./rotation";
 
 /* =========================================================
@@ -63,6 +63,7 @@ export type YumiFilmFrame = {
 };
 
 export type YumiSceneOptions = {
+  previewCollection?: OutfitPreviewCollection;
   /** Called once the eye has been pulled past the opening threshold. */
   onPullOpen?: () => void;
   /** Called on a tap that was not a drag. */
@@ -425,6 +426,7 @@ export function createYumiScene(
   const compiles = new Map<THREE.Object3D, Promise<unknown>>();
   const outfit = createOutfitRig({
     model, eyeGroup, lookGroup, pupil, shellMaterial,
+    previewCollection: options.previewCollection,
     settling: piece => compiles.get(piece),
   });
   /* Pieces just put on, hidden until their shaders are compiled, so trying

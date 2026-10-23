@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, typ
 import YumiLoading from "@/components/yumi3d/YumiLoading";
 import type { Scene } from "@/lib/shop/atmosphere";
 import type { YumiOutfit } from "@/lib/shop/catalog";
+import type { OutfitPreviewCollection } from "@/lib/yumi3d/outfit";
 import type { YumiSceneHandle, YumiView } from "@/lib/yumi3d/scene";
 import { isScrolling } from "@/lib/shop/scrollQuiet";
 import { pauseThumbnails } from "@/lib/yumi3d/thumbnails";
@@ -56,7 +57,9 @@ export default function ShopStage({
   corner,
   scene,
   celebrateKey,
+  previewCollection,
 }: {
+  previewCollection?: OutfitPreviewCollection;
   outfit: YumiOutfit;
   isCosmic: boolean;
   labels: ShopStageLabels;
@@ -140,7 +143,7 @@ export default function ShopStage({
         if (cancelled) return;
         /* Full sharpness again (Chi, 2026-10-13): the half-rate idle frames
            are what keep the stand smooth, not a softer image. */
-        handle = createYumiScene(canvas, { inspect: true, reducedMotion: reduced });
+        handle = createYumiScene(canvas, { inspect: true, reducedMotion: reduced, previewCollection });
         if (!handle) {
           setFailed(true);
           return;
@@ -182,7 +185,7 @@ export default function ShopStage({
       handle?.dispose();
       pauseThumbnails(false);
     };
-  }, []);
+  }, [previewCollection]);
 
   function zoomBy(factor: number) {
     wake(activeUntil, 600);

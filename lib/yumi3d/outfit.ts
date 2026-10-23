@@ -9,7 +9,7 @@ import { COLLECTION03_FINISHES } from "./collection03Finishes";
 import { collectCollection03Motion, updateCollection03Motion } from "./collection03Motion";
 import { CULTURAL_ITEMS } from "@/lib/shop/culturalCollection";
 
-import { cleanOutfit, shopItem, type ShopSlot, type YumiOutfit } from "@/lib/shop/catalog";
+import { cleanOutfit, shopItem, type ShopItem, type ShopSlot, type YumiOutfit } from "@/lib/shop/catalog";
 
 import {
   bendToEye, brass, chain, chrome, clothBand, ellipseRing, extrude, feltTexture, glaze, group, heartPath, irisCap, irisTexture, lathe, mesh, paint, phys, radialShape, ringFrame, roundedRect, seeded, std, stripes, tail, taperedTube, tintedLens,
@@ -360,8 +360,8 @@ const SHELL_DEFAULT = {
   color: 0x040507, metalness: 0.5, roughness: 0.4, envMapIntensity: 0.38,
 };
 
-export function applyShellFinish(material: THREE.MeshPhysicalMaterial, id: string | undefined) {
-  const finish = id ? SHELL_FINISHES[id] : undefined;
+export function applyShellFinish(material: THREE.MeshPhysicalMaterial, id: string | undefined, override?: ShellFinish) {
+  const finish = override ?? (id ? SHELL_FINISHES[id] : undefined);
   material.map?.dispose();
   material.map = finish?.map ? finish.map() : null;
   // One texture serves both channels, so it is disposed once.
@@ -1907,7 +1907,15 @@ const buildCulturalScarfId = (id: string) => CULTURAL_ITEMS.some(item => item.id
 
 // -------------------------------------------------------------------- rig
 
+/** Explicit opt-in for isolated design reviews; never changes the shop catalogue. */
+export type OutfitPreviewCollection = {
+  items: readonly Pick<ShopItem, "id" | "slot">[];
+  builders: Partial<Record<Exclude<ShopSlot, "material" | "neck">, Record<string, () => THREE.Object3D>>>;
+  finishes: Record<string, ShellFinish>;
+};
+
 export type OutfitRigParts = {
+  previewCollection?: OutfitPreviewCollection;
   model: THREE.Group;
   eyeGroup: THREE.Group;
   lookGroup: THREE.Group;
@@ -2054,6 +2062,32 @@ function buildStation33(slot: ShopSlot, id: string): { model?: THREE.Object3D; e
   return null;
 }
 
+function buildPreviewPiece(slot: ShopSlot, id: string, preview: OutfitPreviewCollection) {
+  if (slot === "material" || slot === "neck") return null;
+  const builder = preview.builders[slot]?.[id];
+  if (!builder) return null;
+  const piece = builder();
+  if (slot === "earrings") {
+    const { parts, hang } = earringMount();
+    piece.position.copy(hang);
+    piece.scale.setScalar(STATION33_HANGING_SCALE.earrings);
+    return { model: group(parts, piece) };
+  }
+  if (slot === "brow") {
+    const frame = ringFrame(BROW_ANGLE);
+    frame.add(browCuff(brass()), piece);
+    return { model: frame };
+  }
+  if (slot === "necklace") {
+    piece.position.copy(NECKLACE_CENTRE);
+    return { model: group(piece, necklaceStuds()) };
+  }
+  if (slot === "head") { const anchor = headAnchor(); anchor.add(piece); return { model: anchor }; }
+  // This review only opts into the four accessory mounts above.
+  disposeObject(piece);
+  return null;
+}
+
 /** Builds the piece for one slot, already placed in the model's frame. */
 function buildForSlot(slot: ShopSlot, id: string): { model?: THREE.Object3D; eye?: THREE.Object3D; look?: THREE.Object3D } | null {
   const station = buildStation33(slot, id);
@@ -2159,19 +2193,26 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
   return {
     apply(next) {
       const outfit = cleanOutfit(next);
+      const preview = parts.previewCollection;
+      if (preview) for (const item of preview.items) {
+        if (next[item.slot] === item.id) outfit[item.slot] = item.id;
+      }
       const added: THREE.Object3D[] = [];
 
       if (outfit.material !== finish) {
-        finish = outfit.material && isShellMaterial(outfit.material) ? outfit.material : undefined;
-        applyShellFinish(shellMaterial, finish);
+        finish = outfit.material && (isShellMaterial(outfit.material) || preview?.finishes[outfit.material]) ? outfit.material : undefined;
+        applyShellFinish(shellMaterial, finish, finish ? preview?.finishes[finish] : undefined);
       }
 
       for (const slot of ["pupil", "iris", "eyewear", "head", "neck", "pin", "mouth", "charm", "earrings", "brow", "necklace"] as const) {
         const id = outfit[slot];
         if (worn.get(slot)?.id === id) continue;
         remove(slot);
-        if (!id || !shopItem(id)) continue;
-        const built = buildForSlot(slot, id);
+        if (!id) continue;
+        const prototype = preview?.items.some(item => item.id === id && item.slot === slot);
+        if (!shopItem(id) && !prototype) continue;
+        const built: { model?: THREE.Object3D; eye?: THREE.Object3D; look?: THREE.Object3D } | null = prototype && preview
+          ? buildPreviewPiece(slot, id, preview) : buildForSlot(slot, id);
         if (!built) continue;
         const objects: THREE.Object3D[] = [];
         if (built.model) { model.add(built.model); objects.push(built.model); }
