@@ -1401,3 +1401,173 @@
 }
 
 .collectionNew { display: block; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted, #8b8578); margin-bottom: 0.25rem; }
+
+.catalogHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.catalogHeading h2 { font-size: 1.12rem; margin: 0; }
+.catalogHeading h2 span, .departmentHeading span { font-size: .8rem; font-weight: 400; color: var(--shop-muted); margin-left: 8px; font-variant-numeric: tabular-nums; }
+.filterPanel { display: grid; gap: 16px; padding: 12px 0; color: var(--shop-ink); }
+.filterPanel label { display: grid; gap: 6px; font-size: .85rem; }
+.filterPanel select { width: 100%; min-height: 44px; border-radius: 12px; background: var(--shop-key); color: var(--shop-ink); border: 1px solid var(--shop-line); padding: 8px; font: inherit; }
+.filterPanel .ownedFilter { display: flex; align-items: center; min-height: 44px; gap: 10px; }
+.ownedFilter input { width: 18px; height: 18px; accent-color: var(--shop-accent); }
+.wearHint { color: var(--shop-muted); font-size: .76rem; line-height: 1.6; margin: 6px 0 10px; }
+.department { margin: 0 0 28px; }
+.departmentHeading { font-size: 1rem; letter-spacing: .02em; margin: 0 0 12px; padding-top: 12px; border-top: 1px solid var(--shop-line); }
+.card:disabled { cursor: wait; }
+.filterPanel select:focus-visible { outline: 2px solid var(--shop-accent); outline-offset: 3px; }
+
+/* Station 33 boutique: enamel, engraved brass and a quiet glass cabinet.
+   The new ornaments are static; only deliberate choices get a brief response. */
+.signLights i { animation: none; opacity: 0.85; }
+.sign { will-change: auto; }
+.stage {
+  border: 1px solid #b39359;
+  box-shadow: 0 0 0 3px var(--shop-ground), 0 0 0 4px #b3935966, 0 12px 28px -22px #332c20;
+}
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  z-index: 2;
+  border: 1px solid #d4b67666;
+  border-radius: 21px;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, #fff5da14, #fff5da00 28%),
+    radial-gradient(circle at 10px 10px, #e5c57e 0 1px, #0000 2px),
+    radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), #e5c57e 0 1px, #0000 2px);
+}
+.keeperNote {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 2px;
+  color: var(--shop-ink);
+}
+.keeperSeal {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border: 1px solid #a98a51;
+  outline: 1px solid #a98a5155;
+  outline-offset: 3px;
+  border-radius: 50%;
+  color: var(--shop-tag-ink);
+  background: var(--shop-tag);
+  font: italic 1.25rem Georgia, serif;
+}
+.keeperLabel { font-size: 0.625rem; letter-spacing: .12em; color: var(--shop-muted); }
+.keeperNote p { margin: 4px 0 0; font-size: .8125rem; line-height: 1.6; }
+.collectionCabinet {
+  position: relative;
+  margin: 0 0 22px;
+  border: 1px solid #ae925960;
+  border-radius: 20px 20px 5px 5px;
+  padding: 20px;
+  background: linear-gradient(125deg, #ceac6320, #ceac6300 45%), var(--shop-card);
+  box-shadow: inset 0 0 0 4px var(--shop-ground), inset 0 0 0 5px #b3935926, var(--shop-card-shadow);
+}
+.cabinetIntro { display: flex; align-items: flex-start; gap: 12px; }
+.cabinetCompass { color: var(--shop-tag-ink); padding-top: 3px; }
+.cabinetIntro h2 { margin: 0; font: 500 clamp(1.125rem, 2vw, 1.5rem)/1.4 var(--shop-title-font); }
+.cabinetIntro p { margin: 6px 0 0; color: var(--shop-muted); font-size: .75rem; line-height: 1.7; max-width: 54ch; }
+.collectionRoutes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); position: relative; gap: 10px; margin-top: 22px; }
+.collectionRoutes::before { content: ""; position: absolute; top: 24px; left: 16%; right: 16%; border-top: 1px dashed #b3935970; pointer-events: none; }
+.collectionRoute {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 0 4px 10px;
+  color: var(--shop-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.routePlanet {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #b3935980;
+  border-radius: 50%;
+  background: var(--shop-card);
+  box-shadow: inset 0 0 0 4px var(--shop-ground), inset 0 0 0 5px #b3935933, 0 5px 12px -8px #0008;
+  color: var(--shop-tag-ink);
+  transition: transform 350ms cubic-bezier(.2,.7,.2,1), background 250ms;
+}
+.collectionRoute[aria-pressed="true"] .routePlanet { background: var(--shop-tag); transform: rotate(-12deg); box-shadow: inset 0 0 0 3px var(--shop-card), 0 0 0 2px #b39359; }
+.collectionRoute[aria-pressed="true"] { color: var(--shop-ink); }
+.collectionRoute:focus-visible, .collectionStory button:focus-visible { outline: 2px solid var(--shop-accent); outline-offset: 4px; }
+@media (hover: hover) { .collectionRoute:hover .routePlanet { transform: translateY(-3px); } }
+.routeBearing { font: .5625rem/1.4 var(--font-mono, monospace); letter-spacing: .15em; margin-top: 6px; }
+.routeName { font-size: .8125rem; line-height: 1.45; font-weight: 600; overflow-wrap: anywhere; }
+.routeCount { font-size: .625rem; line-height: 1.5; color: var(--shop-muted); }
+.collectionStory { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--shop-line); min-height: 72px; }
+.collectionStory p { margin: 0; font-size: .8125rem; line-height: 1.7; animation: boutique-reveal 320ms ease-out both; }
+.collectionStory button { padding: 8px 0 0; min-height: 36px; border: 0; background: transparent; color: var(--shop-accent); font-size: .75rem; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+@keyframes boutique-reveal { from { opacity: .35; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+@media (min-width: 1600px) {
+  .collectionCabinet { display: grid; grid-template-columns: 1fr 1.35fr; gap: 12px 28px; padding: 26px; }
+  .cabinetIntro { align-self: center; }
+  .collectionRoutes { margin-top: 0; grid-column: 2; grid-row: 1 / 3; align-self: center; }
+  .collectionStory { grid-column: 1; }
+}
+@media (max-width: 360px) { .collectionCabinet { padding: 16px 12px; } .collectionRoutes { gap: 4px; } }
+@media (prefers-reduced-motion: reduce) {
+  .routePlanet { transition: none; }
+  .collectionStory p { animation: none; }
+}
+.astrolabe { position: absolute; width: min(88%, 560px); aspect-ratio: 1; left: 50%; top: 45%; transform: translate(-50%, -50%); pointer-events: none; z-index: 0; color: #d5b87a; opacity: .28; }
+.astrolabe svg { display: block; width: 100%; height: 100%; stroke: currentColor; stroke-width: .7; }
+:global(html[data-interface-mode="yumi-cosmic"]) .astrolabe { opacity: .36; }
+.page { --shop-plinth-rim: #d1b273; }
+
+/* The commemorative coin is the single entrance to the station's stories. */
+.introduction { margin: 4px 0 6px; }
+.coinTrigger { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 2px 4px; border: 0; background: transparent; text-align: start; color: var(--shop-muted); cursor: pointer; border-radius: 12px; }
+.coinTrigger:focus-visible { outline: 2px solid var(--shop-accent); outline-offset: 4px; }
+.coinPrompt { font-size: .8125rem; line-height: 1.6; }
+.coinPrompt > span { color: var(--shop-tag-ink); white-space: nowrap; }
+.coinPerspective { display: block; width: 48px; height: 48px; flex: 0 0 48px; perspective: 600px; }
+.coinTurn { display: block; position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateY(0deg); transition: transform 320ms cubic-bezier(.3,.05,.2,1) 280ms; }
+.introduction[data-open="true"] .coinTurn { transform: rotateY(180deg); transition-delay: 0ms; }
+.coinFace {
+  position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid #8b703f;
+  background:
+    repeating-linear-gradient(117deg, #fff9d807 0 1px, #4d391307 1px 2px, #0000 2px 4px),
+    radial-gradient(ellipse at 74% 80%, #554c292b, #0000 48%),
+    radial-gradient(ellipse at 26% 18%, #fff7da85, #0000 55%),
+    conic-gradient(from 35deg, #c5ad73, #ecdcad 17%, #b49a60 39%, #d9c493 56%, #a78b52 76%, #dfca97);
+  color: #72562d; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  box-shadow: inset 0 1px 0 #fff4cf, inset 0 -1px 0 #6d542b, inset 0 0 0 2px #d7c18d, inset 0 0 0 3px #876c3d80, inset 0 0 9px #70522630, 0 2px 0 #8b6d3b, 0 3px 0 #b09660, 0 7px 10px -5px #3b2a1370;
+}
+.coinFace::before { content: ""; position: absolute; inset: 1px; border-radius: inherit; background: repeating-conic-gradient(from 0deg, #72501e90 0deg 1deg, #fff2c04d 1deg 2deg, #0000 2deg 5deg); mask: radial-gradient(circle, #0000 65%, #000 66%); pointer-events: none; }
+.coinFace::after { content: ""; position: absolute; inset: 6px; border-radius: inherit; box-shadow: inset 0 1px 1px #6f532b4d, 0 1px 0 #fff2c066; pointer-events: none; }
+.coinEngraving { position: absolute; inset: 0; width: 100%; height: 100%; stroke: currentColor; opacity: .7; pointer-events: none; }
+.coinEmblem { width: 21px; height: 21px; position: relative; filter: drop-shadow(0 1px 0 #fff0bd70); }
+.coinFront { transform: translateZ(2px); }
+.coinBack { transform: rotateY(180deg) translateZ(2px); }
+.coinNumerals { position: relative; display: grid; place-items: center; width: 100%; height: 100%; font: 600 1.375rem/1 "Baskerville", "Palatino Linotype", "Book Antiqua", Georgia, serif; font-variant-numeric: lining-nums tabular-nums; letter-spacing: -.045em; padding-right: .045em; text-shadow: 0 1px 0 #fff1c2, 0 -1px 0 #61482070, 1px 0 0 #fff0bf45; transform: translateY(-.035em); }
+.coinDisclosure { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden; transition: grid-template-rows 280ms cubic-bezier(.22,.7,.3,1), opacity 180ms ease, visibility 0s 280ms; }
+.coinDisclosureInner { min-height: 0; overflow: hidden; }
+.introduction[data-open="true"] .coinDisclosure { grid-template-rows: 1fr; opacity: 1; visibility: visible; transition-delay: 320ms, 320ms, 320ms; }
+.coinDisclosure .keeperNote { margin: 12px 4px 18px; }
+.coinDisclosure .collectionCabinet { margin-bottom: 5px; }
+:global(html[data-interface-mode="yumi-cosmic"]) .coinFace { background: repeating-linear-gradient(117deg, #efdab208 0 1px, #0000 1px 4px), radial-gradient(ellipse at 28% 15%, #77705a66, #0000 55%), conic-gradient(from 35deg, #2e2b25, #484132, #171719, #373229, #171719, #3a342a); color: #efd49a; border-color: #b79552; box-shadow: inset 0 0 0 2px #aa8a4e, inset 0 0 0 4px #111114, inset 0 0 0 6px #b08e4d66, 0 3px 0 #796039, 0 7px 12px -5px #000; }
+:global(html[data-interface-mode="yumi-cosmic"]) .coinFace::before { background: repeating-conic-gradient(#e8cb8cbb 0deg 1deg, #0000 1deg 6deg); }
+:global(html[data-interface-mode="yumi-cosmic"]) .coinNumerals { text-shadow: 0 1px 0 #000, 0 -1px 0 #f9e5b755; }
+@media (prefers-reduced-motion: reduce) { .coinTurn, .coinDisclosure { transition: none !important; } }
+
+/* The personal wardrobe is a destination, not a hidden filter. */
+.wardrobeSwitch { display: flex; gap: .35rem; padding: .35rem; margin: .5rem 0; border: 1px solid var(--shop-line); background: var(--shop-ground); border-radius: 1.4rem; }
+.wardrobeSwitch button { flex: 1; min-width: 0; min-height: 48px; padding: .65rem .75rem; border: 0; border-radius: 1.05rem; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.wardrobeSwitch button[aria-pressed="true"] { background: var(--shop-accent); color: var(--shop-on-accent); }
+.wardrobeSwitch span { margin-inline-start: .5rem; font-size: .85em; opacity: .75; }
+.wardrobeSwitch button:focus-visible { outline: 2px solid #ad8947; outline-offset: 3px; }

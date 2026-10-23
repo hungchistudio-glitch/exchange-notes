@@ -2616,6 +2616,53 @@ const italian: TranslationDictionary = {
     freeTryOn: "Prova gratuita",
     preview: "Anteprima · nessun biscotto vero viene speso",
     selectPrompt: "Tocca un pezzo per provarlo",
+    boutique: {
+      openStory: "Gira la moneta e scopri la nostra storia.",
+      closeStory: "Chiudi la storia della stazione",
+      overview: "Tre collezioni, un viaggio: i ricordi della Terra, l’atelier orbitale e le meraviglie oltre le stelle.",
+      "title": "Oggetti con una storia.",
+      "intro": "Una piccola stazione tra le stelle e la Terra. Scegli una destinazione per esplorarne la collezione.",
+      "map": "Esplora le collezioni",
+      "curator": "Un pensiero di Yumi",
+      "welcome": "Prenditi il tuo tempo. Il tuo prossimo piccolo tesoro ti aspetta.",
+      "trying": "Prova {item}. Fammi girare per vedere ogni dettaglio.",
+      "wearing": "{item} è salvato. Lo indosserò nella nostra prossima avventura.",
+      "removed": "Ci sono altri piccoli tesori da scoprire. Ne proviamo un altro?",
+      "saving": "Un momento: sto salvando questo look per te.",
+      "pieces": "{count} pezzi",
+      "all": "Esplora tutte le collezioni",
+      "stories": {
+            "original": "I colori, i sapori e le meraviglie quotidiane scoperti sulla Terra, raccolti in piccoli ricordi da portare con sé.",
+            "station33": "Tra un viaggio e l’altro, l’officina della stazione trasforma ottone, vetro e un po’ di curiosità in accessori.",
+            "collection03": "Oltre le orbite familiari: tecnologia oscura, texture inaspettate e tesori per viaggiatori fuori dal comune."
+      }
+},
+    browse: {
+      "shopView": "Negozio",
+      "wardrobe": "Il mio guardaroba",
+      "notWorn": "Non indossato",
+      "all": "Tutti gli articoli",
+      "filters": "Filtri",
+      "country": "Paese",
+      "collection": "Collezione",
+      "ownedOnly": "Solo posseduti",
+      "clear": "Cancella filtri",
+      "saving": "Salvataggio del look…",
+      "autoSave": "Gli articoli posseduti si salvano automaticamente. Le prove non acquistate restano qui.",
+      "departments": {
+            "eyes": "Occhi",
+            "eyewear": "Occhiali",
+            "earrings": "Orecchini singoli",
+            "brow": "Piercing al sopracciglio",
+            "necklace": "Collane",
+            "head": "Cappelli",
+            "neck": "Sciarpe e mantelle",
+            "pin": "Spille",
+            "mouth": "Accessori per la bocca",
+            "charm": "Ciondoli",
+            "material": "Materiali del corpo"
+      }
+},
     categories: {
       jewelry: "Gioielli",
       featured: "In vetrina",

@@ -2770,6 +2770,53 @@ const traditionalChinese: TranslationDictionary = {
     freeTryOn: "試戴免費",
     preview: "預覽 · 不會用掉真的餅乾",
     selectPrompt: "點商品就能試戴",
+    boutique: {
+      openStory: "翻開紀念幣，看看小站的故事。",
+      closeStory: "收起小站的故事",
+      overview: "從地球的日常拾光，到軌道上的手作工坊，再往深空尋找未知。三段旅程，在這裡相遇。",
+      "title": "每件珍藏，都有來處。",
+      "intro": "星空與地球之間的一座小站。點選星圖目的地，翻閱那裡的收藏。",
+      "map": "探索收藏星圖",
+      "curator": "Yumi 的店主手記",
+      "welcome": "慢慢挑吧，下一件小小的心動正在等你。",
+      "trying": "試試「{item}」，轉動我看看每個細節。",
+      "wearing": "「{item}」已記下，下次冒險就穿著它出發。",
+      "removed": "還有好多小珍藏，再一起看看吧。",
+      "saving": "等我一下，正在為你記下這身造型。",
+      "pieces": "{count} 件珍藏",
+      "all": "探索全部系列",
+      "stories": {
+            "original": "把地球上的色彩、滋味與日常驚喜，收進一件件能隨身帶走的小紀念。",
+            "station33": "旅程之間，太空站的工坊把黃銅、琉璃與一點好奇心，做成陪你出發的裝備。",
+            "collection03": "越過熟悉的軌道，發現暗黑科技、意想不到的質感，以及屬於異想旅人的珍藏。"
+      }
+},
+    browse: {
+      "shopView": "逛商店",
+      "wardrobe": "個人衣櫥",
+      "notWorn": "未穿戴",
+      "all": "全部商品",
+      "filters": "篩選",
+      "country": "國家",
+      "collection": "系列",
+      "ownedOnly": "只看已擁有",
+      "clear": "清除篩選",
+      "saving": "正在儲存造型…",
+      "autoSave": "已購商品自動儲存穿戴；未購商品僅在此試穿。",
+      "departments": {
+            "eyes": "眼睛",
+            "eyewear": "眼鏡",
+            "earrings": "單耳環",
+            "brow": "眉環",
+            "necklace": "項鍊",
+            "head": "帽子",
+            "neck": "圍巾／披肩",
+            "pin": "胸針",
+            "mouth": "嘴邊小物",
+            "charm": "吊飾",
+            "material": "身體材質"
+      }
+},
     categories: {
       jewelry: "珠寶",
       featured: "精選",

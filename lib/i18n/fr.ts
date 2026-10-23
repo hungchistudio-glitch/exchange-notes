@@ -2616,6 +2616,53 @@ const french: TranslationDictionary = {
     freeTryOn: "Essayage gratuit",
     preview: "Aperçu · aucun vrai cookie dépensé",
     selectPrompt: "Touchez une pièce pour l’essayer",
+    boutique: {
+      openStory: "Retournez la pièce, découvrez notre histoire.",
+      closeStory: "Refermer l’histoire de la station",
+      overview: "Trois collections, un voyage : les souvenirs de la Terre, l’atelier orbital et les merveilles au-delà.",
+      "title": "Des objets, des histoires.",
+      "intro": "Une petite station entre les étoiles et la Terre. Choisissez une destination pour explorer sa collection.",
+      "map": "Explorer les collections",
+      "curator": "Un mot de Yumi",
+      "welcome": "Prenez votre temps. Votre prochain petit trésor vous attend.",
+      "trying": "Essayez {item}. Faites-moi tourner pour voir chaque détail.",
+      "wearing": "{item} est enregistré. Je le porterai pour notre prochaine aventure.",
+      "removed": "Il reste de petits trésors à découvrir. On essaie autre chose ?",
+      "saving": "Un instant : je garde cette tenue pour vous.",
+      "pieces": "{count} pièces",
+      "all": "Explorer toutes les collections",
+      "stories": {
+            "original": "Les couleurs, les saveurs et les merveilles du quotidien découvertes sur Terre, devenues de petits souvenirs à emporter.",
+            "station33": "Entre deux voyages, l’atelier de la station transforme le laiton, le verre et un peu de curiosité en accessoires.",
+            "collection03": "Au-delà des orbites familières : technologies sombres, textures inattendues et trésors pour les voyageurs singuliers."
+      }
+},
+    browse: {
+      "shopView": "Boutique",
+      "wardrobe": "Ma garde-robe",
+      "notWorn": "Non porté",
+      "all": "Tous les articles",
+      "filters": "Filtres",
+      "country": "Pays",
+      "collection": "Collection",
+      "ownedOnly": "Articles possédés",
+      "clear": "Effacer les filtres",
+      "saving": "Enregistrement de la tenue…",
+      "autoSave": "Les articles possédés sont enregistrés automatiquement. Les essais non achetés restent ici.",
+      "departments": {
+            "eyes": "Yeux",
+            "eyewear": "Lunettes",
+            "earrings": "Boucles d’oreille",
+            "brow": "Bijoux de sourcil",
+            "necklace": "Colliers",
+            "head": "Chapeaux",
+            "neck": "Écharpes et capes",
+            "pin": "Broches",
+            "mouth": "Accessoires de bouche",
+            "charm": "Pendentifs",
+            "material": "Matières du corps"
+      }
+},
     categories: {
       jewelry: "Bijoux",
       featured: "Sélection",
