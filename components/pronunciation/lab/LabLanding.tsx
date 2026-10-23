@@ -9,6 +9,7 @@ import {
   Ear,
   Mic,
   RotateCcw,
+  Split,
   Type,
   Waves,
 } from "lucide-react";
@@ -39,6 +40,7 @@ const MODULE_ICON: Record<PronunciationModuleId, LucideIcon> = {
   speak: Mic,
   words: Type,
   rhythm: Waves,
+  readings: Split,
   review: RotateCcw,
 };
 
@@ -48,6 +50,7 @@ const MODULE_ORDER: PronunciationModuleId[] = [
   "speak",
   "words",
   "rhythm",
+  "readings",
   "review",
 ];
 
@@ -55,8 +58,8 @@ const MODULE_ORDER: PronunciationModuleId[] = [
  * The Lab's front door.
  *
  * Reads top to bottom the way a session actually goes: who is coaching you,
- * what you are learning, what to do today, where you stand, the six rooms,
- * and what needs work. Six tiles rather than a wall of entry points —
+ * what you are learning, what to do today, where you stand, the seven rooms,
+ * and what needs work. Seven tiles rather than a wall of entry points —
  * everything else in the Lab is reachable from inside one of them.
  */
 export default function LabLanding() {
@@ -245,9 +248,9 @@ export default function LabLanding() {
           )}
         </section>
 
-        {/* ── The six modules ───────────────────────────────────── */}
+        {/* ── The seven modules ─────────────────────────────────── */}
         {/*
-          A nav rather than a section: these six are the Lab's primary
+          A nav rather than a section: these seven are the Lab's primary
           navigation, and naming the landmark is what lets a screen-reader
           user jump to them instead of walking the whole page.
         */}

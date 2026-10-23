@@ -1271,6 +1271,16 @@ const spanish: TranslationDictionary = {
       tapToHear: "Toca a Yumi para oír y ver este sonido.",
     },
 
+    heteronyms: {
+      summary: "{count} pronunciaciones",
+      summaryCharacter: "«{character}» tiene {count} pronunciaciones",
+      show: "Ver todas las pronunciaciones",
+      hide: "Ocultar las pronunciaciones",
+      usedHere: "Esta es la de aquí",
+      play: "Escuchar «{example}»",
+      suggested: "Sugerencia de Yumi: conviene comprobarla en un diccionario.",
+    },
+
     lab: {
       backToLab: "Volver al laboratorio",
       learningLabel: "Aprendiendo {language}",
@@ -1381,6 +1391,22 @@ const spanish: TranslationDictionary = {
           sandhi: "Un tercer tono ante otro tercero se dice como segundo",
         },
       },
+      readings: {
+        title: "Una escritura, varias lecturas",
+        subtitle: "Las mismas letras, otro sonido… y otro significado.",
+        compare: "Comparar",
+        quiz: "Escucha y elige",
+        playAll: "Escúchalas seguidas",
+        question: "¿Qué pronunciación oíste?",
+        listenAgain: "Escuchar otra vez",
+        correct: "¡Bien! Era «{example}».",
+        incorrect: "Casi: era «{example}».",
+        next: "Siguiente",
+        result: "{correct} de {total} correctas",
+        again: "Otra ronda",
+        empty: "Aún no hay palabras para este idioma.",
+        count: "{count} pronunciaciones",
+      },
 
       modules: {
         sounds: { title: "Sonidos", description: "Cómo se produce cada uno" },
@@ -1389,6 +1415,7 @@ const spanish: TranslationDictionary = {
         words: { title: "Palabras", description: "De tu propio vocabulario" },
         rhythm: { title: "Ritmo", description: "Acento, duración, melodía" },
         review: { title: "Repaso", description: "Lo que toca volver a ver" },
+        readings: { title: "Lecturas", description: "Una escritura, varios sonidos" },
       },
 
       today: {

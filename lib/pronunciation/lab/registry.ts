@@ -143,5 +143,9 @@ export function moduleHasContent(
       // These are driven by the learner's own material and progress rather
       // than by pack content, so they exist wherever the pack does.
       return pack.units.length > 0;
+    case "readings":
+      // Every language has a list (lib/pronunciation/heteronyms), kept out
+      // of here so the registry does not carry five languages of it.
+      return true;
   }
 }

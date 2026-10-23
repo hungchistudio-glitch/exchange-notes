@@ -1287,6 +1287,12 @@ export type TranslationDictionary = {
     };
 
     /**
+     * The other readings of a headword (components/pronunciation/OtherReadings).
+     * summary: {count}; summaryCharacter: {character}, {count}; play: {example}.
+     */
+    heteronyms: { summary: string; summaryCharacter: string; show: string; hide: string; usedHere: string; play: string; suggested: string };
+
+    /**
      * The Pronunciation Lab.
      *
      * Chrome only — every string here names a control, a state or a heading.
@@ -1337,6 +1343,11 @@ export type TranslationDictionary = {
         vowel: { close: string; mid: string; open: string; front: string; central: string; back: string };
         notes: { unaspirated: string; aspirated: string; voicedClosure: string; voiced: string; voiceless: string; geminate: string; longVowel: string; shortVowel: string; reduced: string; rounded: string; spread: string; nasalVowel: string; nasalAir: string; lateral: string; noTouch: string; retroflexTip: string; apical: string; dentalTip: string; uvular: string; glide: string; tapOnce: string; trillRelax: string; glottalStop: string; linked: string; finalStop: string; stressed: string; tone1: string; tone2: string; tone3: string; tone4: string; tone5: string; halfThird: string; sandhi: string };
       };
+      /**
+       * The Lab's one-spelling-several-readings module (ReadingsModule).
+       * correct, incorrect: {example}; result: {correct}, {total}; count: {count}.
+       */
+      readings: { title: string; subtitle: string; compare: string; quiz: string; playAll: string; question: string; listenAgain: string; correct: string; incorrect: string; next: string; result: string; again: string; empty: string; count: string };
 
       modules: {
         sounds: { title: string; description: string };
@@ -1345,6 +1356,7 @@ export type TranslationDictionary = {
         words: { title: string; description: string };
         rhythm: { title: string; description: string };
         review: { title: string; description: string };
+        readings: { title: string; description: string };
       };
 
       today: {

@@ -30,6 +30,11 @@ import { speak } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
+import { lazy, Suspense } from "react";
+
+/* The word's other readings, when it has them — loaded when a card opens,
+   not with the Vocabulary tab (tests/routeImportWeight.test.ts). */
+const OtherReadings = lazy(() => import("@/components/pronunciation/OtherReadings"));
 
 function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
@@ -196,6 +201,15 @@ export default function VocabularyDetailSheet({
                   ]}
                   className="mt-3"
                 />
+
+                <Suspense fallback={null}>
+                  <OtherReadings
+                    className="mt-3"
+                    text={sides.primary.text}
+                    language={sides.primary.language}
+                    partOfSpeech={item.part_of_speech}
+                  />
+                </Suspense>
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
