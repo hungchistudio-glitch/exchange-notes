@@ -34,7 +34,7 @@
   left: 50%;
   bottom: 6%;
   width: min(62%, 340px);
-  aspect-ratio: 4 / 1.45;
+  aspect-ratio: var(--dock-aspect, 4 / 1.45);
   transform: translateX(-50%);
   pointer-events: none;
   filter: drop-shadow(0 16px 18px #0000003d);

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookmarkPlus, Check, Globe, Layers, Moon, Sun } from "lucide-react";
+import { ArrowLeft, BookmarkPlus, Check, Globe, Layers, Moon, SlidersHorizontal, Sun } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -24,14 +24,12 @@ import {
 } from "@/lib/shop/catalog";
 import { COLLECTION03_COPY, SHOP_COLLECTIONS, type ShopCollection } from "@/lib/shop/collection03Presentation";
 import { SHOP_DEPARTMENTS, browseShop, outfitToKeep, type ShopDepartment } from "@/lib/shop/browsing";
-import { getDeviceTimeZone } from "@/lib/push/deviceTimeZone";
-import { QUIET_SCENE, dayPartAt, formatTemperature, sceneFor, seasonAt } from "@/lib/shop/atmosphere";
+import { QUIET_SCENE, sceneFor } from "@/lib/shop/atmosphere";
 import {
   getQuarterHour,
   getSceneChoice,
   getServerQuarterHour,
   getServerSceneChoice,
-  setSceneChoice,
   subscribeToQuarterHour,
   subscribeToSceneChoice,
   useShopWeather,
@@ -43,7 +41,6 @@ import { setWornOutfit } from "@/lib/shop/wornOutfit";
 
 import EnergyCookie from "./EnergyCookie";
 import EnergyReward from "./EnergyReward";
-import ShopScenePicker, { ORBIT_CHOICES } from "./ShopScenePicker";
 import ShopStage from "./ShopStage";
 import ShopCollectionMap from "./ShopCollectionMap";
 import ShopIntroduction from "./ShopIntroduction";
@@ -132,16 +129,6 @@ export default function YumiShop({
     () => (quarter === null ? QUIET_SCENE : sceneFor(sceneChoice, weather, new Date(quarter))),
     [sceneChoice, weather, quarter],
   );
-  const sky = t.shop.sky;
-  const skyNow = sceneChoice !== "auto"
-    ? sky.choices[sceneChoice]
-    : weather
-      ? `${sky.conditions[weather.condition]}${weather.temperature === null ? "" : ` ${formatTemperature(weather.temperature, getDeviceTimeZone())}`}`
-      : quarter === null
-        ? sky.label
-        : dayPartAt(new Date(quarter)) === "night"
-          ? sky.night
-          : sky.seasons[seasonAt(new Date(quarter))];
   const pageRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
   const signRef = useRef<HTMLHeadingElement>(null);
@@ -429,15 +416,6 @@ export default function YumiShop({
           celebrateKey={celebrateKey}
           corner={
             <>
-              <ShopScenePicker
-                scene={scene}
-                choice={sceneChoice}
-                current={skyNow}
-                choices={ORBIT_CHOICES}
-                names={sky.choices}
-                label={sky.label}
-                onChoose={setSceneChoice}
-              />
               <button
                 type="button"
                 className={styles.roundKey}
@@ -471,13 +449,13 @@ export default function YumiShop({
         </aside>
         <ShopCollectionMap collection={collection} onChoose={setCollection} copy={copy.boutique} labels={collectionCopy.labels} locale={locale} />
         </ShopIntroduction>
+        <div className={styles.catalogToolbar}>
         <div className={styles.wardrobeSwitch} role="group" aria-label={copy.title}>
           <button type="button" aria-pressed={!onlyOwned} onClick={() => { setOnlyOwned(false); setCategory("all"); setCountry("all"); setCollection("all"); }}>{copy.browse.shopView}</button>
           <button type="button" aria-pressed={onlyOwned} onClick={() => { setOnlyOwned(true); setCategory("all"); setCountry("all"); setCollection("all"); }}>{copy.browse.wardrobe}<span>{state.owned.length}</span></button>
         </div>
-        <div className={styles.catalogHeading}>
-          <h2>{category === "all" ? (onlyOwned ? copy.browse.wardrobe : copy.browse.all) : copy.browse.departments[category]} <span>{shownCount}</span></h2>
-          <button type="button" className={styles.chip} aria-haspopup="dialog" onClick={() => setFiltersOpen(true)}>{copy.browse.filters}{filterCount > 0 ? ` · ${filterCount}` : ""}</button>
+          <h2 className={styles.catalogSummary}>{category === "all" ? (onlyOwned ? copy.browse.wardrobe : copy.browse.all) : copy.browse.departments[category]} <span>{shownCount}</span></h2>
+          <button type="button" className={`${styles.chip} ${styles.filterIcon}`} aria-label={copy.browse.filters} title={copy.browse.filters} aria-haspopup="dialog" onClick={() => setFiltersOpen(true)}><SlidersHorizontal size={18} strokeWidth={1.6} aria-hidden="true" />{filterCount > 0 && <span className={styles.filterCount}>{filterCount}</span>}</button>
         </div>
         <div className={styles.tabs} role="group" aria-label={copy.browse.all}>
           {(["all", ...SHOP_DEPARTMENTS] as const).map(key => (
