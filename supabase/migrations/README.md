@@ -128,7 +128,15 @@ changes shape:
 | --- | --- |
 | `20261019120000_yumi_hello` | `20261019192626` |
 
-**Fifteen renames across eight occasions now. `apply_migration` always stamps its
+On 2026-10-23 Station 33 Collection 04, the 333 expansion's 113 pieces,
+applied before the merge (Chi: "那把它做完並上架"). It only inserts price rows
+for ids the live code does not sell yet:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261023200000_yumi_shop_collection04` | `20261023220624` |
+
+**Sixteen renames across nine occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 
