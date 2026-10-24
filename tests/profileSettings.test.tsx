@@ -115,10 +115,11 @@ describe("profile settings persistence", () => {
     await act(async () => { signOut.resolve({ error: { message: "Network unavailable" } }); });
     expect(within(dialog).getByRole("alert")).toHaveTextContent(english.common.error);
     expect(mocks.forgetDeviceCopies).not.toHaveBeenCalled();
-    expect(confirm).toBeEnabled();
+    // Released by the update after the failure: waited for, not read at once.
+    await waitFor(() => expect(confirm).toBeEnabled());
     await user.click(confirm);
     expect(mocks.signOut).toHaveBeenCalledTimes(2);
-    expect(confirm).toBeEnabled();
+    await waitFor(() => expect(confirm).toBeEnabled());
     expect(mocks.forgetDeviceCopies).not.toHaveBeenCalled();
   });
 });

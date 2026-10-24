@@ -66,6 +66,13 @@ npx next build      # ~20s with a warm cache, longer cold
 - **"Vitest caught N unhandled errors" fails CI even when every test passed.**
   The usual cause is a timer or listener in a test that fires after the
   test's document was torn down. Clear timers in `afterEach`.
+- **A test that fails in some full runs but never alone, and fast (not a
+  timeout), is usually reading the screen before React's next update.** Run
+  `npm run test:late-react` (~3 min): it makes React's scheduler late on
+  purpose, so those fail every time. The fix is to wait for the second
+  condition (`waitFor`, `findBy…`, or waiting for a key to be enabled
+  before clicking it), not to read it the moment the first one passes.
+  Keep it green after writing a component test.
 
 ## 5. Checking UI
 

@@ -324,7 +324,8 @@ describe("the result view", () => {
     fireEvent.click(screen.getByRole("button", { name: "Copy tondre" }));
 
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("tondre"));
-    expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
+    // The key says so once the copy has resolved, a render later.
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeInTheDocument();
   });
 
   it("will not offer to keep a whole sentence as a card", () => {
