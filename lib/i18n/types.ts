@@ -416,6 +416,9 @@ export type TranslationDictionary = {
     loading: string;
     error: string;
     clearField: string;
+    /** A long text cut to a few lines, and the key that shows all of it. */
+    showFullText: string;
+    showLess: string;
   };
 
   /** The sheet every "send to a partner" flow opens to pick a friend. */

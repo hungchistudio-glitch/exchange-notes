@@ -387,6 +387,8 @@ const traditionalChinese: TranslationDictionary = {
     loading: "載入中…",
     error: "發生錯誤",
     clearField: "清除",
+    showFullText: "展開全文",
+    showLess: "收合",
   },
 
   friendPicker: {

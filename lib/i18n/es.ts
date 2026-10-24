@@ -389,6 +389,8 @@ const spanish: TranslationDictionary = {
     loading: "Cargando…",
     error: "Algo ha salido mal",
     clearField: "Borrar",
+    showFullText: "Ver texto completo",
+    showLess: "Ver menos",
   },
 
   friendPicker: {

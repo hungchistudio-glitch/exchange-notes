@@ -392,6 +392,8 @@ const italian: TranslationDictionary = {
     loading: "Caricamento…",
     error: "Qualcosa è andato storto",
     clearField: "Cancella",
+    showFullText: "Mostra tutto il testo",
+    showLess: "Mostra meno",
   },
 
   friendPicker: {
