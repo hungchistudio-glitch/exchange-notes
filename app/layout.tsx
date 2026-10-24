@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { preload } from "react-dom";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import OrbitField from "@/components/foundation/ambience/OrbitField";
@@ -147,6 +148,9 @@ export default async function RootLayout({
   const appFontSize = await getServerAppFontSize();
   const dailyGoalWords = await getServerDailyGoalWords();
 
+  // Fetched from the start, applied without blocking (see the <head>).
+  for (const { href } of FONT_STYLESHEETS) preload(href, { as: "style" });
+
   return (
     <html
       /*
@@ -244,10 +248,10 @@ export default async function RootLayout({
             before drawing anything (2026-10-24 audit), while the fonts they
             describe were already display=swap, drawn in the fallback until
             they land. So nothing about how text looks changes, only when the
-            page first appears. Without JavaScript they apply as before. */}
-        {FONT_STYLESHEETS.map(({ href }) => (
-          <link key={href} rel="preload" as="style" href={href} />
-        ))}
+            page first appears. Without JavaScript they apply as before.
+            The preloads are asked for above with react-dom's preload(),
+            which writes each once; <link rel="preload"> written here as well
+            came out twice. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `${JSON.stringify(FONT_STYLESHEETS.map(({ href }) => href))}.forEach(function(h){var l=document.createElement("link");l.rel="stylesheet";l.href=h;document.head.appendChild(l)})`,
