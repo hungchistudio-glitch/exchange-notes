@@ -1,7 +1,7 @@
 "use client";
 
 import { Bookmark, Check, ChevronDown, Send, Volume2 } from "lucide-react";
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import OrbitIconButton from "@/components/foundation/buttons/OrbitIconButton";
@@ -46,6 +46,21 @@ export function isLongText(text: string) {
   let width = 0;
   for (const character of text) width += /[\u3000-\u9fff\uac00-\ud7af\uff00-\uffef]/.test(character) ? 2 : 1;
   return width > 26;
+}
+
+/**
+ * Whether any of the card's cut elements hides text, marking each for its
+ * fade; null while the card is open, when nothing is cut.
+ */
+function measureCut(words: HTMLElement | null) {
+  if (!words || words.dataset.expanded === "true") return null;
+  let any = false;
+  for (const element of words.querySelectorAll<HTMLElement>("[data-clamp]")) {
+    const cut = element.scrollHeight > element.clientHeight + 1 || element.scrollWidth > element.clientWidth + 1;
+    element.dataset.overflowing = String(cut);
+    any ||= cut;
+  }
+  return any;
 }
 
 type WordCardMessageProps = {
@@ -289,33 +304,36 @@ export default function WordCardMessage({
   /*
    * Whether anything is cut: measured, not guessed, since it depends on the
    * card's width, the script and the reader's font size. Each cut element
-   * is marked, for its fade. Measured again when the card changes width.
+   * is marked, for its fade. Measured whenever the text, its readings or
+   * the fold change, and again when the card changes width.
    */
   useLayoutEffect(() => {
+    const cut = measureCut(wordsRef.current);
+    if (cut !== null) setOverflowing(cut);
+  }, [expanded, firstText, secondText, phoneticsFor]);
+  useEffect(() => {
     const words = wordsRef.current;
-    if (!words || expanded) return;
-    const measure = () => {
-      let any = false;
-      for (const element of words.querySelectorAll<HTMLElement>("[data-clamp]")) {
-        const cut = element.scrollHeight > element.clientHeight + 1 || element.scrollWidth > element.clientWidth + 1;
-        element.dataset.overflowing = String(cut);
-        any ||= cut;
-      }
-      setOverflowing(any);
-    };
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
+    if (!words || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      const cut = measureCut(words);
+      if (cut !== null) setOverflowing(cut);
+    });
     observer.observe(words);
     return () => observer.disconnect();
-  });
+  }, []);
 
   /* The card grows or shrinks to its new height rather than jumping to it. */
   function toggleFullText() {
     const words = wordsRef.current;
     const from = words?.offsetHeight ?? 0;
+    const collapsing = expanded;
     flushSync(() => setExpanded((value) => !value));
-    if (!words?.animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Folding a card whose top has scrolled away brings it back into view.
+    if (collapsing && words && words.getBoundingClientRect().top < 0) {
+      words.scrollIntoView({ block: "start", behavior: still ? "auto" : "smooth" });
+    }
+    if (!words?.animate || still) return;
     words.animate(
       [{ height: `${from}px`, overflow: "hidden" }, { height: `${words.offsetHeight}px`, overflow: "hidden" }],
       { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" },
@@ -392,7 +410,7 @@ export default function WordCardMessage({
       )}
 
       <div className="p-4 sm:p-5">
-      <div ref={wordsRef} id={wordsId}>
+      <div ref={wordsRef} id={wordsId} data-expanded={expanded}>
         {firstBlock}
         {secondBlock ? (
           <div
