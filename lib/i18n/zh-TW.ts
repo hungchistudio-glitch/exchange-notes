@@ -2830,6 +2830,10 @@ const traditionalChinese: TranslationDictionary = {
       "clear": "清除篩選",
       "saving": "正在儲存造型…",
       "autoSave": "已購商品自動儲存穿戴；未購商品僅在此試穿。",
+      "newArrivals": "新到貨",
+      "newArrivalsNote": "33 號站 · 第 04 系列",
+      "seeAll": "看全部 {count} 件",
+      "clearNew": "關閉",
       "departments": {
             "eyes": "眼睛",
             "eyewear": "眼鏡",

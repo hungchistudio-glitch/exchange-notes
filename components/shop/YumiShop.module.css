@@ -2,11 +2,17 @@
   The Yumi shop, in both modes.
 
   Standard is the Tactile Worlds paper room (app/tactile.css): paper cards,
-  raised keys, a serif for names, and the concept's sage for the choice in
-  hand. Cosmic keeps its own obsidian surfaces and hairlines and uses its
-  existing amber (--cosmic-amber) where Standard uses sage, as the Cosmic
-  board did. Everything reads through the --shop-* tokens below, so the two
-  modes differ in one place.
+  raised keys, and the concept's sage for the choice in hand. Cosmic keeps
+  its own obsidian surfaces and hairlines and uses its existing amber
+  (--cosmic-amber) where Standard uses sage, as the Cosmic board did.
+  Everything reads through the --shop-* tokens below, so the two modes
+  differ in one place.
+
+  One typeface for everything you read and tap; the display face is the
+  signboard's alone. Colour comes from the pieces and their three
+  collections (--c-*), not from the furniture. Nothing smaller than
+  0.6875rem but the signboard's engraved line, and every rule says its final word where it is written: there
+  are no later blocks overriding earlier ones.
 
   Painted once: no backdrop-filter, nothing fixed behind the scroll. The
   only motion is the stand's scale as the catalogue scrolls and opacity on
@@ -41,13 +47,22 @@
     repeating-radial-gradient(ellipse 50% 50% at 50% 50%, #0000 0 3px, #8a7f6a0d 3px 4px),
     radial-gradient(ellipse 70% 80% at 50% 30%, #fbf8f1, #e2dccf 55%, #b9b1a1);
   --shop-plinth-side: linear-gradient(90deg, #7d766a, #d3cdc0 46%, #e8e3d8 54%, #807868);
-  --shop-plinth-rim: #9fdcff;
+  --shop-plinth-rim: #d1b273;
   --shop-plinth-ink: #5a5346;
   --shop-plinth-lights: #ffc96b;
   --shop-spot: #e6f6ff40;
   --shop-title-font: var(--font-display, Georgia, serif);
   --shop-toast: #24211b;
   --shop-on-toast: #fbf8f0;
+  /* The three collections' colours (Chi, 2026-10-24): Earth Keepsakes'
+     jade, Orbital Atelier's brass flame, Deep Space Treasures' violet. A
+     piece's card, its collection's tile and its story all wear the same one,
+     through --c (see [data-collection] below). */
+  --c-original: #13945b;
+  --c-station33: #dd7410;
+  --c-collection03: #7048ec;
+  --c-ink: #ffffff;
+  --stage-height: clamp(230px, 32svh, 340px);
 }
 
 .page {
@@ -91,6 +106,10 @@
   --shop-title-font: var(--font-sans, Arial, sans-serif);
   --shop-toast: #f5f2f0;
   --shop-on-toast: #17171c;
+  --c-original: #48d892;
+  --c-station33: #ffad42;
+  --c-collection03: #a98dff;
+  --c-ink: #121016;
 }
 
 @media (min-width: 640px) {
@@ -103,7 +122,6 @@
 
 .top {
   --shrink: 0;
-  --stage-height: clamp(230px, 32svh, 340px);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -162,7 +180,6 @@
   white-space: nowrap;
   transform: rotate(-1.2deg);
   transform-origin: 50% -10px;
-  will-change: transform;
 }
 
 :global(html[data-interface-mode="yumi-cosmic"]) .sign {
@@ -192,7 +209,7 @@
   margin-top: 1px;
   overflow: hidden;
   font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   line-height: 1.3;
@@ -200,7 +217,8 @@
   color: var(--sign-orbit);
 }
 
-/* Three running lights, lit one after another: Yumi's 3, the station's 33. */
+/* Three running lights: Yumi's 3, the station's 33. Steady, so the sign
+   never asks for a frame of its own. */
 .signLights {
   display: inline-flex;
   gap: 2px;
@@ -213,15 +231,7 @@
   border-radius: 50%;
   background: #ffc96b;
   box-shadow: 0 0 4px #ffc96b;
-  animation: running-light 2.4s ease-in-out infinite;
-}
-
-.signLights i:nth-child(2) { animation-delay: 0.3s; }
-.signLights i:nth-child(3) { animation-delay: 0.6s; }
-
-@keyframes running-light {
-  0%, 60%, 100% { opacity: 0.35; }
-  20% { opacity: 1; }
+  opacity: 0.85;
 }
 
 /* Two brass rods it hangs from. */
@@ -241,7 +251,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .sign { transform: none; }
-  .signLights i { animation: none; opacity: 0.8; }
 }
 
 .tools {
@@ -353,12 +362,13 @@
   isolation: isolate;
   /* The stand looks out on space in both modes, so her loader is starlight. */
   --yumi-loading-ink: #e8edf6;
+  --dock-aspect: 4 / 1.1;
   margin: 2px 12px 8px;
   height: var(--stage-height);
-  border-radius: 28px;
-  border: 1px solid var(--shop-line);
+  border-radius: 22px;
+  border: 1px solid #b39359;
   background: var(--shop-stage);
-  box-shadow: var(--shop-card-shadow);
+  box-shadow: 0 0 0 2px var(--shop-ground), 0 0 0 3px #b3935940, 0 10px 24px -22px #332c20;
   /* Clip, not hidden: hidden would make the stand its keys' nearest
      scroller, and their fade below would follow a scroll that never moves. */
   overflow: clip;
@@ -417,6 +427,18 @@
   }
 }
 
+/* An inner brass hairline, a step in from the frame. */
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  z-index: 2;
+  border: 1px solid #d4b67630;
+  border-radius: 17px;
+  background: linear-gradient(135deg, #fff5da0c, #0000 32%);
+  pointer-events: none;
+}
+
 @keyframes stand-shrink {
   from { transform: scale(1); }
   to { transform: scale(0.6); }
@@ -458,7 +480,7 @@
 .stageCanvas:focus-visible {
   outline: 3px solid var(--shop-accent);
   outline-offset: -3px;
-  border-radius: 28px;
+  border-radius: 22px;
 }
 
 /* Just under the loader's ring, which is centred and min(42%, 136px) wide:
@@ -487,27 +509,29 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: 2;
+  z-index: 3;
   display: flex;
-  gap: 4px;
+  padding: 2px;
+  border: 1px solid #d4b67640;
+  border-radius: 12px;
+  background: #131b27d9;
 }
 
+/* The keys on the stand sit over space in both modes. */
 .viewKey {
-  min-height: 36px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--shop-line);
-  background: var(--shop-key);
-  box-shadow: var(--shop-key-shadow);
-  color: inherit;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #f3ead6;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .viewKey[aria-pressed="true"] {
-  background: var(--shop-accent);
-  color: var(--shop-on-accent);
-  border-color: transparent;
+  background: #d6bd8240;
+  color: #fff4da;
 }
 
 .corner {
@@ -599,7 +623,30 @@
   bottom: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  border: 1px solid #d4b67640;
+  border-radius: 13px;
+  overflow: hidden;
+  background: #131b27d9;
+}
+
+.corner .roundKey,
+.resetKey.roundKey {
+  border-color: #d4b67640;
+  background: #131b27d9;
+  box-shadow: none;
+  color: #f3ead6;
+}
+
+.zoomKeys .roundKey {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #f3ead6;
+}
+
+.zoomKeys .roundKey + .roundKey {
+  border-top: 1px solid #d4b67630;
 }
 
 .roundKey {
@@ -638,9 +685,9 @@
   width: min(62%, 340px);
   padding: 0 8px;
   text-align: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   color: var(--shop-plinth-ink);
   text-shadow: 0 1px 0 #ffffff40;
   white-space: nowrap;
@@ -660,65 +707,386 @@
   padding: 0 12px;
 }
 
+/* Each collection's colour, wherever a piece or its collection appears. */
+.page [data-collection="original"] { --c: var(--c-original); }
+.page [data-collection="station33"] { --c: var(--c-station33); }
+.page [data-collection="collection03"] { --c: var(--c-collection03); }
+
 .previewBadge {
-  display: inline-block;
-  margin: 4px 0 2px;
-  padding: 4px 10px;
+  margin: 0;
+  padding: 2px 0;
+  color: var(--shop-muted);
+  font-size: 0.75rem;
+}
+
+/* Yumi's note and the station's story, inside the coin. */
+.keeperNote {
+  display: grid;
+  gap: 4px;
+  margin: 12px 2px 16px;
+  color: var(--shop-ink);
+}
+
+.keeperLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--shop-muted);
+}
+
+.keeperNote p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.story {
+  margin: 0 2px 16px;
+}
+
+.story h2 {
+  margin: 0;
+  font: 600 1.0625rem/1.35 var(--shop-title-font);
+}
+
+.story > p {
+  margin: 4px 0 12px;
+  color: var(--shop-muted);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.story ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.story li {
+  padding-inline-start: 12px;
+  border-inline-start: 3px solid var(--c);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.story li strong {
+  display: block;
+  font-weight: 700;
+}
+
+.story li span {
+  color: var(--shop-muted);
+}
+
+/* Shop or wardrobe, and the filter key beside them. */
+.catalogToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.wardrobeSwitch {
+  display: flex;
+  flex: 1;
+  max-width: 18rem;
+  min-width: 0;
+  gap: 2px;
+  padding: 0 3px;
+  border: 1px solid var(--shop-line);
+  border-radius: 12px;
+  background: var(--shop-ground);
+}
+
+.wardrobeSwitch button {
+  position: relative;
+  isolation: isolate;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.25rem 0.4rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25;
+  cursor: pointer;
+}
+
+/* The chosen half: a pill inset from the track, so the track stays one line. */
+.wardrobeSwitch button[aria-pressed="true"] {
+  color: var(--shop-on-accent);
+}
+
+.wardrobeSwitch button[aria-pressed="true"]::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 5px 0;
+  border-radius: 8px;
+  background: var(--shop-accent);
+  pointer-events: none;
+}
+
+.wardrobeSwitch span {
+  margin-inline-start: 0.35rem;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.filterKey {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin-inline-start: auto;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--shop-ink);
+}
+
+.filterCount {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
   border-radius: 999px;
-  background: var(--shop-tag);
-  color: var(--shop-tag-ink);
+  background: var(--shop-accent);
+  color: var(--shop-on-accent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ------------------------------------------------- the three collections */
+
+.collections {
+  margin: 8px 0 2px;
+}
+
+.collectionTiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.collectionTile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+  min-height: 84px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--c) 34%, var(--shop-line));
+  border-radius: 16px;
+  background:
+    radial-gradient(90% 80% at 100% 0%, color-mix(in srgb, var(--c) 22%, transparent), transparent 70%),
+    var(--shop-card);
+  box-shadow: var(--shop-card-shadow);
+  color: var(--shop-ink);
+  text-align: start;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease, transform 120ms ease;
+}
+
+.collectionTile:active {
+  transform: translateY(1px);
+}
+
+.collectionTile[aria-pressed="true"] {
+  border-color: transparent;
+  background: radial-gradient(90% 80% at 100% 0%, #ffffff38, transparent 70%), var(--c);
+  color: var(--c-ink);
+}
+
+.collectionMark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--c);
+  color: var(--c-ink);
+}
+
+.collectionTile[aria-pressed="true"] .collectionMark {
+  background: var(--c-ink);
+  color: var(--c);
+}
+
+.collectionCount {
+  justify-self: end;
   font-size: 0.75rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.collectionName {
+  grid-column: 1 / -1;
+  align-self: end;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.collectionTile:focus-visible,
+.collectionStory button:focus-visible,
+.seeAll:focus-visible,
+.clearNew:focus-visible,
+.filterKey:focus-visible,
+.wardrobeSwitch button:focus-visible {
+  outline: 3px solid var(--shop-accent);
+  outline-offset: 2px;
+}
+
+.collectionStory:empty {
+  display: none;
+}
+
+.collectionStory {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 12px;
+  margin-top: 10px;
+  padding-inline-start: 12px;
+  border-inline-start: 3px solid var(--c);
+}
+
+.collectionStory p {
+  flex: 1 1 16rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  animation: story-in 280ms ease-out both;
+}
+
+.collectionStory button {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--shop-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+@keyframes story-in {
+  from { opacity: 0.35; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ------------------------------------------------------- the departments */
+
+/* Stuck under the shrunk stand: its top is the header plus 60% of the
+   stand, where the stand's own band ends. */
+.nav {
+  position: sticky;
+  top: calc(env(safe-area-inset-top) + 64px + var(--stage-height) * 0.6);
+  z-index: 21;
+  margin: 8px -12px 0;
+  padding: 0 12px;
+  background: var(--shop-ground);
+  border-bottom: 1px solid var(--shop-line);
 }
 
 .tabs {
   display: flex;
-  gap: 6px;
+  gap: 2px;
   overflow-x: auto;
-  padding: 6px 1px;
   scrollbar-width: none;
+  overscroll-behavior-x: contain;
 }
 
 .tabs::-webkit-scrollbar {
   display: none;
 }
 
-.tab,
-.chip {
+.tab {
   flex-shrink: 0;
-  min-height: 42px;
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 1px solid var(--shop-line);
-  background: var(--shop-key);
-  box-shadow: var(--shop-key-shadow);
-  color: inherit;
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.chip {
-  min-height: 38px;
-  padding: 0 14px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--shop-muted);
   font-size: 0.8125rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-.tab[aria-pressed="true"],
-.chip[aria-pressed="true"] {
-  background: var(--shop-accent);
-  color: var(--shop-on-accent);
-  border-color: transparent;
-  box-shadow: none;
+.tab[aria-pressed="true"] {
+  color: var(--shop-ink);
+  font-weight: 700;
+  box-shadow: inset 0 -2px var(--shop-accent);
 }
 
-.tab:active,
-.chip:active {
-  transform: translateY(1px);
+.results {
+  scroll-margin-top: calc(env(safe-area-inset-top) + 64px + var(--stage-height) * 0.6 + 52px);
 }
 
-.countries {
-  margin-bottom: 4px;
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 8px 0 2px;
+}
+
+/* The heading names the view for screen readers; the tabs already show it. */
+.catalogSummary {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.clearNew {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--c-station33), var(--c-collection03));
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.wearHint {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--shop-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
 .status {
@@ -742,14 +1110,131 @@
   font-weight: 700;
 }
 
-.grid {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+/* ------------------------------------------------------------ shelves */
+
+.shelf {
+  margin: 16px 0 4px;
 }
+
+/* The new arrivals' window: the station's two newest colours, edge to edge. */
+.shelf[data-new="true"] {
+  margin: 12px -12px 8px;
+  padding: 14px 12px 4px;
+  border-block: 1px solid var(--shop-line);
+  background:
+    radial-gradient(70% 90% at 0% 0%, color-mix(in srgb, var(--c-station33) 20%, transparent), transparent 70%),
+    radial-gradient(70% 90% at 100% 10%, color-mix(in srgb, var(--c-collection03) 22%, transparent), transparent 70%),
+    var(--shop-card);
+}
+
+.shelfHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.shelfHeading h3,
+.departmentHeading {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.shelfHeading h3 span,
+.departmentHeading span {
+  margin-inline-start: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--shop-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.shelfHeading small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--shop-muted);
+}
+
+.seeAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 0 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--shop-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* A row that scrolls sideways, a third of a card showing past the edge to
+   say there is more. It runs to the screen's edges; its padding keeps the
+   first card in line with the headings. */
+.shelfRow {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 16px) / 3.3);
+  gap: 8px;
+  margin: 0 -12px;
+  padding: 2px 12px 12px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 12px;
+  scrollbar-width: none;
+}
+
+.shelfRow::-webkit-scrollbar {
+  display: none;
+}
+
+.shelfRow > li {
+  scroll-snap-align: start;
+}
+
+/* Everything in the new arrivals' window, or their full list, is new; the
+   mark would only repeat. */
+.shelf[data-new="true"] .newBadge,
+.results[data-new-only="true"] .newBadge {
+  display: none;
+}
+
+/* --------------------------------------------------- the full departments */
+
+.department {
+  margin: 16px 0 24px;
+}
+
+.departmentHeading {
+  margin-bottom: 8px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 560px) {
+  .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .shelfRow { grid-auto-columns: calc((100% - 32px) / 4.4); }
+}
+
+/* ------------------------------------------------------------- a piece */
 
 .card {
   position: relative;
@@ -757,18 +1242,32 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: 10px 10px 12px;
-  border-radius: 20px;
+  padding: 5px 5px 9px;
+  border-radius: 16px;
   border: 1px solid var(--shop-line);
   background: var(--shop-card);
   box-shadow: var(--shop-card-shadow);
   color: inherit;
-  text-align: left;
+  text-align: start;
   transition: transform 120ms ease;
 }
 
+/* Its collection's dot, on the picture's corner. */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 11px;
+  left: 11px;
+  z-index: 1;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--shop-card) 80%, transparent);
+}
+
 .card[aria-pressed="true"] {
-  outline: 2px solid var(--shop-accent);
+  outline: 2px solid var(--c);
   outline-offset: -2px;
 }
 
@@ -776,9 +1275,12 @@
   transform: translateY(1px);
 }
 
+.card:disabled {
+  cursor: wait;
+}
+
 .card:focus-visible,
 .tab:focus-visible,
-.chip:focus-visible,
 .primary:focus-visible,
 .secondary:focus-visible,
 .roundKey:focus-visible,
@@ -788,20 +1290,23 @@
   outline-offset: 2px;
 }
 
+/* The picture sits in its collection's light. */
 .thumb {
   position: relative;
   display: grid;
   place-items: center;
-  aspect-ratio: 1 / 0.82;
-  margin-bottom: 8px;
-  border-radius: 14px;
-  background: var(--shop-thumb);
+  aspect-ratio: 1;
+  margin-bottom: 7px;
+  border-radius: 12px;
+  background:
+    radial-gradient(70% 60% at 50% 45%, color-mix(in srgb, var(--c) 18%, transparent), transparent 75%),
+    var(--shop-thumb);
   overflow: hidden;
 }
 
 .thumb img {
-  width: 86%;
-  height: 86%;
+  width: 94%;
+  height: 94%;
   object-fit: contain;
   user-select: none;
 }
@@ -813,16 +1318,33 @@
   box-shadow: inset 0 -6px 12px #00000033, inset 0 4px 8px #ffffff55;
 }
 
+.newBadge,
 .tag {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  padding: 3px 9px;
+  top: 9px;
+  right: 9px;
+  z-index: 1;
+  max-width: calc(100% - 34px);
+  padding: 2px 7px;
   border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.newBadge {
+  background: var(--c);
+  color: var(--c-ink);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tag {
   background: var(--shop-tag);
   color: var(--shop-tag-ink);
-  font-size: 0.6875rem;
-  font-weight: 700;
 }
 
 .tag[data-wearing="true"] {
@@ -835,19 +1357,22 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  min-height: 2.6em;
-  font-family: var(--shop-title-font);
-  font-size: 0.9375rem;
-  line-height: 1.3;
+  min-height: 2.5em;
+  padding: 0 3px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25;
   overflow-wrap: anywhere;
 }
 
 .price {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  margin-top: 6px;
-  font-size: 0.8125rem;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 0 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--shop-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -932,8 +1457,7 @@
 }
 
 .barName {
-  font-family: var(--shop-title-font);
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1025,6 +1549,36 @@
   .barActions > * {
     flex: 1;
   }
+}
+
+/* The filter sheet. */
+.filterPanel {
+  display: grid;
+  gap: 16px;
+  padding: 12px 0;
+  color: var(--shop-ink);
+}
+
+.filterPanel label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+
+.filterPanel select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--shop-line);
+  border-radius: 12px;
+  background: var(--shop-key);
+  color: var(--shop-ink);
+  font: inherit;
+}
+
+.filterPanel select:focus-visible {
+  outline: 2px solid var(--shop-accent);
+  outline-offset: 3px;
 }
 
 /* ---------------------------------------------------- energy supply */
@@ -1345,7 +1899,7 @@
     grid-column: 1 / -1;
     position: sticky;
     top: 0;
-    z-index: 20;
+    z-index: 22;
     padding: env(safe-area-inset-top) 0 0;
     background: var(--shop-ground);
   }
@@ -1379,15 +1933,54 @@
     padding: 0;
   }
 
-  .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Under the header, which is all that stays above the catalogue here. */
+  .nav {
+    top: calc(env(safe-area-inset-top) + 56px);
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  .results {
+    scroll-margin-top: calc(env(safe-area-inset-top) + 56px + 52px);
+  }
+
+  .shelfRow {
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
+  }
+
+  .shelf[data-new="true"] {
+    margin-inline: 0;
+    padding-inline: 14px;
+    border: 1px solid var(--shop-line);
+    border-radius: 22px;
+  }
+
+  .shelf[data-new="true"] .shelfRow {
+    margin-inline: -14px;
+    padding-inline: 14px;
+    scroll-padding-inline: 14px;
+  }
+
+  /* The bar for the piece in hand belongs to the stand: under it, in its
+     column, held at the foot of the window (it covered the cards when it
+     floated across both). */
+  .bar {
+    position: sticky;
+    grid-column: 2;
+    grid-row: 3;
+    left: auto;
+    right: auto;
+    width: auto;
+    transform: none;
+    margin-top: 12px;
   }
 }
 
 @media (min-width: 1240px) {
-  .grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+  .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .shelfRow { grid-auto-columns: calc((100% - 40px) / 5.4); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1395,226 +1988,216 @@
   .stageCanvas,
   .hint,
   .toast,
-  .card {
+  .card,
+  .collectionTile {
     transition: none;
+  }
+
+  .collectionStory p {
+    animation: none;
   }
 }
 
-.collectionNew { display: block; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted, #8b8578); margin-bottom: 0.25rem; }
-
-.catalogHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-.catalogHeading h2 { font-size: 1.12rem; margin: 0; }
-.catalogHeading h2 span, .departmentHeading span { font-size: .8rem; font-weight: 400; color: var(--shop-muted); margin-left: 8px; font-variant-numeric: tabular-nums; }
-.filterPanel { display: grid; gap: 16px; padding: 12px 0; color: var(--shop-ink); }
-.filterPanel label { display: grid; gap: 6px; font-size: .85rem; }
-.filterPanel select { width: 100%; min-height: 44px; border-radius: 12px; background: var(--shop-key); color: var(--shop-ink); border: 1px solid var(--shop-line); padding: 8px; font: inherit; }
-.filterPanel .ownedFilter { display: flex; align-items: center; min-height: 44px; gap: 10px; }
-.ownedFilter input { width: 18px; height: 18px; accent-color: var(--shop-accent); }
-.wearHint { color: var(--shop-muted); font-size: .76rem; line-height: 1.6; margin: 6px 0 10px; }
-.department { margin: 0 0 28px; }
-.departmentHeading { font-size: 1rem; letter-spacing: .02em; margin: 0 0 12px; padding-top: 12px; border-top: 1px solid var(--shop-line); }
-.card:disabled { cursor: wait; }
-.filterPanel select:focus-visible { outline: 2px solid var(--shop-accent); outline-offset: 3px; }
-
-/* Station 33 boutique: enamel, engraved brass and a quiet glass cabinet.
-   The new ornaments are static; only deliberate choices get a brief response. */
-.signLights i { animation: none; opacity: 0.85; }
-.sign { will-change: auto; }
-.stage {
-  border: 1px solid #b39359;
-  box-shadow: 0 0 0 3px var(--shop-ground), 0 0 0 4px #b3935966, 0 12px 28px -22px #332c20;
-}
-.stage::after {
-  content: "";
+/* The stand's engraved astrolabe, behind Yumi (ShopStage.tsx). */
+.astrolabe {
   position: absolute;
-  inset: 8px;
-  z-index: 2;
-  border: 1px solid #d4b67666;
-  border-radius: 21px;
+  z-index: 0;
+  left: 50%;
+  top: 45%;
+  width: min(88%, 560px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  color: #d5b87a;
+  opacity: 0.28;
   pointer-events: none;
-  background:
-    linear-gradient(135deg, #fff5da14, #fff5da00 28%),
-    radial-gradient(circle at 10px 10px, #e5c57e 0 1px, #0000 2px),
-    radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), #e5c57e 0 1px, #0000 2px);
 }
-.keeperNote {
+
+.astrolabe svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  stroke-width: 0.7;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .astrolabe {
+  opacity: 0.36;
+}
+
+/* ------------------------------------------------------- the coin */
+
+/* The commemorative coin opens the station's story. One state drives its
+   turn and the disclosure (ShopIntroduction.tsx). */
+.introduction {
+  margin: 0 0 2px;
+}
+
+.coinTrigger {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 18px 2px;
-  color: var(--shop-ink);
-}
-.keeperSeal {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  flex-shrink: 0;
-  border: 1px solid #a98a51;
-  outline: 1px solid #a98a5155;
-  outline-offset: 3px;
-  border-radius: 50%;
-  color: var(--shop-tag-ink);
-  background: var(--shop-tag);
-  font: italic 1.25rem Georgia, serif;
-}
-.keeperLabel { font-size: 0.625rem; letter-spacing: .12em; color: var(--shop-muted); }
-.keeperNote p { margin: 4px 0 0; font-size: .8125rem; line-height: 1.6; }
-.collectionCabinet {
-  position: relative;
-  margin: 0 0 22px;
-  border: 1px solid #ae925960;
-  border-radius: 20px 20px 5px 5px;
-  padding: 20px;
-  background: linear-gradient(125deg, #ceac6320, #ceac6300 45%), var(--shop-card);
-  box-shadow: inset 0 0 0 4px var(--shop-ground), inset 0 0 0 5px #b3935926, var(--shop-card-shadow);
-}
-.cabinetIntro { display: flex; align-items: flex-start; gap: 12px; }
-.cabinetCompass { color: var(--shop-tag-ink); padding-top: 3px; }
-.cabinetIntro h2 { margin: 0; font: 500 clamp(1.125rem, 2vw, 1.5rem)/1.4 var(--shop-title-font); }
-.cabinetIntro p { margin: 6px 0 0; color: var(--shop-muted); font-size: .75rem; line-height: 1.7; max-width: 54ch; }
-.collectionRoutes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); position: relative; gap: 10px; margin-top: 22px; }
-.collectionRoutes::before { content: ""; position: absolute; top: 24px; left: 16%; right: 16%; border-top: 1px dashed #b3935970; pointer-events: none; }
-.collectionRoute {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  padding: 0 4px 10px;
-  color: var(--shop-muted);
-  background: transparent;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 2px 3px;
   border: 0;
   border-radius: 12px;
+  background: transparent;
+  color: var(--shop-muted);
+  text-align: start;
   cursor: pointer;
 }
-.routePlanet {
+
+.coinTrigger:focus-visible {
+  outline: 2px solid var(--shop-accent);
+  outline-offset: 4px;
+}
+
+.coinPrompt {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.coinPrompt > span {
+  color: var(--shop-tag-ink);
+  white-space: nowrap;
+}
+
+.coinPerspective {
+  display: block;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  perspective: 600px;
+}
+
+.coinTurn {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateY(0deg);
+  transition: transform 320ms cubic-bezier(.3, .05, .2, 1) 280ms;
+}
+
+.introduction[data-open="true"] .coinTurn {
+  transform: rotateY(180deg);
+  transition-delay: 0ms;
+}
+
+.coinFace {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  border: 1px solid #b3935980;
   border-radius: 50%;
-  background: var(--shop-card);
-  box-shadow: inset 0 0 0 4px var(--shop-ground), inset 0 0 0 5px #b3935933, 0 5px 12px -8px #0008;
-  color: var(--shop-tag-ink);
-  transition: transform 350ms cubic-bezier(.2,.7,.2,1), background 250ms;
-}
-.collectionRoute[aria-pressed="true"] .routePlanet { background: var(--shop-tag); transform: rotate(-12deg); box-shadow: inset 0 0 0 3px var(--shop-card), 0 0 0 2px #b39359; }
-.collectionRoute[aria-pressed="true"] { color: var(--shop-ink); }
-.collectionRoute:focus-visible, .collectionStory button:focus-visible { outline: 2px solid var(--shop-accent); outline-offset: 4px; }
-@media (hover: hover) { .collectionRoute:hover .routePlanet { transform: translateY(-3px); } }
-.routeBearing { font: .5625rem/1.4 var(--font-mono, monospace); letter-spacing: .15em; margin-top: 6px; }
-.routeName { font-size: .8125rem; line-height: 1.45; font-weight: 600; overflow-wrap: anywhere; }
-.routeCount { font-size: .625rem; line-height: 1.5; color: var(--shop-muted); }
-.collectionStory { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--shop-line); min-height: 72px; }
-.collectionStory p { margin: 0; font-size: .8125rem; line-height: 1.7; animation: boutique-reveal 320ms ease-out both; }
-.collectionStory button { padding: 8px 0 0; min-height: 36px; border: 0; background: transparent; color: var(--shop-accent); font-size: .75rem; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
-@keyframes boutique-reveal { from { opacity: .35; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
-@media (min-width: 1600px) {
-  .collectionCabinet { display: grid; grid-template-columns: 1fr 1.35fr; gap: 12px 28px; padding: 26px; }
-  .cabinetIntro { align-self: center; }
-  .collectionRoutes { margin-top: 0; grid-column: 2; grid-row: 1 / 3; align-self: center; }
-  .collectionStory { grid-column: 1; }
-}
-@media (max-width: 360px) { .collectionCabinet { padding: 16px 12px; } .collectionRoutes { gap: 4px; } }
-@media (prefers-reduced-motion: reduce) {
-  .routePlanet { transition: none; }
-  .collectionStory p { animation: none; }
-}
-.astrolabe { position: absolute; width: min(88%, 560px); aspect-ratio: 1; left: 50%; top: 45%; transform: translate(-50%, -50%); pointer-events: none; z-index: 0; color: #d5b87a; opacity: .28; }
-.astrolabe svg { display: block; width: 100%; height: 100%; stroke: currentColor; stroke-width: .7; }
-:global(html[data-interface-mode="yumi-cosmic"]) .astrolabe { opacity: .36; }
-.page { --shop-plinth-rim: #d1b273; }
-
-/* The commemorative coin is the single entrance to the station's stories. */
-.introduction { margin: 4px 0 6px; }
-.coinTrigger { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 2px 4px; border: 0; background: transparent; text-align: start; color: var(--shop-muted); cursor: pointer; border-radius: 12px; }
-.coinTrigger:focus-visible { outline: 2px solid var(--shop-accent); outline-offset: 4px; }
-.coinPrompt { font-size: .8125rem; line-height: 1.6; }
-.coinPrompt > span { color: var(--shop-tag-ink); white-space: nowrap; }
-.coinPerspective { display: block; width: 48px; height: 48px; flex: 0 0 48px; perspective: 600px; }
-.coinTurn { display: block; position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateY(0deg); transition: transform 320ms cubic-bezier(.3,.05,.2,1) 280ms; }
-.introduction[data-open="true"] .coinTurn { transform: rotateY(180deg); transition-delay: 0ms; }
-.coinFace {
-  position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%;
   border: 1px solid #8b703f;
   background:
     repeating-linear-gradient(117deg, #fff9d807 0 1px, #4d391307 1px 2px, #0000 2px 4px),
     radial-gradient(ellipse at 74% 80%, #554c292b, #0000 48%),
     radial-gradient(ellipse at 26% 18%, #fff7da85, #0000 55%),
     conic-gradient(from 35deg, #c5ad73, #ecdcad 17%, #b49a60 39%, #d9c493 56%, #a78b52 76%, #dfca97);
-  color: #72562d; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  color: #72562d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   box-shadow: inset 0 1px 0 #fff4cf, inset 0 -1px 0 #6d542b, inset 0 0 0 2px #d7c18d, inset 0 0 0 3px #876c3d80, inset 0 0 9px #70522630, 0 2px 0 #8b6d3b, 0 3px 0 #b09660, 0 7px 10px -5px #3b2a1370;
 }
-.coinFace::before { content: ""; position: absolute; inset: 1px; border-radius: inherit; background: repeating-conic-gradient(from 0deg, #72501e90 0deg 1deg, #fff2c04d 1deg 2deg, #0000 2deg 5deg); mask: radial-gradient(circle, #0000 65%, #000 66%); pointer-events: none; }
-.coinFace::after { content: ""; position: absolute; inset: 6px; border-radius: inherit; box-shadow: inset 0 1px 1px #6f532b4d, 0 1px 0 #fff2c066; pointer-events: none; }
-.coinEngraving { position: absolute; inset: 0; width: 100%; height: 100%; stroke: currentColor; opacity: .7; pointer-events: none; }
-.coinEmblem { width: 21px; height: 21px; position: relative; filter: drop-shadow(0 1px 0 #fff0bd70); }
+
+/* The milled edge. */
+.coinFace::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: repeating-conic-gradient(from 0deg, #72501e90 0deg 1deg, #fff2c04d 1deg 2deg, #0000 2deg 5deg);
+  mask: radial-gradient(circle, #0000 65%, #000 66%);
+  pointer-events: none;
+}
+
+.coinFace::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 1px #6f532b4d, 0 1px 0 #fff2c066;
+  pointer-events: none;
+}
+
+.coinEngraving {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.coinEmblem {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  filter: drop-shadow(0 1px 0 #fff0bd70);
+}
+
 .coinFront { transform: translateZ(2px); }
 .coinBack { transform: rotateY(180deg) translateZ(2px); }
-.coinNumerals { position: relative; display: grid; place-items: center; width: 100%; height: 100%; font: 600 1.375rem/1 "Baskerville", "Palatino Linotype", "Book Antiqua", Georgia, serif; font-variant-numeric: lining-nums tabular-nums; letter-spacing: -.045em; padding-right: .045em; text-shadow: 0 1px 0 #fff1c2, 0 -1px 0 #61482070, 1px 0 0 #fff0bf45; transform: translateY(-.035em); }
-.coinDisclosure { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden; transition: grid-template-rows 280ms cubic-bezier(.22,.7,.3,1), opacity 180ms ease, visibility 0s 280ms; }
-.coinDisclosureInner { min-height: 0; overflow: hidden; }
-.introduction[data-open="true"] .coinDisclosure { grid-template-rows: 1fr; opacity: 1; visibility: visible; transition-delay: 320ms, 320ms, 320ms; }
-.coinDisclosure .keeperNote { margin: 12px 4px 18px; }
-.coinDisclosure .collectionCabinet { margin-bottom: 5px; }
-:global(html[data-interface-mode="yumi-cosmic"]) .coinFace { background: repeating-linear-gradient(117deg, #efdab208 0 1px, #0000 1px 4px), radial-gradient(ellipse at 28% 15%, #77705a66, #0000 55%), conic-gradient(from 35deg, #2e2b25, #484132, #171719, #373229, #171719, #3a342a); color: #efd49a; border-color: #b79552; box-shadow: inset 0 0 0 2px #aa8a4e, inset 0 0 0 4px #111114, inset 0 0 0 6px #b08e4d66, 0 3px 0 #796039, 0 7px 12px -5px #000; }
-:global(html[data-interface-mode="yumi-cosmic"]) .coinFace::before { background: repeating-conic-gradient(#e8cb8cbb 0deg 1deg, #0000 1deg 6deg); }
-:global(html[data-interface-mode="yumi-cosmic"]) .coinNumerals { text-shadow: 0 1px 0 #000, 0 -1px 0 #f9e5b755; }
-@media (prefers-reduced-motion: reduce) { .coinTurn, .coinDisclosure { transition: none !important; } }
 
-/* The personal wardrobe is a destination, not a hidden filter. */
-.wardrobeSwitch { display: flex; gap: .35rem; padding: .35rem; margin: .5rem 0; border: 1px solid var(--shop-line); background: var(--shop-ground); border-radius: 1.4rem; }
-.wardrobeSwitch button { flex: 1; min-width: 0; min-height: 48px; padding: .65rem .75rem; border: 0; border-radius: 1.05rem; background: transparent; color: inherit; font: inherit; cursor: pointer; }
-.wardrobeSwitch button[aria-pressed="true"] { background: var(--shop-accent); color: var(--shop-on-accent); }
-.wardrobeSwitch span { margin-inline-start: .5rem; font-size: .85em; opacity: .75; }
-.wardrobeSwitch button:focus-visible { outline: 2px solid #ad8947; outline-offset: 3px; }
+.coinNumerals {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding-right: 0.045em;
+  font: 600 1rem/1 "Baskerville", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -0.045em;
+  text-shadow: 0 1px 0 #fff1c2, 0 -1px 0 #61482070, 1px 0 0 #fff0bf45;
+  transform: translateY(-0.035em);
+}
 
-/* Quiet boutique: the character and pieces lead, controls stay secondary. */
-.stage { --dock-aspect: 4 / 1.1; }
-.stage { border-radius: 22px; box-shadow: 0 0 0 2px var(--shop-ground), 0 0 0 3px #b3935940, 0 10px 24px -22px #332c20; }
-.stage::after { inset: 5px; border-radius: 17px; background: linear-gradient(135deg, #fff5da0c, #0000 32%); border-color: #d4b67630; }
-.views { gap: 0; padding: 2px; border: 1px solid #d4b67640; border-radius: 12px; background: #131b27d9; }
-.viewKey { min-height: 40px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: #f3ead6; box-shadow: none; font-weight: 500; }
-.viewKey[aria-pressed="true"] { background: #d6bd8240; color: #fff4da; }
-.corner .roundKey, .zoomKeys .roundKey, .resetKey.roundKey { background: #131b27d9; border-color: #d4b67640; color: #f3ead6; box-shadow: none; }
-.zoomKeys { gap: 0; border: 1px solid #d4b67640; border-radius: 13px; overflow: hidden; background: #131b27d9; }
-.zoomKeys .roundKey { border: 0; border-radius: 0; background: transparent; }
-.zoomKeys .roundKey + .roundKey { border-top: 1px solid #d4b67630; }
-.hint { font-size: .6875rem; font-weight: 500; letter-spacing: .01em; }
-.wardrobeSwitch { width: min(100%, 18rem); margin: .375rem auto .5rem; gap: 2px; padding: 0 3px; border-radius: 12px; }
-.wardrobeSwitch button { position: relative; isolation: isolate; min-height: 44px; padding: .25rem .6rem; border-radius: 8px; font-size: .8125rem; font-weight: 500; line-height: 1.25; }
-.wardrobeSwitch button[aria-pressed="true"] { background: transparent; }
-.wardrobeSwitch button[aria-pressed="true"]::before { content: ""; position: absolute; z-index: -1; inset: 5px 0; border-radius: 8px; background: var(--shop-accent); pointer-events: none; }
-.wardrobeSwitch span { margin-inline-start: .35rem; font-size: .75rem; font-variant-numeric: tabular-nums; }
-.catalogHeading h2 { font-size: 1rem; font-weight: 500; }
-.tabs { gap: 3px; border-bottom: 1px solid var(--shop-line); padding: 0 0 4px; }
-.tab { min-height: 44px; padding: 0 12px; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--shop-muted); font-size: .8125rem; font-weight: 500; }
-.tab[aria-pressed="true"] { background: transparent; color: var(--shop-ink); box-shadow: inset 0 -2px var(--shop-accent); }
-.catalogHeading .chip { min-height: 44px; border: 0; background: transparent; box-shadow: none; padding: 0 8px; }
-.departmentHeading { font-size: .8125rem; font-weight: 500; border-top: 0; padding-top: 6px; }
-.wearHint { font-size: .6875rem; margin: 6px 0 8px; }
+.coinDisclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows 280ms cubic-bezier(.22, .7, .3, 1), opacity 180ms ease, visibility 0s 280ms;
+}
 
-/* Compact catalogue navigation leaves the first row to the pieces. */
-.previewBadge { margin: 0; padding: 2px 0; border-radius: 0; background: transparent; color: var(--shop-muted); font-size: .625rem; font-weight: 400; }
-.introduction { margin: 0 0 2px; }
-.coinTrigger { min-height: 44px; gap: 10px; padding: 2px 3px; }
-.coinPerspective { width: 34px; height: 34px; flex-basis: 34px; }
-.coinNumerals { font-size: 1rem; }
-.coinEmblem { width: 16px; height: 16px; }
-.coinFace::after { inset: 4px; }
-.coinPrompt { font-size: .6875rem; line-height: 1.4; }
-.catalogToolbar { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
-.catalogToolbar .wardrobeSwitch { flex: 1; max-width: 18rem; min-width: 0; margin: 0; }
-.catalogToolbar .chip { margin-inline-start: auto; min-height: 44px; padding: 0 8px; background: transparent; box-shadow: none; border: 0; font-size: .75rem; }
-.catalogSummary { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-.wardrobeSwitch button { font-size: .75rem; padding-inline: .4rem; }
-.tabs { padding-bottom: 0; }
-.tab { padding-inline: 10px; font-size: .75rem; }
-.wearHint { margin: 4px 0 6px; font-size: .625rem; }
-.departmentHeading { margin-bottom: 8px; }
+.coinDisclosureInner {
+  min-height: 0;
+  overflow: hidden;
+}
 
-.catalogToolbar .filterIcon { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; padding: 0; color: var(--shop-ink); }
-.filterCount { position: absolute; top: 1px; right: 0; display: grid; place-items: center; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 50%; background: var(--shop-accent); color: var(--shop-on-accent); font-size: .5625rem; line-height: 1; }
+.introduction[data-open="true"] .coinDisclosure {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 320ms, 320ms, 320ms;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .coinFace {
+  background:
+    repeating-linear-gradient(117deg, #efdab208 0 1px, #0000 1px 4px),
+    radial-gradient(ellipse at 28% 15%, #77705a66, #0000 55%),
+    conic-gradient(from 35deg, #2e2b25, #484132, #171719, #373229, #171719, #3a342a);
+  color: #efd49a;
+  border-color: #b79552;
+  box-shadow: inset 0 0 0 2px #aa8a4e, inset 0 0 0 4px #111114, inset 0 0 0 6px #b08e4d66, 0 3px 0 #796039, 0 7px 12px -5px #000;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .coinFace::before {
+  background: repeating-conic-gradient(#e8cb8cbb 0deg 1deg, #0000 1deg 6deg);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .coinNumerals {
+  text-shadow: 0 1px 0 #000, 0 -1px 0 #f9e5b755;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coinTurn,
+  .coinDisclosure {
+    transition: none !important;
+  }
+}

@@ -2874,6 +2874,10 @@ const english: TranslationDictionary = {
       "clear": "Clear filters",
       "saving": "Saving outfit…",
       "autoSave": "Owned pieces save automatically. Unbought trials stay here.",
+      "newArrivals": "New arrivals",
+      "newArrivalsNote": "Station 33 · Collection 04",
+      "seeAll": "See all {count}",
+      "clearNew": "Close",
       "departments": {
             "eyes": "Eyes",
             "eyewear": "Eyewear",

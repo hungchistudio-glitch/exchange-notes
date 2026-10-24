@@ -32,7 +32,7 @@ vi.mock("@/components/shop/ShopStage", () => ({
 }));
 
 // Decorative SVGs are covered visually in the browser. Keep this suite
-// focused on wardrobe transactions even with all 220 cards mounted.
+// focused on wardrobe transactions.
 vi.mock("@/components/shop/EnergyCookie", () => ({ default: () => <span aria-hidden="true" /> }));
 vi.mock("@/components/shop/ShopThumb", () => ({ default: () => <span aria-hidden="true" /> }));
 
@@ -50,6 +50,11 @@ function stand(): YumiOutfit {
   return JSON.parse(screen.getByTestId("stand").getAttribute("data-outfit")!);
 }
 
+/** Opens a department's full grid; the shop window shows only a shelf of each. */
+function department(name: string) {
+  fireEvent.click(within(screen.getByRole("navigation")).getByRole("button", { name }));
+}
+
 function card(name: string) {
   // The catalogue's cards are the toggles; the tag on a worn card comes first.
   return [...document.querySelectorAll<HTMLButtonElement>('button[data-coach-target="shop-item"]')].find(button =>
@@ -63,12 +68,14 @@ describe("the Yumi shop", () => {
     await waitFor(() => expect(screen.getByLabelText(/50 energy cookies/)).toBeInTheDocument(), { timeout: 5000 });
 
     // Too dear: on the stand at once, and the bar says how far short.
+    department("Body finishes");
     fireEvent.click(card("Jade"));
     expect(stand()).toEqual({ material: "jade" });
     expect(screen.getByText("10 cookies short")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Buy" })).toBeDisabled();
 
     // Affordable: nothing is charged until the sheet is confirmed.
+    department("Eyewear");
     fireEvent.click(card("Brass monocle"));
     expect(stand()).toEqual({ material: "jade", eyewear: "monocle" });
     fireEvent.click(screen.getByRole("button", { name: "Buy" }));
@@ -93,6 +100,7 @@ describe("the Yumi shop", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Yumi 商店" })).toBeInTheDocument(), { timeout: 5000 });
     expect(screen.getByRole("button", { name: "全部商品" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "已穿上" })).not.toBeInTheDocument();
+    department("身體材質");
     expect(card("玉石綠")).toBeDefined();
     const text = container.textContent ?? "";
     expect(toTraditional(text)).toBe(text);
@@ -114,6 +122,7 @@ describe("keeping purchased outfits", () => {
   it("automatically saves an owned try-on and restores it when the shop is reopened", async () => {
     const wallet = wardrobeWallet({}, ["monocle"]);
     const first = render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+    department("Eyewear");
     await waitFor(() => expect(card("Brass monocle")).not.toBeDisabled());
     fireEvent.click(card("Brass monocle"));
     await waitFor(() => expect(wallet.wear).toHaveBeenCalledWith({ eyewear: "monocle" }));
@@ -127,7 +136,9 @@ describe("keeping purchased outfits", () => {
     const wallet = wardrobeWallet({ material: "jade" }, ["jade"]);
     render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
     await waitFor(() => expect(stand()).toEqual({ material: "jade" }));
+    department("Body finishes");
     fireEvent.click(card("Porcelain"));
+    department("Eyewear");
     fireEvent.click(card("Brass monocle"));
     fireEvent.click(screen.getByRole("button", { name: "Buy" }));
     fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Buy" }));
@@ -137,6 +148,7 @@ describe("keeping purchased outfits", () => {
   it("keeps an originally empty slot empty after a free trial", async () => {
     const wallet = wardrobeWallet({}, []);
     render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+    department("Body finishes");
     await waitFor(() => expect(card("Jade")).not.toBeDisabled());
     fireEvent.click(card("Jade"));
     fireEvent.click(card("Jade"));
@@ -151,6 +163,7 @@ describe("keeping purchased outfits", () => {
     render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
     await waitFor(() => expect(stand()).toEqual({ eyewear: "monocle" }));
     navigation.back.mockClear(); navigation.push.mockClear();
+    department("Eyewear");
     fireEvent.click(card("Brass monocle"));
     expect(wallet.wear).toHaveBeenCalledWith({});
     expect(card("Brass monocle")).toBeDisabled();
@@ -164,6 +177,7 @@ describe("keeping purchased outfits", () => {
     const wallet = wardrobeWallet({}, ["monocle"]);
     const wear = vi.spyOn(wallet, "wear").mockRejectedValueOnce(new Error("offline"));
     render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+    department("Eyewear");
     await waitFor(() => expect(card("Brass monocle")).not.toBeDisabled());
     fireEvent.click(card("Brass monocle"));
     await waitFor(() => expect(screen.getByRole("button", { name: "Put on" })).not.toBeDisabled());
@@ -179,6 +193,7 @@ it("keeps the shop open when an in-flight save fails during exit", async () => {
   let reject!: (error: Error) => void;
   wallet.wear = vi.fn(() => new Promise<WardrobeState>((_, fail) => { reject = fail; }));
   render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+  department("Eyewear");
   await waitFor(() => expect(card("Brass monocle")).not.toBeDisabled());
   navigation.back.mockClear(); navigation.push.mockClear();
   fireEvent.click(card("Brass monocle"));
@@ -188,22 +203,43 @@ it("keeps the shop open when an in-flight save fails during exit", async () => {
   expect(screen.getByRole("button", { name: "Put on" })).not.toBeDisabled();
 }, 15_000);
 
-it("uses the star chart to filter real collections without losing other filters", async () => {
+it("filters by collection from tiles always in view, without losing the department", () => {
   reader.language = "english";
   render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
-  fireEvent.click(screen.getByRole("button", { name: /Turn the coin/ }));
-  const chart = screen.getByRole("group", { name: "Explore the collections" });
-  fireEvent.click(within(chart).getByRole("button", { name: /Deep Space Treasures/ }));
-  /* Collection 03's 57 and Collection 04's 55 deep-space pieces. */
-  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(112);
+  const tiles = screen.getByRole("group", { name: "Explore the collections" });
+  fireEvent.click(within(tiles).getByRole("button", { name: /Deep Space Treasures/ }));
   expect(document.getElementById("shop-collection-story")).toHaveTextContent("dark technology");
-  fireEvent.click(screen.getByRole("button", { name: "Earrings" }));
-  const filtered = document.querySelectorAll('[data-coach-target="shop-item"]').length;
-  expect(filtered).toBeGreaterThan(0);
-  expect(filtered).toBeLessThan(57);
+  const shown = () => [...document.querySelectorAll<HTMLElement>('[data-coach-target="shop-item"]')];
+  expect(shown().every(card => card.dataset.collection === "collection03")).toBe(true);
+
+  // A department's full grid: Collection 03's and Collection 04's deep-space earrings.
+  department("Earrings");
+  const filtered = shown().length;
+  expect(filtered).toBeGreaterThan(12);
+  expect(filtered).toBeLessThan(37);
   fireEvent.click(screen.getByRole("button", { name: /Explore all collections/ }));
-  expect(screen.getByRole("button", { name: "Earrings" })).toHaveAttribute("aria-pressed", "true");
-  expect(document.querySelectorAll('[data-coach-target="shop-item"]').length).toBeGreaterThan(filtered);
+  expect(within(screen.getByRole("navigation")).getByRole("button", { name: "Earrings" })).toHaveAttribute("aria-pressed", "true");
+  expect(shown()).toHaveLength(37);
+}, 15_000);
+
+it("opens on the shop window: the new arrivals, then a shelf of each department", () => {
+  reader.language = "english";
+  render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
+  const windowShelf = screen.getByRole("region", { name: /New arrivals/ });
+  const newCards = within(windowShelf).getAllByRole("button", { pressed: false }).filter(button => button.hasAttribute("data-coach-target"));
+  expect(newCards).toHaveLength(16);
+  // Dealt across departments, not sixteen earrings.
+  expect(screen.getByRole("region", { name: /^Earrings/ })).toBeInTheDocument();
+
+  fireEvent.click(within(windowShelf).getByRole("button", { name: "See all 113" }));
+  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(113);
+  fireEvent.click(screen.getByRole("button", { name: /Close/ }));
+  expect(screen.getByRole("region", { name: /New arrivals/ })).toBeInTheDocument();
+
+  // "See all" on a shelf opens that department.
+  fireEvent.click(within(screen.getByRole("region", { name: /^Eyes/ })).getByRole("button", { name: /See all/ }));
+  expect(within(screen.getByRole("navigation")).getByRole("button", { name: "Eyes" })).toHaveAttribute("aria-pressed", "true");
+  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(28);
 }, 15_000);
 
 it("opens the personal wardrobe with all owned items and saves dressing from it", async () => {
@@ -217,6 +253,6 @@ it("opens the personal wardrobe with all owned items and saves dressing from it"
   fireEvent.click(card("Brass monocle"));
   await waitFor(() => expect(wallet.wear).toHaveBeenCalledWith({ eyewear: "monocle" }));
   fireEvent.click(screen.getByRole("button", { name: "Shop" }));
-  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(333);
+  expect(screen.getByRole("region", { name: /New arrivals/ })).toBeInTheDocument();
   expect(stand()).toEqual({ eyewear: "monocle" });
 });

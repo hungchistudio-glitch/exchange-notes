@@ -2746,6 +2746,8 @@ export type TranslationDictionary = {
     browse: {
       all: string; shopView: string; wardrobe: string; filters: string; country: string; collection: string; ownedOnly: string;
       clear: string; saving: string; autoSave: string; notWorn: string;
+      /** Collection 04's shelf; {count} in seeAll is a number of pieces. clearNew leaves the new arrivals. */
+      newArrivals: string; newArrivalsNote: string; seeAll: string; clearNew: string;
       departments: { eyes: string; eyewear: string; earrings: string; brow: string; necklace: string; head: string; neck: string; pin: string; mouth: string; charm: string; material: string };
     };
     categories: { featured: string; jewelry: string; eyes: string; materials: string; wear: string; small: string; owned: string };

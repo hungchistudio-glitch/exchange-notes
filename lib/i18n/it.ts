@@ -2676,6 +2676,10 @@ const italian: TranslationDictionary = {
       "clear": "Cancella filtri",
       "saving": "Salvataggio del look…",
       "autoSave": "Gli articoli posseduti si salvano automaticamente. Le prove non acquistate restano qui.",
+      "newArrivals": "Novità",
+      "newArrivalsNote": "Stazione 33 · Collezione 04",
+      "seeAll": "Vedi tutti i {count}",
+      "clearNew": "Chiudi",
       "departments": {
             "eyes": "Occhi",
             "eyewear": "Occhiali",
