@@ -56,13 +56,13 @@ describe("the cookie-landing card", () => {
   });
 
   it("plays once for a credited save, says where it came from, and marks it shown", async () => {
-    db.rows = [{ id: "a", amount: 1, kind: "save" }];
+    db.rows = [{ id: "a", amount: 3, kind: "save" }];
     const landed = vi.fn();
     window.addEventListener(ENERGY_LANDED_EVENT, landed);
 
     render(<EnergyRewardObserver userId="reader" />);
 
-    expect(await screen.findByText("+1")).toBeInTheDocument();
+    expect(await screen.findByText("+3")).toBeInTheDocument();
     expect(screen.getByText("Saved-word reward")).toBeInTheDocument();
     await waitFor(() => expect(db.acked).toEqual([["a"]]));
     expect(landed).toHaveBeenCalledTimes(1);
@@ -79,12 +79,12 @@ describe("the cookie-landing card", () => {
     await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
 
     db.rows = [
-      { id: "b", amount: 1, kind: "save" },
+      { id: "b", amount: 3, kind: "save" },
       { id: "c", amount: 3, kind: "review" },
     ];
     await act(async () => { window.dispatchEvent(new Event(ENERGY_REFRESH_EVENT)); });
 
-    expect(await screen.findByText("+4")).toBeInTheDocument();
+    expect(await screen.findByText("+6")).toBeInTheDocument();
     expect(screen.getByText("Energy cookies received")).toBeInTheDocument();
   });
 

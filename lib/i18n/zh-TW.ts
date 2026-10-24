@@ -472,8 +472,8 @@ const traditionalChinese: TranslationDictionary = {
         },
         keep: {
           body:
-            "存下新字，就有兩樣收穫：首頁一塊餵我的餅乾，和商店 +1 能量餅乾。",
-          tag: "存起來 · +1 能量餅乾",
+            "存下新字，就有兩樣收穫：首頁一塊餵我的餅乾，和商店 +3 能量餅乾。",
+          tag: "存起來 · +3 能量餅乾",
         },
         feed: {
           body:
@@ -517,7 +517,7 @@ const traditionalChinese: TranslationDictionary = {
         },
         cookies: {
           body:
-            "能量餅乾是我商店的錢，第一次存下一個字就得到一塊。點右上角發光的購物袋，進來逛逛。",
+            "能量餅乾是我商店的錢，第一次存下一個字就得到 3 塊。點右上角發光的購物袋，進來逛逛。",
         },
         tryOn: {
           body:
@@ -2705,7 +2705,7 @@ const traditionalChinese: TranslationDictionary = {
     goBack: "返回",
     cookiesOne: "{count} 塊能量餅乾",
     cookiesOther: "{count} 塊能量餅乾",
-    howEarned: "第一次收藏一個單字得 1 塊能量餅乾，整輪複習全部通過再得 3 塊。",
+    howEarned: "第一次收藏一個單字得 3 塊能量餅乾，整輪複習全部通過也得 3 塊。",
     stage: "Yumi 3D 試戴台。拖曳可以旋轉，也可以用方向鍵。",
     hint: "拖曳 360° 試戴 · 雙指縮放",
     views: "視角",

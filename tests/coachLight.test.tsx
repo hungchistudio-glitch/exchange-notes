@@ -251,7 +251,7 @@ describe("over the search sheet (Chi, 2026-10-18)", () => {
 
     await waitFor(() => expect(light()).toHaveAttribute("data-shown", "true"));
     expect(light()?.style.transform).toBe("translate3d(21px, 557px, 0)");
-    expect(light()).toHaveTextContent("Save it · +1 energy cookie");
+    expect(light()).toHaveTextContent("Save it · +3 energy cookies");
 
     await act(async () => {
       announceWordSaved({ term: "lujo", duplicate: false });

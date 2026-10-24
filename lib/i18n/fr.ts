@@ -474,8 +474,8 @@ const french: TranslationDictionary = {
         },
         keep: {
           body:
-            "Garde un nouveau mot et tu reçois deux choses : un biscuit sur l'accueil pour me nourrir, et +1 cookie d'énergie pour la boutique.",
-          tag: "Garde-le · +1 cookie d'énergie",
+            "Garde un nouveau mot et tu reçois deux choses : un biscuit sur l'accueil pour me nourrir, et +3 cookies d'énergie pour la boutique.",
+          tag: "Garde-le · +3 cookies d'énergie",
         },
         feed: {
           body:
@@ -519,7 +519,7 @@ const french: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Les cookies d'énergie sont la monnaie de ma boutique ; garder un mot pour la première fois t'en rapporte un. Touche le sac qui brille en haut à droite pour entrer.",
+            "Les cookies d'énergie sont la monnaie de ma boutique ; garder un mot pour la première fois t'en rapporte 3. Touche le sac qui brille en haut à droite pour entrer.",
         },
         tryOn: {
           body:
@@ -2551,7 +2551,7 @@ const french: TranslationDictionary = {
     goBack: "Retour",
     cookiesOne: "{count} cookie d’énergie",
     cookiesOther: "{count} cookies d’énergie",
-    howEarned: "Enregistrer un mot pour la première fois rapporte 1 cookie d'énergie ; réussir toutes les cartes d'une révision en rapporte 3 de plus.",
+    howEarned: "Enregistrer un mot pour la première fois rapporte 3 cookies d'énergie, et réussir toutes les cartes d'une révision aussi.",
     stage: "Cabine d’essayage 3D de Yumi. Faites-la tourner en glissant ou avec les flèches.",
     hint: "Glissez pour 360° · Pincez pour zoomer",
     views: "Vues",
