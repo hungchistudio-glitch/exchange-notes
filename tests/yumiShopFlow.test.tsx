@@ -303,3 +303,15 @@ it("filters from the sheet: nothing changes until its key is pressed, and each c
   fireEvent.click(screen.getByRole("button", { name: "Remove 27–39" }));
   expect(prices()).toHaveLength(before);
 }, 20_000);
+
+it("says no piece matches only when a choice was made", async () => {
+  reader.language = "english";
+  const wallet = wardrobeWallet({}, []);
+  render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+  fireEvent.click(await screen.findByRole("button", { name: /My wardrobe\s*0/ }, { timeout: 5000 }));
+  fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+  const sheet = await screen.findByRole("dialog", {}, { timeout: 5000 });
+  // In the wardrobe, ownership is not a question.
+  expect(within(sheet).queryByRole("button", { name: /^Ownership/ })).toBeNull();
+  expect(within(sheet.parentElement!).getByRole("button", { name: "Show 0 pieces" })).toBeDisabled();
+}, 15_000);

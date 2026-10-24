@@ -91,7 +91,11 @@ export default function ShopFilterSheet({ open, onClose, filters, onApply, items
       >
         {/* Keyed by the number, so it rolls in afresh when it changes. */}
         <span key={shown} className={styles.applyLabel}>
-          {shown === 0 ? words.none : plural(shown, locale, words.showOne, words.showOther, { count: number(shown) })}
+          {/* "No pieces match" only blames a choice when one was made; an
+              empty wardrobe with nothing chosen just shows nothing. */}
+          {shown === 0 && activeCount(draft) > 0
+            ? words.none
+            : plural(shown, locale, words.showOne, words.showOther, { count: number(shown) })}
         </span>
       </button>
     </div>
