@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookmarkPlus, Check, Globe, Layers, Moon, SlidersHorizontal, Sun } from "lucide-react";
+import { ArrowLeft, BookmarkPlus, Check, ChevronRight, Globe, Layers, Moon, SlidersHorizontal, Sun, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -22,8 +22,17 @@ import {
   type ShopItem,
   type YumiOutfit,
 } from "@/lib/shop/catalog";
-import { COLLECTION03_COPY, SHOP_COLLECTIONS, type ShopCollection } from "@/lib/shop/collection03Presentation";
-import { SHOP_DEPARTMENTS, browseShop, outfitToKeep, type ShopDepartment } from "@/lib/shop/browsing";
+import { COLLECTION03_COPY, type ShopCollection } from "@/lib/shop/collection03Presentation";
+import {
+  SHOP_DEPARTMENTS,
+  browseShop,
+  collectionOf,
+  departmentFor,
+  isNewArrival,
+  outfitToKeep,
+  shelfPicks,
+  type ShopDepartment,
+} from "@/lib/shop/browsing";
 import { QUIET_SCENE, sceneFor } from "@/lib/shop/atmosphere";
 import {
   getQuarterHour,
@@ -42,7 +51,7 @@ import { setWornOutfit } from "@/lib/shop/wornOutfit";
 import EnergyCookie from "./EnergyCookie";
 import EnergyReward from "./EnergyReward";
 import ShopStage from "./ShopStage";
-import ShopCollectionMap from "./ShopCollectionMap";
+import ShopCollectionSwitch, { SHOP_COLLECTION_TILES } from "./ShopCollectionSwitch";
 import ShopIntroduction from "./ShopIntroduction";
 import ShopThumb from "./ShopThumb";
 import styles from "./YumiShop.module.css";
@@ -70,6 +79,10 @@ import styles from "./YumiShop.module.css";
 
 /** How small the stand gets as the catalogue scrolls; YumiShop.module.css agrees. */
 const STAND_SMALLEST = 0.6;
+
+/** How many pieces a shelf shows before "See all". */
+const SHELF_SIZE = 12;
+const NEW_SHELF_SIZE = 16;
 
 const EMPTY_STATE: WardrobeState = { earned: 0, paid: 0, spent: 0, balance: 0, owned: [], outfit: {} };
 
@@ -105,6 +118,9 @@ export default function YumiShop({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const leaving = useRef(false);
   const [onlyOwned, setOnlyOwned] = useState(false);
+  const [newOnly, setNewOnly] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const pendingWrite = useRef<Promise<boolean> | null>(null);
   const wardrobeRevision = useRef(0);
   const [confirming, setConfirming] = useState<ShopItem | null>(null);
@@ -187,10 +203,49 @@ export default function YumiShop({
 
   // --------------------------------------------------------- catalogue
   const groups = useMemo(() => browseShop({
-    department: category, country, collection, ownedOnly: onlyOwned, owned: new Set(state.owned),
-  }), [category, country, collection, onlyOwned, state.owned]);
+    department: category, country, collection, newOnly, ownedOnly: onlyOwned, owned: new Set(state.owned),
+  }), [category, country, collection, newOnly, onlyOwned, state.owned]);
   const shownCount = groups.reduce((count, group) => count + group.items.length, 0);
-  const filterCount = Number(country !== "all") + Number(collection !== "all");
+  const filterCount = Number(country !== "all");
+  /* The shop window (Chi, 2026-10-24: "先看櫥窗，再看全部"): with no
+     department chosen, each department shows a shelf of its range, the new
+     arrivals first, and "See all" opens the department's full grid. */
+  const showcase = !onlyOwned && !newOnly && category === "all";
+  const newShelf = useMemo(
+    () => showcase ? shelfPicks(groups.flatMap(group => group.items).filter(isNewArrival), NEW_SHELF_SIZE, item => departmentFor(item.slot)) : [],
+    [showcase, groups],
+  );
+  const newCount = useMemo(() => groups.reduce((count, group) => count + group.items.filter(isNewArrival).length, 0), [groups]);
+
+  /* A choice made from the stuck navigation, far down the page, brings its
+     results up to meet it rather than leaving the reader in the middle of
+     something that is no longer there. */
+  function browse(change: () => void) {
+    change();
+    requestAnimationFrame(() => {
+      const results = resultsRef.current;
+      const under = navRef.current?.getBoundingClientRect().bottom ?? 0;
+      if (results && results.getBoundingClientRect().top < under) results.scrollIntoView({ block: "start" });
+    });
+  }
+  /* The chosen department's tab, brought into the strip's view: "See all"
+     can choose one that is scrolled off its end. Only the strip scrolls. */
+  useEffect(() => {
+    const strip = navRef.current?.querySelector<HTMLElement>(`.${styles.tabs}`);
+    const tab = strip?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (!strip || !tab) return;
+    const left = tab.offsetLeft - strip.offsetLeft;
+    if (left < strip.scrollLeft || left + tab.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollTo({ left: left - (strip.clientWidth - tab.offsetWidth) / 2 });
+    }
+  }, [category, newOnly]);
+
+  function chooseDepartment(key: ShopDepartment | "all") {
+    browse(() => { setCategory(key); setNewOnly(false); });
+  }
+  function chooseView(owned: boolean) {
+    browse(() => { setOnlyOwned(owned); setCategory("all"); setCountry("all"); setCollection("all"); setNewOnly(false); });
+  }
 
   // ------------------------------------------------- the stand shrinking
   /* The stand shrinks as one picture (Chi, 2026-10-13: "原比例縮放"): a
@@ -364,6 +419,38 @@ export default function YumiShop({
         : !online ? copy.offline
           : null;
 
+  /** One piece: its picture on its collection's light, the new mark, what
+   * it costs or that it is owned. Tapping tries it on, or takes it off. */
+  function card(item: ShopItem) {
+    const trying = draft[item.slot] === item.id;
+    const wearing = worn[item.slot] === item.id;
+    return (
+      <button
+        type="button"
+        className={styles.card}
+        data-collection={collectionOf(item)}
+        data-coach-target="shop-item"
+        aria-pressed={trying}
+        disabled={busy || availability !== "open"}
+        onClick={() => tryOn(item)}
+      >
+        <ShopThumb item={item} className={styles.thumb} />
+        {isNewArrival(item) && !trying && !wearing && <span className={styles.newBadge}>{collectionCopy.newItem}</span>}
+        {(trying || wearing) && (
+          <span className={styles.tag} data-wearing={wearing ? "true" : "false"}>
+            {wearing ? copy.wearing : copy.tryingOn}
+          </span>
+        )}
+        <span className={styles.cardName}>{name(item)}</span>
+        <span className={styles.price}>
+          {owned.has(item.id)
+            ? <><Check size={13} strokeWidth={2.2} aria-hidden="true" />{copy.ownedBadge}</>
+            : <><EnergyCookie className={styles.priceCookie} />{item.price}</>}
+        </span>
+      </button>
+    );
+  }
+
   return (
     <div ref={pageRef} className={styles.page}>
       <div ref={topRef} className={styles.top} data-shrunk="false">
@@ -444,74 +531,149 @@ export default function YumiShop({
       <section className={styles.catalog} aria-label={copy.title}>
         {preview && <p className={styles.previewBadge}>{copy.preview}</p>}
         <ShopIntroduction openLabel={copy.boutique.openStory} closeLabel={copy.boutique.closeStory}>
-        <aside className={styles.keeperNote} aria-label={copy.boutique.curator}>
-          <div><span className={styles.keeperLabel}>{copy.boutique.curator}</span><p role="status">{keeperMessage}</p></div>
-        </aside>
-        <ShopCollectionMap collection={collection} onChoose={setCollection} copy={copy.boutique} labels={collectionCopy.labels} locale={locale} />
+          <aside className={styles.keeperNote} aria-label={copy.boutique.curator}>
+            <span className={styles.keeperLabel}>{copy.boutique.curator}</span>
+            <p role="status">{keeperMessage}</p>
+          </aside>
+          {/* The station's story: the coin tells it, the tiles below choose. */}
+          <div className={styles.story}>
+            <h2>{copy.boutique.title}</h2>
+            <p>{copy.boutique.intro}</p>
+            <ul>
+              {SHOP_COLLECTION_TILES.map(({ id }) => (
+                <li key={id} data-collection={id}>
+                  <strong>{collectionCopy.labels[id]}</strong>
+                  <span>{copy.boutique.stories[id]}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </ShopIntroduction>
-        <div className={styles.catalogToolbar}>
-        <div className={styles.wardrobeSwitch} role="group" aria-label={copy.title}>
-          <button type="button" aria-pressed={!onlyOwned} onClick={() => { setOnlyOwned(false); setCategory("all"); setCountry("all"); setCollection("all"); }}>{copy.browse.shopView}</button>
-          <button type="button" aria-pressed={onlyOwned} onClick={() => { setOnlyOwned(true); setCategory("all"); setCountry("all"); setCollection("all"); }}>{copy.browse.wardrobe}<span>{state.owned.length}</span></button>
-        </div>
-          <h2 className={styles.catalogSummary}>{category === "all" ? (onlyOwned ? copy.browse.wardrobe : copy.browse.all) : copy.browse.departments[category]} <span>{shownCount}</span></h2>
-          <button type="button" className={`${styles.chip} ${styles.filterIcon}`} aria-label={copy.browse.filters} title={copy.browse.filters} aria-haspopup="dialog" onClick={() => setFiltersOpen(true)}><SlidersHorizontal size={18} strokeWidth={1.6} aria-hidden="true" />{filterCount > 0 && <span className={styles.filterCount}>{filterCount}</span>}</button>
-        </div>
-        <div className={styles.tabs} role="group" aria-label={copy.browse.all}>
-          {(["all", ...SHOP_DEPARTMENTS] as const).map(key => (
-            <button key={key} type="button" className={styles.tab} aria-pressed={category === key} onClick={() => setCategory(key)}>
-              {key === "all" ? copy.browse.all : copy.browse.departments[key]}
-            </button>
-          ))}
-        </div>
-        <p className={styles.wearHint} role="status">{busy ? copy.browse.saving : copy.browse.autoSave}</p>
 
-        {status && (
-          <p className={styles.status} role="status">
-            {status}
-            {availability === "failed" && (
+        <div className={styles.catalogToolbar}>
+          <div className={styles.wardrobeSwitch} role="group" aria-label={copy.title}>
+            <button type="button" aria-pressed={!onlyOwned} onClick={() => chooseView(false)}>{copy.browse.shopView}</button>
+            <button type="button" aria-pressed={onlyOwned} onClick={() => chooseView(true)}>{copy.browse.wardrobe}<span>{state.owned.length}</span></button>
+          </div>
+          <button
+            type="button"
+            className={styles.filterKey}
+            aria-label={copy.browse.filters}
+            title={copy.browse.filters}
+            aria-haspopup="dialog"
+            onClick={() => setFiltersOpen(true)}
+          >
+            <SlidersHorizontal size={18} strokeWidth={1.7} aria-hidden="true" />
+            {filterCount > 0 && <span className={styles.filterCount}>{filterCount}</span>}
+          </button>
+        </div>
+
+        {!onlyOwned && (
+          <ShopCollectionSwitch
+            collection={collection}
+            onChoose={next => browse(() => setCollection(next))}
+            copy={copy.boutique}
+            labels={collectionCopy.labels}
+            locale={locale}
+          />
+        )}
+
+        {/* Stuck under the shrunk stand, so a department is one tap away
+            from anywhere in the catalogue. */}
+        <nav ref={navRef} className={styles.nav} aria-label={copy.browse.all}>
+          <div className={styles.tabs} role="group" aria-label={copy.browse.all}>
+            {(["all", ...SHOP_DEPARTMENTS] as const).map(key => (
+              <button key={key} type="button" className={styles.tab} aria-pressed={!newOnly && category === key} onClick={() => chooseDepartment(key)}>
+                {key === "all" ? copy.browse.all : copy.browse.departments[key]}
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        <div ref={resultsRef} className={styles.results} data-new-only={newOnly}>
+          <div className={styles.summary}>
+            <h2 className={styles.catalogSummary}>
+              {newOnly ? copy.browse.newArrivals
+                : category === "all" ? (onlyOwned ? copy.browse.wardrobe : copy.browse.all)
+                  : copy.browse.departments[category]}
+              {" "}<span>{shownCount}</span>
+            </h2>
+            {newOnly && (
               <button
                 type="button"
-                className={styles.retry}
-                onClick={() => { setAvailability("loading"); setAttempt(n => n + 1); }}
+                className={styles.clearNew}
+                aria-label={`${copy.browse.clearNew}: ${copy.browse.newArrivals}`}
+                onClick={() => browse(() => setNewOnly(false))}
               >
-                {copy.retry}
+                {copy.browse.newArrivals} · {shownCount.toLocaleString(locale)}
+                <X size={14} strokeWidth={2.2} aria-hidden="true" />
               </button>
             )}
-          </p>
-        )}
+            <p className={styles.wearHint} role="status">{busy ? copy.browse.saving : copy.browse.autoSave}</p>
+          </div>
 
-        {shownCount === 0 ? (
-          <p className={styles.empty}>{onlyOwned ? copy.emptyOwned : copy.empty}</p>
-        ) : (
-          groups.map(group => <section key={group.key} aria-labelledby={`shop-department-${group.key}`} className={styles.department}>
-          <h3 id={`shop-department-${group.key}`} className={styles.departmentHeading}>{copy.browse.departments[group.key]} <span>{group.items.length}</span></h3>
-          <ul className={styles.grid}>
-            {group.items.map(item => {
-              const trying = draft[item.slot] === item.id;
-              const wearing = worn[item.slot] === item.id;
-              return (
-                <li key={item.id}>
-                  <button type="button" className={styles.card} data-coach-target="shop-item" aria-pressed={trying} disabled={busy || availability !== "open"} onClick={() => tryOn(item)}>
-                    <ShopThumb item={item} className={styles.thumb} />
-                    {(trying || wearing) && (
-                      <span className={styles.tag} data-wearing={wearing ? "true" : "false"}>
-                        {wearing ? copy.wearing : copy.tryingOn}
-                      </span>
+          {status && (
+            <p className={styles.status} role="status">
+              {status}
+              {availability === "failed" && (
+                <button
+                  type="button"
+                  className={styles.retry}
+                  onClick={() => { setAvailability("loading"); setAttempt(n => n + 1); }}
+                >
+                  {copy.retry}
+                </button>
+              )}
+            </p>
+          )}
+
+          {shownCount === 0 ? (
+            <p className={styles.empty}>{onlyOwned ? copy.emptyOwned : copy.empty}</p>
+          ) : showcase ? (
+            <>
+              {newShelf.length > 0 && (
+                <section aria-labelledby="shop-shelf-new" className={styles.shelf} data-new="true">
+                  <header className={styles.shelfHeading}>
+                    <h3 id="shop-shelf-new">
+                      {copy.browse.newArrivals} <span>{newCount}</span>
+                      <small>{copy.browse.newArrivalsNote}</small>
+                    </h3>
+                    <button type="button" className={styles.seeAll} onClick={() => browse(() => setNewOnly(true))}>
+                      {fill(copy.browse.seeAll, { count: newCount.toLocaleString(locale) })}
+                      <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
+                    </button>
+                  </header>
+                  <ul className={styles.shelfRow}>{newShelf.map(item => <li key={item.id}>{card(item)}</li>)}</ul>
+                </section>
+              )}
+              {groups.map(group => (
+                <section key={group.key} aria-labelledby={`shop-department-${group.key}`} className={styles.shelf}>
+                  <header className={styles.shelfHeading}>
+                    <h3 id={`shop-department-${group.key}`}>{copy.browse.departments[group.key]} <span>{group.items.length}</span></h3>
+                    {group.items.length > SHELF_SIZE && (
+                      <button type="button" className={styles.seeAll} onClick={() => chooseDepartment(group.key)}>
+                        {fill(copy.browse.seeAll, { count: group.items.length.toLocaleString(locale) })}
+                        <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
+                      </button>
                     )}
-                    <span className={styles.cardName}>{name(item)}</span>
-                    <span className={styles.price}>
-                      {owned.has(item.id)
-                        ? <><Check size={13} strokeWidth={2.2} aria-hidden="true" />{copy.ownedBadge}</>
-                        : <><EnergyCookie className={styles.priceCookie} />{item.price}</>}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          </section>)
-        )}
+                  </header>
+                  <ul className={styles.shelfRow}>
+                    {shelfPicks(group.items, SHELF_SIZE).map(item => <li key={item.id}>{card(item)}</li>)}
+                  </ul>
+                </section>
+              ))}
+            </>
+          ) : (
+            groups.map(group => (
+              <section key={group.key} aria-labelledby={`shop-department-${group.key}`} className={styles.department}>
+                <h3 id={`shop-department-${group.key}`} className={styles.departmentHeading}>
+                  {copy.browse.departments[group.key]} <span>{group.items.length}</span>
+                </h3>
+                <ul className={styles.grid}>{group.items.map(item => <li key={item.id}>{card(item)}</li>)}</ul>
+              </section>
+            ))
+          )}
+        </div>
 
         <p className={styles.footnote}>{copy.howEarned}</p>
       </section>
@@ -642,12 +804,7 @@ export default function YumiShop({
                   {(["all", ...SHOP_COUNTRIES] as const).map(key => <option key={key} value={key}>{copy.countries[key]}</option>)}
                 </select>
               </label>
-              <label>{copy.browse.collection}
-                <select value={collection} onChange={event => setCollection(event.target.value as ShopCollection)}>
-                  {SHOP_COLLECTIONS.map(key => <option key={key} value={key}>{collectionCopy.labels[key]}</option>)}
-                </select>
-              </label>
-              <button type="button" className={styles.secondary} disabled={!filterCount} onClick={() => {setCountry("all");setCollection("all");}}>{copy.browse.clear}</button>
+              <button type="button" className={styles.secondary} disabled={!filterCount} onClick={() => setCountry("all")}>{copy.browse.clear}</button>
             </div>
       </BottomSheet>
 

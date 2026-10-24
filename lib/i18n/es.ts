@@ -2870,6 +2870,10 @@ const spanish: TranslationDictionary = {
       "clear": "Borrar filtros",
       "saving": "Guardando el conjunto…",
       "autoSave": "Los artículos adquiridos se guardan automáticamente. Las pruebas sin comprar se quedan aquí.",
+      "newArrivals": "Novedades",
+      "newArrivalsNote": "Estación 33 · Colección 04",
+      "seeAll": "Ver las {count}",
+      "clearNew": "Cerrar",
       "departments": {
             "eyes": "Ojos",
             "eyewear": "Gafas",

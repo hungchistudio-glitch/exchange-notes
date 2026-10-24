@@ -2676,6 +2676,10 @@ const french: TranslationDictionary = {
       "clear": "Effacer les filtres",
       "saving": "Enregistrement de la tenue…",
       "autoSave": "Les articles possédés sont enregistrés automatiquement. Les essais non achetés restent ici.",
+      "newArrivals": "Nouveautés",
+      "newArrivalsNote": "Station 33 · Collection 04",
+      "seeAll": "Voir les {count}",
+      "clearNew": "Fermer",
       "departments": {
             "eyes": "Yeux",
             "eyewear": "Lunettes",
