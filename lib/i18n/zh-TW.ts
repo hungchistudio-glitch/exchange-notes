@@ -1257,6 +1257,16 @@ const traditionalChinese: TranslationDictionary = {
       tapToHear: "點一下 Yumi，聆聽並觀看目前的發音方式。",
     },
 
+    heteronyms: {
+      summary: "有 {count} 種讀音",
+      summaryCharacter: "「{character}」有 {count} 種讀音",
+      show: "展開所有讀音",
+      hide: "收起讀音",
+      usedHere: "這裡唸這個",
+      play: "播放「{example}」",
+      suggested: "Yumi 的建議——可再查字典確認。",
+    },
+
     lab: {
       backToLab: "回到實驗室",
       learningLabel: "正在學{language}",
@@ -1367,6 +1377,22 @@ const traditionalChinese: TranslationDictionary = {
           sandhi: "三聲連讀：前一個字唸成第二聲",
         },
       },
+      readings: {
+        title: "一字多音",
+        subtitle: "同一個寫法，不同的讀音——也是不同的意思。",
+        compare: "對照",
+        quiz: "聽音選讀音",
+        playAll: "依序聽",
+        question: "你聽到的是哪個讀音？",
+        listenAgain: "再聽一次",
+        correct: "答對了！是「{example}」。",
+        incorrect: "差一點，是「{example}」。",
+        next: "下一題",
+        result: "答對 {correct} / {total} 題",
+        again: "再練一輪",
+        empty: "這個語言還沒有收錄的字。",
+        count: "{count} 種讀音",
+      },
 
       modules: {
         sounds: { title: "聲音", description: "每個音怎麼發出來" },
@@ -1375,6 +1401,7 @@ const traditionalChinese: TranslationDictionary = {
         words: { title: "單字", description: "來自你自己的字庫" },
         rhythm: { title: "節奏", description: "重音、時長、旋律" },
         review: { title: "複習", description: "該回頭練的內容" },
+        readings: { title: "一字多音", description: "同一個字，不同讀音" },
       },
 
       today: {

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import Link from "next/link";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
@@ -29,6 +29,13 @@ import { knownFromLookup, saveHelloDraft } from "@/lib/hello/draft";
 import { peekImageCapture } from "@/lib/lexicon/pendingImageCapture";
 import type useLexiconSave from "@/hooks/lexicon/useLexiconSave";
 import type { LexiconEntry, LexiconLanguages } from "@/lib/lexicon/types";
+
+/*
+ * A headword's other readings (破音字, "record" the noun and the verb),
+ * fetched only when a result is drawn: five languages of lists that Home's
+ * first paint should not carry (tests/routeImportWeight.test.ts).
+ */
+const OtherReadings = lazy(() => import("@/components/pronunciation/OtherReadings"));
 import {
   INTERFACE_LANGUAGE_CODE,
   LANGUAGES,
@@ -566,6 +573,18 @@ export default function LexiconResults({
                       }
                     </p>
                   )}
+
+                  <Suspense fallback={null}>
+                    <OtherReadings
+                      className="mt-2.5"
+                      text={entry.term}
+                      language={languages.sourceLanguage}
+                      partOfSpeech={entry.partOfSpeech}
+                      ipa={entry.termIpa}
+                      suggested={entry.termReadings}
+                      tone={tone}
+                    />
+                  </Suspense>
                 </div>
               )}
 

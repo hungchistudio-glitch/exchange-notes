@@ -84,8 +84,17 @@ function hydrateOnce(): Promise<void> {
  */
 let snapshot: ReadonlyMap<string, WordPhonetics> = new Map();
 
+/*
+ * Chinese readings changed on 2026-10-19 to Taiwan's (lib/chinese/
+ * taiwanReadings.ts): 銀行 had been cached as yín xíng on every device that
+ * ever showed it. A new key for Chinese leaves those answers unread rather
+ * than served; they are asked for once more and kept under it.
+ */
+const READINGS_EDITION: Partial<Record<LanguageCode, string>> = { "zh-TW": "tw" };
+
 function key(language: LanguageCode, text: string): string {
-  return `${language}:${text}`;
+  const edition = READINGS_EDITION[language];
+  return edition ? `${language}~${edition}:${text}` : `${language}:${text}`;
 }
 
 /*

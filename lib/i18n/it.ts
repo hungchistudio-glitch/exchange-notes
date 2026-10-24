@@ -1215,6 +1215,16 @@ const italian: TranslationDictionary = {
       demoAriaLabel: "Yumi mostra la posizione di bocca e lingua per questo suono",
       tapToHear: "Tocca Yumi per ascoltare e vedere questo suono.",
     },
+    heteronyms: {
+      summary: "{count} pronunce",
+      summaryCharacter: "«{character}» ha {count} pronunce",
+      show: "Mostra tutte le pronunce",
+      hide: "Nascondi le pronunce",
+      usedHere: "È questa qui",
+      play: "Ascolta «{example}»",
+      suggested: "Suggerimento di Yumi: meglio verificarlo su un dizionario.",
+    },
+
     lab: {
       backToLab: "Torna al laboratorio",
       learningLabel: "Stai imparando: {language}",
@@ -1324,6 +1334,22 @@ const italian: TranslationDictionary = {
           sandhi: "Un terzo tono davanti a un altro si dice come un secondo",
         },
       },
+      readings: {
+        title: "Una grafia, più letture",
+        subtitle: "Le stesse lettere, un altro suono — e un altro significato.",
+        compare: "Confronta",
+        quiz: "Ascolta e scegli",
+        playAll: "Ascoltale di seguito",
+        question: "Quale pronuncia hai sentito?",
+        listenAgain: "Riascolta",
+        correct: "Giusto: era «{example}».",
+        incorrect: "Quasi: era «{example}».",
+        next: "Avanti",
+        result: "{correct} su {total}",
+        again: "Un altro giro",
+        empty: "Ancora nessuna parola per questa lingua.",
+        count: "{count} pronunce",
+      },
       modules: {
         sounds: {
           title: "Suoni",
@@ -1349,6 +1375,7 @@ const italian: TranslationDictionary = {
           title: "Ripasso",
           description: "Cosa va rivisto",
         },
+        readings: { title: "Letture", description: "Una grafia, più suoni" },
       },
       today: {
         eyebrow: "Allenamento di oggi",

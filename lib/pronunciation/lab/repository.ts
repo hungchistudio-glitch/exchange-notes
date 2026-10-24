@@ -10,7 +10,7 @@ import type {
   PronunciationProgress,
   PronunciationTrainingSession,
   ProgressByUnit,
-  PronunciationModuleId,
+  AttemptModule,
   TrainingItemOutcome,
 } from "./types";
 
@@ -113,7 +113,7 @@ export async function fetchPronunciationProgress(
 export type AttemptRecord = {
   language: LanguageCode;
   unitId: string;
-  module: PronunciationModuleId;
+  module: AttemptModule;
   outcome: TrainingItemOutcome;
   /** Absent when nothing measured this attempt. Never substituted. */
   score?: number;

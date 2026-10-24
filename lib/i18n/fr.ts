@@ -1215,6 +1215,16 @@ const french: TranslationDictionary = {
       demoAriaLabel: "Yumi montre la position de la bouche et de la langue pour ce son",
       tapToHear: "Touchez Yumi pour entendre et voir ce son.",
     },
+    heteronyms: {
+      summary: "{count} prononciations",
+      summaryCharacter: "« {character} » a {count} prononciations",
+      show: "Voir toutes les prononciations",
+      hide: "Masquer les prononciations",
+      usedHere: "C'est celle-ci ici",
+      play: "Écouter « {example} »",
+      suggested: "Suggestion de Yumi — à vérifier dans un dictionnaire.",
+    },
+
     lab: {
       backToLab: "Retour au laboratoire",
       learningLabel: "Apprentissage : {language}",
@@ -1324,6 +1334,22 @@ const french: TranslationDictionary = {
           sandhi: "Un troisième ton devant un autre se dit comme un deuxième",
         },
       },
+      readings: {
+        title: "Une graphie, plusieurs lectures",
+        subtitle: "Les mêmes lettres, un autre son — et un autre sens.",
+        compare: "Comparer",
+        quiz: "Écouter et choisir",
+        playAll: "Les écouter à la suite",
+        question: "Quelle prononciation as-tu entendue ?",
+        listenAgain: "Réécouter",
+        correct: "Bravo — c'était « {example} ».",
+        incorrect: "Presque — c'était « {example} ».",
+        next: "Suivant",
+        result: "{correct} sur {total}",
+        again: "Encore une série",
+        empty: "Pas encore de mots pour cette langue.",
+        count: "{count} prononciations",
+      },
       modules: {
         sounds: {
           title: "Sons",
@@ -1349,6 +1375,7 @@ const french: TranslationDictionary = {
           title: "Révision",
           description: "Ce qu'il faut revoir",
         },
+        readings: { title: "Lectures", description: "Une graphie, plusieurs sons" },
       },
       today: {
         eyebrow: "Entraînement du jour",

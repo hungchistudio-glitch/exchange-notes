@@ -210,5 +210,16 @@ ${exampleSentenceRules()}
   phonemic, in forward slashes, with ˈ before the stressed syllable, e.g.
   /sa.ly/. Leave it empty when termLanguage is Chinese, or when you are
   unsure — an empty transcription is better than a wrong one.
+- "termReadings" lists every pronunciation of "term" when the same spelling is
+  said in more than one way with a different meaning or role — English
+  "record" (/ˈrɛkərd/ the noun, /rɪˈkɔrd/ the verb), French "fils" (/fis/ sons,
+  /fil/ threads), Italian "ancora" (/ˈaŋ.ko.ra/ anchor, /aŋˈko.ra/ still),
+  Chinese 行 (xíng, háng). For each: "pronunciation" is IPA in forward
+  slashes, or for Chinese the Taiwan standard reading in pinyin with tone
+  marks; "meaning" is what it means said that way, a few words in
+  translationLanguage; "example" is a short phrase in termLanguage that can
+  only be read that way. Most words have one pronunciation: then, or when
+  you are unsure, leave it an empty array. Never list two spellings of the
+  same sound, or regional accents.
   `.trim();
 }

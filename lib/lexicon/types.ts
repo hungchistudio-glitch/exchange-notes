@@ -115,6 +115,23 @@ export function readInsight(value: unknown): LexiconInsight | null {
  * language. Nothing in the name says which those are, which is the point —
  * `termLanguage` and `translationLanguage` say it instead.
  */
+/**
+ * One way a headword is said, when it is said more than one way: 行 is
+ * xíng and háng, "record" /ˈrɛkərd/ and /rɪˈkɔrd/. The lookup's model lists
+ * them for words the app's own lists (lib/pronunciation/heteronyms) do not
+ * have; those lists win where they do.
+ */
+export type TermReading = {
+  /** IPA for most languages; pinyin with tone marks for Chinese. */
+  pronunciation: string;
+  /** Chinese only: the same reading in zhuyin, computed on the server. */
+  zhuyin?: string;
+  /** What the word means read this way, in the translation language. */
+  meaning: string;
+  /** A short phrase in the term's language that can only be read this way. */
+  example: string;
+};
+
 export type LexiconEntry = {
   term: string;
   translation: string;
@@ -124,6 +141,12 @@ export type LexiconEntry = {
    * app/api/classify-text/route.ts. Absent on cached rows written before it.
    */
   termIpa?: string;
+  /**
+   * Every way the headword is said, when there is more than one — see
+   * TermReading. Absent when there is only one, and on rows written before
+   * the lookup asked.
+   */
+  termReadings?: TermReading[];
   termExample: string;
   translationExample: string;
   confidence: "high" | "medium" | "low";

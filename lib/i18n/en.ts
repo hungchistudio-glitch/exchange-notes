@@ -1272,6 +1272,16 @@ const english: TranslationDictionary = {
       tapToHear: "Tap Yumi to hear and watch this sound.",
     },
 
+    heteronyms: {
+      summary: "{count} readings",
+      summaryCharacter: "「{character}」 has {count} readings",
+      show: "Show every reading",
+      hide: "Hide the readings",
+      usedHere: "Used here",
+      play: "Play “{example}”",
+      suggested: "Suggested by Yumi — worth checking in a dictionary.",
+    },
+
     lab: {
       backToLab: "Back to the Lab",
       learningLabel: "Learning {language}",
@@ -1382,6 +1392,22 @@ const english: TranslationDictionary = {
           sandhi: "A third tone before another third tone is said as a second tone",
         },
       },
+      readings: {
+        title: "One spelling, several readings",
+        subtitle: "Same letters, a different sound — and a different meaning.",
+        compare: "Compare",
+        quiz: "Listen and choose",
+        playAll: "Hear them in turn",
+        question: "Which reading did you hear?",
+        listenAgain: "Listen again",
+        correct: "Right — that was “{example}”.",
+        incorrect: "Not quite — it was “{example}”.",
+        next: "Next",
+        result: "{correct} of {total} right",
+        again: "Another round",
+        empty: "No words for this language yet.",
+        count: "{count} readings",
+      },
 
       modules: {
         sounds: { title: "Sounds", description: "How each one is made" },
@@ -1390,6 +1416,7 @@ const english: TranslationDictionary = {
         words: { title: "Words", description: "From your own vocabulary" },
         rhythm: { title: "Rhythm", description: "Stress, timing, melody" },
         review: { title: "Review", description: "What's due to come back" },
+        readings: { title: "Readings", description: "One spelling, several sounds" },
       },
 
       today: {
