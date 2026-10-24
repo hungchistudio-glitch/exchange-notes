@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:late-react": "vitest run --config vitest.late-scheduler.config.mts",
     "test:widget": "node scripts/verify-scriptable-widget.mjs",
     "generate:brand": "node scripts/generate-brand.mjs",
     "generate:native": "bash native/apple/scripts/generate-project.sh",
