@@ -2878,6 +2878,22 @@ const english: TranslationDictionary = {
       "newArrivalsNote": "Station 33 · Collection 04",
       "seeAll": "See all {count}",
       "clearNew": "Close",
+      "refine": {
+        "sort": "Order",
+        "sorts": { "recommended": "Recommended", "priceLow": "Price: low to high", "priceHigh": "Price: high to low", "newest": "Newest first" },
+        "price": "Price",
+        "ownership": "Ownership",
+        "ownerships": { "unowned": "Not owned yet", "owned": "Owned", "affordable": "Affordable now" },
+        "colour": "Colour",
+        "colourNote": "By each piece’s main colour.",
+        "colours": { "gold": "Gold & amber", "red": "Red & pink", "violet": "Violet", "green": "Green", "blue": "Blue & teal", "neutral": "Black, white & grey" },
+        "origin": "Origin",
+        "showOne": "Show {count} piece",
+        "showOther": "Show {count} pieces",
+        "none": "No pieces match",
+        "reset": "Clear all",
+        "remove": "Remove {filter}"
+      },
       "departments": {
             "eyes": "Eyes",
             "eyewear": "Eyewear",

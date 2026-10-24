@@ -256,3 +256,50 @@ it("opens the personal wardrobe with all owned items and saves dressing from it"
   expect(screen.getByRole("region", { name: /New arrivals/ })).toBeInTheDocument();
   expect(stand()).toEqual({ eyewear: "monocle" });
 });
+
+it("filters from the sheet: nothing changes until its key is pressed, and each choice comes off on its own", async () => {
+  reader.language = "english";
+  render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
+  department("Earrings");
+  // No earring costs 24 or less, so that choice cannot be made here.
+  fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+  expect(within(await screen.findByRole("dialog", {}, { timeout: 5000 })).getByRole("button", { name: /≤ 24/ })).toBeDisabled();
+  fireEvent.click(within(screen.getByRole("dialog")).getAllByRole("button", { name: "Close" })[0]);
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  const prices = () => [...document.querySelectorAll('[data-coach-target="shop-item"]')].map(card => card.textContent ?? "");
+  const before = prices().length;
+
+  // Chosen but not applied: closing the sheet leaves the catalogue alone.
+  fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+  let sheet = await screen.findByRole("dialog", {}, { timeout: 5000 });
+  fireEvent.click(within(sheet).getByRole("button", { name: /27–39/ }));
+  fireEvent.click(within(sheet).getAllByRole("button", { name: "Close" })[0]);
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(prices()).toHaveLength(before);
+
+  // Applied: the key says how many, and the catalogue shows exactly those.
+  fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+  sheet = await screen.findByRole("dialog", {}, { timeout: 5000 });
+  const middle = within(sheet).getByRole("button", { name: /27–39/ });
+  expect(middle).toHaveAttribute("aria-pressed", "false");
+  fireEvent.click(middle);
+  // Colour is folded until opened.
+  const colour = within(sheet).getByRole("button", { name: /^Colour/ });
+  expect(colour).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(colour);
+  expect(colour).toHaveAttribute("aria-expanded", "true");
+  fireEvent.click(within(sheet).getByRole("button", { name: /Gold & amber/ }));
+  const apply = within(sheet.parentElement!).getByRole("button", { name: /^Show \d+ piece/ });
+  const promised = Number(apply.textContent!.match(/\d+/)![0]);
+  fireEvent.click(apply);
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(prices()).toHaveLength(promised);
+  expect(promised).toBeLessThan(before);
+  expect(screen.getByRole("button", { name: "Filters" })).toHaveTextContent("2");
+
+  // Each applied choice is a chip that takes itself off.
+  fireEvent.click(screen.getByRole("button", { name: "Remove Gold & amber" }));
+  expect(prices().length).toBeGreaterThanOrEqual(promised);
+  fireEvent.click(screen.getByRole("button", { name: "Remove 27–39" }));
+  expect(prices()).toHaveLength(before);
+}, 20_000);

@@ -25,15 +25,19 @@ export function collectionOf(item: ShopItem): ShopCollectionKey {
   return 'original';
 }
 
+/**
+ * Where the reader is: a department (or all), a collection, the new
+ * arrivals, the wardrobe. The filter sheet narrows this further
+ * (filters.ts); its counts are counted within it.
+ */
 export function browseShop(filters: {
-  department: ShopDepartment | 'all'; country: ShopItem['country'] | 'all';
+  department: ShopDepartment | 'all';
   collection: ShopCollection; ownedOnly: boolean; owned: ReadonlySet<string>;
   newOnly?: boolean;
 }) {
   return SHOP_DEPARTMENTS.filter(key => filters.department === 'all' || key === filters.department)
     .map(key => ({ key, items: SHOP_ITEMS.filter(item =>
       departmentFor(item.slot) === key &&
-      (filters.country === 'all' || item.country === filters.country) &&
       inShopCollection(item, filters.collection) &&
       (!filters.newOnly || isNewArrival(item)) &&
       (!filters.ownedOnly || filters.owned.has(item.id)),
