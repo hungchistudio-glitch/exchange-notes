@@ -30,6 +30,36 @@ const geistMono = Geist_Mono({
  * previews, and the manifest is the one an install prompt reads (see
  * lib/pwa/webManifest.ts for why each language has its own).
  */
+/*
+ * Google Fonts stylesheets, applied without blocking the first paint
+ * (RootLayout's <head>). Not next/font, deliberately:
+ *
+ *  - Noto Sans TC is the fallback for Traditional Chinese on platforms
+ *    without a refined native CJK font (Windows without JhengHei, Linux,
+ *    some Android builds). Google's CDN subsets it per character on the
+ *    fly; self-hosting a full CJK family would bundle several MB.
+ *  - Noto Serif TC is the serif Standard Mode sets titles and words in
+ *    (app/tactile.css), for the Chinese Georgia has no glyphs for. Same
+ *    slicing, so a screen downloads only the slices its headings use, and
+ *    Cosmic, which never asks for the family, downloads no font files.
+ *  - The last two are pinned to exact character lists with `text=`, which
+ *    next/font cannot express: the Pronunciation Lab's Zhuyin symbols and
+ *    tone marks, and its IPA symbols (lib/pronunciation/{zhuyinSounds,
+ *    englishSounds}.ts). Pinning guarantees the glyphs are in the file, so
+ *    they never fall back to a mismatched system font (the "亂碼/替代符號"
+ *    bug).
+ */
+const FONT_STYLESHEETS = [
+  { href: "https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" },
+  { href: "https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600&display=swap" },
+  {
+    href: "https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&text=%CB%87%CB%8A%CB%8B%CB%99%E3%84%85%E3%84%86%E3%84%87%E3%84%88%E3%84%89%E3%84%8A%E3%84%8B%E3%84%8C%E3%84%8D%E3%84%8E%E3%84%8F%E3%84%90%E3%84%91%E3%84%92%E3%84%93%E3%84%94%E3%84%95%E3%84%96%E3%84%97%E3%84%98%E3%84%99%E3%84%9A%E3%84%9B%E3%84%9C%E3%84%9D%E3%84%9E%E3%84%9F%E3%84%A0%E3%84%A1%E3%84%A2%E3%84%A3%E3%84%A4%E3%84%A5%E3%84%A6%E3%84%A7%E3%84%A8%E3%84%A9&display=swap",
+  },
+  {
+    href: "https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&text=abdefghijklmnoprstuvwz%C3%A6%C3%B0%C5%8B%C9%91%C9%94%C9%99%C9%9B%C9%9C%C9%A1%C9%AA%CA%83%CA%8A%CA%8C%CA%92%CB%90%CE%B8&display=swap",
+  },
+] as const;
+
 export async function generateMetadata(): Promise<Metadata> {
   const language = await getServerInterfaceLanguage();
 
@@ -193,68 +223,41 @@ export default async function RootLayout({
       }}
     >
       <head>
-        {/* eslint-disable @next/next/no-page-custom-font --
-            The rule wants font <link>s moved out of a page and into the
-            document, and in the App Router this file *is* that document —
-            a root layout is the one place these belong. It fires anyway
-            because the rule predates the App Router and only recognises
-            pages/_document.
+        {/* Fonts from Google's CDN rather than next/font, which has no
+            `text` option (node_modules/next/dist/docs/01-app/03-api-reference/
+            02-components/font.md) for the character pinning two of them
+            depend on, and self-hosts, the opposite of what the CJK family
+            wants. FONT_STYLESHEETS says why each one exists. */}
 
-            Its other suggestion, next/font, cannot express what the three
-            links below need. next/font has no `text` option (see
-            node_modules/next/dist/docs/01-app/03-api-reference/02-components/font.md
-            — src, weight, style, subsets, axes, display, preload, fallback,
-            adjustFontFallback, variable, declarations), so the character
-            pinning two of them depend on has no equivalent, and it
-            self-hosts, which is the opposite of what the CJK family wants.
-            Each link is deliberate for a reason given below it. */}
-
-        {/* Noto Sans TC fallback for Traditional Chinese on platforms
-            without a refined native CJK font (e.g. Windows without
-            JhengHei, Linux, some Android builds). Loaded from Google's
-            CDN — which subsets per-character on the fly — rather than
-            next/font, since self-hosting a full CJK family would bundle
-            several MB into the app. */}
+        {/* Google's two font hosts, connected before the stylesheets
+            below ask them for anything. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
-          rel="stylesheet"
+        {/* The four stylesheets below, each kept for the reason given beside
+            it in FONT_STYLESHEETS. They are fetched now (preload) but
+            applied by the script after them, which makes them stop blocking
+            the first paint: every page waited on four cross-origin requests
+            before drawing anything (2026-10-24 audit), while the fonts they
+            describe were already display=swap, drawn in the fallback until
+            they land. So nothing about how text looks changes, only when the
+            page first appears. Without JavaScript they apply as before. */}
+        {FONT_STYLESHEETS.map(({ href }) => (
+          <link key={href} rel="preload" as="style" href={href} />
+        ))}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `${JSON.stringify(FONT_STYLESHEETS.map(({ href }) => href))}.forEach(function(h){var l=document.createElement("link");l.rel="stylesheet";l.href=h;document.head.appendChild(l)})`,
+          }}
         />
-
-        {/* The serif Standard Mode sets titles and words in (app/tactile.css),
-            for the Chinese that Georgia has no glyphs for. Same CDN and the
-            same per-character slicing as the sans above, so a screen only
-            downloads the font slices its headings use, and Cosmic, which
-            never asks for the family, downloads no font files (only this
-            small stylesheet, alongside the others). One weight. */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600&display=swap"
-          rel="stylesheet"
-        />
-
-        {/* Two narrowly-scoped Google Fonts requests, each pinned to an
-            exact character list via the `text=` param instead of relying
-            on automatic language-subsetting. This guarantees the glyphs
-            are actually present in the downloaded font file — the
-            Pronunciation Lab's Zhuyin symbols/tone marks and IPA symbols
-            are small, fixed sets, so this is cheap and removes any risk of
-            them silently falling back to a mismatched system font (the
-            "亂碼/替代符號" bug). See lib/pronunciation/{zhuyinSounds,
-            englishSounds}.ts for the source symbols. */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&text=%CB%87%CB%8A%CB%8B%CB%99%E3%84%85%E3%84%86%E3%84%87%E3%84%88%E3%84%89%E3%84%8A%E3%84%8B%E3%84%8C%E3%84%8D%E3%84%8E%E3%84%8F%E3%84%90%E3%84%91%E3%84%92%E3%84%93%E3%84%94%E3%84%95%E3%84%96%E3%84%97%E3%84%98%E3%84%99%E3%84%9A%E3%84%9B%E3%84%9C%E3%84%9D%E3%84%9E%E3%84%9F%E3%84%A0%E3%84%A1%E3%84%A2%E3%84%A3%E3%84%A4%E3%84%A5%E3%84%A6%E3%84%A7%E3%84%A8%E3%84%A9&display=swap"
-          rel="stylesheet"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&text=abdefghijklmnoprstuvwz%C3%A6%C3%B0%C5%8B%C9%91%C9%94%C9%99%C9%9B%C9%9C%C9%A1%C9%AA%CA%83%CA%8A%CA%8C%CA%92%CB%90%CE%B8&display=swap"
-          rel="stylesheet"
-        />
-        {/* eslint-enable @next/next/no-page-custom-font */}
+        <noscript>
+          {FONT_STYLESHEETS.map(({ href }) => (
+            <link key={href} rel="stylesheet" href={href} />
+          ))}
+        </noscript>
       </head>
       <body className="min-h-full flex flex-col">
         {/*
