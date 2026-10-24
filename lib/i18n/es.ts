@@ -475,8 +475,8 @@ const spanish: TranslationDictionary = {
         },
         keep: {
           body:
-            "Guarda una palabra nueva y recibes dos cosas: una galleta en Inicio para alimentarme y +1 galleta de energía para la tienda.",
-          tag: "Guárdala · +1 galleta de energía",
+            "Guarda una palabra nueva y recibes dos cosas: una galleta en Inicio para alimentarme y +3 galletas de energía para la tienda.",
+          tag: "Guárdala · +3 galletas de energía",
         },
         feed: {
           body:
@@ -520,7 +520,7 @@ const spanish: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Las galletas de energía son el dinero de mi tienda; guardar una palabra por primera vez te da una. Toca la bolsa que brilla arriba a la derecha para entrar.",
+            "Las galletas de energía son el dinero de mi tienda; guardar una palabra por primera vez te da 3. Toca la bolsa que brilla arriba a la derecha para entrar.",
         },
         tryOn: {
           body:
@@ -2745,7 +2745,7 @@ const spanish: TranslationDictionary = {
     goBack: "Volver",
     cookiesOne: "{count} galleta de energía",
     cookiesOther: "{count} galletas de energía",
-    howEarned: "Guardar una palabra por primera vez da 1 galleta de energía; superar todas las tarjetas de un repaso da 3 más.",
+    howEarned: "Guardar una palabra por primera vez da 3 galletas de energía, y superar todas las tarjetas de un repaso, otras 3.",
     stage: "Probador 3D de Yumi. Arrastra para girarla o usa las flechas.",
     hint: "Arrastra para 360° · Pellizca para ampliar",
     views: "Vistas",

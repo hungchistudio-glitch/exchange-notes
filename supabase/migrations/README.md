@@ -143,6 +143,9 @@ nothing needed renaming: `20261024205753_index_unindexed_foreign_keys` and
 `20261024205803_drop_vocabulary_examples_backup_20260831`. Applying first and
 naming the file second is the order that cannot drift.
 
+`20261024215615_yumi_save_word_three_cookies` (2026-10-24, three cookies a
+saved word) was named the same way, from the version read back.
+
 **Sixteen renames across nine occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.

@@ -59,7 +59,7 @@ export type ShopItem = {
   id: string;
   country: ShopCountry;
   slot: ShopSlot;
-  /** In energy cookies. One saved word is one cookie. */
+  /** In energy cookies: a newly saved word earns three (lib/shop/energy.ts). */
   price: number;
   /** Swatch colour while a rendered thumbnail is not available. */
   tone: string;

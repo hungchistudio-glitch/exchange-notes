@@ -474,8 +474,8 @@ const italian: TranslationDictionary = {
         },
         keep: {
           body:
-            "Salva una parola nuova e ricevi due cose: un biscotto nella Home per nutrirmi e +1 biscotto energia per il negozio.",
-          tag: "Salvala · +1 biscotto energia",
+            "Salva una parola nuova e ricevi due cose: un biscotto nella Home per nutrirmi e +3 biscotti energia per il negozio.",
+          tag: "Salvala · +3 biscotti energia",
         },
         feed: {
           body:
@@ -519,7 +519,7 @@ const italian: TranslationDictionary = {
         },
         cookies: {
           body:
-            "I biscotti energia sono la moneta del mio negozio; salvare una parola per la prima volta te ne fa guadagnare uno. Tocca la borsa che brilla in alto a destra per entrare.",
+            "I biscotti energia sono la moneta del mio negozio; salvare una parola per la prima volta te ne fa guadagnare 3. Tocca la borsa che brilla in alto a destra per entrare.",
         },
         tryOn: {
           body:
@@ -2551,7 +2551,7 @@ const italian: TranslationDictionary = {
     goBack: "Indietro",
     cookiesOne: "{count} biscotto energia",
     cookiesOther: "{count} biscotti energia",
-    howEarned: "Salvare una parola per la prima volta dà 1 biscotto energia; superare tutte le carte di un ripasso ne dà altri 3.",
+    howEarned: "Salvare una parola per la prima volta dà 3 biscotti energia, e superare tutte le carte di un ripasso altri 3.",
     stage: "Camerino 3D di Yumi. Trascina per farla girare, oppure usa le frecce.",
     hint: "Trascina per 360° · Pizzica per lo zoom",
     views: "Viste",

@@ -475,8 +475,8 @@ const english: TranslationDictionary = {
         },
         keep: {
           body:
-            "Save a new word and you get two things: a cookie on Home to feed me, and +1 energy cookie for the shop.",
-          tag: "Save it · +1 energy cookie",
+            "Save a new word and you get two things: a cookie on Home to feed me, and +3 energy cookies for the shop.",
+          tag: "Save it · +3 energy cookies",
         },
         feed: {
           body:
@@ -520,7 +520,7 @@ const english: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Energy cookies are my shop's money. Saving a word for the first time earns an energy cookie. Tap the glowing bag at the top right to come in.",
+            "Energy cookies are my shop's money. Saving a word for the first time earns 3 energy cookies. Tap the glowing bag at the top right to come in.",
         },
         tryOn: {
           body:
@@ -2749,7 +2749,7 @@ const english: TranslationDictionary = {
     goBack: "Back",
     cookiesOne: "{count} energy cookie",
     cookiesOther: "{count} energy cookies",
-    howEarned: "Saving a word for the first time earns 1 energy cookie; passing every card in a review round earns 3 more.",
+    howEarned: "Saving a word for the first time earns 3 energy cookies, and so does passing every card in a review round.",
     stage: "Yumi’s 3D try-on stand. Drag to turn her; the arrow keys turn her too.",
     hint: "Drag for 360° · Pinch to zoom",
     views: "Views",

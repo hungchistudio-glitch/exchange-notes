@@ -51,7 +51,13 @@ import {
   type FilterGroup,
   type ShopFilters,
 } from "@/lib/shop/filters";
-import { ENERGY_LANDED_EVENT, ENERGY_PER_USD, SUPPLY_PACKS_USD } from "@/lib/shop/energy";
+import {
+  ENERGY_LANDED_EVENT,
+  ENERGY_PER_REVIEW_ROUND,
+  ENERGY_PER_SAVED_WORD,
+  ENERGY_PER_USD,
+  SUPPLY_PACKS_USD,
+} from "@/lib/shop/energy";
 import { markScrolling } from "@/lib/shop/scrollQuiet";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
@@ -810,12 +816,12 @@ export default function YumiShop({
               <li>
                 <BookmarkPlus size={18} strokeWidth={1.8} aria-hidden="true" />
                 <span>{copy.energy.ruleSave}</span>
-                <strong><EnergyCookie className={styles.priceCookie} />+1</strong>
+                <strong><EnergyCookie className={styles.priceCookie} />+{ENERGY_PER_SAVED_WORD}</strong>
               </li>
               <li>
                 <Layers size={18} strokeWidth={1.8} aria-hidden="true" />
                 <span>{copy.energy.ruleReview}</span>
-                <strong><EnergyCookie className={styles.priceCookie} />+3</strong>
+                <strong><EnergyCookie className={styles.priceCookie} />+{ENERGY_PER_REVIEW_ROUND}</strong>
               </li>
             </ul>
           </section>
