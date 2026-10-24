@@ -1,6 +1,6 @@
 import type { SpeechLanguage } from "@/lib/speech";
 
-import { getSpeechSettings, getVoiceForLanguage } from "@/lib/speech";
+import { getSpeechSettings, getVoiceForLanguage, preferPlaybackAudio } from "@/lib/speech";
 
 let currentAudio: HTMLAudioElement | null = null;
 
@@ -28,6 +28,8 @@ export function speakText(text: string, lang: SpeechLanguage) {
   }
 
   stopSpeech();
+  /* The silent switch would mute it on an iPhone otherwise (lib/speech.ts). */
+  preferPlaybackAudio();
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
