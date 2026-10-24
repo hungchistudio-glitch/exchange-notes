@@ -261,21 +261,28 @@ describe("chapter two: around the app", () => {
 });
 
 describe("chapter three: Yumi's shop", () => {
-  it("shows where cookies come from at the shop key, then waits for a try-on in the shop", async () => {
+  it("asks the reader to go in by the shop key, then waits for a try-on in the shop", async () => {
     setCoachStep(stepOf("cookies"));
 
     const { again, container } = coach("/home");
     expect(screen.getByText("Chapter 3 · Yumi’s shop · 1/2")).toBeInTheDocument();
+    expect(screen.getByText(/Tap the glowing bag at the top right to come in/)).toBeInTheDocument();
     /* The card names the step, which is what keeps the shop key in view
        (HomeShopKey.module.css) while the tour's glow rings it. */
     expect(container.querySelector("[data-coach-card]")).toHaveAttribute("data-coach-step", "cookies");
-    await act(async () => {
-      screen.getByRole("button", { name: "Next" }).click();
-    });
+    /* Going in is the step: no Next, only a way past it. */
+    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Skip this step" })).toBeInTheDocument();
 
-    /* Not in the shop yet: a door, and nothing else to press. */
-    again("/home");
-    expect(screen.getByRole("link", { name: "Open the shop" })).toHaveAttribute("href", "/shop");
+    /* In through the bag: done. */
+    vi.useFakeTimers();
+    again("/shop");
+    expect(screen.getByText("Good.")).toBeInTheDocument();
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    vi.useRealTimers();
+    expect(getCoachStep()).toBe(stepOf("tryOn"));
 
     /* In the shop: a try-on, told in the same breath how buying works,
        rather than made to spend. */
@@ -293,6 +300,37 @@ describe("chapter three: Yumi's shop", () => {
     vi.useRealTimers();
 
     expect(getCoachStep()).toBe(stepOf("modeSwitch"));
+  });
+});
+
+describe("the shop's way in (Chi, 2026-10-19)", () => {
+  it("counts a reader already in the shop as in, rather than sending them back to Home", async () => {
+    setCoachStep(stepOf("cookies"));
+    vi.useFakeTimers();
+
+    coach("/shop");
+
+    expect(screen.getByText("Good.")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Back to Home" })).toBeNull();
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    vi.useRealTimers();
+
+    expect(getCoachStep()).toBe(stepOf("tryOn"));
+    expect(screen.getByText(/Tap any piece and I’ll try it on for free/)).toBeInTheDocument();
+  });
+
+  it("leaves a door to the shop for a reader who passes the step on Home", async () => {
+    setCoachStep(stepOf("cookies"));
+
+    coach("/home");
+    await act(async () => {
+      screen.getByRole("button", { name: "Skip this step" }).click();
+    });
+
+    expect(getCoachStep()).toBe(stepOf("tryOn"));
+    expect(screen.getByRole("link", { name: "Open the shop" })).toHaveAttribute("href", "/shop");
   });
 });
 
@@ -483,9 +521,14 @@ describe("what's new, for a reader who had finished the tour", () => {
     again("/home");
     expect(screen.getByText("What’s new · 4/4")).toBeInTheDocument();
     expect(screen.getByText(/Energy cookies are my shop's money/)).toBeInTheDocument();
+
+    /* The last of them is done by going in. */
+    vi.useFakeTimers();
+    again("/shop");
     await act(async () => {
-      screen.getByRole("button", { name: "Next" }).click();
+      vi.advanceTimersByTime(1_000);
     });
+    vi.useRealTimers();
 
     expect(container).toBeEmptyDOMElement();
     expect(getCoachStep()).toBe(COACH_FINISHED);

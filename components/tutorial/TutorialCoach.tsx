@@ -145,6 +145,12 @@ type Step = {
   awaits?: ReadonlyArray<HomeMoment | "word-saved">;
   /** Take the reader to `route` without asking — used right after a switch. */
   autoGo?: boolean;
+  /**
+   * The screen whose opening does this step: the key it lights leads there,
+   * and a reader who is already there — however they got there — has done
+   * it.
+   */
+  enters?: string;
   /** New in this edition: shown to readers who finished the last one. */
   refresh?: boolean;
   /**
@@ -269,9 +275,14 @@ export const COACH_STEPS: readonly Step[] = [
 
   /*
    * The shop, before the other look (Chi, 2026-10-12: "在最後的模式切換教學前
-   * 教商店及如何賺取 cookie 及購買"). Where cookies go is said on Home, at the
-   * shop key; then, in the shop, the reader tries something on themselves and
-   * is told in the same breath how buying works, rather than made to spend.
+   * 教商店及如何賺取 cookie 及購買"). Where cookies come from is said on Home,
+   * with the shop key lit, and the reader goes in by it; then, in the shop,
+   * they try something on themselves and are told in the same breath how
+   * buying works, rather than made to spend.
+   *
+   * Going in is the step (Chi, 2026-10-19). It used to be read and passed
+   * with Next, so a reader who had found the shop already met this card in
+   * there, telling them to go back to Home for the way in.
    */
   {
     key: "cookies",
@@ -280,6 +291,7 @@ export const COACH_STEPS: readonly Step[] = [
     mode: STANDARD,
     refresh: true,
     point: POINT.shopKey,
+    enters: "/shop",
   },
   {
     key: "tryOn",
@@ -483,8 +495,12 @@ export default function TutorialCoach({
   const switched =
     current?.key === "modeSwitch" && interfaceMode === COSMIC && !switching;
 
-  /* Derived rather than stored: the switch is a fact about the props. */
-  const done = satisfied || switched;
+  /* A step done by going somewhere is done on arrival, by whatever way. */
+  const arrived = Boolean(current?.enters && pathname === current.enters && !wrongMode);
+
+  /* Derived rather than stored: the switch and the arrival are facts about
+     the props. */
+  const done = satisfied || switched || arrived;
 
   /*
    * The beat between doing it and being asked for the next thing.
@@ -649,7 +665,7 @@ export default function TutorialCoach({
         </button>
       </>
     );
-  } else if ((awaiting && !keepBlocked) || current.key === "modeSwitch") {
+  } else if ((awaiting && !keepBlocked) || current.key === "modeSwitch" || current.enters) {
     /*
      * A waiting step has no "Next", only "Skip this step".
      *

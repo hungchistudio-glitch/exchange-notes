@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import type { SpeechLanguage } from "@/lib/speech";
 import {
   Check,
   Clock3,
   FolderPlus,
+  Gift,
   Pencil,
   Send,
   Share2,
@@ -404,6 +406,15 @@ export default function VocabularyDetailSheet({
                 <Trash2 size={18} />
               </AppButton>
             </div>
+
+            {/* A public hello made from this word: components/hello/HelloEditor.tsx. */}
+            <Link
+              href={`/invitations/new?word=${encodeURIComponent(item.id)}`}
+              className="mt-2 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[18px] border border-black/[0.08] bg-white text-[0.875rem] font-semibold text-ink-strong transition active:scale-[0.99]"
+            >
+              <Gift size={17} aria-hidden="true" />
+              {t.hello.sendWithYumi}
+            </Link>
           </div>
         </div>
       </section>

@@ -57,6 +57,12 @@ export function buildSettingsSearchIndex(
       keywords: ["pronunciation", "voice", "speed", "speech", "audio", "rate"],
     },
     {
+      id: "setting-yumi-hellos",
+      title: t.hello.manageTitle,
+      section: sections.yumi,
+      keywords: ["yumi", "invitation", "hello", "share", "link", "qr", "friend"],
+    },
+    {
       id: "setting-interface-mode",
       title: settings.interfaceMode.rowTitle,
       section: sections.yumi,

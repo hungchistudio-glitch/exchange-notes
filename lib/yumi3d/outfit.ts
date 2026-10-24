@@ -1,9 +1,14 @@
 import * as THREE from "three";
 import { buildCulturalPiece, buildCulturalScarf, CULTURAL_FINISHES } from "./culturalOutfit";
 import {
-  STATION33_BROW, STATION33_BUILDABLE, STATION33_CHARM, STATION33_EARRINGS, STATION33_EYEWEAR, STATION33_FINISHES,
-  STATION33_HEAD, STATION33_IRISES, STATION33_MOUTH, STATION33_NECK, STATION33_NECKLACE, STATION33_PIN, STATION33_PUPILS,
+  STATION33_BROW as BASE_BROW, STATION33_BUILDABLE, STATION33_CHARM as BASE_CHARM, STATION33_EARRINGS as BASE_EARRINGS, STATION33_EYEWEAR as BASE_EYEWEAR, STATION33_FINISHES as BASE_FINISHES,
+  STATION33_HEAD as BASE_HEAD, STATION33_IRISES as BASE_IRISES, STATION33_MOUTH as BASE_MOUTH, STATION33_NECK as BASE_NECK, STATION33_NECKLACE as BASE_NECKLACE, STATION33_PIN as BASE_PIN, STATION33_PUPILS as BASE_PUPILS,
 } from "./station33Outfit";
+import { COLLECTION03_BROW, COLLECTION03_CHARM, COLLECTION03_EARRINGS, COLLECTION03_EYEWEAR, COLLECTION03_HEAD, COLLECTION03_IRISES, COLLECTION03_MOUTH, COLLECTION03_NECK, COLLECTION03_NECKLACE, COLLECTION03_PIN, COLLECTION03_PUPILS } from "./collection03Outfit";
+import { COLLECTION03_FINISHES } from "./collection03Finishes";
+import { COLLECTION04_BROW, COLLECTION04_CHARM, COLLECTION04_EARRINGS, COLLECTION04_EYEWEAR, COLLECTION04_HEAD, COLLECTION04_IRISES, COLLECTION04_MOUTH, COLLECTION04_NECK, COLLECTION04_NECKLACE, COLLECTION04_PIN, COLLECTION04_PUPILS } from "./collection04Outfit";
+import { COLLECTION04_FINISHES } from "./collection04Finishes";
+import { collectCollection03Motion, updateCollection03Motion } from "./collection03Motion";
 import { CULTURAL_ITEMS } from "@/lib/shop/culturalCollection";
 
 import { cleanOutfit, shopItem, type ShopSlot, type YumiOutfit } from "@/lib/shop/catalog";
@@ -16,6 +21,19 @@ import {
   ARM_RADIUS, EYE_RADIUS, GAP_HALF, SHELL_DEPTH, SHELL_RADIUS, TUBE_FRONT, TUBE_RADIUS,
   tubeCentre,
 } from "./anatomy";
+
+const STATION33_BROW = { ...BASE_BROW, ...COLLECTION03_BROW, ...COLLECTION04_BROW };
+const STATION33_CHARM = { ...BASE_CHARM, ...COLLECTION03_CHARM, ...COLLECTION04_CHARM };
+const STATION33_EARRINGS = { ...BASE_EARRINGS, ...COLLECTION03_EARRINGS, ...COLLECTION04_EARRINGS };
+const STATION33_EYEWEAR = { ...BASE_EYEWEAR, ...COLLECTION03_EYEWEAR, ...COLLECTION04_EYEWEAR };
+const STATION33_HEAD = { ...BASE_HEAD, ...COLLECTION03_HEAD, ...COLLECTION04_HEAD };
+const STATION33_IRISES = { ...BASE_IRISES, ...COLLECTION03_IRISES, ...COLLECTION04_IRISES };
+const STATION33_MOUTH = { ...BASE_MOUTH, ...COLLECTION03_MOUTH, ...COLLECTION04_MOUTH };
+const STATION33_NECK = { ...BASE_NECK, ...COLLECTION03_NECK, ...COLLECTION04_NECK };
+const STATION33_NECKLACE = { ...BASE_NECKLACE, ...COLLECTION03_NECKLACE, ...COLLECTION04_NECKLACE };
+const STATION33_PIN = { ...BASE_PIN, ...COLLECTION03_PIN, ...COLLECTION04_PIN };
+const STATION33_PUPILS = { ...BASE_PUPILS, ...COLLECTION03_PUPILS, ...COLLECTION04_PUPILS };
+const STATION33_FINISHES = { ...BASE_FINISHES, ...COLLECTION03_FINISHES, ...COLLECTION04_FINISHES };
 
 /* =========================================================
    What Yumi wears
@@ -356,6 +374,10 @@ export function applyShellFinish(material: THREE.MeshPhysicalMaterial, id: strin
   material.color.set(finish ? finish.color : SHELL_DEFAULT.color);
   material.metalness = finish ? finish.metalness : SHELL_DEFAULT.metalness;
   material.roughness = finish ? finish.roughness : SHELL_DEFAULT.roughness;
+  material.iridescence = finish?.iridescence ?? 0;
+  material.sheen = finish?.sheen ?? 0;
+  material.sheenColor.set(finish?.sheenColor ?? 0xffffff);
+  material.sheenRoughness = finish?.sheenRoughness ?? 1;
   material.clearcoat = finish?.clearcoat ?? 0;
   material.clearcoatRoughness = finish?.clearcoatRoughness ?? 0;
   material.envMapIntensity = finish?.envMapIntensity ?? (finish ? 0.9 : SHELL_DEFAULT.envMapIntensity);
@@ -1832,6 +1854,8 @@ export function buildableIds(): string[] {
   return [
     ...CULTURAL_ITEMS.map(item => item.id),
     ...STATION33_BUILDABLE,
+    ...[ COLLECTION03_BROW, COLLECTION03_CHARM, COLLECTION03_EARRINGS, COLLECTION03_EYEWEAR, COLLECTION03_HEAD, COLLECTION03_IRISES, COLLECTION03_MOUTH, COLLECTION03_NECK, COLLECTION03_NECKLACE, COLLECTION03_PIN, COLLECTION03_PUPILS].flatMap(record => Object.keys(record)),
+    ...[ COLLECTION04_BROW, COLLECTION04_CHARM, COLLECTION04_EARRINGS, COLLECTION04_EYEWEAR, COLLECTION04_HEAD, COLLECTION04_IRISES, COLLECTION04_MOUTH, COLLECTION04_NECK, COLLECTION04_NECKLACE, COLLECTION04_PIN, COLLECTION04_PUPILS].flatMap(record => Object.keys(record)),
     ...Object.keys(SHELL_FINISHES), ...PUPILS, ...Object.keys(IRISES), ...Object.keys(EYEWEAR), ...Object.keys(HEAD),
     ...Object.keys(NECK), ...Object.keys(PIN), ...Object.keys(MOUTH), ...Object.keys(CHARM),
   ];
@@ -1908,7 +1932,7 @@ export type OutfitRig = {
   /** True while a shop material is on the shell. */
   hasShellFinish(): boolean;
   /** Per frame: keep eyewear in front of the eye, minus the blink. */
-  sync(): void;
+  sync(dt?: number, reducedMotion?: boolean): void;
   setVisible(visible: boolean): void;
   dispose(): void;
 };
@@ -2118,7 +2142,8 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
   const eyewear = new THREE.Group();
   eyeGroup.add(eyewear);
 
-  const worn = new Map<ShopSlot, { id: string; objects: THREE.Object3D[] }>();
+  const worn = new Map<ShopSlot, { id: string; objects: THREE.Object3D[]; motion: ReturnType<typeof collectCollection03Motion> }>();
+  let motionTime = 0;
   let finish: string | undefined;
 
   function remove(slot: ShopSlot) {
@@ -2156,7 +2181,7 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
         if (built.eye) { eyewear.add(built.eye); objects.push(built.eye); }
         if (built.look) { lookGroup.add(built.look); objects.push(built.look); }
         if (slot === "pupil") pupil.visible = false;
-        worn.set(slot, { id, objects });
+        worn.set(slot, { id, objects, motion: collectCollection03Motion(objects) });
         added.push(...objects);
       }
 
@@ -2170,7 +2195,9 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
       return finish !== undefined;
     },
 
-    sync() {
+    sync(dt = 0, reducedMotion = false) {
+      motionTime += Math.max(0, Math.min(dt, 1 / 30));
+      for (const piece of worn.values()) updateCollection03Motion(piece.motion, motionTime, reducedMotion);
       eyewear.quaternion.copy(lookGroup.quaternion);
       eyewear.scale.copy(lookGroup.scale);
     },

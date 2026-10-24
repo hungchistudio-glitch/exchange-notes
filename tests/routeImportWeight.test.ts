@@ -169,10 +169,16 @@ describe("what the heaviest tabs drag in with them", () => {
    * debug，合併上線"). components/home/yumi/PrecisionDial and its own
    * stylesheet replace LiquidRingButton, which styled itself from the
    * overlay's CSS — two files for one. It imports React and nothing else.
+   * Raised home 180 → 181 (2026-10-19): Yumi hellos (Chi's hello brief: a
+   * word "from saved cards or a new lookup"). A looked-up word's "Send with
+   * Yumi" hands the word to the editor through lib/hello/draft.ts — the
+   * lookup-to-sides conversion and a sessionStorage write, importing only
+   * the language table home already loads. The editor, the 3D picture and
+   * the share image all stay on their own route.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 162],
-    ["home", TABS.home, 180],
+    ["home", TABS.home, 181],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

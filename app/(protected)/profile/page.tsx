@@ -7,6 +7,7 @@ import { disableNativePushRegistration } from "@/lib/push/nativeClient";
 
 import {
   CircleHelp,
+  Gift,
   GraduationCap,
   Globe,
   LoaderCircle,
@@ -513,6 +514,17 @@ export default function ProfilePage() {
                 description={t.shop.howEarned}
                 icon={<ShoppingBag size={16} strokeWidth={1.8} />}
                 tone="amber"
+              />
+            </SettingsAnchor>
+
+            {/* Yumi hellos: making one, and the links already shared (components/hello). */}
+            <SettingsAnchor id="setting-yumi-hellos">
+              <SettingsRow
+                href="/invitations"
+                title={t.hello.manageTitle}
+                description={t.hello.settingsDescription}
+                icon={<Gift size={16} strokeWidth={1.8} />}
+                tone="blue"
               />
             </SettingsAnchor>
 

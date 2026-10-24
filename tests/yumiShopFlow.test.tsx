@@ -1,10 +1,10 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { toTraditional } from "@/lib/chinese/toTraditional";
 import type { TranslationLanguage } from "@/lib/i18n/types";
 import type { YumiOutfit } from "@/lib/shop/catalog";
-import { createPreviewWallet } from "@/lib/shop/wallet";
+import { createPreviewWallet, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 
 /* =========================================================
    Trying on is free; buying asks first, charges once and dresses her
@@ -14,6 +14,7 @@ import { createPreviewWallet } from "@/lib/shop/wallet";
    real shop on the in-memory wallet the review screen uses.
    ========================================================= */
 
+const navigation = vi.hoisted(() => ({ back: vi.fn(), push: vi.fn() }));
 const reader = vi.hoisted(() => ({ language: "english" as TranslationLanguage }));
 
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
@@ -21,7 +22,7 @@ vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ back: vi.fn(), push: vi.fn() }),
+  useRouter: () => navigation,
 }));
 
 vi.mock("@/components/shop/ShopStage", () => ({
@@ -29,6 +30,11 @@ vi.mock("@/components/shop/ShopStage", () => ({
     <div data-testid="stand" data-outfit={JSON.stringify(outfit)} />
   ),
 }));
+
+// Decorative SVGs are covered visually in the browser. Keep this suite
+// focused on wardrobe transactions even with all 220 cards mounted.
+vi.mock("@/components/shop/EnergyCookie", () => ({ default: () => <span aria-hidden="true" /> }));
+vi.mock("@/components/shop/ShopThumb", () => ({ default: () => <span aria-hidden="true" /> }));
 
 vi.mock("@/lib/yumi3d/thumbnails", () => ({
   cachedThumbnail: () => undefined,
@@ -46,8 +52,8 @@ function stand(): YumiOutfit {
 
 function card(name: string) {
   // The catalogue's cards are the toggles; the tag on a worn card comes first.
-  return screen.getAllByRole("button").find(button =>
-    button.hasAttribute("aria-pressed") && button.textContent?.includes(name))!;
+  return [...document.querySelectorAll<HTMLButtonElement>('button[data-coach-target="shop-item"]')].find(button =>
+    button.hasAttribute("data-coach-target") && [...button.querySelectorAll("span")].some(span => span.textContent === name))!;
 }
 
 describe("the Yumi shop", () => {
@@ -85,11 +91,132 @@ describe("the Yumi shop", () => {
     reader.language = "traditional-chinese";
     const { container } = render(<YumiShop wallet={createPreviewWallet(10)} isCosmic={false} onToggleMode={() => {}} preview />);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Yumi 商店" })).toBeInTheDocument(), { timeout: 5000 });
-    expect(screen.getByRole("button", { name: "精選" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "還原裝扮" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "全部商品" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "已穿上" })).not.toBeInTheDocument();
     expect(card("玉石綠")).toBeDefined();
     const text = container.textContent ?? "";
     expect(toTraditional(text)).toBe(text);
     reader.language = "english";
   });
+});
+
+function wardrobeWallet(outfit: YumiOutfit, owned: string[]) {
+  let state: WardrobeState = { earned: 500, paid: 0, spent: 0, balance: 500, owned, outfit };
+  const wallet: ShopWallet = {
+    load: vi.fn(async () => state),
+    buy: vi.fn(async id => { state = { ...state, owned: [...state.owned, id] }; return { status: "bought" as const, state }; }),
+    wear: vi.fn(async next => { state = { ...state, outfit: next }; return state; }),
+  };
+  return wallet;
+}
+
+describe("keeping purchased outfits", () => {
+  it("automatically saves an owned try-on and restores it when the shop is reopened", async () => {
+    const wallet = wardrobeWallet({}, ["monocle"]);
+    const first = render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+    await waitFor(() => expect(card("Brass monocle")).not.toBeDisabled());
+    fireEvent.click(card("Brass monocle"));
+    await waitFor(() => expect(wallet.wear).toHaveBeenCalledWith({ eyewear: "monocle" }));
+    await screen.findByText("Yumi has her new look on");
+    first.unmount();
+    render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+    await waitFor(() => expect(stand()).toEqual({ eyewear: "monocle" }));
+  }, 15_000);
+
+  it("preserves saved clothing under an unbought trial when buying a different slot", async () => {
+    const wallet = wardrobeWallet({ material: "jade" }, ["jade"]);
+    render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+    await waitFor(() => expect(stand()).toEqual({ material: "jade" }));
+    fireEvent.click(card("Porcelain"));
+    fireEvent.click(card("Brass monocle"));
+    fireEvent.click(screen.getByRole("button", { name: "Buy" }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Buy" }));
+    await waitFor(() => expect(wallet.wear).toHaveBeenCalledWith({ material: "jade", eyewear: "monocle" }));
+  }, 15_000);
+
+  it("keeps an originally empty slot empty after a free trial", async () => {
+    const wallet = wardrobeWallet({}, []);
+    render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+    await waitFor(() => expect(card("Jade")).not.toBeDisabled());
+    fireEvent.click(card("Jade"));
+    fireEvent.click(card("Jade"));
+    expect(stand()).toEqual({});
+    expect(wallet.wear).not.toHaveBeenCalled();
+  }, 15_000);
+
+  it("saves explicit removal and waits for a pending save before leaving", async () => {
+    const wallet = wardrobeWallet({ eyewear: "monocle" }, ["monocle"]);
+    let resolve!: (state: WardrobeState) => void;
+    wallet.wear = vi.fn(() => new Promise<WardrobeState>(done => { resolve = done; }));
+    render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+    await waitFor(() => expect(stand()).toEqual({ eyewear: "monocle" }));
+    navigation.back.mockClear(); navigation.push.mockClear();
+    fireEvent.click(card("Brass monocle"));
+    expect(wallet.wear).toHaveBeenCalledWith({});
+    expect(card("Brass monocle")).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(navigation.back).not.toHaveBeenCalled(); expect(navigation.push).not.toHaveBeenCalled();
+    await act(async () => resolve({ ...(await wallet.load()), outfit: {} }));
+    expect(navigation.back.mock.calls.length + navigation.push.mock.calls.length).toBe(1);
+  }, 15_000);
+
+  it("keeps a failed save out of the wardrobe and allows retry", async () => {
+    const wallet = wardrobeWallet({}, ["monocle"]);
+    const wear = vi.spyOn(wallet, "wear").mockRejectedValueOnce(new Error("offline"));
+    render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+    await waitFor(() => expect(card("Brass monocle")).not.toBeDisabled());
+    fireEvent.click(card("Brass monocle"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Put on" })).not.toBeDisabled());
+    expect((await wallet.load()).outfit).toEqual({});
+    fireEvent.click(screen.getByRole("button", { name: "Put on" }));
+    await waitFor(() => expect(wear).toHaveBeenCalledTimes(2));
+    await waitFor(async () => expect((await wallet.load()).outfit).toEqual({ eyewear: "monocle" }));
+  }, 15_000);
+});
+
+it("keeps the shop open when an in-flight save fails during exit", async () => {
+  const wallet = wardrobeWallet({}, ["monocle"]);
+  let reject!: (error: Error) => void;
+  wallet.wear = vi.fn(() => new Promise<WardrobeState>((_, fail) => { reject = fail; }));
+  render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview />);
+  await waitFor(() => expect(card("Brass monocle")).not.toBeDisabled());
+  navigation.back.mockClear(); navigation.push.mockClear();
+  fireEvent.click(card("Brass monocle"));
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
+  await act(async () => reject(new Error("network failed")));
+  expect(navigation.back).not.toHaveBeenCalled(); expect(navigation.push).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: "Put on" })).not.toBeDisabled();
+}, 15_000);
+
+it("uses the star chart to filter real collections without losing other filters", async () => {
+  reader.language = "english";
+  render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
+  fireEvent.click(screen.getByRole("button", { name: /Turn the coin/ }));
+  const chart = screen.getByRole("group", { name: "Explore the collections" });
+  fireEvent.click(within(chart).getByRole("button", { name: /Deep Space Treasures/ }));
+  /* Collection 03's 57 and Collection 04's 55 deep-space pieces. */
+  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(112);
+  expect(document.getElementById("shop-collection-story")).toHaveTextContent("dark technology");
+  fireEvent.click(screen.getByRole("button", { name: "Earrings" }));
+  const filtered = document.querySelectorAll('[data-coach-target="shop-item"]').length;
+  expect(filtered).toBeGreaterThan(0);
+  expect(filtered).toBeLessThan(57);
+  fireEvent.click(screen.getByRole("button", { name: /Explore all collections/ }));
+  expect(screen.getByRole("button", { name: "Earrings" })).toHaveAttribute("aria-pressed", "true");
+  expect(document.querySelectorAll('[data-coach-target="shop-item"]').length).toBeGreaterThan(filtered);
+}, 15_000);
+
+it("opens the personal wardrobe with all owned items and saves dressing from it", async () => {
+  const wallet = wardrobeWallet({}, ["monocle"]);
+  render(<YumiShop wallet={wallet} isCosmic={false} onToggleMode={() => {}} preview startCollection="collection03" />);
+  const wardrobe = await screen.findByRole("button", { name: /My wardrobe\s*1/ }, { timeout: 5000 });
+  fireEvent.click(wardrobe);
+  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(1);
+  expect(card("Brass monocle")).toBeDefined();
+  expect(card("Jade")).toBeUndefined();
+  fireEvent.click(card("Brass monocle"));
+  await waitFor(() => expect(wallet.wear).toHaveBeenCalledWith({ eyewear: "monocle" }));
+  fireEvent.click(screen.getByRole("button", { name: "Shop" }));
+  expect(document.querySelectorAll('[data-coach-target="shop-item"]')).toHaveLength(333);
+  expect(stand()).toEqual({ eyewear: "monocle" });
 });

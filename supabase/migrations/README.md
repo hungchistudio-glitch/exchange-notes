@@ -119,7 +119,24 @@ only schedules a request to /home and does not depend on any code):
 | --- | --- |
 | `20261018180000_keep_app_warm` | `20261018174327` |
 
-**Fourteen renames across seven occasions now. `apply_migration` always stamps its
+On 2026-10-19 Yumi's bilingual hello, applied before the merge (Chi: "套用
+migration"). It adds a table, functions and a bucket, and widens
+prepare_account_deletion to list hello posters; nothing the live code calls
+changes shape:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261019120000_yumi_hello` | `20261019192626` |
+
+On 2026-10-23 Station 33 Collection 04, the 333 expansion's 113 pieces,
+applied before the merge (Chi: "那把它做完並上架"). It only inserts price rows
+for ids the live code does not sell yet:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261023200000_yumi_shop_collection04` | `20261023220624` |
+
+**Sixteen renames across nine occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 
