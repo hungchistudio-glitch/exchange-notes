@@ -389,6 +389,8 @@ const english: TranslationDictionary = {
     loading: "Loading…",
     error: "Something went wrong",
     clearField: "Clear",
+    showFullText: "Show full text",
+    showLess: "Show less",
   },
 
   friendPicker: {

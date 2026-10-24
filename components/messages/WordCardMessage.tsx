@@ -1,6 +1,8 @@
 "use client";
 
-import { Bookmark, Check, Send, Volume2 } from "lucide-react";
+import { Bookmark, Check, ChevronDown, Send, Volume2 } from "lucide-react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 import OrbitIconButton from "@/components/foundation/buttons/OrbitIconButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -31,6 +33,20 @@ import { insertValues } from "@/lib/utils";
  * Both blocks name their own language, so neither side depends on the reader
  * recognising a script.
  */
+
+/** The last line of cut text fades out, saying there is more. */
+const CLAMP_FADE =
+  "data-[overflowing=true]:[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_1.4em),transparent)]";
+
+/**
+ * A sentence rather than a word: wider than a line of the large type. Han
+ * and kana count double, being about twice as wide as a Latin letter.
+ */
+export function isLongText(text: string) {
+  let width = 0;
+  for (const character of text) width += /[\u3000-\u9fff\uac00-\ud7af\uff00-\uffef]/.test(character) ? 2 : 1;
+  return width > 26;
+}
 
 type WordCardMessageProps = {
   card: SharedWordCard;
@@ -83,8 +99,24 @@ export default function WordCardMessage({
     supportLanguage,
   );
 
-  const primaryWordClass = "min-w-0 truncate text-xl font-bold";
-  const secondaryWordClass = "min-w-0 truncate text-base font-normal";
+  /*
+   * Long text (Chi, 2026-10-24: a sentence sent as a card was cut to one
+   * line with no way to read the rest). The words wrap to three lines and
+   * each reading to one; past that a key opens the whole card, words and
+   * readings together. A sentence is set smaller than a word, so it reads
+   * as a sentence rather than a headline.
+   */
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const wordsRef = useRef<HTMLDivElement>(null);
+  const wordsId = useId();
+
+  function wordClass(text: string, primary: boolean) {
+    const size = isLongText(text)
+      ? primary ? "text-[1.0625rem] font-semibold leading-snug" : "text-[0.9375rem] font-normal leading-snug"
+      : primary ? "text-xl font-bold leading-tight" : "text-base font-normal leading-snug";
+    return `min-w-0 break-words ${size} ${expanded ? "" : `line-clamp-3 ${CLAMP_FADE}`}`;
+  }
 
   function speakerStyle(primary: boolean) {
     return primary
@@ -125,9 +157,10 @@ export default function WordCardMessage({
         >
           {language.endonym}
         </span>
-        <div className="mt-1 flex items-center justify-between gap-2">
+        <div className="mt-1 flex items-start justify-between gap-2">
           <p
-            className={primary ? primaryWordClass : secondaryWordClass}
+            data-clamp
+            className={wordClass(text, primary)}
             style={{
               color: primary ? "var(--msg-ink)" : "var(--msg-ink-soft)",
             }}
@@ -156,7 +189,8 @@ export default function WordCardMessage({
                 key={reading.script}
                 data-script={reading.script}
                 lang={reading.script === "pinyin" ? "zh-Latn" : code}
-                className={`block ${reading.script === "zhuyin" ? "font-zhuyin" : "font-phonetic"}`}
+                data-clamp
+                className={`block ${expanded ? "" : "truncate"} ${reading.script === "zhuyin" ? "font-zhuyin" : "font-phonetic"}`}
               >
                 {reading.label}
               </span>
@@ -252,6 +286,42 @@ export default function WordCardMessage({
   const firstExampleLang = getLanguage(firstCode).speechTag;
   const secondExampleLang = getLanguage(secondCode).speechTag;
 
+  /*
+   * Whether anything is cut: measured, not guessed, since it depends on the
+   * card's width, the script and the reader's font size. Each cut element
+   * is marked, for its fade. Measured again when the card changes width.
+   */
+  useLayoutEffect(() => {
+    const words = wordsRef.current;
+    if (!words || expanded) return;
+    const measure = () => {
+      let any = false;
+      for (const element of words.querySelectorAll<HTMLElement>("[data-clamp]")) {
+        const cut = element.scrollHeight > element.clientHeight + 1 || element.scrollWidth > element.clientWidth + 1;
+        element.dataset.overflowing = String(cut);
+        any ||= cut;
+      }
+      setOverflowing(any);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(words);
+    return () => observer.disconnect();
+  });
+
+  /* The card grows or shrinks to its new height rather than jumping to it. */
+  function toggleFullText() {
+    const words = wordsRef.current;
+    const from = words?.offsetHeight ?? 0;
+    flushSync(() => setExpanded((value) => !value));
+    if (!words?.animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    words.animate(
+      [{ height: `${from}px`, overflow: "hidden" }, { height: `${words.offsetHeight}px`, overflow: "hidden" }],
+      { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" },
+    );
+  }
+
   function renderExample(
     text: string,
     language: SpeechLanguage,
@@ -322,15 +392,36 @@ export default function WordCardMessage({
       )}
 
       <div className="p-4 sm:p-5">
-      {firstBlock}
-      {secondBlock ? (
-        <div
-          className="mt-3 border-t pt-3"
-          style={{ borderColor: "var(--msg-line)" }}
+      <div ref={wordsRef} id={wordsId}>
+        {firstBlock}
+        {secondBlock ? (
+          <div
+            className="mt-3 border-t pt-3"
+            style={{ borderColor: "var(--msg-line)" }}
+          >
+            {secondBlock}
+          </div>
+        ) : null}
+      </div>
+
+      {(overflowing || expanded) && (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={wordsId}
+          onClick={toggleFullText}
+          className="mt-2 inline-flex min-h-9 items-center gap-1 rounded-full px-1 text-xs font-semibold"
+          style={{ color: "var(--msg-ink-soft)" }}
         >
-          {secondBlock}
-        </div>
-      ) : null}
+          {expanded ? t.common.showLess : t.common.showFullText}
+          <ChevronDown
+            size={14}
+            strokeWidth={2}
+            aria-hidden="true"
+            className={`transition-transform duration-200 motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`}
+          />
+        </button>
+      )}
 
       {card.partOfSpeech && (
         <p className="mt-2 text-xs" style={{ color: "var(--msg-ink-faint)" }}>

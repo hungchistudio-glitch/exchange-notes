@@ -392,6 +392,8 @@ const french: TranslationDictionary = {
     loading: "Chargement…",
     error: "Une erreur est survenue",
     clearField: "Effacer",
+    showFullText: "Afficher le texte complet",
+    showLess: "Réduire",
   },
 
   friendPicker: {
