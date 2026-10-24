@@ -175,9 +175,14 @@ describe("what the heaviest tabs drag in with them", () => {
    * lookup-to-sides conversion and a sessionStorage write, importing only
    * the language table home already loads. The editor, the 3D picture and
    * the share image all stay on their own route.
+   * Raised vocabulary 162 → 165 (2026-10-24): each word's status in its own
+   * colour with a ring for how far it is from mastered (Chi chose it from
+   * the audit). components/vocabulary/MasteryRing, its stylesheet, and
+   * lib/vocabulary/mastery.ts, the pure function both the ring and its test
+   * read; none imports anything but React's types and a type.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 162],
+    ["vocabulary", TABS.vocabulary, 165],
     ["home", TABS.home, 181],
   ] as const)(
     "keeps %s's static graph inside its ceiling",

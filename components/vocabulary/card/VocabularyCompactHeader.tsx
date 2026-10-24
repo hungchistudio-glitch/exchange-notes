@@ -1,6 +1,7 @@
 "use client";
 
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
+import MasteryRing, { statusClassName } from "@/components/vocabulary/MasteryRing";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
@@ -24,10 +25,9 @@ export default function VocabularyCompactHeader({ item }: Props) {
   return (
     <header className="min-w-0 px-4 py-3.5">
       <div className="flex min-w-0 items-start gap-3">
-        <span
-          className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-amber)]/70"
-          aria-hidden="true"
-        />
+        <span className="mt-[5px] flex shrink-0">
+          <MasteryRing item={item} />
+        </span>
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center justify-between gap-3">
@@ -45,7 +45,10 @@ export default function VocabularyCompactHeader({ item }: Props) {
             <span className="flex shrink-0 items-center gap-2">
               <LanguageOriginBadge language={primary.language} size="sm" />
 
-              <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.13em] text-ink-faint">
+              <span
+                data-status={item.status}
+                className={`${statusClassName} text-[0.6875rem] font-semibold uppercase tracking-[0.13em]`}
+              >
                 {statusLabels[item.status]}
               </span>
             </span>

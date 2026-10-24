@@ -1,0 +1,68 @@
+/*
+  The three statuses' colours (MasteryRing.tsx): new is sky, learning is
+  amber, mastered is jade. --status is set per status and read by the ring
+  and by the label beside it (statusClassName, with data-status).
+*/
+
+.ring,
+.status {
+  --status: #3b82d6;
+}
+
+.ring[data-status="learning"],
+.status[data-status="learning"] {
+  --status: #c9861c;
+}
+
+.ring[data-status="mastered"],
+.status[data-status="mastered"] {
+  --status: #16936a;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .ring,
+:global(html[data-interface-mode="yumi-cosmic"]) .status {
+  --status: #7cb8ff;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .ring[data-status="learning"],
+:global(html[data-interface-mode="yumi-cosmic"]) .status[data-status="learning"] {
+  --status: #f2bb5c;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .ring[data-status="mastered"],
+:global(html[data-interface-mode="yumi-cosmic"]) .status[data-status="mastered"] {
+  --status: #5fd6a4;
+}
+
+.ring {
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+}
+
+.track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--status) 22%, transparent);
+  stroke-width: 2;
+}
+
+.fill {
+  fill: none;
+  stroke: var(--status);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 600ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.core {
+  fill: var(--status);
+}
+
+.status {
+  color: var(--status);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}
