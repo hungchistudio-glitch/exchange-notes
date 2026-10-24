@@ -2874,6 +2874,22 @@ const spanish: TranslationDictionary = {
       "newArrivalsNote": "Estación 33 · Colección 04",
       "seeAll": "Ver las {count}",
       "clearNew": "Cerrar",
+      "refine": {
+        "sort": "Orden",
+        "sorts": { "recommended": "Recomendado", "priceLow": "Precio: de menor a mayor", "priceHigh": "Precio: de mayor a menor", "newest": "Novedades primero" },
+        "price": "Precio",
+        "ownership": "Propiedad",
+        "ownerships": { "unowned": "Aún no es tuyo", "owned": "Tuyo", "affordable": "Al alcance ahora" },
+        "colour": "Color",
+        "colourNote": "Según el color principal de cada pieza.",
+        "colours": { "gold": "Dorado y ámbar", "red": "Rojo y rosa", "violet": "Violeta", "green": "Verde", "blue": "Azul y turquesa", "neutral": "Negro, blanco y gris" },
+        "origin": "Origen",
+        "showOne": "Ver {count} pieza",
+        "showOther": "Ver {count} piezas",
+        "none": "Ninguna pieza coincide",
+        "reset": "Borrar todo",
+        "remove": "Quitar {filter}"
+      },
       "departments": {
             "eyes": "Ojos",
             "eyewear": "Gafas",

@@ -2680,6 +2680,22 @@ const french: TranslationDictionary = {
       "newArrivalsNote": "Station 33 · Collection 04",
       "seeAll": "Voir les {count}",
       "clearNew": "Fermer",
+      "refine": {
+        "sort": "Ordre",
+        "sorts": { "recommended": "Recommandé", "priceLow": "Prix croissant", "priceHigh": "Prix décroissant", "newest": "Nouveautés d’abord" },
+        "price": "Prix",
+        "ownership": "Possession",
+        "ownerships": { "unowned": "Pas encore à vous", "owned": "À vous", "affordable": "Abordable maintenant" },
+        "colour": "Couleur",
+        "colourNote": "Selon la couleur principale de chaque pièce.",
+        "colours": { "gold": "Or et ambre", "red": "Rouge et rose", "violet": "Violet", "green": "Vert", "blue": "Bleu et turquoise", "neutral": "Noir, blanc et gris" },
+        "origin": "Origine",
+        "showOne": "Voir {count} pièce",
+        "showOther": "Voir {count} pièces",
+        "none": "Aucune pièce ne correspond",
+        "reset": "Tout effacer",
+        "remove": "Retirer {filter}"
+      },
       "departments": {
             "eyes": "Yeux",
             "eyewear": "Lunettes",

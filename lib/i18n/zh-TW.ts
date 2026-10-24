@@ -2834,6 +2834,22 @@ const traditionalChinese: TranslationDictionary = {
       "newArrivalsNote": "33 號站 · 第 04 系列",
       "seeAll": "看全部 {count} 件",
       "clearNew": "關閉",
+      "refine": {
+        "sort": "排序",
+        "sorts": { "recommended": "推薦", "priceLow": "價格：低到高", "priceHigh": "價格：高到低", "newest": "新品優先" },
+        "price": "價格",
+        "ownership": "擁有與買得起",
+        "ownerships": { "unowned": "還沒擁有", "owned": "已擁有", "affordable": "現在買得起" },
+        "colour": "色系",
+        "colourNote": "依每件作品的主色分類。",
+        "colours": { "gold": "金橙", "red": "紅粉", "violet": "紫", "green": "綠", "blue": "藍青", "neutral": "黑白灰" },
+        "origin": "產地",
+        "showOne": "顯示 {count} 件",
+        "showOther": "顯示 {count} 件",
+        "none": "沒有符合的作品",
+        "reset": "全部清除",
+        "remove": "移除{filter}"
+      },
       "departments": {
             "eyes": "眼睛",
             "eyewear": "眼鏡",

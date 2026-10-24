@@ -13,12 +13,10 @@ import { announceHomeMoment } from "@/lib/home/homeMoments";
 import { fill, plural } from "@/lib/i18n/format";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
 import {
-  SHOP_COUNTRIES,
   sameOutfit,
   shopItem,
   toggleInOutfit,
   unownedIn,
-  type ShopCountry,
   type ShopItem,
   type YumiOutfit,
 } from "@/lib/shop/catalog";
@@ -43,6 +41,16 @@ import {
   subscribeToSceneChoice,
   useShopWeather,
 } from "@/lib/shop/useShopWeather";
+import {
+  COLOUR_SWATCHES,
+  NO_FILTERS,
+  activeCount,
+  applyFilters,
+  choose,
+  priceBandLabel,
+  type FilterGroup,
+  type ShopFilters,
+} from "@/lib/shop/filters";
 import { ENERGY_LANDED_EVENT, ENERGY_PER_USD, SUPPLY_PACKS_USD } from "@/lib/shop/energy";
 import { markScrolling } from "@/lib/shop/scrollQuiet";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
@@ -52,6 +60,7 @@ import EnergyCookie from "./EnergyCookie";
 import EnergyReward from "./EnergyReward";
 import ShopStage from "./ShopStage";
 import ShopCollectionSwitch, { SHOP_COLLECTION_TILES } from "./ShopCollectionSwitch";
+import ShopFilterSheet from "./ShopFilterSheet";
 import ShopIntroduction from "./ShopIntroduction";
 import ShopThumb from "./ShopThumb";
 import styles from "./YumiShop.module.css";
@@ -86,6 +95,9 @@ const NEW_SHELF_SIZE = 16;
 
 const EMPTY_STATE: WardrobeState = { earned: 0, paid: 0, spent: 0, balance: 0, owned: [], outfit: {} };
 
+/** Takes one choice back out of the filters in force. */
+const without = (group: FilterGroup, option: string) => (current: ShopFilters) => choose(current, group, option);
+
 
 type Availability = "loading" | "open" | "closed" | "failed";
 
@@ -114,8 +126,10 @@ export default function YumiShop({
   const [draft, setDraft] = useState<YumiOutfit>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [category, setCategory] = useState<ShopDepartment | "all">("all");
-  const [country, setCountry] = useState<ShopCountry | "all">("all");
+  const [filters, setFilters] = useState<ShopFilters>(NO_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  /** Bumped on each opening, so the sheet starts from the filters in force. */
+  const [filterSheetKey, setFilterSheetKey] = useState(0);
   const leaving = useRef(false);
   const [onlyOwned, setOnlyOwned] = useState(false);
   const [newOnly, setNewOnly] = useState(false);
@@ -202,15 +216,36 @@ export default function YumiShop({
   }, [demoReward]);
 
   // --------------------------------------------------------- catalogue
-  const groups = useMemo(() => browseShop({
-    department: category, country, collection, newOnly, ownedOnly: onlyOwned, owned: new Set(state.owned),
-  }), [category, country, collection, newOnly, onlyOwned, state.owned]);
+  const owned = useMemo(() => new Set(state.owned), [state.owned]);
+  /* Where the reader is, then what the filter sheet narrows it to. */
+  const here = useMemo(() => browseShop({
+    department: category, collection, newOnly, ownedOnly: onlyOwned, owned,
+  }), [category, collection, newOnly, onlyOwned, owned]);
+  const piecesHere = useMemo(() => here.flatMap(group => group.items), [here]);
+  const holdings = useMemo(() => ({ owned, balance: state.balance }), [owned, state.balance]);
+  const groups = useMemo(
+    () => here.map(group => ({ key: group.key, items: applyFilters(group.items, filters, holdings) })).filter(group => group.items.length > 0),
+    [here, filters, holdings],
+  );
   const shownCount = groups.reduce((count, group) => count + group.items.length, 0);
-  const filterCount = Number(country !== "all");
+  const filterCount = activeCount(filters);
+  /* The filters in force, each a chip under the tabs that takes itself off. */
+  const refine = copy.browse.refine;
+  const appliedFilters: { key: string; label: string; swatch?: string; remove: (current: ShopFilters) => ShopFilters }[] = [
+    ...(filters.sort === "recommended" ? [] : [{
+      key: "sort", label: refine.sorts[filters.sort], remove: (current: ShopFilters) => ({ ...current, sort: "recommended" as const }),
+    }]),
+    ...filters.price.map(band => ({ key: band, label: priceBandLabel(band), remove: without("price", band) })),
+    ...(filters.ownership ? [{ key: filters.ownership, label: refine.ownerships[filters.ownership], remove: without("ownership", filters.ownership) }] : []),
+    ...filters.colour.map(family => ({ key: family, label: refine.colours[family], swatch: COLOUR_SWATCHES[family], remove: without("colour", family) })),
+    ...filters.origin.map(country => ({ key: country, label: copy.countries[country], remove: without("origin", country) })),
+  ];
   /* The shop window (Chi, 2026-10-24: "先看櫥窗，再看全部"): with no
      department chosen, each department shows a shelf of its range, the new
-     arrivals first, and "See all" opens the department's full grid. */
-  const showcase = !onlyOwned && !newOnly && category === "all";
+     arrivals first, and "See all" opens the department's full grid. A
+     filter turns it into that grid: the sheet promised a number of pieces,
+     and the grid is where all of them are. */
+  const showcase = !onlyOwned && !newOnly && category === "all" && filterCount === 0;
   const newShelf = useMemo(
     () => showcase ? shelfPicks(groups.flatMap(group => group.items).filter(isNewArrival), NEW_SHELF_SIZE, item => departmentFor(item.slot)) : [],
     [showcase, groups],
@@ -244,7 +279,7 @@ export default function YumiShop({
     browse(() => { setCategory(key); setNewOnly(false); });
   }
   function chooseView(owned: boolean) {
-    browse(() => { setOnlyOwned(owned); setCategory("all"); setCountry("all"); setCollection("all"); setNewOnly(false); });
+    browse(() => { setOnlyOwned(owned); setCategory("all"); setFilters(NO_FILTERS); setCollection("all"); setNewOnly(false); });
   }
 
   // ------------------------------------------------- the stand shrinking
@@ -291,7 +326,6 @@ export default function YumiShop({
   }, [notice]);
 
   // ------------------------------------------------------------ derived
-  const owned = useMemo(() => new Set(state.owned), [state.owned]);
   const worn = state.outfit;
   const selected = shopItem(selectedId);
   const draftChanged = !sameOutfit(draft, worn);
@@ -561,7 +595,7 @@ export default function YumiShop({
             aria-label={copy.browse.filters}
             title={copy.browse.filters}
             aria-haspopup="dialog"
-            onClick={() => setFiltersOpen(true)}
+            onClick={() => { setFilterSheetKey(key => key + 1); setFiltersOpen(true); }}
           >
             <SlidersHorizontal size={18} strokeWidth={1.7} aria-hidden="true" />
             {filterCount > 0 && <span className={styles.filterCount}>{filterCount}</span>}
@@ -608,6 +642,31 @@ export default function YumiShop({
                 {copy.browse.newArrivals} · {shownCount.toLocaleString(locale)}
                 <X size={14} strokeWidth={2.2} aria-hidden="true" />
               </button>
+            )}
+            {appliedFilters.length > 0 && (
+              <ul className={styles.applied} aria-label={copy.browse.filters}>
+                {appliedFilters.map(({ key, label, swatch, remove }) => (
+                  <li key={key}>
+                    <button
+                      type="button"
+                      className={styles.appliedChip}
+                      aria-label={fill(copy.browse.refine.remove, { filter: label })}
+                      onClick={() => browse(() => setFilters(remove))}
+                    >
+                      {swatch && <i style={{ background: swatch }} aria-hidden="true" />}
+                      {label}
+                      <X size={13} strokeWidth={2.4} aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+                {appliedFilters.length > 1 && (
+                  <li>
+                    <button type="button" className={styles.appliedClear} onClick={() => browse(() => setFilters(NO_FILTERS))}>
+                      {copy.browse.refine.reset}
+                    </button>
+                  </li>
+                )}
+              </ul>
             )}
             <p className={styles.wearHint} role="status">{busy ? copy.browse.saving : copy.browse.autoSave}</p>
           </div>
@@ -658,7 +717,7 @@ export default function YumiShop({
                     )}
                   </header>
                   <ul className={styles.shelfRow}>
-                    {shelfPicks(group.items, SHELF_SIZE).map(item => <li key={item.id}>{card(item)}</li>)}
+                    {group.items.slice(0, SHELF_SIZE).map(item => <li key={item.id}>{card(item)}</li>)}
                   </ul>
                 </section>
               ))}
@@ -797,16 +856,18 @@ export default function YumiShop({
       </BottomSheet>
       {demoReward > 0 && <EnergyReward key={demoReward} amount={ENERGY_PER_USD} label={copy.energy.rewardPaid} />}
 
-      <BottomSheet open={filtersOpen} onClose={() => setFiltersOpen(false)} title={copy.browse.filters}>
-            <div className={`${styles.supply} ${styles.filterPanel}`}>
-              <label>{copy.browse.country}
-                <select value={country} onChange={event => setCountry(event.target.value as ShopCountry | "all")}>
-                  {(["all", ...SHOP_COUNTRIES] as const).map(key => <option key={key} value={key}>{copy.countries[key]}</option>)}
-                </select>
-              </label>
-              <button type="button" className={styles.secondary} disabled={!filterCount} onClick={() => setCountry("all")}>{copy.browse.clear}</button>
-            </div>
-      </BottomSheet>
+      <ShopFilterSheet
+        key={filterSheetKey}
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        filters={filters}
+        onApply={next => browse(() => setFilters(next))}
+        items={piecesHere}
+        wallet={holdings}
+        showOwnership={!onlyOwned}
+        copy={copy}
+        locale={locale}
+      />
 
       <AppLanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />
 

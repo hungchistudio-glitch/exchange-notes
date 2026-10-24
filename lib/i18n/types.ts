@@ -2748,6 +2748,16 @@ export type TranslationDictionary = {
       clear: string; saving: string; autoSave: string; notWorn: string;
       /** Collection 04's shelf; {count} in seeAll is a number of pieces. clearNew leaves the new arrivals. */
       newArrivals: string; newArrivalsNote: string; seeAll: string; clearNew: string;
+      /** The filter sheet. {count} is a number of pieces; {filter} a choice's label. */
+      refine: {
+        sort: string; sorts: { recommended: string; priceLow: string; priceHigh: string; newest: string };
+        price: string;
+        ownership: string; ownerships: { unowned: string; owned: string; affordable: string };
+        colour: string; colourNote: string;
+        colours: { gold: string; red: string; violet: string; green: string; blue: string; neutral: string };
+        origin: string;
+        showOne: string; showOther: string; none: string; reset: string; remove: string;
+      };
       departments: { eyes: string; eyewear: string; earrings: string; brow: string; necklace: string; head: string; neck: string; pin: string; mouth: string; charm: string; material: string };
     };
     categories: { featured: string; jewelry: string; eyes: string; materials: string; wear: string; small: string; owned: string };

@@ -2680,6 +2680,22 @@ const italian: TranslationDictionary = {
       "newArrivalsNote": "Stazione 33 · Collezione 04",
       "seeAll": "Vedi tutti i {count}",
       "clearNew": "Chiudi",
+      "refine": {
+        "sort": "Ordine",
+        "sorts": { "recommended": "Consigliati", "priceLow": "Prezzo: dal più basso", "priceHigh": "Prezzo: dal più alto", "newest": "Prima le novità" },
+        "price": "Prezzo",
+        "ownership": "Possesso",
+        "ownerships": { "unowned": "Non ancora tuoi", "owned": "Tuoi", "affordable": "Acquistabili ora" },
+        "colour": "Colore",
+        "colourNote": "In base al colore principale di ogni pezzo.",
+        "colours": { "gold": "Oro e ambra", "red": "Rosso e rosa", "violet": "Viola", "green": "Verde", "blue": "Blu e turchese", "neutral": "Nero, bianco e grigio" },
+        "origin": "Origine",
+        "showOne": "Mostra {count} pezzo",
+        "showOther": "Mostra {count} pezzi",
+        "none": "Nessun pezzo corrisponde",
+        "reset": "Cancella tutto",
+        "remove": "Rimuovi {filter}"
+      },
       "departments": {
             "eyes": "Occhi",
             "eyewear": "Occhiali",
