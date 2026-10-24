@@ -45,7 +45,7 @@ export default function VocabularyCompactHeader({ item }: Props) {
             <span className="flex shrink-0 items-center gap-2">
               <LanguageOriginBadge language={primary.language} size="sm" />
 
-              <span className="text-[0.5625rem] font-semibold uppercase tracking-[0.13em] text-ink-faint">
+              <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.13em] text-ink-faint">
                 {statusLabels[item.status]}
               </span>
             </span>

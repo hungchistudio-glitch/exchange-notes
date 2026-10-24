@@ -55,7 +55,7 @@ export default function LabScreen({
         <div className="mt-2 flex items-start justify-between gap-4">
           <div className="min-w-0">
             {eyebrow ? (
-              <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
                 {eyebrow}
               </p>
             ) : null}

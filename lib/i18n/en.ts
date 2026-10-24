@@ -578,7 +578,7 @@ const english: TranslationDictionary = {
   lexicon: {
     open: "Search or add a word",
     fieldPlaceholder: "Search or add a word…",
-    fieldPlaceholderLanguage: "Search or add a word in {language}…",
+    fieldPlaceholderLanguage: "{language} word or phrase…",
     fieldHint: "Type it, say it, or point your camera at it.",
     inputAriaLabel: "Search or add a word",
 

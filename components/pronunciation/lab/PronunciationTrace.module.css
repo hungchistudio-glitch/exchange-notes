@@ -125,7 +125,7 @@
   fill: color-mix(in oklab, var(--ink) 62%, transparent);
   font-family: var(--font-phonetic, var(--font-mono)), ui-monospace, monospace;
   /* In viewBox units, and in rem so the reader's text size still moves it. */
-  font-size: 0.5625rem;
+  font-size: 0.6875rem;
 }
 
 .labelActive {
@@ -176,7 +176,7 @@
 }
 
 .trace[data-instrument="phoneme-waveform"] .label {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
 }
 
 /* ── Tap targets ─────────────────────────────────────────────────────── */

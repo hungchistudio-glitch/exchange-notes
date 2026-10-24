@@ -167,7 +167,7 @@ export default function WordCardMessage({
     return (
       <div key={code}>
         <span
-          className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
+          className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
           style={{ color: "var(--msg-ink-faint)" }}
         >
           {language.endonym}
@@ -188,7 +188,7 @@ export default function WordCardMessage({
             aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
               text,
             })}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border"
+            className="hit-44 relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border"
             style={speakerStyle(primary)}
           >
             <Volume2 size={15} strokeWidth={1.8} />
@@ -364,7 +364,7 @@ export default function WordCardMessage({
           aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
             text,
           })}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border"
+          className="hit-44 relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border"
           style={{
             background: "var(--msg-surface)",
             borderColor: "var(--msg-line)",
@@ -462,13 +462,13 @@ export default function WordCardMessage({
       <div className="mt-2.5 flex items-center justify-between">
         <time
           dateTime={createdAt}
-          className="text-[0.625rem]"
+          className="text-[0.6875rem]"
           style={{ color: "var(--msg-ink-faint)" }}
         >
           {formatMessageTime(createdAt, locale)}
         </time>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-4">
           {/* Forwarding a card someone sent you is how a good word travels.
               The picker holds the card itself, so this needs nothing saved
               first. */}
@@ -476,6 +476,7 @@ export default function WordCardMessage({
             onClick={onShare}
             aria-label={t.vocabulary.lookup.shareWithFriend}
             sizeClassName="h-7 w-7"
+            className="hit-44"
           >
             <Send size={13} strokeWidth={1.9} />
           </OrbitIconButton>
@@ -485,7 +486,7 @@ export default function WordCardMessage({
             onClick={onSave}
             disabled={saving || saved}
             aria-label={t.capture.result.saveToVocabulary}
-            className="flex h-7 w-7 items-center justify-center rounded-full transition disabled:opacity-60"
+            className="hit-44 relative flex h-7 w-7 items-center justify-center rounded-full transition disabled:opacity-60"
             style={
               saved
                 ? { background: "var(--success-soft)", color: "var(--success)" }

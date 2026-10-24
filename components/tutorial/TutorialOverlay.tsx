@@ -206,7 +206,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
       className="fixed inset-0 z-[120] flex flex-col bg-surface"
     >
       <header className="flex shrink-0 items-center justify-between px-7 pt-[max(1rem,env(safe-area-inset-top))]">
-        <span className="text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-ink-faint">
+        <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.22em] text-ink-faint">
           {insertValues(copy.stepLabel, {
             current: index + 1,
             total: STEP_ORDER.length,

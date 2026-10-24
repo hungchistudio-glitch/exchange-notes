@@ -230,7 +230,7 @@ export default function SettingsSearch() {
                   type="button"
                   onClick={() => setQuery("")}
                   aria-label={t.common.clearField}
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-ink-soft"
+                  className="hit-44 relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-ink-soft"
                 >
                   <X size={12} strokeWidth={2.4} />
                 </button>

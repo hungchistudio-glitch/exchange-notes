@@ -208,7 +208,7 @@ export default function OtherReadings({
                             </span>
                           ) : null}
                           {used ? (
-                            <span className="font-cjk rounded-full bg-[#c9962e]/[0.18] px-2 py-0.5 text-[0.625rem] font-semibold text-ink-strong">
+                            <span className="font-cjk rounded-full bg-[#c9962e]/[0.18] px-2 py-0.5 text-[0.6875rem] font-semibold text-ink-strong">
                               {copy.usedHere}
                             </span>
                           ) : null}

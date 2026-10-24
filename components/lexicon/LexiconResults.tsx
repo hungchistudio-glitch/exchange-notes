@@ -87,7 +87,7 @@ type LexiconResultsProps = {
 function eyebrowClass(tone: LexiconTone) {
   return tone === "cosmic"
     ? "hud-label"
-    : "text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint";
+    : "text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-ink-faint";
 }
 
 function cardClass(tone: LexiconTone) {
@@ -289,7 +289,7 @@ export default function LexiconResults({
                         {sides.secondary.text}
                       </p>
                       {saved && (
-                        <p className="mt-0.5 text-[0.625rem] text-ink-faint">
+                        <p className="mt-0.5 text-[0.6875rem] text-ink-faint">
                           {insertValues(copy.savedOn, { date: saved })}
                         </p>
                       )}

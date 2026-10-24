@@ -1714,7 +1714,7 @@ export default function ConversationRoom({
                           </p>
                         )}
                         <div
-                          className="mt-1.5 flex items-center justify-end gap-1 text-[0.625rem]"
+                          className="mt-1.5 flex items-center justify-end gap-1 text-[0.6875rem]"
                           style={{
                             color: isMine
                               ? "var(--msg-bubble-out-meta)"
@@ -1953,7 +1953,7 @@ export default function ConversationRoom({
               {showCharacterCount && (
                 <div className="flex justify-end px-3 pt-1.5">
                   <span
-                    className="text-[0.625rem]"
+                    className="text-[0.6875rem]"
                     style={{
                       color:
                         newMessage.length >= MAX_MESSAGE_LENGTH
@@ -2016,7 +2016,7 @@ export default function ConversationRoom({
                 onClick={deleteMotion.requestClose}
                 disabled={deleting}
                 aria-label={copy.closeDeleteConfirmation}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full disabled:opacity-50"
+                className="hit-44 relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full disabled:opacity-50"
                 style={{
                   background: "var(--msg-surface-soft)",
                   color: "var(--msg-ink-soft)",

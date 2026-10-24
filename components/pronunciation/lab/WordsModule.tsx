@@ -153,7 +153,7 @@ export default function WordsModule() {
                     <div className="border-t border-black/[0.05] px-5 py-4">
                       {drills.length > 0 ? (
                         <div className="mb-4">
-                          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                             {copy.words.drills}
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">

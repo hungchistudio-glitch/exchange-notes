@@ -136,6 +136,13 @@ for ids the live code does not sell yet:
 | --- | --- |
 | `20261023200000_yumi_shop_collection04` | `20261023220624` |
 
+On 2026-10-24 two were applied from the database advisor's list — the
+missing foreign-key indexes, then the 2026-08-31 backup table dropped on its
+own — and written to files only after the versions were read back, so
+nothing needed renaming: `20261024205753_index_unindexed_foreign_keys` and
+`20261024205803_drop_vocabulary_examples_backup_20260831`. Applying first and
+naming the file second is the order that cannot drift.
+
 **Sixteen renames across nine occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.

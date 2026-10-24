@@ -179,7 +179,7 @@ export default function ConversationRow({
           <span className="flex shrink-0 items-center gap-1.5">
             {phraseCount > 0 && !hasUnread && (
               <span
-                className="rounded-full px-2 py-0.5 text-[0.625rem] font-semibold"
+                className="rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold"
                 style={{
                   background: "var(--msg-accent-soft)",
                   color: "var(--msg-accent)",

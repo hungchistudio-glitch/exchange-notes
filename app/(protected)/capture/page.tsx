@@ -1086,7 +1086,7 @@ function CaptureContent() {
 
         {!fullScreen && !imageData && (
           <section className="flex flex-1 flex-col items-center justify-center pb-28 text-center">
-            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-ink-faint">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.22em] text-ink-faint">
               {getLanguageName(languagePair[0], interfaceLanguage)} ×{" "}
               {getLanguageName(languagePair[1], interfaceLanguage)}
             </p>
@@ -1259,11 +1259,11 @@ function CaptureContent() {
             {result && !fromLexicon && (
               <div className="flex flex-1 flex-col pt-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+                  <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
                     {capture.result.eyebrow}
                   </span>
 
-                  <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[0.625rem] font-medium text-ink-soft">
+                  <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[0.6875rem] font-medium text-ink-soft">
                     {insertValues(capture.result.confidence, {
                       value:
                         result.confidence === "high"

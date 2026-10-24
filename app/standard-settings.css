@@ -104,7 +104,7 @@ html:not([data-interface-mode="yumi-cosmic"]) .settings-screen .settings-section
   content: counter(settings-group, decimal-leading-zero);
   flex: 0 0 auto;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   color: rgb(0 0 0 / 0.3);

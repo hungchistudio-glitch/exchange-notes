@@ -573,7 +573,7 @@ const french: TranslationDictionary = {
   lexicon: {
     open: "Rechercher ou ajouter un mot",
     fieldPlaceholder: "Cherchez ou ajoutez un mot…",
-    fieldPlaceholderLanguage: "Cherchez ou ajoutez un mot en {language}…",
+    fieldPlaceholderLanguage: "Mot ou phrase en {language}…",
     fieldHint: "Écrivez-le, dites-le, ou visez-le avec l'appareil photo.",
     inputAriaLabel: "Rechercher ou ajouter un mot",
 

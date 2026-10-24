@@ -107,7 +107,7 @@ export default function ReplyCoachPanel({
           type="button"
           onClick={onClose}
           aria-label={copy.close}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+          className="hit-44 relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
           style={{ color: "var(--msg-ink-faint)" }}
         >
           <X size={15} strokeWidth={2} />
@@ -165,7 +165,7 @@ export default function ReplyCoachPanel({
                   }}
                 >
                   <span
-                    className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
+                    className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
                     style={{ color: "var(--msg-accent)" }}
                   >
                     {directionLabel[suggestion.direction]}

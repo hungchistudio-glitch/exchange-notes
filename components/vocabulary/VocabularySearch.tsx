@@ -170,7 +170,7 @@ export default function VocabularySearch({
               type="button"
               onClick={onClear}
               aria-label={search.clearSearch}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-ink-soft transition-transform active:scale-95"
+              className="hit-44 relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-ink-soft transition-transform active:scale-95"
             >
               <X size={13} strokeWidth={2} />
             </button>
@@ -188,7 +188,7 @@ export default function VocabularySearch({
               type="submit"
               aria-label={t.lexicon.search}
               title={t.lexicon.search}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-white transition-transform active:scale-95"
+              className="hit-44 relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-white transition-transform active:scale-95"
             >
               <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
             </button>
