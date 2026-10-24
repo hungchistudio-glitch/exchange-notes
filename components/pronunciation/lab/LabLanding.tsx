@@ -144,7 +144,7 @@ export default function LabLanding() {
         {/* ── Today's training ──────────────────────────────────── */}
         <section className="overflow-hidden rounded-[26px] border border-black/[0.06] bg-black text-white">
           <div className="p-5">
-            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
               {copy.today.eyebrow}
             </p>
 
@@ -199,7 +199,7 @@ export default function LabLanding() {
           aria-label={copy.progress.title}
           className="rounded-[26px] border border-black/[0.06] bg-white p-5"
         >
-          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
             {copy.progress.eyebrow}
           </p>
           <h2 className="mt-1 text-lg font-bold tracking-[-0.02em]">

@@ -230,7 +230,7 @@ export default function NameStep({
               onClick={() => photoInputRef.current?.click()}
               disabled={uploadingPhoto}
               aria-label={avatarUrl ? copy.changePhoto : copy.addPhoto}
-              className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white ring-[3px] ring-surface transition-transform active:scale-90 disabled:opacity-50"
+              className="hit-44 absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white ring-[3px] ring-surface transition-transform active:scale-90 disabled:opacity-50"
             >
               <Camera size={13} strokeWidth={2} />
             </button>

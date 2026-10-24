@@ -71,7 +71,7 @@ function ChoiceRow<T extends string>({
 }: ChoiceRowProps<T>) {
   return (
     <div>
-      <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
         {label}
       </p>
 

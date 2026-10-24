@@ -55,7 +55,7 @@ export default function PwaInstallOverlay({ open, onClose, children }: PwaInstal
           type="button"
           aria-label={t.common.close}
           onClick={motion.requestClose}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/[0.05] text-ink-soft transition-colors hover:bg-black/[0.08]"
+          className="hit-44 absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/[0.05] text-ink-soft transition-colors hover:bg-black/[0.08]"
         >
           <X size={15} strokeWidth={1.8} />
         </button>

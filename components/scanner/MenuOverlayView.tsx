@@ -209,7 +209,7 @@ export default function MenuOverlayView({
             onClick={() => setZoomIndex((index) => Math.max(0, index - 1))}
             disabled={zoomIndex === 0}
             aria-label={copy.zoomOut}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.08] text-ink-strong transition-colors active:bg-black/[0.05] disabled:opacity-35"
+            className="hit-44 relative flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.08] text-ink-strong transition-colors active:bg-black/[0.05] disabled:opacity-35"
           >
             <Minus size={15} strokeWidth={2} />
           </button>
@@ -228,7 +228,7 @@ export default function MenuOverlayView({
             }
             disabled={zoomIndex === ZOOM_STEPS.length - 1}
             aria-label={copy.zoomIn}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.08] text-ink-strong transition-colors active:bg-black/[0.05] disabled:opacity-35"
+            className="hit-44 relative flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.08] text-ink-strong transition-colors active:bg-black/[0.05] disabled:opacity-35"
           >
             <Plus size={15} strokeWidth={2} />
           </button>

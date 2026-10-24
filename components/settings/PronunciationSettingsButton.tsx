@@ -206,7 +206,7 @@ export default function PronunciationSettingsButton() {
               className="mt-5 w-full accent-blue-600"
             />
 
-            <div className="mt-2 flex justify-between text-[0.625rem] font-medium text-ink-faint">
+            <div className="mt-2 flex justify-between text-[0.6875rem] font-medium text-ink-faint">
               <span>{copy.slower}</span>
               <span>{copy.faster}</span>
             </div>
@@ -334,7 +334,7 @@ export default function PronunciationSettingsButton() {
                             <span className="min-w-0 truncate">{voice.name}</span>
                             <span
                               className={[
-                                "shrink-0 font-mono text-[0.625rem]",
+                                "shrink-0 font-mono text-[0.6875rem]",
                                 selected ? "text-white" : "text-ink-faint",
                               ].join(" ")}
                             >

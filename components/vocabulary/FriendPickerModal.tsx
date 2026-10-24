@@ -156,7 +156,7 @@ export default function FriendPickerModal({
             type="button"
             onClick={motion.requestClose}
             aria-label={t.common.close}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-black/5 hover:text-black"
+            className="hit-44 relative flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-black/5 hover:text-black"
           >
             <X size={15} />
           </button>

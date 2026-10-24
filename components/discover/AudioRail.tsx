@@ -91,7 +91,7 @@ export default function AudioRail({
               onClick={() => onModeChange(option.value)}
               aria-label={language.endonym}
               aria-pressed={active}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[0.65625rem] font-semibold transition-colors"
+              className="hit-44 relative flex h-7 w-7 items-center justify-center rounded-full text-[0.65625rem] font-semibold transition-colors"
               style={{
                 backgroundColor: active ? DISCOVER_COLORS.accent : "transparent",
                 color: active

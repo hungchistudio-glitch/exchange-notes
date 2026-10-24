@@ -109,7 +109,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
       }}
     >
       <span
-        className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
+        className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
         style={{ color: "var(--msg-ink-faint)" }}
       >
         📰 {t.messages.newsCardEyebrow}
@@ -136,7 +136,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
           </p>
           {(titlePronunciation.pinyin || titlePronunciation.zhuyin) && (
             <p
-              className="mt-0.5 text-[0.625rem] leading-4"
+              className="mt-0.5 text-[0.6875rem] leading-4"
               style={{ color: "var(--msg-ink-faint)" }}
             >
               {[titlePronunciation.pinyin, titlePronunciation.zhuyin]
@@ -177,7 +177,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
             </p>
             {(summaryPronunciation.pinyin || summaryPronunciation.zhuyin) && (
               <p
-                className="mt-0.5 text-[0.625rem] leading-4"
+                className="mt-0.5 text-[0.6875rem] leading-4"
                 style={{ color: "var(--msg-ink-faint)" }}
               >
                 {[summaryPronunciation.pinyin, summaryPronunciation.zhuyin]
@@ -200,7 +200,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
           style={{ borderColor: "var(--msg-line)" }}
         >
           <span
-            className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
+            className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
             style={{ color: "var(--msg-ink-faint)" }}
           >
             {t.messages.newsCardVocabulary}
@@ -269,7 +269,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
                         wordPronunciation.pinyin ||
                         wordPronunciation.zhuyin) && (
                         <p
-                          className="text-[0.625rem]"
+                          className="text-[0.6875rem]"
                           style={{ color: "var(--msg-ink-faint)" }}
                         >
                           {[
@@ -305,14 +305,14 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
             href={card.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="min-w-0 truncate text-[0.625rem] underline"
+            className="min-w-0 truncate text-[0.6875rem] underline"
             style={{ color: "var(--msg-ink-faint)" }}
           >
             {card.sourceName || card.sourceUrl}
           </a>
         ) : (
           <span
-            className="min-w-0 truncate text-[0.625rem]"
+            className="min-w-0 truncate text-[0.6875rem]"
             style={{ color: "var(--msg-ink-faint)" }}
           >
             {card.sourceName}
@@ -320,7 +320,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
         )}
         <time
           dateTime={createdAt}
-          className="shrink-0 text-[0.625rem]"
+          className="shrink-0 text-[0.6875rem]"
           style={{ color: "var(--msg-ink-faint)" }}
         >
           {formatMessageTime(createdAt, locale)}

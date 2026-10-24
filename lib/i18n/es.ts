@@ -578,7 +578,7 @@ const spanish: TranslationDictionary = {
   lexicon: {
     open: "Buscar o añadir una palabra",
     fieldPlaceholder: "Busca o añade una palabra…",
-    fieldPlaceholderLanguage: "Busca o añade una palabra en {language}…",
+    fieldPlaceholderLanguage: "Palabra o frase en {language}…",
     fieldHint: "Escríbela, dila o enfócala con la cámara.",
     inputAriaLabel: "Buscar o añadir una palabra",
 

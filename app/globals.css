@@ -608,3 +608,23 @@ html[data-launching="true"] :is([data-app-viewport], [data-app-ambience]) *::aft
     animation-duration: 1ms;
   }
 }
+
+/*
+ * A key drawn smaller than a finger still answers to one (2026-10-24: the
+ * word card's 28px send, save and listen keys, the search field's clear).
+ * Its tap area reaches 44px around its centre, the size Apple and WCAG ask
+ * for, without changing how it looks. ::before, because the orbit key
+ * already draws its ring with ::after. The key must be positioned itself
+ * (`relative`, or the `absolute` it already has): this sets no position,
+ * since an unlayered one would override Tailwind's `absolute`. Give
+ * neighbours room so their areas do not swallow each other.
+ */
+.hit-44::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}

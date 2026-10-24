@@ -220,7 +220,7 @@ export default function SpeakTrainer({
   return (
     <div className="space-y-4">
       <section className="rounded-3xl border border-black/[0.06] bg-white p-5">
-        <p className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
           {copy.listenFirst}
         </p>
 
@@ -303,7 +303,7 @@ export default function SpeakTrainer({
 
       {clipSource ? (
         <section className="rounded-3xl border border-black/[0.06] bg-white p-5">
-          <h3 className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+          <h3 className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
             {copy.compare}
           </h3>
 

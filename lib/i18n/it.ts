@@ -573,7 +573,7 @@ const italian: TranslationDictionary = {
   lexicon: {
     open: "Cerca o aggiungi una parola",
     fieldPlaceholder: "Cerca o aggiungi una parola…",
-    fieldPlaceholderLanguage: "Cerca o aggiungi una parola in {language}…",
+    fieldPlaceholderLanguage: "Parola o frase in {language}…",
     fieldHint: "Scrivila, dilla, o inquadrala con la fotocamera.",
     inputAriaLabel: "Cerca o aggiungi una parola",
 

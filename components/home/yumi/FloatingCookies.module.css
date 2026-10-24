@@ -99,7 +99,7 @@
 .side + .side { border-top:1px solid #e6e9de; padding-top:18px; }
 .wordRow { display:flex; align-items:center; justify-content:space-between; gap:15px; }
 .wordRow > div { min-width:0; }
-.language { font-size:0.625rem; color:#77836a; }
+.language { font-size:0.6875rem; color:#77836a; }
 .wordRow h2 { font:2rem/1.2 Georgia,"Songti TC",serif; margin:7px 0; overflow-wrap:anywhere; }
 .translation { font-size:1.375rem; line-height:1.5; margin:5px 0; overflow-wrap:anywhere; }
 .speaker { flex:none; width:46px; height:46px; display:grid; place-items:center; border:1px solid #d9e1cf; border-radius:50%; background:#edf1e6; color:#526a43; cursor:pointer; }

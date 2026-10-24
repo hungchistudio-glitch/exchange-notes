@@ -757,7 +757,7 @@ export default function MessagesHub() {
                   {entry.label}
                   {entry.badge !== undefined && (
                     <span
-                      className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.625rem] font-bold"
+                      className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6875rem] font-bold"
                       style={{
                         background: "var(--msg-accent)",
                         color: "var(--msg-accent-ink)",

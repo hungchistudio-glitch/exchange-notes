@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 import { askText, textQuotaResetAt } from "@/lib/ai/askText";
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
-import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
+import { consumeDailyQuota, nextQuotaDayStart, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import {
   readToneKeys,
   TONE_KEYS,
@@ -60,11 +60,6 @@ const MODEL_BUDGET_MS = 25_000;
 /** How long to hold off after a failure that is not the daily quota. */
 const TRANSIENT_PAUSE_MS = 2 * 60 * 1000;
 
-/** The next midnight UTC, when the app's own per-reader allowance renews. */
-function nextUtcMidnight(now = Date.now()) {
-  const day = new Date(now).toISOString().slice(0, 10);
-  return new Date(`${day}T00:00:00.000Z`).getTime() + 24 * 60 * 60 * 1000;
-}
 
 /*
  * "Stop asking until then."
@@ -250,7 +245,13 @@ export async function POST(request: Request) {
         MAX_ANALYSES_PER_DAY,
       ))
     ) {
-      return pausedResponse("Daily language-help limit reached.", nextUtcMidnight());
+      // Their allowance renews at their own midnight, not UTC's.
+      const { data: zone } = await supabase
+        .from("notification_preferences")
+        .select("time_zone")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      return pausedResponse("Daily language-help limit reached.", nextQuotaDayStart(zone?.time_zone));
     }
 
     // Spent; handed back below if the model never answers.

@@ -575,7 +575,7 @@ const traditionalChinese: TranslationDictionary = {
   lexicon: {
     open: "搜尋或新增單字",
     fieldPlaceholder: "搜尋或新增單字…",
-    fieldPlaceholderLanguage: "搜尋或新增{language}單字…",
+    fieldPlaceholderLanguage: "{language}單字或句子…",
     fieldHint: "可以打字、說出來，或用相機拍下來。",
     inputAriaLabel: "搜尋或新增單字",
 

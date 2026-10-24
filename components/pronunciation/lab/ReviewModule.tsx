@@ -130,7 +130,7 @@ export default function ReviewModule() {
               {bandOrder.map((band) =>
                 bands[band].length === 0 ? null : (
                   <div key={band}>
-                    <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                    <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                       {bandLabel[band]}
                     </p>
 

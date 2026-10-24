@@ -36,7 +36,7 @@
 .edition {
   margin-left: auto;
   font-family: var(--font-mono), monospace;
-  font-size: 0.5625rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.16em;
   color: var(--cosmic-violet);
 }
@@ -683,7 +683,7 @@
 }
 
 .nodeFamiliar {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   line-height: 1.35;
   color: #f2e4ef;
 }
