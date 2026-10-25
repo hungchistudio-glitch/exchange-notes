@@ -2782,6 +2782,10 @@ export type TranslationDictionary = {
     title: string;
     open: string;
     back: string;
+    /** The game's own learning-language key: {language} is the language's name. */
+    language: string;
+    languageTitle: string;
+    languageNote: string;
     level: string;
     levelChoice: string;
     levelRewards: string;

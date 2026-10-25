@@ -61,8 +61,7 @@
 .bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   min-height: 48px;
 }
 
@@ -85,6 +84,83 @@
 .listen:focus-visible {
   outline: 3px solid var(--hy-accent);
   outline-offset: 2px;
+}
+
+/* The game's own learning language, beside the difficulty bar. */
+.languageKey {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 2.75rem;
+  margin-inline-start: auto;
+  padding: 0 0.7rem;
+  border: 1px solid var(--hy-line);
+  border-radius: 999px;
+  background: var(--hy-card);
+  color: var(--hy-ink);
+  font-size: 0.8125rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.languageKey:focus-visible,
+.languageChoice:focus-visible {
+  outline: 3px solid var(--hy-accent);
+  outline-offset: 2px;
+}
+
+.languages {
+  display: grid;
+  gap: 6px;
+}
+
+.languageChoice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 3.5rem;
+  padding: 0 14px;
+  border: 1px solid var(--line, #e6dfcf);
+  border-radius: 16px;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.languageChoice[aria-checked="true"] {
+  border-color: currentColor;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.languageBadge {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--line, #e6dfcf);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.languageNames {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.languageNames small {
+  opacity: 0.65;
+  font-size: 0.8125rem;
+}
+
+.languageNote {
+  margin: 12px 2px 0;
+  opacity: 0.7;
+  font-size: 0.8125rem;
+  line-height: 1.45;
 }
 
 .levels {

@@ -33,8 +33,8 @@ function play(options: { language?: "fr" | "zh-TW"; earnedToday?: number } = {})
   render(
     <HangyumiGame
       service={service}
-      learningLanguage={options.language ?? "fr"}
-      hintLanguage={options.language === "zh-TW" ? "en" : "zh-TW"}
+      defaultLanguage={options.language ?? "fr"}
+      nativeLanguage={options.language === "zh-TW" ? "en" : "zh-TW"}
       loadOutfit={loadOutfit}
     />,
   );
@@ -142,6 +142,19 @@ describe("a round of Hangyumi", () => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "P" }));
     });
     await waitFor(() => expect(screen.getByRole("button", { name: "p, already guessed" })).toBeInTheDocument());
+  });
+
+  it("switches the language it deals in, and only that", async () => {
+    play();
+    await screen.findByText("只存在很短的時間");
+    fireEvent.click(screen.getByRole("button", { name: "Learning language: French" }));
+    fireEvent.click(await screen.findByRole("radio", { name: /中文/ }));
+    expect(window.localStorage.getItem("hangyumi-language")).toBe("zh-TW");
+    // Chinese at C1 has no practice word: it says so rather than falling back.
+    expect(await screen.findByText(/No C1 words in .* have been approved yet\./)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Difficulty B1" }));
+    // Played in the reader's own language, the clue moves to another one.
+    expect(await screen.findByText("a trip for pleasure")).toBeInTheDocument();
   });
 
   it("guesses Chinese from a set of characters that holds the answer's", async () => {

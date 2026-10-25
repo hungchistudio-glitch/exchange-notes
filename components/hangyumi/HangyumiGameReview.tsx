@@ -18,8 +18,8 @@ export default function HangyumiGameReview({ learningLanguage, hintLanguage, ear
   return (
     <HangyumiGame
       service={service}
-      learningLanguage={learningLanguage}
-      hintLanguage={hintLanguage}
+      defaultLanguage={learningLanguage}
+      nativeLanguage={hintLanguage}
       loadOutfit={loadOutfit}
       backHref="/hangyumi-review"
     />

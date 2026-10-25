@@ -47,10 +47,6 @@ const BASE_TOP = 0.22;
 const STAND_Y = BASE_TOP + (SHELL_RADIUS + TUBE_RADIUS) * SCALE;
 const EYE_TOP = HANG_Y + (EYE_REST.x + EYE_RADIUS) * SCALE;
 
-const easeOutBack = (t: number) => {
-  const c = 1.6;
-  return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
-};
 const easeOutBounce = (t: number) => {
   if (t < 1 / 2.75) return 7.5625 * t * t;
   if (t < 2 / 2.75) return 7.5625 * (t -= 1.5 / 2.75) * t + 0.75;
@@ -176,17 +172,12 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
 
   // ------------------------------------------------------------ Yumi
   const actor = buildYumiActor();
-  const { model, yuGroup, arm, armCollar, eyeGroup, lookGroup, pupil, shellMaterial } = actor;
+  const { model, yuGroup, arm, armCollar, eyeGroup, blinkPivot, lookGroup, pupil, shellMaterial, eyeMaterial } = actor;
   model.scale.setScalar(SCALE);
   const hang = new THREE.Group();
   hang.position.y = HANG_Y - BEAM_Y;
   pivot.add(hang);
   hang.add(model);
-
-  const armDirection = EYE_REST.clone().sub(ARM_ROOT);
-  const armLength = armDirection.length();
-  arm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), armDirection.normalize());
-  eyeGroup.position.copy(EYE_REST);
   model.traverse(object => {
     const mesh = object as THREE.Mesh;
     if (mesh.isMesh && mesh.material && (mesh.material as THREE.Material).visible !== false) mesh.castShadow = true;
@@ -196,54 +187,158 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   let wearing = false;
 
   // ---------------------------------------------------------- the pose
-  /* Each piece's appearance runs from 0 (not there) to 1 (hung). */
-  const pieces = { eye: 0, arm: 0, body: 0 };
-  const wanted = { eye: 0, arm: 0, body: 0 };
-  const startedAt = { eye: 0, arm: 0, body: 0 };
+  /*
+   * Every piece moves on a spring rather than along a fixed curve, so it
+   * carries momentum: it overshoots, the line takes its weight, and it
+   * settles. Under-damped (ζ ≈ 0.5) for the drops, which is what makes
+   * them land rather than arrive.
+   *
+   * Her own frame while she hangs: turned a quarter, so her local +x is
+   * up. The eye slides down the line from the beam like a bead; the neck
+   * (her arm) grows down from it; the body rises into place beneath and
+   * turns to face us.
+   */
+  type Spring = { x: number; v: number; to: number; k: number; c: number };
+  const spring = (k: number, c: number): Spring => ({ x: 0, v: 0, to: 0, k, c });
+  const eyeIn = spring(62, 8.5);
+  const neckIn = spring(95, 10);
+  const bodyIn = spring(55, 7.2);
+  /* The eye's bob when the neck catches it, and the line's yank on the third miss. */
+  const bob = spring(140, 9);
+  const tug = spring(320, 15);
+  const springs = [eyeIn, neckIn, bodyIn, bob, tug];
+  const settled = (s: Spring) => Math.abs(s.x - s.to) < 0.0008 && Math.abs(s.v) < 0.0008;
+  const snap = (s: Spring, to: number) => { s.x = s.to = to; s.v = 0; };
+  function stepSprings(dt: number) {
+    /* Small steps, so a stiff spring stays stable on a slow frame. */
+    for (let left = dt; left > 0; left -= 1 / 240) {
+      const h = Math.min(left, 1 / 240);
+      for (const s of springs) {
+        s.v += (-s.k * (s.x - s.to) - s.c * s.v) * h;
+        s.x += s.v * h;
+      }
+    }
+  }
+
   let free = 0;
   let freeWanted = 0;
   let freeStartedAt = 0;
-  let lookDown = 0;
-  let lookDownWanted = 0;
+  let blinkAt = -1e9;
+  let eyeLanded = false;
+  let neckLanded = false;
+  /* When the third piece was hung: the struggle runs from here. */
+  let lostAt: number | null = null;
+  /* How many pieces the last pose had: a jump of more than one is a resume. */
+  let lastHung = 0;
   /* The swing, as a damped pendulum about the beam. */
   let angle = 0;
   let velocity = 0;
   let pendingOutfit: YumiOutfit | null = null;
 
-  const APPEAR_MS = 520;
   const FREE_MS = 1100;
+  const BLINK_MS = 190;
+  /* The struggle starts once the body has landed, and is over by this. */
+  const STRUGGLE_DELAY = 0.45;
+  const DEATH_SECONDS = 3.4;
+  const UP_LOCAL = new THREE.Vector3(1, 0, 0);
+  const Y_AXIS = new THREE.Vector3(0, 1, 0);
+  const Z_AXIS = new THREE.Vector3(0, 0, 1);
+  const NECK_REST = ARM_ROOT.clone().sub(EYE_REST);
+  const BODY_FROM_EYE = EYE_REST.clone().negate();
+  const eyeColour = eyeMaterial.color.clone();
+  const deadEye = new THREE.Color(0xa7a49b);
+  const scratch = { eye: new THREE.Vector3(), root: new THREE.Vector3(), rel: new THREE.Vector3(), dir: new THREE.Vector3() };
+
+  const smoothstep = (a: number, b: number, t: number) => {
+    const x = clamp01((t - a) / (b - a));
+    return x * x * (3 - 2 * x);
+  };
+  const burst = (t: number, at: number, height: number) => height * Math.exp(-((t - at) ** 2) / (2 * 0.2 ** 2));
+
+  /** The struggle at time t (seconds since it began): how hard, and where. */
+  function struggle(t: number) {
+    if (lostAt === null || t <= 0) return { kick: 0, env: 0, closed: 0 };
+    if (reduced) return { kick: 0, env: 0, closed: 1 };
+    /* Three bursts, each weaker: fighting the line, then running out. */
+    const env = burst(t, 0.3, 1) + burst(t, 0.9, 0.72) + burst(t, 1.45, 0.42);
+    const kick = env * (0.42 * Math.sin(t * Math.PI * 2 * 3.1) + 0.17 * Math.sin(t * Math.PI * 2 * 7.3 + 1.1));
+    const closed = smoothstep(1.75, 2.55, t);
+    return { kick, env, closed };
+  }
 
   function place(now: number) {
-    for (const name of ["eye", "arm", "body"] as const) {
-      if (pieces[name] !== wanted[name]) {
-        pieces[name] = wanted[name] === 0 || reduced ? wanted[name] : clamp01((now - startedAt[name]) / APPEAR_MS);
-      }
-    }
     if (free !== freeWanted) {
       free = freeWanted === 0 || reduced ? freeWanted : clamp01((now - freeStartedAt) / FREE_MS);
     }
+    const t = lostAt === null ? 0 : (now - lostAt) / 1000 - STRUGGLE_DELAY;
+    const lineLift = clamp01(free / 0.35);
+    const fall = clamp01((free - 0.2) / 0.8);
+    const { kick, env, closed } = struggle(t);
 
-    const eyeShown = Math.max(pieces.eye, free);
-    const armShown = Math.max(pieces.arm, free);
-    const bodyShown = Math.max(pieces.body, free);
-    eyeGroup.visible = eyeShown > 0;
-    eyeGroup.scale.setScalar(Math.max(0.001, easeOutBack(eyeShown)));
-    arm.visible = armCollar.visible = armShown > 0;
-    /* The I rises from the bottom of the U up to the eye. */
-    arm.scale.set(1, Math.max(0.001, armLength * easeOutBack(armShown)), 1);
-    armCollar.scale.setScalar(Math.max(0.001, easeOutBack(armShown)));
-    yuGroup.visible = bodyShown > 0;
-    yuGroup.scale.setScalar(Math.max(0.001, easeOutBack(bodyShown)));
+    // The eye, sliding down the line from the beam, spinning to face us.
+    const eyeShown = Math.max(eyeIn.x, free);
+    const lift = (1 - eyeIn.x) * (fullLine / SCALE) * (1 - free) + bob.x;
+    const eyePos = scratch.eye.copy(EYE_REST).addScaledVector(UP_LOCAL, lift);
+    eyeGroup.visible = eyeShown > 0.002;
+    eyeGroup.position.copy(eyePos);
+    eyeGroup.scale.setScalar(Math.max(0.001, 0.35 + 0.65 * clamp01(eyeShown * 1.35)));
+    eyeGroup.rotation.x = (1 - clamp01(eyeShown)) * 2.6;
+    if (!eyeLanded && eyeIn.to === 1 && eyeIn.x > 0.97) {
+      eyeLanded = true;
+      blinkAt = now;
+      velocity += 0.35;
+    }
+
+    // The neck: grows down from the eye to where the body will hang it.
+    const neckShown = Math.max(neckIn.x, free);
+    const bodyAngle = kick + closed * 0.2;
+    const rel = scratch.rel.copy(NECK_REST).applyAxisAngle(Z_AXIS, bodyAngle * 0.85);
+    const root = scratch.root.copy(eyePos).addScaledVector(rel, Math.max(0, neckShown));
+    const toEye = scratch.dir.copy(eyePos).sub(root);
+    const neckLength = toEye.length();
+    arm.visible = armCollar.visible = neckShown > 0.002;
+    arm.position.copy(root);
+    if (neckLength > 1e-4) arm.quaternion.setFromUnitVectors(Y_AXIS, toEye.multiplyScalar(1 / neckLength));
+    arm.scale.set(1, Math.max(0.001, neckLength), 1);
+    armCollar.position.copy(root);
+    armCollar.scale.setScalar(Math.max(0.001, clamp01(neckShown * 1.2)));
+    if (!neckLanded && neckIn.to === 1 && neckIn.x > 0.95) {
+      neckLanded = true;
+      /* The neck catches the eye: it dips, and the line answers. */
+      bob.v -= 1.6;
+      velocity -= 0.3;
+    }
+
+    // The body: rises into place beneath, turning like a coin, and swings
+    // about the eye when she kicks.
+    const bodyShown = Math.max(bodyIn.x, free);
+    yuGroup.visible = bodyShown > 0.002;
+    yuGroup.rotation.set((1 - clamp01(bodyShown)) * 2.4, 0, bodyAngle);
+    yuGroup.position.copy(BODY_FROM_EYE).applyAxisAngle(Z_AXIS, bodyAngle).add(eyePos)
+      .addScaledVector(UP_LOCAL, -(1 - bodyShown) * 1.8);
+    yuGroup.scale.setScalar(Math.max(0.001, 0.55 + 0.45 * bodyShown));
+
+    // The eye while she fights: wide, darting; then it closes. She hangs
+    // turned a quarter, so the screen's vertical is her local x: a blink
+    // squashes x, a glance sideways turns about x, looking down about y.
+    const blink = Math.sin(Math.PI * clamp01((now - blinkAt) / BLINK_MS));
+    const wide = 1 + 0.14 * env;
+    const upright = clamp01(fall * 1.6);
+    const lid = (1 - 0.85 * blink) * (1 - 0.9 * closed);
+    blinkPivot.scale.set(wide * (1 - (1 - lid) * (1 - upright)), wide * (1 - (1 - lid) * upright), wide);
+    lookGroup.rotation.x = env * 0.55 * Math.sin(t * Math.PI * 2 * 4.6);
+    lookGroup.rotation.y = env * 0.3 * Math.sin(t * Math.PI * 2 * 3.3) - closed * 0.55;
+    eyeMaterial.color.copy(eyeColour).lerp(deadEye, closed * 0.8);
 
     /* Freed: the line lifts away first, then she turns upright and drops
        onto the stand. */
-    const lift = clamp01(free / 0.35);
-    const fall = clamp01((free - 0.2) / 0.8);
-    line.scale.y = Math.max(0.001, fullLine * (1 - lift));
-    ring.position.y = -fullLine * (1 - lift);
-    ring.visible = lift < 1;
+    const stretch = eyeShown > 0.002 ? Math.max(0, -lift * SCALE) : 0;
+    const lineLength = (fullLine + stretch - tug.x) * (1 - lineLift);
+    line.scale.y = Math.max(0.001, lineLength);
+    ring.position.y = -lineLength;
+    ring.visible = lineLift < 1 && eyeIn.x < 0.5;
     model.rotation.z = (Math.PI / 2) * (1 - clamp01(fall * 1.6));
-    hang.position.y = HANG_Y - BEAM_Y + (STAND_Y - HANG_Y) * (reduced ? fall : easeOutBounce(fall));
+    hang.position.y = HANG_Y - BEAM_Y + tug.x + (STAND_Y - HANG_Y) * (reduced ? fall : easeOutBounce(fall));
 
     if (free === 1 && pendingOutfit) {
       for (const piece of rig.apply(pendingOutfit)) piece.traverse(o => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
@@ -251,9 +346,9 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
       pendingOutfit = null;
     }
 
-    lookDown += (lookDownWanted - lookDown) * (reduced ? 1 : 0.08);
-    lookGroup.rotation.x = lookDown * 0.55;
-    pivot.rotation.z = free > 0 ? angle * (1 - free) : angle;
+    /* Her kicks shake the whole line, a little. */
+    const jolt = env * 0.045 * Math.sin(t * Math.PI * 2 * 8.7);
+    pivot.rotation.z = (free > 0 ? angle * (1 - free) : angle) + jolt;
   }
 
   // -------------------------------------------------------- rendering
@@ -261,9 +356,10 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   let last = performance.now();
   let disposed = false;
 
-  function moving() {
-    return pieces.eye !== wanted.eye || pieces.arm !== wanted.arm || pieces.body !== wanted.body
-      || free !== freeWanted || Math.abs(lookDown - lookDownWanted) > 0.002
+  function moving(now: number) {
+    return springs.some(s => !settled(s)) || free !== freeWanted
+      || now - blinkAt < BLINK_MS
+      || (lostAt !== null && (now - lostAt) / 1000 < STRUGGLE_DELAY + DEATH_SECONDS)
       || Math.abs(angle) > 0.0004 || Math.abs(velocity) > 0.0004;
   }
 
@@ -275,13 +371,15 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
     if (!reduced) {
       velocity += (-9 * angle - 1.1 * velocity) * dt;
       angle += velocity * dt;
+      stepSprings(dt);
     } else {
       angle = velocity = 0;
+      for (const s of springs) snap(s, s.to);
     }
     place(now);
     rig.sync(dt, reduced);
     renderer.render(scene, camera);
-    if (moving()) frame = requestAnimationFrame(tick);
+    if (moving(now)) frame = requestAnimationFrame(tick);
   }
 
   function wake() {
@@ -315,22 +413,46 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   return {
     set({ misses, status, outfit }) {
       const now = performance.now();
+      /* A new round: everything off the line at once, nothing animated. */
+      if (status === "playing" && misses === 0) {
+        for (const s of springs) snap(s, 0);
+        eyeLanded = neckLanded = false;
+        lostAt = null;
+        lastHung = 0;
+      }
+      /* More than one piece at once means a round picked up already over
+         (a reload, a second tab): it is shown as it ended, not replayed. */
+      const hung = status === "lost" ? 3 : misses;
+      const instant = reduced || hung - lastHung > 1;
+      lastHung = status === "playing" ? misses : hung;
       /* Won, every piece is there: whatever was not hung yet grows in as
          she drops onto the stand. */
-      const shownFor = (index: number) => (status !== "playing" ? 1 : misses > index ? 1 : 0);
-      (["eye", "arm", "body"] as const).forEach((name, index) => {
-        const next = shownFor(index);
-        if (next !== wanted[name]) {
-          wanted[name] = next;
-          startedAt[name] = now;
-          /* A new piece on the line sets it swinging. */
-          if (next === 1) velocity += 0.5 + index * 0.15;
-        }
+      const shown = (index: number) => (status !== "playing" || misses > index ? 1 : 0);
+      [eyeIn, neckIn, bodyIn].forEach((s, index) => {
+        const next = shown(index);
+        if (next === s.to) return;
+        if (next === 0 || instant) snap(s, next);
+        else s.to = next;
+        if (next === 1 && !instant) velocity += index === 2 ? 0.55 : 0.2;
       });
+      if (instant) eyeLanded = neckLanded = true;
+      if (status === "lost" && lostAt === null) {
+        if (instant) {
+          lostAt = now - (STRUGGLE_DELAY + DEATH_SECONDS) * 1000;
+          snap(tug, 0.32);
+        } else {
+          lostAt = now;
+          /* The line yanks tight. */
+          tug.to = 0.32;
+          tug.v += 4;
+        }
+      } else if (status !== "lost") {
+        tug.to = 0;
+      }
       const nextFree = status === "won" ? 1 : 0;
       if (nextFree !== freeWanted) {
         freeWanted = nextFree;
-        freeStartedAt = now;
+        freeStartedAt = instant ? now - FREE_MS : now;
       }
       if (status === "won") {
         pendingOutfit = outfit ?? {};
@@ -339,8 +461,6 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
         rig.apply({});
         wearing = false;
       }
-      lookDownWanted = status === "lost" ? 1 : 0;
-      if (status === "lost") velocity += 0.4;
       wake();
     },
     dispose() {

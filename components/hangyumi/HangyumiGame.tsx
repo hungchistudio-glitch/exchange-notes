@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Info, Volume2 } from "lucide-react";
+import { ArrowLeft, Check, Info, Languages, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -15,7 +15,9 @@ import {
 } from "@/lib/hangyumi/rules";
 import { HangyumiClosedError, type HangyumiService } from "@/lib/hangyumi/service";
 import { fill, plural } from "@/lib/i18n/format";
-import { getLanguage, getLanguageName, type LanguageCode } from "@/lib/languages";
+import {
+  INTERFACE_LANGUAGE_CODE, LANGUAGE_CODES, getLanguage, getLanguageName, resolveSupportLanguage, type LanguageCode,
+} from "@/lib/languages";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { announceEnergyLanded } from "@/lib/shop/energy";
 import { speak, speechSupported } from "@/lib/speech";
@@ -32,6 +34,11 @@ import styles from "./Hangyumi.module.css";
    which says what it revealed and what it paid; the cookies it paid fly
    from the key to today's count.
 
+   The language key beside the difficulty bar changes only the language
+   the game deals in (Chi: "單純學習語言的切換"); the app's own learning
+   language is left alone, and the clue stays in the reader's native
+   language, or the next best one when they play in their own.
+
    The round in progress is remembered per language and level, so a reload
    or a second tab carries on with the same word rather than dealing a new
    one (the server deals once per round id).
@@ -39,8 +46,10 @@ import styles from "./Hangyumi.module.css";
 
 type Props = {
   service: HangyumiService;
-  learningLanguage: LanguageCode;
-  hintLanguage: LanguageCode;
+  /** The app's learning language: what the game deals in until the reader picks another. */
+  defaultLanguage: LanguageCode;
+  /** The reader's native language, for the clue. */
+  nativeLanguage: LanguageCode | null;
   /** The reader's own outfit, put on when a word is won. */
   loadOutfit?: () => Promise<YumiOutfit>;
   backHref?: string;
@@ -50,6 +59,9 @@ type Props = {
 type Phase = "loading" | "ready" | "missing" | "error";
 
 const LEVEL_KEY = "hangyumi-level";
+const LANGUAGE_KEY = "hangyumi-language";
+const isLanguageCode = (value: unknown): value is LanguageCode =>
+  typeof value === "string" && (LANGUAGE_CODES as readonly string[]).includes(value);
 const roundKey = (language: LanguageCode, level: HangyumiLevel) => `hangyumi-round:${language}:${level}`;
 
 function readStorage(key: string): string | null {
@@ -68,9 +80,13 @@ function newRoundId() {
 const QWERTY = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 
 export default function HangyumiGame({
-  service, learningLanguage, hintLanguage, loadOutfit, backHref = "/home", reviewHref = "/hangyumi/review",
+  service, defaultLanguage, nativeLanguage, loadOutfit, backHref = "/home", reviewHref = "/hangyumi/review",
 }: Props) {
   const { t, language: interfaceLanguage, locale } = useTranslation();
+  const [chosenLanguage, setChosenLanguage] = useState<LanguageCode | null>(null);
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const learningLanguage = chosenLanguage ?? defaultLanguage;
+  const hintLanguage = resolveSupportLanguage(learningLanguage, INTERFACE_LANGUAGE_CODE[interfaceLanguage], nativeLanguage);
   const copy = t.hangyumi;
   const online = useOnline();
   const reducedMotion = useReducedMotion();
@@ -102,7 +118,11 @@ export default function HangyumiGame({
   // The level last played, once the page is in the browser.
   useEffect(() => {
     const saved = readStorage(LEVEL_KEY);
-    if (isLevel(saved)) queueMicrotask(() => setLevel(saved));
+    const savedLanguage = readStorage(LANGUAGE_KEY);
+    queueMicrotask(() => {
+      if (isLevel(saved)) setLevel(saved);
+      if (isLanguageCode(savedLanguage)) setChosenLanguage(savedLanguage);
+    });
   }, []);
 
   useEffect(() => {
@@ -153,6 +173,13 @@ export default function HangyumiGame({
     setQueuedLevel(null);
     setLevel(next);
   }, [level]);
+
+  const chooseLanguage = useCallback((next: LanguageCode) => {
+    writeStorage(LANGUAGE_KEY, next);
+    setChosenLanguage(next);
+    setQueuedLevel(null);
+    setLanguageOpen(false);
+  }, []);
 
   const nextWord = useCallback(() => {
     const nextLevel = queuedLevel ?? level;
@@ -283,6 +310,16 @@ export default function HangyumiGame({
           <ArrowLeft size={22} strokeWidth={1.9} aria-hidden="true" />
         </Link>
         <h1 className={styles.srOnly}>{copy.title}</h1>
+        <button
+          type="button"
+          className={styles.languageKey}
+          onClick={() => setLanguageOpen(true)}
+          aria-label={fill(copy.language, { language: languageName })}
+          title={fill(copy.language, { language: languageName })}
+        >
+          <Languages size={18} strokeWidth={1.9} aria-hidden="true" />
+          <span>{getLanguage(learningLanguage).badge}</span>
+        </button>
         <div className={styles.levels} role="radiogroup" aria-label={copy.level}>
           {LEVELS.map(choice => {
             const chosen = (queuedLevel ?? level) === choice;
@@ -449,6 +486,29 @@ export default function HangyumiGame({
       <div ref={flightRef} className={styles.flight} aria-hidden="true">
         <span data-cookie-template="" className={styles.cookieTemplate}><EnergyCookie /></span>
       </div>
+
+      <BottomSheet open={languageOpen} onClose={() => setLanguageOpen(false)} title={copy.languageTitle} maxHeight="70vh">
+        <div className={styles.languages} role="radiogroup" aria-label={copy.languageTitle}>
+          {LANGUAGE_CODES.map(code => (
+            <button
+              key={code}
+              type="button"
+              role="radio"
+              aria-checked={code === learningLanguage}
+              className={styles.languageChoice}
+              onClick={() => chooseLanguage(code)}
+            >
+              <span className={styles.languageBadge}>{getLanguage(code).badge}</span>
+              <span className={styles.languageNames}>
+                <strong lang={getLanguage(code).htmlLang}>{getLanguage(code).endonym}</strong>
+                <small>{getLanguageName(code, interfaceLanguage)}</small>
+              </span>
+              {code === learningLanguage && <Check size={18} strokeWidth={2.2} aria-hidden="true" />}
+            </button>
+          ))}
+        </div>
+        <p className={styles.languageNote}>{copy.languageNote}</p>
+      </BottomSheet>
 
       <BottomSheet open={rulesOpen} onClose={() => setRulesOpen(false)} title={copy.rulesTitle} maxHeight="70vh">
         <ul className={styles.rules}>
