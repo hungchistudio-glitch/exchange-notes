@@ -1,0 +1,278 @@
+/* The word bank's review page: the app's paper, or its deck in Cosmic. */
+
+.page {
+  --hr-ground: var(--surface, #f3efe6);
+  --hr-card: var(--paper-face, #fdfaf3);
+  --hr-line: var(--line, #e6dfcf);
+  --hr-ink: var(--color-black, #24211b);
+  --hr-muted: var(--ink-faint, #766e60);
+  --hr-accent: #4f6248;
+  --hr-on-accent: #fbf8f0;
+  --hr-miss: #a4473a;
+
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: calc(10px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));
+  align-content: start;
+  color: var(--hr-ink);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .page {
+  --hr-ground: #08090b;
+  --hr-card: var(--cosmic-surface-card, #1c1a21);
+  --hr-line: var(--cosmic-hairline, #38363e);
+  --hr-ink: var(--cosmic-ink, #f5f2f0);
+  --hr-muted: var(--cosmic-muted, #bdb9c1);
+  --hr-accent: var(--cosmic-amber, #e8ce8c);
+  --hr-on-accent: #1a1710;
+  --hr-miss: #ef8f7f;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 750;
+}
+
+.back {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-inline-start: -8px;
+  border-radius: 50%;
+  color: inherit;
+}
+
+.note,
+.counts {
+  margin: 0;
+  color: var(--hr-muted);
+  font-size: 0.875rem;
+}
+
+.counts {
+  color: var(--hr-ink);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.tab {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--hr-line);
+  border-radius: 999px;
+  background: var(--hr-card);
+  color: var(--hr-ink);
+  font-size: 0.875rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.tab[aria-selected="true"] {
+  border-color: transparent;
+  background: var(--hr-ink);
+  color: var(--hr-ground);
+}
+
+.cells {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cell {
+  display: grid;
+  gap: 2px;
+  padding: 10px 6px;
+  border: 1px solid var(--hr-line);
+  border-radius: 16px;
+  background: var(--hr-card);
+  color: var(--hr-ink);
+  text-align: center;
+  cursor: pointer;
+}
+
+.cell[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 2px var(--hr-ink);
+}
+
+.cell span {
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell small {
+  color: var(--hr-accent);
+  font-size: 0.6875rem;
+  font-weight: 650;
+}
+
+.cell small[data-short="true"] {
+  color: var(--hr-miss);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.approveAll,
+.approve,
+.reject,
+.undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.approveAll,
+.approve {
+  border: 0;
+  background: var(--hr-accent);
+  color: var(--hr-on-accent);
+}
+
+.reject,
+.undo {
+  border: 1px solid var(--hr-line);
+  background: transparent;
+  color: var(--hr-ink);
+}
+
+.approveAll:disabled,
+.approve:disabled,
+.reject:disabled,
+.undo:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.status {
+  color: var(--hr-muted);
+  font-size: 0.8125rem;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.word {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--hr-line);
+  border-radius: 18px;
+  background: var(--hr-card);
+}
+
+.word[data-status="rejected"] {
+  opacity: 0.6;
+}
+
+.wordHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.answer {
+  font-size: 1.25rem;
+  font-weight: 750;
+}
+
+.pos {
+  color: var(--hr-muted);
+  font-size: 0.8125rem;
+}
+
+.chip {
+  margin-inline-start: auto;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--hr-line);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.word[data-status="approved"] .chip {
+  background: var(--hr-accent);
+  color: var(--hr-on-accent);
+}
+
+.clue {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.more summary {
+  color: var(--hr-muted);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.more dl {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+}
+
+.more dl div {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 8px;
+}
+
+.more dt {
+  color: var(--hr-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.more dd {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.source {
+  margin: 8px 0 0;
+  color: var(--hr-muted);
+  font-size: 0.75rem;
+}
+
+.wordActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

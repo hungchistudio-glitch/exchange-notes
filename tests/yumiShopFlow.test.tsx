@@ -109,7 +109,7 @@ describe("the Yumi shop", () => {
 });
 
 function wardrobeWallet(outfit: YumiOutfit, owned: string[]) {
-  let state: WardrobeState = { earned: 500, paid: 0, spent: 0, balance: 500, owned, outfit };
+  let state: WardrobeState = { earned: 500, paid: 0, game: 0, spent: 0, balance: 500, owned, outfit };
   const wallet: ShopWallet = {
     load: vi.fn(async () => state),
     buy: vi.fn(async id => { state = { ...state, owned: [...state.owned, id] }; return { status: "bought" as const, state }; }),

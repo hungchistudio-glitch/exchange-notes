@@ -54,7 +54,7 @@ describe("the database wallet", () => {
     const result = await createSupabaseWallet(client(rpc)).buy("beret");
     expect(rpc).toHaveBeenCalledWith("buy_yumi_item", { p_item_id: "beret" });
     expect(result.status).toBe("bought");
-    expect(result.state).toEqual({ earned: 12, paid: 0, spent: 3, balance: 0, owned: ["beret"], outfit: { head: "beret" } });
+    expect(result.state).toEqual({ earned: 12, paid: 0, game: 0, spent: 3, balance: 0, owned: ["beret"], outfit: { head: "beret" } });
   });
 
   it("keeps paid supply apart from what was earned by learning", async () => {

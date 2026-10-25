@@ -30,6 +30,7 @@ searching further.
 | Translations, language table | `lib/i18n/`, `lib/languages.ts` (see `lib/i18n/AGENTS.md`) |
 | Device preferences (language, mode, font size) | Cookies read on the server: `lib/appPreferences.ts`, `lib/preferences/` |
 | Yumi in 3D, the shop | `lib/yumi3d/`, `lib/shop/` (each has an `AGENTS.md`) |
+| Hangyumi (Hangman with Yumi) | `lib/hangyumi/` (rules, server calls, studio), `supabase/hangyumi/` (the drafted word bank, which no page may import), `scripts/hangyumi-seed.mjs` |
 | Database | `supabase/migrations/`. Read its `README.md` before writing a migration. |
 | Service worker | `public/sw.js`. It never caches pages or `/api`. |
 | iOS wrapper and widget | `native/apple/` (see below) |

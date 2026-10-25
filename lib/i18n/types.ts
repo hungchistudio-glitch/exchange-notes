@@ -2723,6 +2723,9 @@ export type TranslationDictionary = {
       howTitle: string;
       ruleSave: string;
       ruleReview: string;
+      /** Hangyumi's own line: what it has paid, and how (+3 to +12 a letter, at most 333 a day). */
+      fromGame: string;
+      ruleGame: string;
       packsTitle: string;
       rate: string;
       story: string;
@@ -2767,6 +2770,83 @@ export type TranslationDictionary = {
     };
     categories: { featured: string; jewelry: string; eyes: string; materials: string; wear: string; small: string; owned: string };
     countries: { all: string; basic: string; tw: string; us: string; fr: string; it: string; es: string };
+  };
+
+  /**
+   * Hangyumi, Hangman with Yumi (lib/hangyumi). {level}: B1–C2. {count}: a
+   * number. {letter} and {word}: cookies a letter and for the word.
+   * {earned} and {cap}: today's cookies and the daily 333. {language}: a
+   * learning language's name in the interface language. {char}: one letter.
+   */
+  hangyumi: {
+    title: string;
+    open: string;
+    back: string;
+    level: string;
+    levelChoice: string;
+    levelRewards: string;
+    nextLevel: string;
+    clue: string;
+    partsOfSpeech: { noun: string; verb: string; adj: string; adv: string; idiom: string };
+    word: string;
+    hidden: string;
+    lettersLabel: string;
+    charactersLabel: string;
+    guessKey: string;
+    usedKey: string;
+    missesLeftOne: string;
+    missesLeftOther: string;
+    pieces: { eye: string; arm: string; body: string };
+    nextPiece: string;
+    studio: string;
+    studioWon: string;
+    studioLost: string;
+    today: string;
+    todayLabel: string;
+    roundEarned: string;
+    letterPaid: string;
+    wordPaid: string;
+    alreadyPaid: string;
+    capped: string;
+    capReached: string;
+    won: string;
+    wonBody: string;
+    lost: string;
+    lostBodyOne: string;
+    lostBodyOther: string;
+    lostBodyNone: string;
+    answer: string;
+    listen: string;
+    next: string;
+    loading: string;
+    missing: string;
+    missingNote: string;
+    review: string;
+    failed: string;
+    retry: string;
+    offline: string;
+    closed: string;
+    rulesTitle: string;
+    rules: { letters: string; misses: string; cap: string; learning: string; accents: string };
+    close: string;
+    reviewPage: {
+      title: string;
+      intro: string;
+      onlyReviewers: string;
+      counts: string;
+      missingCell: string;
+      complete: string;
+      approve: string;
+      reject: string;
+      undo: string;
+      approveAll: string;
+      statuses: { draft: string; approved: string; rejected: string };
+      source: string;
+      clues: string;
+      saving: string;
+      failed: string;
+      play: string;
+    };
   };
 
   /**

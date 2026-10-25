@@ -17,10 +17,13 @@
 
 .header { padding-bottom: 0.25rem; }
 .eyebrow {
-  /* Clear of Home's corner keys: the shop, the switch (right 124px + 44px). */
-  padding-right: 156px;
+  /* Clear of Home's corner keys: Hangyumi, the shop, the switch (right
+     176px + 44px). A long eyebrow wraps under itself rather than under them. */
+  padding-right: 208px;
   min-height: 2rem;
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 0.25rem;
   align-items: center;
   gap: 0.5rem;
   color: #c5bbc7;

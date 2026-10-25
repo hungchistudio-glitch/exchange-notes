@@ -1674,7 +1674,7 @@
 
 .supplySplit {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
 }
@@ -1751,6 +1751,13 @@
 .supplyRules li > span {
   flex: 1;
   min-width: 0;
+}
+
+/* Hangyumi's mark, the size of the lucide icons beside it. */
+.ruleGlyph {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
 }
 
 .supplyRules strong {
