@@ -24,6 +24,13 @@ export type LastMessagePreview = {
 
 export type ConversationSummary = {
   friend: FriendProfile;
+  /*
+   * False for someone you have a conversation with but are no longer friends
+   * with (2026-10-24). The thread stays in the list as history you can read
+   * (ConversationRoom's canContact); messages need a friendship again, which
+   * the database enforces on insert.
+   */
+  isFriend: boolean;
   conversationId: string | null;
   lastReadAt: string | null;
   unreadCount: number;
@@ -361,10 +368,6 @@ export async function listConversationSummaries(
 ): Promise<ConversationSummary[]> {
   const friends = await listFriends(supabase, currentUserId);
 
-  if (friends.length === 0) {
-    return [];
-  }
-
   const membershipQuery = supabase
     .from("conversation_members")
     .select("conversation_id, last_read_at, hidden_at, muted_at")
@@ -388,6 +391,7 @@ export async function listConversationSummaries(
 
     return friends.map((friend) => ({
       friend,
+      isFriend: true,
       conversationId: null,
       lastReadAt: null,
       unreadCount: 0,
@@ -413,17 +417,32 @@ export async function listConversationSummaries(
   if (otherMembershipsError) throw otherMembershipsError;
 
   const conversationByFriendId = new Map<string, string>();
+  /*
+   * Conversations whose other member is not a friend any more. They used to
+   * be dropped here, which took the whole history out of the app the moment
+   * a friendship ended (2026-10-24: a reader with one conversation saw
+   * "Start your first conversation").
+   */
+  const conversationByFormerFriendId = new Map<string, string>();
 
   for (const membership of otherMemberships ?? []) {
-    if (
-      friendIds.has(membership.user_id) &&
-      !conversationByFriendId.has(membership.user_id)
-    ) {
-      conversationByFriendId.set(
-        membership.user_id,
-        membership.conversation_id
-      );
+    const byPartner = friendIds.has(membership.user_id)
+      ? conversationByFriendId
+      : conversationByFormerFriendId;
+    if (!byPartner.has(membership.user_id)) {
+      byPartner.set(membership.user_id, membership.conversation_id);
     }
+  }
+
+  let formerFriends: FriendProfile[] = [];
+  if (conversationByFormerFriendId.size > 0) {
+    const { data: formerProfiles, error: formerProfilesError } = await supabase
+      .from(PUBLIC_PROFILES)
+      .select(PUBLIC_PROFILE_COLUMNS)
+      .in("id", [...conversationByFormerFriendId.keys()]);
+
+    if (formerProfilesError) throw formerProfilesError;
+    formerFriends = (formerProfiles ?? []).map((row) => toFriendProfile(row as ProfileRow));
   }
 
   const lastReadByConversationId = new Map<string, string | null>(
@@ -441,7 +460,7 @@ export async function listConversationSummaries(
   );
 
   const relevantConversationIds = Array.from(
-    new Set(conversationByFriendId.values())
+    new Set([...conversationByFriendId.values(), ...conversationByFormerFriendId.values()])
   );
 
   // One most-recent-message-per-conversation preview, for the "116 saved..."
@@ -559,17 +578,23 @@ export async function listConversationSummaries(
     }
   }
 
-  const summaries = friends
-    // An archived conversation is a conversation. A friend you have simply
-    // never written to has nothing to un-archive, so they do not belong here.
-    .filter(
-      (friend) => scope === "active" || conversationByFriendId.has(friend.id)
-    )
-    .map((friend) => {
-      const conversationId = conversationByFriendId.get(friend.id) ?? null;
+  const partners = [
+    ...friends
+      // An archived conversation is a conversation. A friend you have simply
+      // never written to has nothing to un-archive, so they do not belong here.
+      .filter((friend) => scope === "active" || conversationByFriendId.has(friend.id))
+      .map((friend) => ({ friend, isFriend: true, conversationId: conversationByFriendId.get(friend.id) ?? null })),
+    // A former friend is listed only for a history there is to read.
+    ...formerFriends
+      .map((friend) => ({ friend, isFriend: false, conversationId: conversationByFormerFriendId.get(friend.id) ?? null }))
+      .filter(({ conversationId }) => conversationId && lastMessageByConversationId.has(conversationId)),
+  ];
 
+  const summaries = partners
+    .map(({ friend, isFriend, conversationId }) => {
       return {
         friend,
+        isFriend,
         conversationId,
         lastReadAt: conversationId
           ? lastReadByConversationId.get(conversationId) ?? null

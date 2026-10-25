@@ -1599,6 +1599,8 @@ export type TranslationDictionary = {
     muted: string;
     muteConversation: string;
     unmuteConversation: string;
+    /** On a conversation row whose other person is no longer a friend. */
+    historyOnlyTag: string;
     noConversationsFound: string;
     typingIndicator: string;
     statusSent: string;

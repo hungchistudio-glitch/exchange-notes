@@ -1185,7 +1185,7 @@ const traditionalChinese: TranslationDictionary = {
       saveError: "無法儲存這則筆記，請檢查網路後再試一次。",
       libraryTitle: "筆記",
       libraryDescription: "同一個想法的所有語言版本都留在一起。",
-      searchPlaceholder: "搜尋原文、翻譯、標籤與意思",
+      searchPlaceholder: "搜尋你的單字",
       allNotes: "全部",
       mine: "我的",
       sharedWithMe: "分享給我的",
@@ -1276,7 +1276,7 @@ const traditionalChinese: TranslationDictionary = {
 
       coach: {
         eyebrow: "Yumi",
-        calibratedFor: "已校準：{instrument}",
+        calibratedFor: "我會特別留意{instrument}。",
         idle: "選一個音，我示範給你看。",
         demonstrating: "看我的嘴型。",
         listening: "說吧，我在聽。",
@@ -1643,6 +1643,7 @@ const traditionalChinese: TranslationDictionary = {
     muted: "已靜音",
     muteConversation: "靜音",
     unmuteConversation: "取消靜音",
+    historyOnlyTag: "僅保留紀錄",
     noConversationsFound: "找不到符合的對話。",
     typingIndicator: "{name} 正在輸入…",
     statusSent: "已送出",
@@ -1653,7 +1654,7 @@ const traditionalChinese: TranslationDictionary = {
       eyebrow: "通訊艙",
       subtitleFirst: "真實的對話。",
       subtitleSecond: "真實的語言。",
-      searchPlaceholder: "搜尋好友、對話或語言內容…",
+      searchPlaceholder: "搜尋好友與訊息",
       searchLabel: "搜尋訊息",
       clearSearch: "清除搜尋",
 

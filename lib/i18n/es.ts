@@ -1199,7 +1199,7 @@ const spanish: TranslationDictionary = {
       saveError: "No se pudo guardar la nota. Comprueba la conexión e inténtalo de nuevo.",
       libraryTitle: "Notas",
       libraryDescription: "Una idea con todas sus versiones lingüísticas juntas.",
-      searchPlaceholder: "Buscar texto, traducciones, etiquetas y significados",
+      searchPlaceholder: "Busca tus palabras",
       allNotes: "Todas",
       mine: "Mías",
       sharedWithMe: "Compartidas conmigo",
@@ -1290,7 +1290,7 @@ const spanish: TranslationDictionary = {
 
       coach: {
         eyebrow: "Yumi",
-        calibratedFor: "Calibrada para {instrument}",
+        calibratedFor: "Escucho con atención {instrument}.",
         idle: "Elige un sonido y te enseño cómo se hace.",
         demonstrating: "Mira mi boca.",
         listening: "Adelante, te escucho.",
@@ -1660,6 +1660,7 @@ const spanish: TranslationDictionary = {
     muted: "Silenciada",
     muteConversation: "Silenciar",
     unmuteConversation: "Dejar de silenciar",
+    historyOnlyTag: "Solo historial",
     noConversationsFound: "No se han encontrado conversaciones.",
     typingIndicator: "{name} está escribiendo…",
     statusSent: "Enviado",
@@ -1670,7 +1671,7 @@ const spanish: TranslationDictionary = {
       eyebrow: "Cubierta de comunicaciones",
       subtitleFirst: "Conversaciones de verdad.",
       subtitleSecond: "Idioma de verdad.",
-      searchPlaceholder: "Busca personas, conversaciones o idioma…",
+      searchPlaceholder: "Busca amigos y mensajes",
       searchLabel: "Buscar mensajes",
       clearSearch: "Borrar la búsqueda",
 

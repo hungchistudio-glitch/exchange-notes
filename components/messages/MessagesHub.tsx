@@ -950,7 +950,8 @@ export default function MessagesHub() {
                 </div>
               )
             ) : (() => {
-              const rows = tab === "recent" ? recentSummaries : summaries;
+              // Former friends' histories are conversations, not friends.
+              const rows = tab === "recent" ? recentSummaries : summaries.filter((summary) => summary.isFriend);
 
               if (rows.length === 0) {
                 return (

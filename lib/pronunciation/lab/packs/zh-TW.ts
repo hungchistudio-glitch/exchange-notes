@@ -522,10 +522,14 @@ export const traditionalChinesePronunciationPack: PronunciationLanguagePack = {
   scoreDimensions: ["sound", "tone", "pitch", "rhythm"],
   yumiCalibration: {
     instrument: "tone-contour",
+    // What Yumi listens for, said plainly (2026-10-24: the names were
+    // instrument jargon, and French and Italian fell back to English).
     label: {
-      english: "Pitch contour",
-      "traditional-chinese": "音高曲線",
-      spanish: "Contorno tonal",
+      english: "the rise and fall of tones",
+      "traditional-chinese": "聲調的高低起伏",
+      spanish: "la subida y bajada de los tonos",
+      french: "la montée et la descente des tons",
+      italian: "il salire e scendere dei toni",
     },
     // Mandarin initials sit close to a relaxed jaw and lip position and
     // differ mostly in where the tongue goes, so the rig's default emphasis
