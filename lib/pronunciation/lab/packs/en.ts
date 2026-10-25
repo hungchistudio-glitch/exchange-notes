@@ -1124,10 +1124,14 @@ export const englishPronunciationPack: PronunciationLanguagePack = {
   scoreDimensions: ["sound", "stress", "rhythm", "fluency"],
   yumiCalibration: {
     instrument: "phoneme-waveform",
+    // What Yumi listens for, said plainly (2026-10-24: the names were
+    // instrument jargon, and French and Italian fell back to English).
     label: {
-      english: "Phoneme waveform",
-      "traditional-chinese": "音素波形",
-      spanish: "Forma de onda fonémica",
+      english: "the shape of each sound",
+      "traditional-chinese": "每個音的形狀",
+      spanish: "la forma de cada sonido",
+      french: "la forme de chaque son",
+      italian: "la forma di ogni suono",
     },
   },
   defaultDialect: "en-US",

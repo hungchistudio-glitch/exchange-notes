@@ -890,10 +890,14 @@ export const spanishPronunciationPack: PronunciationLanguagePack = {
   scoreDimensions: ["consonant", "vowel", "stress", "rhythm"],
   yumiCalibration: {
     instrument: "syllable-pulse",
+    // What Yumi listens for, said plainly (2026-10-24: the names were
+    // instrument jargon, and French and Italian fell back to English).
     label: {
-      english: "Syllable timing",
-      "traditional-chinese": "音節等時",
-      spanish: "Ritmo silábico",
+      english: "the even beat of syllables",
+      "traditional-chinese": "音節平均的節奏",
+      spanish: "el ritmo parejo de las sílabas",
+      french: "le rythme régulier des syllabes",
+      italian: "il ritmo regolare delle sillabe",
     },
   },
   defaultDialect: "es-419",

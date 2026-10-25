@@ -62,6 +62,7 @@ export default function VocabularyMainContent({
         due={itemsLoading ? 0 : reviewStats.due}
         retention={reviewStats.retention}
         accuracy={reviewStats.accuracy}
+        reviewed={reviewStats.reviewed}
         loading={itemsLoading}
       />
 

@@ -168,19 +168,27 @@ export default function LabLanding() {
             ) : (
               <>
                 <ul className="mt-3 space-y-1.5">
-                  {plan.items.map((item) => (
+                  {plan.items.map((item, index) => {
+                    /* A module that comes twice is numbered, so two rows are
+                       never both just "Sounds" (2026-10-24). */
+                    const sameModule = plan.items.filter((other) => other.module === item.module);
+                    const ordinal = sameModule.length > 1
+                      ? ` ${plan.items.slice(0, index + 1).filter((other) => other.module === item.module).length}`
+                      : "";
+                    return (
                     <li
                       key={item.id}
                       className="flex items-center justify-between gap-3 text-sm"
                     >
                       <span className="font-cjk truncate text-ink-invert-soft">
-                        {copy.modules[item.module].title}
+                        {copy.modules[item.module].title}{ordinal}
                       </span>
                       <span className="font-cjk shrink-0 truncate text-right font-medium">
                         {item.label}
                       </span>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
 
                 <Link

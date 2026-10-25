@@ -249,29 +249,41 @@ function isQuietTime(
   );
 }
 
+/*
+ * Claims today's reminder for a reader, or finds it already claimed.
+ *
+ * ON CONFLICT DO NOTHING rather than an insert that fails: the hourly run
+ * asks again for everyone already reminded today, and each of those used to
+ * land in the API logs as a 409 (2026-10-24, three an hour), noise that hid
+ * real errors. Only a row actually inserted comes back, so an empty answer
+ * is "someone already has it".
+ */
 async function claimReminder(
   supabase: SupabaseClient,
   userId: string,
   localDate: string,
 ): Promise<boolean> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("yumi_reminder_deliveries")
-    .insert({
-      user_id: userId,
-      local_date: localDate,
-    });
+    .upsert(
+      {
+        user_id: userId,
+        local_date: localDate,
+      },
+      {
+        onConflict: "user_id,local_date",
+        ignoreDuplicates: true,
+      },
+    )
+    .select("user_id");
 
-  if (!error) {
-    return true;
+  if (error) {
+    throw new Error(
+      `Yumi reminder claim failed: ${error.code}`,
+    );
   }
 
-  if (error.code === "23505") {
-    return false;
-  }
-
-  throw new Error(
-    `Yumi reminder claim failed: ${error.code}`,
-  );
+  return (data?.length ?? 0) > 0;
 }
 
 async function releaseReminder(

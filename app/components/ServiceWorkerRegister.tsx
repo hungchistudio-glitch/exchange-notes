@@ -27,6 +27,22 @@ export default function ServiceWorkerRegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
+    /*
+     * Not under `next dev`. The worker serves /_next/static/ from its cache
+     * first, which is right in production, where every build's chunks have
+     * new names, and wrong in development, where an edited module can keep
+     * its chunk's name: the browser then ran yesterday's code with no sign
+     * of it (2026-10-25, an edit to the messages list that never arrived).
+     * A worker left over from earlier is taken away too.
+     */
+    if (process.env.NODE_ENV === "development") {
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .catch(() => {});
+      return;
+    }
+
     // Captured before registering: on a first-ever install there is no
     // controller and the resulting controllerchange is just the worker taking
     // over for the first time, not a new version of anything.

@@ -1200,7 +1200,7 @@ const english: TranslationDictionary = {
       saveError: "This note could not be saved. Check your connection and try again.",
       libraryTitle: "Notes",
       libraryDescription: "One thought, with every language view kept together.",
-      searchPlaceholder: "Search text, translations, tags, and meanings",
+      searchPlaceholder: "Search your words",
       allNotes: "All",
       mine: "Mine",
       sharedWithMe: "Shared with me",
@@ -1291,7 +1291,7 @@ const english: TranslationDictionary = {
 
       coach: {
         eyebrow: "Yumi",
-        calibratedFor: "Calibrated for {instrument}",
+        calibratedFor: "I listen closely to {instrument}.",
         idle: "Pick a sound and I'll show you how it's made.",
         demonstrating: "Watch my mouth.",
         listening: "Go ahead — I'm listening.",
@@ -1661,6 +1661,7 @@ const english: TranslationDictionary = {
     muted: "Muted",
     muteConversation: "Mute",
     unmuteConversation: "Unmute",
+    historyOnlyTag: "History only",
     noConversationsFound: "No conversations found.",
     typingIndicator: "{name} is typing…",
     statusSent: "Sent",
@@ -1671,7 +1672,7 @@ const english: TranslationDictionary = {
       eyebrow: "Comms deck",
       subtitleFirst: "Real conversations.",
       subtitleSecond: "Real language.",
-      searchPlaceholder: "Search people, conversations, or language…",
+      searchPlaceholder: "Search friends and messages",
       searchLabel: "Search messages",
       clearSearch: "Clear search",
 

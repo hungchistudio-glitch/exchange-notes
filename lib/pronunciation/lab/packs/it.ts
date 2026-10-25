@@ -635,10 +635,14 @@ export const italianPronunciationPack: PronunciationLanguagePack = {
   scoreDimensions: ["consonantLength", "stress", "rhythm", "melody"],
   yumiCalibration: {
     instrument: "consonant-length",
+    // What Yumi listens for, said plainly (2026-10-24: the names were
+    // instrument jargon, and French and Italian fell back to English).
     label: {
-      english: "Length gate",
-      "traditional-chinese": "長度閘門",
-      spanish: "Medidor de duración",
+      english: "short and long consonants",
+      "traditional-chinese": "子音的長短",
+      spanish: "las consonantes cortas y largas",
+      french: "les consonnes courtes et longues",
+      italian: "le consonanti brevi e lunghe",
     },
   },
   defaultDialect: "it-IT",
