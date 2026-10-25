@@ -1,13 +1,21 @@
 /*
-  Hangyumi. The page wears the app's own paper (Standard) or deck (Cosmic);
-  the studio inside it is always white, lit from the right, the way Chi
-  asked for it. Every size is in rem or relative to the word's length, so
-  the font-size preference scales it without a breakpoint that cannot see
-  it.
+  Hangyumi. One phone screen, in four bands: the bar (back, language,
+  difficulty), the studio, the clue with the word, and the keyboard held
+  to the bottom where a thumb is. The studio takes whatever height is
+  left between a floor and a ceiling, so the keyboard never has to be
+  scrolled to; what is happening (today's cookies, the pieces hung, a
+  word on what was paid) is laid over the studio's corners rather than
+  given rows of its own.
+
+  The page wears the app's own paper (Standard) or deck (Cosmic); the
+  studio is always white, lit from the right, so what sits on it is drawn
+  in fixed light-studio colours. Sizes are in rem, dvh or relative to the
+  word's length, so the font-size preference scales it without a
+  breakpoint that cannot see it.
 
   Motion, all of it skipped under reduced motion: a revealed letter pops
-  in, today's count bumps when the cookies land, and the cookies fly from
-  the key to the count.
+  in, today's count bumps when the cookies land, a notice fades over the
+  studio, and the cookies fly from the key to the count.
 */
 
 .page {
@@ -22,14 +30,14 @@
   --hy-key: var(--key-face, #fbf7ee);
   --hy-miss: #a4473a;
 
-  display: grid;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   width: 100%;
   max-width: 35rem;
   min-height: 100dvh;
   margin: 0 auto;
-  padding: calc(10px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
-  align-content: start;
+  padding: calc(8px + env(safe-area-inset-top)) 16px 0;
   background: var(--hy-ground);
   color: var(--hy-ink);
 }
@@ -207,13 +215,21 @@
 
 /* ---------------------------------------------------------- the studio */
 
-.stage {
+/* Grows into whatever the other bands leave, between a floor and a ceiling. */
+.stageWrap {
   position: relative;
-  height: clamp(13rem, 32dvh, 22rem);
+  flex: 1 1 auto;
+  min-height: clamp(11.5rem, 30dvh, 15rem);
+  max-height: 26rem;
   overflow: hidden;
   border-radius: 28px;
   background: #f7f6f2;
   box-shadow: inset 0 0 0 1px #0000000d, 0 18px 40px -30px #3a352a99;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
 }
 
 .canvas {
@@ -224,9 +240,9 @@
 
 .flat {
   position: absolute;
-  inset: 8% 0;
+  inset: 12% 0 8%;
   width: 100%;
-  height: 84%;
+  height: 80%;
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -262,28 +278,58 @@
   transform: translateY(36px);
 }
 
-/* --------------------------------------------------------- today */
-
-.today {
+/* What sits on the studio: frosted, in the studio's own light colours. */
+.stageTop,
+.stageBottom {
+  position: absolute;
+  left: 10px;
+  right: 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 44px;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.stageTop {
+  top: 10px;
+}
+
+.stageBottom {
+  bottom: 10px;
+}
+
+.stageTop > *,
+.stageBottom > * {
+  pointer-events: auto;
+}
+
+.todayCount,
+.roundEarned,
+.missesText,
+.info {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .todayCount {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 1.0625rem;
+  height: 2.25rem;
+  padding: 0 12px 0 7px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.78);
+  box-shadow: 0 1px 2px #00000014, inset 0 0 0 1px #0000000a;
+  color: #24211b;
+  font-size: 1rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
 .todayCount small {
-  color: var(--hy-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
+  color: #8a8376;
+  font-size: 0.75rem;
+  font-weight: 650;
 }
 
 .todayCount[data-bump="a"] {
@@ -295,11 +341,11 @@
 }
 
 @keyframes bump-a {
-  40% { transform: scale(1.14); }
+  40% { transform: scale(1.12); }
 }
 
 @keyframes bump-b {
-  40% { transform: scale(1.14); }
+  40% { transform: scale(1.12); }
 }
 
 .todayCookie {
@@ -308,46 +354,96 @@
 }
 
 .roundEarned {
-  padding: 2px 10px;
+  display: inline-flex;
+  align-items: center;
+  height: 1.75rem;
+  padding: 0 10px;
   border-radius: 999px;
-  background: var(--hy-accent);
-  color: var(--hy-on-accent);
+  background: rgb(79 98 72 / 0.9);
+  color: #fbf8f0;
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 750;
   font-variant-numeric: tabular-nums;
-}
-
-.rewardNote {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--hy-muted);
-  font-size: 0.8125rem;
-  text-align: end;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .info {
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-inline-end: -10px;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-inline-start: auto;
   border: 0;
   border-radius: 50%;
-  background: transparent;
-  color: var(--hy-muted);
+  background: rgb(255 255 255 / 0.72);
+  box-shadow: 0 1px 2px #00000014, inset 0 0 0 1px #0000000a;
+  color: #4a453c;
   cursor: pointer;
 }
 
-.live {
-  min-height: 0;
-  margin: -6px 0 0;
-  color: var(--hy-muted);
+.pieces {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.piece {
+  display: grid;
+  place-items: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.82);
+  box-shadow: inset 0 0 0 1.5px #d9d3c7;
+  color: #8a8376;
+  font-size: 0.75rem;
+  font-weight: 800;
+  transition: background-color 220ms ease, color 220ms ease, box-shadow 220ms ease, transform 320ms cubic-bezier(.34, 1.56, .64, 1);
+}
+
+.piece[data-hung="true"] {
+  background: #a4473a;
+  box-shadow: none;
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.missesText {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.7);
+  color: #5d574c;
   font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.missesText:empty {
+  display: none;
+}
+
+/* A word on what was paid, fading over the studio rather than taking a row. */
+.live {
+  position: absolute;
+  top: 3.25rem;
+  left: 50%;
+  max-width: calc(100% - 24px);
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgb(36 33 27 / 0.86);
+  color: #fbf8f0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
   text-align: center;
+  opacity: 0;
+  transform: translate(-50%, -4px);
+  transition: opacity 220ms ease, transform 260ms cubic-bezier(.2, .8, .2, 1);
+  pointer-events: none;
+}
+
+.live[data-shown="true"] {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 /* ---------------------------------------------------------- panels */
@@ -358,9 +454,9 @@
   display: grid;
   gap: 10px;
   margin: 0;
-  padding: 16px 18px;
+  padding: 14px 16px;
   border: 1px solid var(--hy-line);
-  border-radius: 20px;
+  border-radius: 22px;
   background: var(--hy-card);
   box-shadow: var(--hy-card-shadow);
 }
@@ -375,19 +471,23 @@
   font-size: 0.875rem;
 }
 
+/* ------------------------------------------- the clue, and the word under it */
+
 .clue {
-  gap: 6px;
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 12px 16px 14px;
 }
 
-.clue p {
-  margin: 0;
-  font-size: 1.0625rem;
-  line-height: 1.45;
+.clueHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .pos {
-  justify-self: start;
-  padding: 1px 9px;
+  flex-shrink: 0;
+  padding: 2px 9px;
   border-radius: 999px;
   background: var(--hy-line);
   color: var(--hy-muted);
@@ -395,18 +495,34 @@
   font-weight: 700;
 }
 
-/* ------------------------------------------------------------ the word */
+.rewardNote {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--hy-muted);
+  font-size: 0.75rem;
+  text-align: end;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hint {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.45;
+}
 
 .word {
-  --slot: min(2.6rem, calc((min(100vw, 35rem) - 32px - (var(--letters) - 1) * 4px) / var(--letters)));
+  --slot: min(2.5rem, calc((min(100vw, 35rem) - 66px - (var(--letters) - 1) * 4px) / var(--letters)));
   display: flex;
   justify-content: center;
   gap: 4px;
-  padding: 6px 0;
+  margin-top: 2px;
+  padding: 4px 0 0;
 }
 
 .word[data-chinese="true"] {
-  --slot: min(3.75rem, calc((min(100vw, 35rem) - 32px - (var(--letters) - 1) * 8px) / var(--letters)));
+  --slot: min(3.5rem, calc((min(100vw, 35rem) - 66px - (var(--letters) - 1) * 8px) / var(--letters)));
   gap: 8px;
 }
 
@@ -415,7 +531,7 @@
   display: grid;
   place-items: center;
   width: var(--slot);
-  height: calc(var(--slot) * 1.25);
+  height: calc(var(--slot) * 1.2);
   font-size: calc(var(--slot) * 0.64);
   font-weight: 700;
   line-height: 1;
@@ -429,7 +545,7 @@
 .word[data-chinese="true"] .slot {
   border: 2px solid var(--hy-line);
   border-radius: 12px;
-  background: var(--hy-card);
+  background: var(--hy-ground);
   font-size: calc(var(--slot) * 0.6);
   font-weight: 600;
 }
@@ -453,43 +569,16 @@
   from { opacity: 0; transform: translateY(8px) scale(0.7); }
 }
 
-/* --------------------------------------------------------- the misses */
+/* ------------------------------------------------- the bottom: keys or result */
 
-.misses {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 28px;
-  color: var(--hy-muted);
-  font-size: 0.875rem;
+.dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin: auto -16px 0;
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, transparent, var(--hy-ground) 12px);
 }
-
-.pieces {
-  display: inline-flex;
-  gap: 4px;
-}
-
-.piece {
-  display: grid;
-  place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border: 1.5px solid var(--hy-line);
-  border-radius: 50%;
-  color: var(--hy-muted);
-  font-size: 0.75rem;
-  font-weight: 800;
-  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
-}
-
-.piece[data-hung="true"] {
-  border-color: var(--hy-miss);
-  background: var(--hy-miss);
-  color: #fff;
-}
-
-/* -------------------------------------------------------- the keyboard */
 
 .keyboard {
   display: grid;
@@ -504,28 +593,26 @@
 
 .keyRow[data-accents="true"] {
   flex-wrap: wrap;
-  margin-top: 4px;
+  row-gap: 6px;
+  margin-top: 2px;
 }
 
 .key {
   flex: 1 1 0;
   min-width: 0;
   max-width: 2.6rem;
-  min-height: 2.9rem;
+  min-height: clamp(2.6rem, 6.2dvh, 3.1rem);
   padding: 0;
   border: 1px solid var(--hy-line);
   border-radius: 10px;
   background: var(--hy-key);
+  box-shadow: 0 1px 0 var(--hy-line);
   color: var(--hy-ink);
   font-size: 1.125rem;
   font-weight: 650;
   cursor: pointer;
   touch-action: manipulation;
   transition: background-color 160ms ease, color 160ms ease, opacity 160ms ease, transform 100ms ease;
-}
-
-.keyRow[data-accents="true"] {
-  row-gap: 6px;
 }
 
 /* The same width as a letter key, ten to a row, so French's sixteen take
@@ -542,7 +629,7 @@
 
 .keyboard[data-chinese="true"] .key {
   max-width: none;
-  min-height: 3.4rem;
+  min-height: clamp(3rem, 7dvh, 3.5rem);
   font-size: 1.5rem;
   font-weight: 500;
 }
@@ -558,6 +645,7 @@
 .key[data-used="hit"] {
   border-color: transparent;
   background: var(--hy-accent);
+  box-shadow: none;
   color: var(--hy-on-accent);
 }
 
@@ -566,12 +654,15 @@
   text-decoration: line-through;
 }
 
-/* ----------------------------------------------------------- the result */
+.result {
+  gap: 6px;
+  padding: 16px 18px;
+}
 
 .result h2 {
   margin: 0;
   font-family: var(--font-display, Georgia, serif);
-  font-size: 1.5rem;
+  font-size: 1.375rem;
 }
 
 .result[data-status="lost"] h2 {
@@ -579,11 +670,11 @@
 }
 
 .answerLabel {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   color: var(--hy-muted);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
@@ -594,9 +685,11 @@
 }
 
 .answer {
-  font-size: 2rem;
+  flex: 1;
+  min-width: 0;
+  font-size: 1.75rem;
   font-weight: 750;
-  line-height: 1.1;
+  line-height: 1.15;
   overflow-wrap: anywhere;
 }
 
@@ -627,7 +720,7 @@
 }
 
 .primary {
-  margin-top: 6px;
+  margin-top: 8px;
   border: 0;
   background: var(--hy-accent);
   color: var(--hy-on-accent);
@@ -681,7 +774,8 @@
 @media (prefers-reduced-motion: reduce) {
   .level,
   .key,
-  .piece {
+  .piece,
+  .live {
     transition: none;
   }
 

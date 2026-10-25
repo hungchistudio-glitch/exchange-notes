@@ -342,22 +342,40 @@ export default function HangyumiGame({
       </header>
       {queuedLevel && <p className={styles.queued}>{fill(copy.nextLevel, { level: queuedLevel })}</p>}
 
-      <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />
-
-      <div className={styles.today}>
-        <span className={styles.todayCount} data-bump={bump % 2 ? "a" : "b"} ref={counterRef}>
-          <EnergyCookie className={styles.todayCookie} />
-          <span aria-hidden="true">{earned}<small> / 333</small></span>
-          <span className={styles.srOnly}>{fill(copy.todayLabel, { earned, cap: 333 })}</span>
-        </span>
-        {round && round.earned > 0 && <span className={styles.roundEarned}>{fill(copy.roundEarned, { count: round.earned })}</span>}
-        <span className={styles.rewardNote}>{fill(copy.levelRewards, { letter: REWARDS[level].letter, word: REWARDS[level].word })}</span>
-        <button type="button" className={styles.info} onClick={() => setRulesOpen(true)} aria-label={copy.rulesTitle} title={copy.rulesTitle}>
-          <Info size={18} strokeWidth={1.9} aria-hidden="true" />
-        </button>
-      </div>
-
-      <p className={styles.live} aria-live="polite">{notice}</p>
+      {/* The studio, with what is happening on it laid over its corners:
+          today's cookies and the rules up top, the pieces hung below. */}
+      <section className={styles.stageWrap}>
+        <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />
+        <div className={styles.stageTop}>
+          <span className={styles.todayCount} data-bump={bump % 2 ? "a" : "b"} ref={counterRef}>
+            <EnergyCookie className={styles.todayCookie} />
+            <span aria-hidden="true">{earned}<small> / 333</small></span>
+            <span className={styles.srOnly}>{fill(copy.todayLabel, { earned, cap: 333 })}</span>
+          </span>
+          {round && round.earned > 0 && <span className={styles.roundEarned}>{fill(copy.roundEarned, { count: round.earned })}</span>}
+          <button type="button" className={styles.info} onClick={() => setRulesOpen(true)} aria-label={copy.rulesTitle} title={copy.rulesTitle}>
+            <Info size={18} strokeWidth={1.9} aria-hidden="true" />
+          </button>
+        </div>
+        {phase === "ready" && round && (
+          <div className={styles.stageBottom}>
+            <span className={styles.pieces} aria-hidden="true">
+              {PIECES.map((piece, index) => (
+                <span key={piece} className={styles.piece} data-hung={misses > index || round.status === "lost" ? "true" : "false"} data-piece={piece}>
+                  {piece === "eye" ? "O" : piece === "arm" ? "I" : "U"}
+                </span>
+              ))}
+            </span>
+            <span className={styles.missesText}>
+              {round.status === "playing"
+                ? plural(missesLeft, locale, copy.missesLeftOne, copy.missesLeftOther, { count: missesLeft })
+                : null}
+              {nextPiece && <span className={styles.srOnly}> {fill(copy.nextPiece, { piece: nextPiece })}</span>}
+            </span>
+          </div>
+        )}
+        <p className={styles.live} aria-live="polite" data-shown={notice ? "true" : "false"}>{notice}</p>
+      </section>
 
       {!online && phase !== "ready" && <p className={styles.panel}>{copy.offline}</p>}
 
@@ -381,10 +399,11 @@ export default function HangyumiGame({
       {phase === "ready" && round && (
         <>
           <section className={styles.clue} aria-label={copy.clue}>
-            <span className={styles.pos}>{copy.partsOfSpeech[round.partOfSpeech]}</span>
-            <p lang={getLanguage(round.hintLanguage).htmlLang}>{round.hint}</p>
-          </section>
-
+            <div className={styles.clueHead}>
+              <span className={styles.pos}>{copy.partsOfSpeech[round.partOfSpeech]}</span>
+              <span className={styles.rewardNote}>{fill(copy.levelRewards, { letter: round.rewards.letter, word: round.rewards.word })}</span>
+            </div>
+            <p className={styles.hint} lang={getLanguage(round.hintLanguage).htmlLang}>{round.hint}</p>
           <div
             className={styles.word}
             data-chinese={isChinese ? "true" : "false"}
@@ -407,22 +426,11 @@ export default function HangyumiGame({
             ))}
           </div>
 
-          <div className={styles.misses}>
-            <span className={styles.pieces} aria-hidden="true">
-              {PIECES.map((piece, index) => (
-                <span key={piece} className={styles.piece} data-hung={misses > index || round.status === "lost" ? "true" : "false"} data-piece={piece}>
-                  {piece === "eye" ? "O" : piece === "arm" ? "I" : "U"}
-                </span>
-              ))}
-            </span>
-            <span>
-              {round.status === "playing"
-                ? plural(missesLeft, locale, copy.missesLeftOne, copy.missesLeftOther, { count: missesLeft })
-                : null}
-              {nextPiece && <span className={styles.srOnly}> {fill(copy.nextPiece, { piece: nextPiece })}</span>}
-            </span>
-          </div>
+          </section>
 
+          {/* The keyboard, or once the round is over its result, held to the
+              bottom of the screen where a thumb is. */}
+          <div className={styles.dock}>
           {round.status === "playing" ? (
             <div
               className={styles.keyboard}
@@ -480,6 +488,7 @@ export default function HangyumiGame({
               <button type="button" className={styles.primary} onClick={nextWord}>{copy.next}</button>
             </section>
           )}
+          </div>
         </>
       )}
 
