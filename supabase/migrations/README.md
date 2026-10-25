@@ -146,7 +146,18 @@ naming the file second is the order that cannot drift.
 `20261024215615_yumi_save_word_three_cookies` (2026-10-24, three cookies a
 saved word) was named the same way, from the version read back.
 
-**Sixteen renames across nine occasions now. `apply_migration` always stamps its
+On 2026-10-25 Hangyumi's bank, rounds, awards and the ledger's `game` kind,
+applied before the merge (everything is new; the widened ledger checks only
+let one more kind in). Tested first inside a transaction that rolled back:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261025120000_hangyumi` | `20261025201516` |
+
+`20261025202916_hangyumi_canonical_by_trigger`, a few minutes later, was named
+from the version read back.
+
+**Seventeen renames across ten occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 

@@ -3,6 +3,7 @@
 import CommandDeck from "@/components/cosmic/CommandDeck";
 import StandardHome from "@/components/home/StandardHome";
 import HomeModePortal from "@/components/home/HomeModePortal";
+import HomeHangyumiKey from "@/components/home/HomeHangyumiKey";
 import HomeShopKey from "@/components/home/HomeShopKey";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 
@@ -21,5 +22,5 @@ import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 export default function HomePage() {
   const { isCosmic } = useInterfaceMode();
 
-  return <><HomeShopKey /><HomeModePortal />{isCosmic ? <CommandDeck /> : <StandardHome />}</>;
+  return <><HomeHangyumiKey /><HomeShopKey /><HomeModePortal />{isCosmic ? <CommandDeck /> : <StandardHome />}</>;
 }

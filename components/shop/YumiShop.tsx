@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import HangyumiGlyph from "@/components/hangyumi/HangyumiGlyph";
 import AppLanguageSheet, { prefetchAppLanguages } from "@/components/settings/AppLanguageSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useOnline from "@/hooks/useOnline";
+import { REWARDS } from "@/lib/hangyumi/rules";
 import { announceHomeMoment } from "@/lib/home/homeMoments";
 import { fill, plural } from "@/lib/i18n/format";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
@@ -99,7 +101,7 @@ const STAND_SMALLEST = 0.6;
 const SHELF_SIZE = 12;
 const NEW_SHELF_SIZE = 16;
 
-const EMPTY_STATE: WardrobeState = { earned: 0, paid: 0, spent: 0, balance: 0, owned: [], outfit: {} };
+const EMPTY_STATE: WardrobeState = { earned: 0, paid: 0, game: 0, spent: 0, balance: 0, owned: [], outfit: {} };
 
 /** Takes one choice back out of the filters in force. */
 const without = (group: FilterGroup, option: string) => (current: ShopFilters) => choose(current, group, option);
@@ -805,6 +807,10 @@ export default function YumiShop({
               <dd>{state.earned.toLocaleString(locale)}</dd>
             </div>
             <div>
+              <dt>{copy.energy.fromGame}</dt>
+              <dd>{state.game.toLocaleString(locale)}</dd>
+            </div>
+            <div>
               <dt>{copy.energy.fromSupply}</dt>
               <dd>{state.paid.toLocaleString(locale)}</dd>
             </div>
@@ -822,6 +828,11 @@ export default function YumiShop({
                 <Layers size={18} strokeWidth={1.8} aria-hidden="true" />
                 <span>{copy.energy.ruleReview}</span>
                 <strong><EnergyCookie className={styles.priceCookie} />+{ENERGY_PER_REVIEW_ROUND}</strong>
+              </li>
+              <li>
+                <HangyumiGlyph className={styles.ruleGlyph} />
+                <span>{copy.energy.ruleGame}</span>
+                <strong><EnergyCookie className={styles.priceCookie} />+{REWARDS.B1.letter}–{REWARDS.C2.letter}</strong>
               </li>
             </ul>
           </section>

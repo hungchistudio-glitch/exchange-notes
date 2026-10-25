@@ -1,0 +1,39 @@
+"use client";
+
+import Link from "next/link";
+import { useRef } from "react";
+
+import HangyumiGlyph from "@/components/hangyumi/HangyumiGlyph";
+import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import useTuckOnScroll from "@/hooks/home/useTuckOnScroll";
+import useTranslation from "@/hooks/i18n/useTranslation";
+
+import styles from "./HomeShopKey.module.css";
+
+/**
+ * The way into Hangyumi, beside the shop's key in Home's top corner (Chi,
+ * 2026-10-25: a minimal line icon next to the shop). It is the shop key's
+ * twin in every way but its mark: the same target, the same ink, stepping
+ * away and hiding with it.
+ */
+export default function HomeHangyumiKey() {
+  const { isCosmic } = useInterfaceMode();
+  const { t } = useTranslation();
+  const linkRef = useRef<HTMLAnchorElement>(null);
+  useTuckOnScroll(linkRef);
+
+  return (
+    <Link
+      ref={linkRef}
+      href="/hangyumi"
+      className={styles.key}
+      data-home-hangyumi-key=""
+      data-slot="hangyumi"
+      data-cosmic={isCosmic ? "true" : "false"}
+      aria-label={t.hangyumi.open}
+      title={t.hangyumi.open}
+    >
+      <HangyumiGlyph className={styles.bag} accentClassName={styles.clasp} />
+    </Link>
+  );
+}

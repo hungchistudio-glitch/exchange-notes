@@ -180,10 +180,15 @@ describe("what the heaviest tabs drag in with them", () => {
    * the audit). components/vocabulary/MasteryRing, its stylesheet, and
    * lib/vocabulary/mastery.ts, the pure function both the ring and its test
    * read; none imports anything but React's types and a type.
+   * Raised home 181 → 183 (2026-10-25): Hangyumi's key beside the shop's
+   * (Chi: a minimal line icon next to the shop). components/home/
+   * HomeHangyumiKey and components/hangyumi/HangyumiGlyph, an SVG with no
+   * imports; the key shares the shop key's stylesheet and scroll tuck. The
+   * game, its 3D studio and the word service stay on /hangyumi.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 165],
-    ["home", TABS.home, 181],
+    ["home", TABS.home, 183],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

@@ -7,6 +7,7 @@ import { VocabularyProvider } from "@/contexts/VocabularyContext";
 import CommandDeck from "@/components/cosmic/CommandDeck";
 import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
 import HomeModePortal from "./HomeModePortal";
+import HomeHangyumiKey from "./HomeHangyumiKey";
 import HomeShopKey from "./HomeShopKey";
 import { InterfaceModeProvider, useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { LexiconSearchProvider, useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
@@ -71,7 +72,7 @@ function PreviewShell() {
   const { isCosmic, interfaceMode, setInterfaceMode, modeTransition } = useInterfaceMode();
   const { open: searchOpen, closeSearch } = useLexiconSearchSheet();
   return <>
-    <HomeShopKey /><HomeModePortal />{isCosmic ? <CommandDeck /> : <StandardPreview />}<ModeTransitionStage />
+    <HomeHangyumiKey /><HomeShopKey /><HomeModePortal />{isCosmic ? <CommandDeck /> : <StandardPreview />}<ModeTransitionStage />
     {/* The tour's card over this home, as if on /home. Draws nothing unless
         this browser is mid-tour, so set `yumi-coach-step` (and
         `yumi-coach-track`) in localStorage to review a step. */}
