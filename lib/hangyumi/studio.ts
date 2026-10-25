@@ -1,10 +1,13 @@
 import * as THREE from "three";
+import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { ARM_ROOT, EYE_REST, buildYumiActor } from "@/lib/yumi3d/actor";
 import { EYE_RADIUS, SHELL_RADIUS, TUBE_RADIUS } from "@/lib/yumi3d/anatomy";
 import { createOutfitRig } from "@/lib/yumi3d/outfit";
 import { makeStudioEnvironment } from "@/lib/yumi3d/scene";
+
+import { createGrains, type Grain } from "./particles";
 
 /* =========================================================
    Hangyumi's studio: the real Yumi on a gallows
@@ -20,6 +23,13 @@ import { makeStudioEnvironment } from "@/lib/yumi3d/scene";
    round is lost. Finish the word and the line lifts away: she turns back
    into her C, drops onto the stand, and only then puts on what the reader
    has bought in the shop (Chi: "完成時才穿上").
+
+   Each finished round leaves the studio its own way when the next word is
+   dealt (Chi, 2026-10-26). Lost, she is taken by the wind: a front sweeps
+   across her from the left, and everything it passes turns to sand that
+   lifts away and pales like a soul. Won, she spins faster and faster on
+   her stand, shrinks to nothing and leaves a few golden glints. Then the
+   empty line lowers from the beam for the next word.
 
    Built from lib/yumi3d/actor.ts, the same parts the home stage moves, so
    she cannot drift from herself. Renders only while something moves, and
@@ -70,6 +80,8 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   renderer.toneMappingExposure = 1.02;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  /* The wind's front: clips her away from the left as she turns to sand. */
+  renderer.localClippingEnabled = true;
   renderer.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
 
   const scene = new THREE.Scene();
@@ -186,6 +198,21 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   const rig = createOutfitRig({ model, eyeGroup, lookGroup, pupil, shellMaterial });
   let wearing = false;
 
+  /* Every material of hers carries the clipping plane from the start, set
+     far away, so the dissolve never recompiles a shader mid-animation. */
+  const NO_CLIP = 1e4;
+  const front = new THREE.Plane(new THREE.Vector3(1, 0, 0), NO_CLIP);
+  model.traverse(object => {
+    const mesh = object as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      material.clippingPlanes = [front];
+      material.clipShadows = true;
+    }
+  });
+  const grains = createGrains(3200);
+  scene.add(grains.points);
+
   // ---------------------------------------------------------- the pose
   /*
    * Every piece moves on a spring rather than along a fixed curve, so it
@@ -206,7 +233,10 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   /* The eye's bob when the neck catches it, and the line's yank on the third miss. */
   const bob = spring(140, 9);
   const tug = spring(320, 15);
-  const springs = [eyeIn, neckIn, bodyIn, bob, tug];
+  /* The empty line lowering from the beam for a new word. */
+  const lineIn = spring(70, 8.5);
+  lineIn.x = lineIn.to = 1;
+  const springs = [eyeIn, neckIn, bodyIn, bob, tug, lineIn];
   const settled = (s: Spring) => Math.abs(s.x - s.to) < 0.0008 && Math.abs(s.v) < 0.0008;
   const snap = (s: Spring, to: number) => { s.x = s.to = to; s.v = 0; };
   function stepSprings(dt: number) {
@@ -234,6 +264,23 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   let angle = 0;
   let velocity = 0;
   let pendingOutfit: YumiOutfit | null = null;
+
+  /* Leaving a finished round: which way, and since when. While it runs the
+     new round's pose waits in pendingPose. */
+  let exit: { kind: "sand" | "spin"; at: number; grainsAt: number; burst: boolean } | null = null;
+  let pendingPose: StudioPose | null = null;
+  let lastStatus: StudioPose["status"] = "playing";
+  const SAND_SWEEP = 1.1;
+  const SPIN_MS = 820;
+  const GRIT = new THREE.Color(0x3b3f45);
+  const MIST = new THREE.Color(0xc7d0d6);
+  const GOLD = [new THREE.Color(0xe0a82e), new THREE.Color(0xc98a1c), new THREE.Color(0xf2c14e)];
+  const WHITE = new THREE.Color(0xffffff);
+  /* The grains outlive the leaving: the next word's line lowers while
+     the last of them are still drifting. */
+  let grainsActive = false;
+  let sandLeft = 0;
+  let sandRight = 1;
 
   const FREE_MS = 1100;
   const BLINK_MS = 190;
@@ -333,12 +380,27 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
     /* Freed: the line lifts away first, then she turns upright and drops
        onto the stand. */
     const stretch = eyeShown > 0.002 ? Math.max(0, -lift * SCALE) : 0;
-    const lineLength = (fullLine + stretch - tug.x) * (1 - lineLift);
+    const lineLength = (fullLine + stretch - tug.x) * (1 - lineLift) * Math.max(0, lineIn.x);
     line.scale.y = Math.max(0.001, lineLength);
     ring.position.y = -lineLength;
-    ring.visible = lineLift < 1 && eyeIn.x < 0.5;
+    ring.visible = lineLift < 1 && eyeIn.x < 0.5 && lineIn.x > 0.02;
     model.rotation.z = (Math.PI / 2) * (1 - clamp01(fall * 1.6));
     hang.position.y = HANG_Y - BEAM_Y + tug.x + (STAND_Y - HANG_Y) * (reduced ? fall : easeOutBounce(fall));
+
+    // Leaving after a win: faster and faster, smaller and smaller, gone.
+    let size = 1;
+    model.rotation.y = 0;
+    if (exit?.kind === "spin") {
+      const p = clamp01((now - exit.at) / SPIN_MS);
+      model.rotation.y = p ** 3 * Math.PI * 6;
+      size = (1 + 0.1 * Math.sin(p * Math.PI)) * (1 - p ** 4);
+      hang.position.y += p ** 2 * 0.7;
+    }
+    model.scale.setScalar(SCALE * Math.max(0.001, size));
+    // Leaving after a loss: the wind's front, from the left.
+    front.constant = exit?.kind === "sand"
+      ? -(sandLeft - 0.1 + (sandRight - sandLeft + 0.2) * clamp01((now - exit.at) / 1000 / SAND_SWEEP))
+      : NO_CLIP;
 
     if (free === 1 && pendingOutfit) {
       for (const piece of rig.apply(pendingOutfit)) piece.traverse(o => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
@@ -357,7 +419,7 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   let disposed = false;
 
   function moving(now: number) {
-    return springs.some(s => !settled(s)) || free !== freeWanted
+    return exit !== null || grainsActive || springs.some(s => !settled(s)) || free !== freeWanted
       || now - blinkAt < BLINK_MS
       || (lostAt !== null && (now - lostAt) / 1000 < STRUGGLE_DELAY + DEATH_SECONDS)
       || Math.abs(angle) > 0.0004 || Math.abs(velocity) > 0.0004;
@@ -378,8 +440,186 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
     }
     place(now);
     rig.sync(dt, reduced);
+    if (exit) runExit(now);
+    runGrains(now);
     renderer.render(scene, camera);
     if (moving(now)) frame = requestAnimationFrame(tick);
+  }
+
+  // ------------------------------------------------------------ leaving
+  const scratchScale = new THREE.Vector3();
+  const scratchPoint = new THREE.Vector3();
+  const bufferSize = new THREE.Vector2();
+  const random = (from: number, to: number) => from + Math.random() * (to - from);
+  const showing = (object: THREE.Object3D | null): boolean => !object || (object.visible && showing(object.parent));
+
+  /** Her surface, as sand: grains spread by area, each letting go as the front reaches it. */
+  function sandFromHer(): Grain[] {
+    scene.updateMatrixWorld(true);
+    const parts: { mesh: THREE.Mesh; sampler: MeshSurfaceSampler; area: number }[] = [];
+    model.traverse(object => {
+      const mesh = object as THREE.Mesh;
+      const material = mesh.material as THREE.Material | undefined;
+      if (!mesh.isMesh || !material || material.visible === false || !showing(mesh)) return;
+      const sampler = new MeshSurfaceSampler(mesh).build();
+      const cumulative = sampler.distribution;
+      mesh.getWorldScale(scratchScale);
+      const stretch = (scratchScale.x * scratchScale.y + scratchScale.y * scratchScale.z + scratchScale.x * scratchScale.z) / 3;
+      parts.push({ mesh, sampler, area: (cumulative ? cumulative[cumulative.length - 1] : 0) * stretch });
+    });
+    const total = parts.reduce((sum, part) => sum + part.area, 0) || 1;
+    const placed: { at: THREE.Vector3; colour: THREE.Color }[] = [];
+    for (const { mesh, sampler, area } of parts) {
+      const count = Math.max(24, Math.round(2900 * (area / total)));
+      const material = mesh.material as THREE.MeshStandardMaterial;
+      const colour = material.color ? material.color.clone() : WHITE.clone();
+      for (let i = 0; i < count; i++) {
+        sampler.sample(scratchPoint);
+        placed.push({ at: scratchPoint.clone().applyMatrix4(mesh.matrixWorld), colour });
+      }
+    }
+    sandLeft = Math.min(...placed.map(grain => grain.at.x));
+    sandRight = Math.max(...placed.map(grain => grain.at.x));
+    const span = sandRight - sandLeft + 0.2;
+    return placed.map(({ at, colour }) => ({
+      at,
+      velocity: new THREE.Vector3(random(0.45, 1.4), random(0.15, 0.95), random(-0.5, 0.5)),
+      acceleration: new THREE.Vector3(1.5, 0.85, 0),
+      release: SAND_SWEEP * ((at.x - sandLeft + 0.1) / span) + random(0, 0.06),
+      life: random(1.3, 2.3),
+      size: random(0.05, 0.12),
+      from: colour.clone().lerp(GRIT, 0.3),
+      to: MIST,
+      drift: 0.55,
+    }));
+  }
+
+  /** A burst of golden glints where she was. */
+  function glints(): Grain[] {
+    model.getWorldPosition(scratchPoint);
+    return Array.from({ length: 90 }, () => {
+      const angle = random(0, Math.PI * 2);
+      const speed = random(1.6, 3.4);
+      return {
+        at: scratchPoint.clone(),
+        velocity: new THREE.Vector3(Math.cos(angle) * speed, Math.sin(angle) * speed + 0.6, random(-1, 1)),
+        acceleration: new THREE.Vector3(0, -1.2, 0),
+        release: random(0, 0.08),
+        life: random(0.6, 1.1),
+        size: random(0.1, 0.2),
+        from: GOLD[Math.floor(Math.random() * GOLD.length)],
+        to: WHITE,
+        drift: 0.12,
+      };
+    });
+  }
+
+  function pixelScale() {
+    renderer.getDrawingBufferSize(bufferSize);
+    return bufferSize.y / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+  }
+
+  let grainsAt = 0;
+
+  function startExit(kind: "sand" | "spin", now: number) {
+    exit = { kind, at: now, grainsAt: now, burst: false };
+    if (kind === "sand") {
+      grains.load(sandFromHer());
+      grainsAt = now;
+      grainsActive = true;
+      /* The empty line is drawn up with the wind. */
+      lineIn.to = 0;
+    }
+  }
+
+  function runGrains(now: number) {
+    if (grainsActive) grainsActive = grains.update((now - grainsAt) / 1000, pixelScale());
+  }
+
+  function runExit(now: number) {
+    if (!exit) return;
+    if (exit.kind === "spin" && !exit.burst && now - exit.at > SPIN_MS * 0.78) {
+      exit.burst = true;
+      grains.load(glints());
+      grainsAt = now;
+      grainsActive = true;
+    }
+    const done = exit.kind === "sand"
+      ? (now - exit.at) / 1000 > SAND_SWEEP + 0.35
+      : now - exit.at >= SPIN_MS + 120;
+    if (done) finishExit();
+  }
+
+  /** The studio as a new round finds it: an empty line, lowering in. */
+  function clearRound() {
+    for (const s of [eyeIn, neckIn, bodyIn, bob, tug]) snap(s, 0);
+    eyeLanded = neckLanded = false;
+    lostAt = null;
+    lastHung = 0;
+    free = freeWanted = 0;
+    if (wearing || pendingOutfit) rig.apply({});
+    wearing = false;
+    pendingOutfit = null;
+  }
+
+  function finishExit() {
+    exit = null;
+    front.constant = NO_CLIP;
+    clearRound();
+    lineIn.x = 0;
+    lineIn.v = 0;
+    lineIn.to = 1;
+    const pose = pendingPose;
+    pendingPose = null;
+    if (pose) apply(pose);
+  }
+
+  function apply({ misses, status, outfit }: StudioPose) {
+    const now = performance.now();
+    lastStatus = status;
+    /* A new round: everything off the line at once. */
+    if (status === "playing" && misses === 0) clearRound();
+    /* More than one piece at once means a round picked up already over
+       (a reload, a second tab): it is shown as it ended, not replayed. */
+    const hung = status === "lost" ? 3 : misses;
+    const instant = reduced || hung - lastHung > 1;
+    lastHung = status === "playing" ? misses : hung;
+    /* Won, every piece is there: whatever was not hung yet grows in as
+       she drops onto the stand. */
+    const shown = (index: number) => (status !== "playing" || misses > index ? 1 : 0);
+    [eyeIn, neckIn, bodyIn].forEach((s, index) => {
+      const next = shown(index);
+      if (next === s.to) return;
+      if (next === 0 || instant) snap(s, next);
+      else s.to = next;
+      if (next === 1 && !instant) velocity += index === 2 ? 0.55 : 0.2;
+    });
+    if (instant) eyeLanded = neckLanded = true;
+    if (status === "lost" && lostAt === null) {
+      if (instant) {
+        lostAt = now - (STRUGGLE_DELAY + DEATH_SECONDS) * 1000;
+        snap(tug, 0.32);
+      } else {
+        lostAt = now;
+        /* The line yanks tight. */
+        tug.to = 0.32;
+        tug.v += 4;
+      }
+    } else if (status !== "lost") {
+      tug.to = 0;
+    }
+    const nextFree = status === "won" ? 1 : 0;
+    if (nextFree !== freeWanted) {
+      freeWanted = nextFree;
+      freeStartedAt = instant ? now - FREE_MS : now;
+    }
+    if (status === "won") {
+      pendingOutfit = outfit ?? {};
+    } else if (wearing || pendingOutfit) {
+      pendingOutfit = null;
+      rig.apply({});
+      wearing = false;
+    }
   }
 
   function wake() {
@@ -411,55 +651,23 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   fit();
 
   return {
-    set({ misses, status, outfit }) {
-      const now = performance.now();
-      /* A new round: everything off the line at once, nothing animated. */
-      if (status === "playing" && misses === 0) {
-        for (const s of springs) snap(s, 0);
-        eyeLanded = neckLanded = false;
-        lostAt = null;
-        lastHung = 0;
-      }
-      /* More than one piece at once means a round picked up already over
-         (a reload, a second tab): it is shown as it ended, not replayed. */
-      const hung = status === "lost" ? 3 : misses;
-      const instant = reduced || hung - lastHung > 1;
-      lastHung = status === "playing" ? misses : hung;
-      /* Won, every piece is there: whatever was not hung yet grows in as
-         she drops onto the stand. */
-      const shown = (index: number) => (status !== "playing" || misses > index ? 1 : 0);
-      [eyeIn, neckIn, bodyIn].forEach((s, index) => {
-        const next = shown(index);
-        if (next === s.to) return;
-        if (next === 0 || instant) snap(s, next);
-        else s.to = next;
-        if (next === 1 && !instant) velocity += index === 2 ? 0.55 : 0.2;
-      });
-      if (instant) eyeLanded = neckLanded = true;
-      if (status === "lost" && lostAt === null) {
-        if (instant) {
-          lostAt = now - (STRUGGLE_DELAY + DEATH_SECONDS) * 1000;
-          snap(tug, 0.32);
-        } else {
-          lostAt = now;
-          /* The line yanks tight. */
-          tug.to = 0.32;
-          tug.v += 4;
+    set(pose) {
+      if (exit) {
+        /* The next word while she is still leaving: it waits its turn,
+           unless it is already being played, which ends the leaving now. */
+        if (pose.status === "playing" && pose.misses === 0) {
+          pendingPose = pose;
+          return;
         }
-      } else if (status !== "lost") {
-        tug.to = 0;
+        finishExit();
       }
-      const nextFree = status === "won" ? 1 : 0;
-      if (nextFree !== freeWanted) {
-        freeWanted = nextFree;
-        freeStartedAt = instant ? now - FREE_MS : now;
-      }
-      if (status === "won") {
-        pendingOutfit = outfit ?? {};
-      } else if (wearing || pendingOutfit) {
-        pendingOutfit = null;
-        rig.apply({});
-        wearing = false;
+      const leaving = lastStatus !== "playing" && pose.status === "playing" && pose.misses === 0;
+      if (leaving && !reduced) {
+        startExit(lastStatus === "lost" ? "sand" : "spin", performance.now());
+        pendingPose = pose;
+        lastStatus = "playing";
+      } else {
+        apply(pose);
       }
       wake();
     },
@@ -469,6 +677,7 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
       observer?.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       rig.dispose();
+      grains.dispose();
       const geometries = new Set<THREE.BufferGeometry>();
       const materials = new Set<THREE.Material>();
       scene.traverse(object => {

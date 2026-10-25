@@ -85,6 +85,8 @@ export default function HangyumiGame({
   const { t, language: interfaceLanguage, locale } = useTranslation();
   const [chosenLanguage, setChosenLanguage] = useState<LanguageCode | null>(null);
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [levelsOpen, setLevelsOpen] = useState(false);
+  const levelsRef = useRef<HTMLDivElement>(null);
   const learningLanguage = chosenLanguage ?? defaultLanguage;
   const hintLanguage = resolveSupportLanguage(learningLanguage, INTERFACE_LANGUAGE_CODE[interfaceLanguage], nativeLanguage);
   const copy = t.hangyumi;
@@ -255,6 +257,24 @@ export default function HangyumiGame({
     }
   }, [service, copy, flyCookies, reducedMotion]);
 
+  // The difficulty folds away again on a tap anywhere else, or Escape.
+  useEffect(() => {
+    if (!levelsOpen) return;
+    function away(event: PointerEvent) {
+      if (event.target instanceof Node && levelsRef.current?.contains(event.target)) return;
+      setLevelsOpen(false);
+    }
+    function escape(event: KeyboardEvent) {
+      if (event.key === "Escape") setLevelsOpen(false);
+    }
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [levelsOpen]);
+
   // A real keyboard works too.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -285,6 +305,7 @@ export default function HangyumiGame({
   }, [round]);
 
   const languageName = getLanguageName(learningLanguage, interfaceLanguage);
+  const shownLevel = queuedLevel ?? level;
   const isChinese = learningLanguage === "zh-TW";
   const hits = useMemo(() => new Set(round?.guessed.filter(g => !round.wrong.includes(g)) ?? []), [round]);
   const wrong = useMemo(() => new Set(round?.wrong ?? []), [round]);
@@ -320,9 +341,35 @@ export default function HangyumiGame({
           <Languages size={18} strokeWidth={1.9} aria-hidden="true" />
           <span>{getLanguage(learningLanguage).badge}</span>
         </button>
-        <div className={styles.levels} role="radiogroup" aria-label={copy.level}>
+        {/* The difficulty, as one chip; a tap opens the others out to its
+            left (Chi), a choice or a tap elsewhere folds them away. */}
+        <div
+          ref={levelsRef}
+          className={styles.levels}
+          data-open={levelsOpen ? "true" : "false"}
+          role={levelsOpen ? "radiogroup" : undefined}
+          aria-label={levelsOpen ? copy.level : undefined}
+        >
           {LEVELS.map(choice => {
-            const chosen = (queuedLevel ?? level) === choice;
+            const chosen = shownLevel === choice;
+            const current = level === choice && !queuedLevel ? "true" : "false";
+            if (!levelsOpen) {
+              return (
+                <button
+                  key={choice}
+                  type="button"
+                  className={styles.level}
+                  data-chosen={chosen ? "true" : "false"}
+                  data-current={current}
+                  hidden={!chosen}
+                  aria-expanded="false"
+                  aria-label={fill(copy.levelChoice, { level: choice })}
+                  onClick={() => setLevelsOpen(true)}
+                >
+                  {choice}
+                </button>
+              );
+            }
             return (
               <button
                 key={choice}
@@ -331,8 +378,12 @@ export default function HangyumiGame({
                 aria-checked={chosen}
                 aria-label={fill(copy.levelChoice, { level: choice })}
                 className={styles.level}
-                data-current={level === choice && !queuedLevel ? "true" : "false"}
-                onClick={() => chooseLevel(choice)}
+                data-chosen={chosen ? "true" : "false"}
+                data-current={current}
+                onClick={() => {
+                  setLevelsOpen(false);
+                  chooseLevel(choice);
+                }}
               >
                 {choice}
               </button>

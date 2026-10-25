@@ -62,7 +62,15 @@ describe("a round of Hangyumi", () => {
   it("deals a word in the level chosen, with its clue in the reader's language and no answer", async () => {
     play();
     expect(await screen.findByText("只存在很短的時間")).toBeInTheDocument();
+    // The difficulty is one chip until it is tapped.
+    const chip = screen.getByRole("button", { name: "Difficulty C1" });
+    expect(chip).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "Difficulty B1" })).toBeNull();
+    fireEvent.click(chip);
+    expect(screen.getAllByRole("radio")).toHaveLength(4);
     expect(screen.getByRole("radio", { name: "Difficulty C1" })).toHaveAttribute("aria-checked", "true");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("radiogroup", { name: "Difficulty" })).toBeNull();
     expect(screen.getByText("adjective")).toBeInTheDocument();
     expect(within(screen.getByRole("group", { name: "The word" })).getAllByText("a hidden letter")).toHaveLength(8);
     expect(screen.queryByText("éphémère")).toBeNull();
@@ -123,8 +131,11 @@ describe("a round of Hangyumi", () => {
     play();
     await screen.findByText("只存在很短的時間");
     await guess("z");
+    fireEvent.click(screen.getByRole("button", { name: "Difficulty C1" }));
     fireEvent.click(screen.getByRole("radio", { name: "Difficulty B1" }));
     expect(screen.getByText("The next word will be B1.")).toBeInTheDocument();
+    // Folded again, the chip shows what comes next.
+    expect(screen.getByRole("button", { name: "Difficulty B1" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByText("只存在很短的時間")).toBeInTheDocument();
   });
 
@@ -152,6 +163,7 @@ describe("a round of Hangyumi", () => {
     expect(window.localStorage.getItem("hangyumi-language")).toBe("zh-TW");
     // Chinese at C1 has no practice word: it says so rather than falling back.
     expect(await screen.findByText(/No C1 words in .* have been approved yet\./)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Difficulty C1" }));
     fireEvent.click(screen.getByRole("radio", { name: "Difficulty B1" }));
     // Played in the reader's own language, the clue moves to another one.
     expect(await screen.findByText("a trip for pleasure")).toBeInTheDocument();
