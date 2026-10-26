@@ -50,7 +50,8 @@ export default function HangyumiPage() {
         userId: user.id,
         term: word.answer,
         translation: translation || word.hint,
-        partOfSpeech: word.partOfSpeech,
+        /* The vocabulary has no idiom; a 成語 is kept as a phrase. */
+        partOfSpeech: word.partOfSpeech === "idiom" ? "phrase" : word.partOfSpeech,
         confidence: "medium",
         category: "other",
         status: "new",

@@ -141,6 +141,47 @@
   pointer-events: auto;
 }
 
+/* The way in (Chi, 2026-10-26: "進入…商店頁…加一個簡單的動畫"): the
+   signboard and stand settle in, the catalogue rises a beat later, the
+   bar slides up from the foot. The individual translate property, not
+   transform: the bar centres itself with a transform on wide screens,
+   and the stand already scales by one as the page scrolls. Played once,
+   on arrival; the elements are never remounted. Filled backwards only,
+   so once played no translate is left behind: a translate that stays
+   would make each of these a containing block for anything fixed
+   inside it. */
+.top {
+  animation: shop-enter-top 520ms cubic-bezier(.2, .8, .2, 1) backwards;
+}
+
+.catalog {
+  animation: shop-enter 640ms cubic-bezier(.2, .8, .2, 1) 110ms backwards;
+}
+
+.bar {
+  animation: shop-enter-bar 520ms cubic-bezier(.2, .8, .2, 1) 220ms backwards;
+}
+
+@keyframes shop-enter-top {
+  from { opacity: 0; translate: 0 -10px; }
+}
+
+@keyframes shop-enter {
+  from { opacity: 0; translate: 0 22px; }
+}
+
+@keyframes shop-enter-bar {
+  from { opacity: 0; translate: 0 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top,
+  .catalog,
+  .bar {
+    animation: none;
+  }
+}
+
 .header {
   display: flex;
   align-items: center;

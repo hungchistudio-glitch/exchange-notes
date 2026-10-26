@@ -70,6 +70,13 @@ describe("keeping a Hangyumi word", () => {
     }));
   });
 
+  it("keeps a 成語 as a phrase, which the vocabulary knows", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ texts: { "畫蛇添足": "to overdo it" } }))));
+    const save = await mount();
+    await act(async () => expect(await save({ ...word, answer: "畫蛇添足", language: "zh-TW", partOfSpeech: "idiom" })).toBe("saved"));
+    expect(calls.create).toHaveBeenCalledWith(expect.objectContaining({ term: "畫蛇添足", partOfSpeech: "phrase" }));
+  });
+
   it("calls a word already kept a duplicate, not a failure", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("offline"); }));
     const { DuplicateVocabularyError } = await import("@/lib/vocabulary/createEntry");
