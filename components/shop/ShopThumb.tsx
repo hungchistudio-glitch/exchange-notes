@@ -23,6 +23,15 @@ const noPicture = () => undefined;
 export default function ShopThumb({ item, className }: { item: ShopItem; className: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [shippedMissing, setShippedMissing] = useState(false);
+  /* The picture fades in once it has loaded rather than popping in. A
+     picture already in the cache can finish before React is listening, so
+     it is also checked once mounted. */
+  const imageRef = useRef<HTMLImageElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    const image = imageRef.current;
+    if (image?.complete && image.naturalWidth > 0) queueMicrotask(() => setLoaded(true));
+  });
   const rendered = useSyncExternalStore(subscribeToThumbnails, () => cachedThumbnail(item.id), noPicture);
   const url = shippedMissing ? rendered : shippedThumbnail(item.id);
 
@@ -49,6 +58,9 @@ export default function ShopThumb({ item, className }: { item: ShopItem; classNa
         ? (
           // eslint-disable-next-line @next/next/no-img-element -- a small static picture, or a blob URL rendered on this device
           <img
+            ref={imageRef}
+            data-loaded={loaded ? "true" : "false"}
+            onLoad={() => setLoaded(true)}
             src={url}
             alt=""
             draggable={false}

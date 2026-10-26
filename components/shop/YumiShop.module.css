@@ -141,6 +141,36 @@
   pointer-events: auto;
 }
 
+/* The pieces arriving as they come into view (components/shop/
+   useShopReveal): each card rises into place a beat after the one before
+   it. The catalogue is rendered with data-reveal="on", so they start
+   hidden instead of showing and then vanishing. */
+.catalog .grid > li,
+.catalog .shelfRow > li {
+  transition:
+    opacity 460ms ease var(--reveal-delay, 0ms),
+    translate 620ms cubic-bezier(.2, .8, .2, 1) var(--reveal-delay, 0ms),
+    scale 620ms cubic-bezier(.2, .8, .2, 1) var(--reveal-delay, 0ms);
+}
+
+.catalog[data-reveal="on"] .grid > li:not([data-revealed]),
+.catalog[data-reveal="on"] .shelfRow > li:not([data-revealed]) {
+  opacity: 0;
+  translate: 0 18px;
+  scale: 0.95;
+}
+
+/* A piece's picture fades in once it has loaded. */
+.thumb img,
+.barThumb img {
+  transition: opacity 380ms ease;
+}
+
+.thumb img[data-loaded="false"],
+.barThumb img[data-loaded="false"] {
+  opacity: 0;
+}
+
 /* The way in (Chi, 2026-10-26: "進入…商店頁…加一個簡單的動畫"): the
    signboard and stand settle in, the catalogue rises a beat later, the
    bar slides up from the foot. The individual translate property, not
@@ -179,6 +209,21 @@
   .catalog,
   .bar {
     animation: none;
+  }
+
+  .catalog .grid > li,
+  .catalog .shelfRow > li,
+  .thumb img,
+  .barThumb img,
+  .stageCanvas {
+    transition: none;
+  }
+
+  .catalog[data-reveal="on"] .grid > li:not([data-revealed]),
+  .catalog[data-reveal="on"] .shelfRow > li:not([data-revealed]) {
+    opacity: 1;
+    translate: none;
+    scale: none;
   }
 }
 
@@ -510,11 +555,19 @@
   touch-action: none;
   cursor: grab;
   opacity: 0;
-  transition: opacity 240ms ease;
+  /* Yumi arrives on the stand: rising a little as she fades in, rather
+     than being simply there once she has loaded. The individual scale
+     and translate properties, so the stand's own scroll-driven shrink
+     and the pointer mapping are left as they are. */
+  scale: 0.94;
+  translate: 0 12px;
+  transition: opacity 520ms ease, scale 760ms cubic-bezier(.2, .8, .2, 1), translate 760ms cubic-bezier(.2, .8, .2, 1);
 }
 
 .stageCanvas[data-live="true"] {
   opacity: 1;
+  scale: 1;
+  translate: 0 0;
 }
 
 .stageCanvas:active {

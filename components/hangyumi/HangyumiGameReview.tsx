@@ -13,13 +13,13 @@ export default function HangyumiGameReview({ learningLanguage, earnedToday }: {
   earnedToday: number;
 }) {
   const service = useMemo(() => createPreviewHangyumi({ earnedToday }), [earnedToday]);
-  const loadOutfit = useMemo(() => async () => ({ head: "beret" }), []);
+  const loadWallet = useMemo(() => async () => ({ outfit: { head: "beret" }, balance: 240 }), []);
   const saveWord = useMemo(() => createPreviewSaveWord(), []);
   return (
     <HangyumiGame
       service={service}
       defaultLanguage={learningLanguage}
-      loadOutfit={loadOutfit}
+      loadWallet={loadWallet}
       saveWord={saveWord}
       backHref="/hangyumi-review"
     />

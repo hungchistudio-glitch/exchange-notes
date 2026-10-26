@@ -357,6 +357,10 @@
 .stageTop,
 .stageBottom {
   position: absolute;
+  /* Above the canvas, which is raised itself so it can fade in over the
+     flat drawing: without this the cookies, the rules and the pieces sat
+     under the studio, unseen. */
+  z-index: 2;
   left: 10px;
   right: 10px;
   display: flex;
@@ -389,9 +393,9 @@
 .todayCount {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 2.25rem;
-  padding: 0 12px 0 7px;
+  gap: 7px;
+  min-height: 2.5rem;
+  padding: 3px 13px 3px 7px;
   border-radius: 999px;
   background: rgb(255 255 255 / 0.78);
   box-shadow: 0 1px 2px #00000014, inset 0 0 0 1px #0000000a;
@@ -401,9 +405,20 @@
   font-variant-numeric: tabular-nums;
 }
 
-.todayCount small {
+/* The cookies there are to spend, large; today's share under it. */
+.wallet {
+  display: grid;
+  line-height: 1.05;
+}
+
+.wallet b {
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+.wallet small {
   color: #8a8376;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 650;
 }
 
@@ -498,6 +513,7 @@
 /* What comes next and what was paid, over the studio rather than in rows. */
 .notices {
   position: absolute;
+  z-index: 2;
   top: 3.25rem;
   left: 12px;
   right: 12px;
@@ -600,15 +616,30 @@
   font-weight: 700;
 }
 
-.rewardNote {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--hy-muted);
+/* What this level pays, beside a cookie: a letter, and the word. */
+.rewardChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-inline-start: auto;
+  padding: 2px 10px 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #e3862a 12%, transparent);
+  color: var(--hy-ink);
   font-size: 0.75rem;
-  text-align: end;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  text-overflow: ellipsis;
+}
+
+.rewardChip i {
+  color: var(--hy-muted);
+  font-style: normal;
+}
+
+.rewardCookie {
+  width: 1rem;
+  height: 1rem;
 }
 
 .hint {
@@ -818,19 +849,88 @@
   text-transform: uppercase;
 }
 
-.answerRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* The finished word as the app's word card: the word and its readings,
+   then the gloss, each with its own speaker. */
+.wordCard {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--hy-line);
+  border-radius: 18px;
+  background: var(--hy-ground);
+  overflow: hidden;
 }
 
-.answer {
+.wordSide {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+}
+
+.wordSide + .wordSide {
+  border-top: 1px solid var(--hy-line);
+}
+
+.wordSideText {
+  display: grid;
   flex: 1;
   min-width: 0;
+  gap: 2px;
+}
+
+.wordSideLanguage {
+  color: var(--hy-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wordSideWord {
   font-size: 1.75rem;
   font-weight: 750;
   line-height: 1.15;
   overflow-wrap: anywhere;
+}
+
+.wordSideGloss {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.wordSideReadings {
+  color: var(--hy-muted);
+  font-size: 0.8125rem;
+}
+
+.wordSideGhost {
+  display: block;
+  height: 1rem;
+  margin: 14px 16px;
+  border-radius: 999px;
+  background: var(--hy-line);
+  animation: ghost 1.4s ease-in-out infinite;
+}
+
+.soundStatus {
+  margin: 0;
+  padding: 0 16px;
+  color: var(--hy-miss);
+  font-size: 0.8125rem;
+}
+
+.soundStatus:empty {
+  display: none;
+}
+
+.spinner {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .listen {
@@ -964,6 +1064,7 @@
   .page[data-entering="true"] > *,
   .ghostPill,
   .ghostLine,
+  .wordSideGhost,
   .queued,
   .todayCount[data-bump="a"],
   .todayCount[data-bump="b"] {

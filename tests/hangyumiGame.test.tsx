@@ -15,7 +15,8 @@ import { createPreviewHangyumi, type PracticeWord, type SaveWord } from "@/lib/h
 const speech = vi.hoisted(() => ({ speak: vi.fn() }));
 const reader = vi.hoisted(() => ({ language: "english" as "english" | "traditional-chinese" }));
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => reader.language }));
-vi.mock("@/lib/speech", () => ({ speak: speech.speak, speechSupported: () => true }));
+vi.mock("@/lib/speech", () => ({ speak: speech.speak, speechSupported: () => true, stopSpeech: vi.fn() }));
+vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => undefined }));
 vi.mock("@/components/hangyumi/HangyumiStage", () => ({
   default: ({ misses, status, outfit, label }: { misses: number; status: string; outfit: unknown; label: string }) => (
     <div data-testid="stage" data-misses={misses} data-status={status} data-outfit={JSON.stringify(outfit)} aria-label={label} />
@@ -31,12 +32,12 @@ const WORDS: PracticeWord[] = [
 
 function play(options: { language?: "fr" | "zh-TW"; earnedToday?: number; saveWord?: SaveWord } = {}) {
   const service = createPreviewHangyumi({ words: WORDS, delayMs: 0, earnedToday: options.earnedToday });
-  const loadOutfit = vi.fn(async () => ({ head: "beret" }));
+  const loadOutfit = vi.fn(async () => ({ outfit: { head: "beret" }, balance: 240 }));
   render(
     <HangyumiGame
       service={service}
       defaultLanguage={options.language ?? "fr"}
-      loadOutfit={loadOutfit}
+      loadWallet={loadOutfit}
       saveWord={options.saveWord}
     />,
   );
@@ -108,8 +109,14 @@ describe("a round of Hangyumi", () => {
     expect(screen.getByTestId("stage")).toHaveAttribute("data-status", "won");
     expect(loadOutfit).toHaveBeenCalled();
     expect(screen.getByTestId("stage")).toHaveAttribute("data-outfit", JSON.stringify({ head: "beret" }));
-    expect(speech.speak).toHaveBeenCalledWith("éphémère", "fr-FR");
-    expect(screen.getByRole("button", { name: "Listen" })).toBeInTheDocument();
+    // Never spoken on its own (iOS would leave every speaker mute); its
+    // own speaker says it, inside the tap.
+    expect(speech.speak).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Listen: éphémère" }));
+    expect(speech.speak).toHaveBeenCalledWith("éphémère", "fr-FR", expect.any(Object));
+    // The word card's second side: the clue stands in where no translation is to be had.
+    expect(within(screen.getByRole("heading", { name: "You freed Yumi!" }).closest("section")!)
+      .getByRole("button", { name: "Listen: lasting a very short time" })).toBeInTheDocument();
     // Today's count moves once the cookies have landed.
     expect(await screen.findByText("90 of 333 cookies today", {}, { timeout: 2000 })).toBeInTheDocument();
   });
@@ -266,6 +273,27 @@ describe("a round of Hangyumi", () => {
     play();
     expect(await screen.findByRole("button", { name: "Learning language: French" })).toBeInTheDocument();
     expect(window.localStorage.getItem("hangyumi-language")).toBeNull();
+  });
+
+  it("shows the cookies there are to spend, and adds what a guess pays", async () => {
+    play();
+    expect(await screen.findByText("240 energy cookies to spend")).toBeInTheDocument();
+    await screen.findByText("lasting a very short time");
+    await guess("é");
+    expect(await screen.findByText("249 energy cookies to spend", {}, { timeout: 2000 })).toBeInTheDocument();
+  });
+
+  it("glosses the finished word in the reader's language, and keeps that gloss when saving", async () => {
+    const service = createPreviewHangyumi({ words: WORDS, delayMs: 0 });
+    const translate = vi.fn(async () => "ephemeral");
+    const saveWord = vi.fn<SaveWord>(async () => "saved");
+    render(<HangyumiGame service={service} defaultLanguage="fr" translate={translate} saveWord={saveWord} />);
+    await screen.findByText("lasting a very short time");
+    for (const char of ["x", "y", "z"]) await guess(char);
+    expect(await screen.findByRole("button", { name: "Listen: ephemeral" })).toBeInTheDocument();
+    expect(translate).toHaveBeenCalledWith("éphémère", "fr", "en");
+    fireEvent.click(screen.getByRole("button", { name: "Save to vocabulary" }));
+    await waitFor(() => expect(saveWord).toHaveBeenCalledWith(expect.objectContaining({ translation: "ephemeral", translationLanguage: "en" })));
   });
 
   it("guesses Chinese from a set of characters that holds the answer's", async () => {
