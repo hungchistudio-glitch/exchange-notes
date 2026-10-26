@@ -338,6 +338,8 @@ export default function HangyumiGame({
     return [...QWERTY.map(row => [...row]), ...(layout.accents.length ? [layout.accents] : [])];
   }, [isChinese, chineseKeys, learningLanguage]);
 
+  /* The placeholder word: as long as the last one, if it was in this language. */
+  const ghostLetters = round && round.language === learningLanguage ? round.slots.length : isChinese ? 2 : 7;
   const misses = round?.misses ?? 0;
   const status = round?.status ?? "playing";
   const stageLabel = status === "won" ? copy.studioWon : status === "lost" ? copy.studioLost : fill(copy.studio, { count: misses });
@@ -412,7 +414,6 @@ export default function HangyumiGame({
           })}
         </div>
       </header>
-      {queuedLevel && <p className={styles.queued}>{fill(copy.nextLevel, { level: queuedLevel })}</p>}
 
       {/* The studio, with what is happening on it laid over its corners:
           today's cookies and the rules up top, the pieces hung below. */}
@@ -446,12 +447,46 @@ export default function HangyumiGame({
             </span>
           </div>
         )}
-        <p className={styles.live} aria-live="polite" data-shown={notice ? "true" : "false"}>{notice}</p>
+        {/* Notices over the studio, never rows of their own: what comes next,
+            and what was just paid. */}
+        <div className={styles.notices}>
+          {queuedLevel && <p className={styles.queued}>{fill(copy.nextLevel, { level: queuedLevel })}</p>}
+          <p className={styles.live} aria-live="polite" data-shown={notice ? "true" : "false"}>{notice}</p>
+        </div>
       </section>
 
       {!online && phase !== "ready" && <p className={styles.panel}>{copy.offline}</p>}
 
-      {phase === "loading" && <p className={styles.panel} aria-busy="true">{copy.loading}</p>}
+      {/* While a word is dealt, its card and keys hold their places, so
+          nothing on the page moves between one word and the next. */}
+      {phase === "loading" && (
+        <>
+          <section className={styles.clue} aria-busy="true" aria-label={copy.loading}>
+            <div className={styles.clueHead}><span className={styles.ghostPill} /></div>
+            <p className={styles.hint}>
+              <span className={styles.ghostLine} />
+              <span className={styles.srOnly}>{copy.loading}</span>
+            </p>
+            <div
+              className={styles.word}
+              data-chinese={isChinese ? "true" : "false"}
+              style={{ "--letters": ghostLetters } as React.CSSProperties}
+              aria-hidden="true"
+            >
+              {Array.from({ length: ghostLetters }, (_, index) => <span key={index} className={styles.slot} data-ghost="true" />)}
+            </div>
+          </section>
+          <div className={styles.dock} aria-hidden="true">
+            <div className={styles.keyboard} data-chinese={isChinese ? "true" : "false"}>
+              {(isChinese ? [Array.from({ length: 16 }, (_, index) => String(index))] : rows).map((row, rowIndex) => (
+                <div key={rowIndex} className={styles.keyRow} data-accents={!isChinese && rowIndex === 3 ? "true" : "false"}>
+                  {row.map(char => <span key={char} className={styles.key} data-ghost="true">{isChinese ? "" : char}</span>)}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       {phase === "error" && (
         <div className={styles.panel}>

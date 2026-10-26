@@ -138,7 +138,8 @@ describe("a round of Hangyumi", () => {
     await guess("z");
     fireEvent.click(screen.getByRole("button", { name: "Difficulty C1" }));
     fireEvent.click(screen.getByRole("radio", { name: "Difficulty B1" }));
-    expect(screen.getByText("The next word will be B1.")).toBeInTheDocument();
+    // Over the studio, not a row of its own that would shrink it.
+    expect(screen.getByText("The next word will be B1.").closest("section")).toContainElement(screen.getByTestId("stage"));
     // Folded again, the chip shows what comes next.
     expect(screen.getByRole("button", { name: "Difficulty B1" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByText("lasting a very short time")).toBeInTheDocument();
