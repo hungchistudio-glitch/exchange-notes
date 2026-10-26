@@ -2782,6 +2782,10 @@ export type TranslationDictionary = {
     title: string;
     open: string;
     back: string;
+    /** The station line under the game's signboard, as the shop's says where it orbits. */
+    station: string;
+    /** The rules sheet's switch for the game's sound effects. */
+    sound: string;
     /** The game's own learning-language key: {language} is the language's name. */
     language: string;
     languageTitle: string;

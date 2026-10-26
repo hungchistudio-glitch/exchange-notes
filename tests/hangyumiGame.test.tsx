@@ -308,3 +308,41 @@ describe("a round of Hangyumi", () => {
     expect(await screen.findByRole("heading", { name: "You freed Yumi!" })).toBeInTheDocument();
   });
 });
+
+describe("the game's finish", () => {
+  it("hangs the shop's signboard over the game", async () => {
+    play();
+    await screen.findByText("lasting a very short time");
+    expect(screen.getByRole("heading", { level: 1, name: "Hangyumi" })).toBeInTheDocument();
+    expect(screen.getByText("Station 33 · Studio")).toBeInTheDocument();
+  });
+
+  it("moves only the key and the places of the letter just guessed", async () => {
+    play();
+    await screen.findByText("lasting a very short time");
+    await guess("z");
+    expect(screen.getByRole("button", { name: "z, already guessed" })).toHaveAttribute("data-latest", "true");
+    // A miss blushes the screen's edge.
+    expect(document.querySelector("[class*='missFlash']")).not.toBeNull();
+    await guess("é");
+    expect(screen.getByRole("button", { name: "z, already guessed" })).toHaveAttribute("data-latest", "false");
+    expect(screen.getByRole("button", { name: "é, already guessed" })).toHaveAttribute("data-latest", "true");
+    const word = screen.getByRole("group", { name: "The word" });
+    const fresh = within(word).getAllByText("é").map(letter => letter.closest("[data-fresh]")!);
+    expect(fresh.map(slot => slot.getAttribute("data-fresh"))).toEqual(["true", "true"]);
+    // Each a beat after the one before.
+    expect(fresh.map(slot => (slot as HTMLElement).style.getPropertyValue("--flip-delay"))).toEqual(["0ms", "90ms"]);
+    expect(word.querySelectorAll("[data-fresh='true']")).toHaveLength(2);
+  });
+
+  it("lets the sound effects be switched off, and remembers it", async () => {
+    play();
+    await screen.findByText("lasting a very short time");
+    fireEvent.click(screen.getByRole("button", { name: "How Hangyumi works" }));
+    const toggle = await screen.findByRole("switch", { name: "Sound effects" });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(window.localStorage.getItem("hangyumi-sound")).toBe("off");
+  });
+});

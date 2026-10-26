@@ -2892,6 +2892,8 @@ const traditionalChinese: TranslationDictionary = {
     title: "Hangyumi",
     open: "玩 Hangyumi",
     back: "返回",
+    station: "Station 33 · 攝影棚",
+    sound: "音效",
     language: "學習語言：{language}",
     languageTitle: "用哪種語言玩",
     languageNote: "只改變 Hangyumi 出題的語言，App 的設定不會變動。",

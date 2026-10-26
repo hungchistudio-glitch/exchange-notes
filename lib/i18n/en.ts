@@ -2936,6 +2936,8 @@ const english: TranslationDictionary = {
     title: "Hangyumi",
     open: "Play Hangyumi",
     back: "Back",
+    station: "Station 33 · Studio",
+    sound: "Sound effects",
     language: "Learning language: {language}",
     languageTitle: "Play in",
     languageNote: "Only changes the language Hangyumi deals words in. Your app settings stay as they are.",

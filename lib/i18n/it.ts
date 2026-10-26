@@ -2738,6 +2738,8 @@ const italian: TranslationDictionary = {
     title: "Hangyumi",
     open: "Gioca a Hangyumi",
     back: "Indietro",
+    station: "Station 33 · Studio",
+    sound: "Effetti sonori",
     language: "Lingua di studio: {language}",
     languageTitle: "Gioca in",
     languageNote: "Cambia solo la lingua delle parole di Hangyumi. Le impostazioni dell'app restano invariate.",

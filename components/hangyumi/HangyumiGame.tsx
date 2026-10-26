@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookmarkCheck, BookmarkPlus, Check, Info, Languages } from "lucide-react";
+import { ArrowLeft, BookmarkCheck, BookmarkPlus, Check, Globe, Info } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -14,6 +14,7 @@ import {
   type HangyumiLevel, type HangyumiRound,
 } from "@/lib/hangyumi/rules";
 import { HangyumiClosedError, type HangyumiService, type SaveWord } from "@/lib/hangyumi/service";
+import { setSoundsOn, sounds, soundsOn, unlockSounds } from "@/lib/hangyumi/sounds";
 import { fill, plural } from "@/lib/i18n/format";
 import {
   INTERFACE_LANGUAGE_CODE, LANGUAGE_CODES, getLanguage, getLanguageName, resolveSupportLanguage, type LanguageCode,
@@ -101,6 +102,11 @@ export default function HangyumiGame({
   /* The page's way in: its bands rise into place once, on arrival, and
      never again for a new word (Chi: "進入遊戲頁…加一個簡單的動畫"). */
   const [entering, setEntering] = useState(true);
+  /* Each wrong guess flashes the screen's edge; counted so each one replays. */
+  const [flash, setFlash] = useState(0);
+  const [soundOn, setSoundOn] = useState(true);
+  useEffect(() => { queueMicrotask(() => setSoundOn(soundsOn())); }, []);
+  const celebrateRef = useRef<HTMLDivElement>(null);
   /* The save button's state, for the round it belongs to. */
   const [saving, setSaving] = useState<{ id: string; state: "saving" | "saved" | "duplicate" | "failed" } | null>(null);
   const levelsRef = useRef<HTMLDivElement>(null);
@@ -279,6 +285,31 @@ export default function HangyumiGame({
     }
   }, [reducedMotion]);
 
+  /* The word is won: gold cookies and glints rain down the screen. */
+  const celebrate = useCallback(() => {
+    const layer = celebrateRef.current;
+    const template = flightRef.current?.querySelector<HTMLElement>("[data-cookie-template]");
+    if (!layer || reducedMotion || typeof layer.animate !== "function") return;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    for (let i = 0; i < 34; i++) {
+      const cookie = i % 3 === 0 && template;
+      const piece = cookie ? (template.cloneNode(true) as HTMLElement) : document.createElement("span");
+      piece.removeAttribute("data-cookie-template");
+      piece.className = cookie ? styles.confettiCookie : styles.confettiGlint;
+      layer.appendChild(piece);
+      const x = Math.random() * width;
+      const drift = (Math.random() - 0.5) * 120;
+      const spin = (Math.random() - 0.5) * 720;
+      const animation = piece.animate([
+        { transform: `translate(${x}px, -40px) rotate(0deg)`, opacity: 0 },
+        { transform: `translate(${x + drift * 0.3}px, ${height * 0.25}px) rotate(${spin * 0.3}deg)`, opacity: 1, offset: 0.15 },
+        { transform: `translate(${x + drift}px, ${height + 40}px) rotate(${spin}deg)`, opacity: 0.9 },
+      ], { duration: 1600 + Math.random() * 900, delay: Math.random() * 420, easing: "cubic-bezier(.3,.2,.6,1)", fill: "both" });
+      animation.onfinish = () => piece.remove();
+    }
+  }, [reducedMotion]);
+
   const guess = useCallback(async (raw: string, from: DOMRect | null) => {
     const current = roundRef.current;
     const letter = normalizeGuess(raw);
@@ -287,9 +318,25 @@ export default function HangyumiGame({
     if (current.keyboard && !current.keyboard.includes(letter)) return;
     pendingRef.current = true;
     setPending(true);
+    unlockSounds();
+    sounds.tap();
     try {
       const result = await service.guess(current.id, letter);
       showRound(result);
+      if (!result.repeat) {
+        if (result.status === "won") {
+          sounds.win();
+          celebrate();
+        } else if (result.status === "lost") {
+          sounds.lose();
+          setFlash(n => n + 1);
+        } else if (result.hit) {
+          sounds.hit();
+        } else {
+          sounds.miss();
+          setFlash(n => n + 1);
+        }
+      }
       const paid = result.paid.letter + result.paid.word;
       const messages: string[] = [];
       if (paid > 0) {
@@ -315,7 +362,7 @@ export default function HangyumiGame({
       pendingRef.current = false;
       setPending(false);
     }
-  }, [service, copy, flyCookies, reducedMotion, showRound]);
+  }, [service, copy, flyCookies, reducedMotion, showRound, celebrate]);
 
   const keepWord = useCallback(async () => {
     const current = roundRef.current;
@@ -421,6 +468,9 @@ export default function HangyumiGame({
   /* The placeholder word: as long as the last one, if it was in this language. */
   const ghostLetters = round && round.language === learningLanguage ? round.slots.length : isChinese ? 2 : 7;
   const misses = round?.misses ?? 0;
+  /* The letter just guessed: its key and its places are the ones that move. */
+  const lastGuess = round?.guessed.at(-1) ?? null;
+  let flipCount = 0;
   const status = round?.status ?? "playing";
   const stageLabel = status === "won" ? copy.studioWon : status === "lost" ? copy.studioLost : fill(copy.studio, { count: misses });
   const nextPiece = status === "playing" && misses < MAX_MISSES ? copy.pieces[PIECES[misses]] : null;
@@ -435,7 +485,18 @@ export default function HangyumiGame({
         <Link href={backHref} className={styles.back} aria-label={copy.back} title={copy.back}>
           <ArrowLeft size={22} strokeWidth={1.9} aria-hidden="true" />
         </Link>
-        <h1 className={styles.srOnly}>{copy.title}</h1>
+        {/* The game's signboard, the shop's own: a lacquered plate on two
+            rods, the name in gilt, the station under it. */}
+        <div className={styles.signArea}>
+          <h1 className={styles.sign}>
+            <span className={styles.signHooks} aria-hidden="true" />
+            <span className={styles.signName}>{copy.title}</span>
+            <span className={styles.signOrbit} aria-hidden="true">
+              <span className={styles.signLights}><i /><i /><i /></span>
+              {copy.station}
+            </span>
+          </h1>
+        </div>
         <button
           type="button"
           className={styles.languageKey}
@@ -443,7 +504,7 @@ export default function HangyumiGame({
           aria-label={fill(copy.language, { language: languageName })}
           title={fill(copy.language, { language: languageName })}
         >
-          <Languages size={18} strokeWidth={1.9} aria-hidden="true" />
+          <Globe size={16} strokeWidth={1.8} aria-hidden="true" />
           <span>{getLanguage(learningLanguage).badge}</span>
         </button>
         {/* The difficulty, as one chip; a tap opens the others out to its
@@ -616,18 +677,27 @@ export default function HangyumiGame({
               aria-label={copy.word}
               role="group"
             >
-              {round.slots.map((slot, index) => slot.letter ? (
+              {round.slots.map((slot, index) => {
+                const missed = round.status === "lost" && !!slot.char && !round.guessed.includes(slot.char.toLocaleLowerCase());
+                /* Turned over by this guess (or, lost, shown at the end): each
+                   such place flips in a beat after the one before. */
+                const fresh = !!slot.char && (missed || slot.char.toLocaleLowerCase() === lastGuess);
+                const flip = fresh ? flipCount++ : 0;
+                return slot.letter ? (
                 <span
                   key={index}
                   className={styles.slot}
                   data-filled={slot.char ? "true" : "false"}
-                  data-missed={round.status === "lost" && slot.char && !round.guessed.includes(slot.char.toLocaleLowerCase()) ? "true" : "false"}
+                  data-missed={missed ? "true" : "false"}
+                  data-fresh={fresh ? "true" : "false"}
+                  style={fresh ? { "--flip-delay": `${flip * 90}ms` } as React.CSSProperties : undefined}
                 >
                   {slot.char ?? <span className={styles.srOnly}>{copy.hidden}</span>}
                 </span>
               ) : (
                 <span key={index} className={styles.gap}>{slot.char === " " ? " " : slot.char}</span>
-              ))}
+              );
+              })}
             </div>
 
             </section>
@@ -646,6 +716,7 @@ export default function HangyumiGame({
                   <div key={rowIndex} className={styles.keyRow} data-accents={!isChinese && rowIndex === 3 ? "true" : "false"}>
                     {row.map(char => {
                       const used = hits.has(char) ? "hit" : wrong.has(char) ? "miss" : "no";
+                      const latest = char === lastGuess;
                       return (
                         <button
                           key={char}
@@ -653,6 +724,7 @@ export default function HangyumiGame({
                           className={styles.key}
                           data-hangyumi-key={char}
                           data-used={used}
+                          data-latest={latest ? "true" : "false"}
                           disabled={used !== "no" || pending}
                           aria-label={used === "no" ? fill(copy.guessKey, { char }) : fill(copy.usedKey, { char })}
                           onClick={event => void guess(char, event.currentTarget.getBoundingClientRect())}
@@ -723,6 +795,8 @@ export default function HangyumiGame({
         )}
       </div>
 
+      <div ref={celebrateRef} className={styles.flight} aria-hidden="true" />
+      {flash > 0 && <div key={flash} className={styles.missFlash} aria-hidden="true" />}
       <div ref={flightRef} className={styles.flight} aria-hidden="true">
         <span data-cookie-template="" className={styles.cookieTemplate}><EnergyCookie /></span>
       </div>
@@ -758,6 +832,24 @@ export default function HangyumiGame({
           {!isChinese && <li>{copy.rules.accents}</li>}
           <li>{copy.rules.learning}</li>
         </ul>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={soundOn}
+          className={styles.soundSwitch}
+          onClick={() => {
+            const next = !soundOn;
+            setSoundOn(next);
+            setSoundsOn(next);
+            if (next) {
+              unlockSounds();
+              sounds.hit();
+            }
+          }}
+        >
+          <span>{copy.sound}</span>
+          <span className={styles.switchTrack} aria-hidden="true"><span className={styles.switchThumb} /></span>
+        </button>
       </BottomSheet>
     </div>
   );
