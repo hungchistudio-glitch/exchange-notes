@@ -65,10 +65,11 @@ function isInShop(pathname: string) {
 
 /*
  * Hangyumi too: its keyboard is the bottom of the screen, and the game has
- * its own back arrow (Chi: only a back arrow at the top left).
+ * its own back arrow (Chi: only a back arrow at the top left). So do Yumi
+ * Wordvault, its twin, and the games hub both are entered from.
  */
 function isInHangyumi(pathname: string) {
-  return pathname === "/hangyumi";
+  return pathname === "/hangyumi" || pathname === "/wordvault" || pathname === "/games";
 }
 
 function isInsideConversation(pathname: string) {

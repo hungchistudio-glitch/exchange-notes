@@ -446,6 +446,37 @@
   box-shadow: inset 0 0 0 1px #0000000d, 0 18px 40px -30px #3a352a99;
 }
 
+/* Wordvault's studio is a warmer ivory; the frame matches it while it loads. */
+.stageWrap:has(.stage[data-game="wordvault"]) {
+  background: #f3efe6;
+}
+
+/* Wordvault: skips the show that is playing (the cookies are already paid). */
+.skip {
+  position: absolute;
+  z-index: 3;
+  right: 10px;
+  bottom: 10px;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.82);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 2px #00000014, inset 0 0 0 1px #0000000a;
+  color: #24211b;
+  cursor: pointer;
+  animation: notice-in 220ms ease both;
+}
+
+.skip:focus-visible {
+  outline: 3px solid var(--hy-accent);
+  outline-offset: 2px;
+}
+
 .stage {
   position: absolute;
   inset: 0;
@@ -534,6 +565,92 @@
 .stageTop > *,
 .stageBottom > * {
   pointer-events: auto;
+}
+
+/* The stage's top left: Wordvault's streak, and the round's earnings under it. */
+.stageTopLeft {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+/* Seven steps; the fourth and the seventh are chests. */
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 1.75rem;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.8);
+  box-shadow: 0 1px 2px #00000014, inset 0 0 0 1px #0000000a;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.streakPips {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.streakPips i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d8d2c4;
+  transition: background-color 300ms ease, transform 300ms cubic-bezier(.3, 1.6, .5, 1);
+}
+
+.streakPips i[data-chest] {
+  width: 11px;
+  height: 9px;
+  border-radius: 2px 2px 3px 3px;
+}
+
+.streakPips i[data-chest="medium"] {
+  background: #b9d8c8;
+}
+
+.streakPips i[data-chest="premium"] {
+  background: #c9bdf0;
+}
+
+.streakPips i[data-done="true"] {
+  background: #c9a55a;
+}
+
+.streakPips i[data-now="true"] {
+  background: #4f6248;
+  transform: scale(1.3);
+}
+
+.streakPips i[data-now="true"][data-chest="medium"] {
+  background: #3fae86;
+  box-shadow: 0 0 0 2px #3fae8640;
+}
+
+.streakPips i[data-now="true"][data-chest="premium"] {
+  background: #7b5cff;
+  box-shadow: 0 0 0 2px #7b5cff40, 0 0 10px #b9a3ff;
+}
+
+.streak b {
+  color: #24211b;
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.streak b[data-chest="medium"] {
+  color: #2f7f62;
+}
+
+.streak b[data-chest="premium"] {
+  background: linear-gradient(90deg, #7b5cff, #c56bff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .roundEarned,
@@ -1030,6 +1147,86 @@
   color: var(--hy-miss);
 }
 
+/* What a Wordvault chest gave: cookies beyond the 333, and the piece. */
+.chestReward {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 2px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f4fbf7, #e3f3ea);
+  box-shadow: inset 0 0 0 1px #3fae8633;
+}
+
+.chestReward[data-tier="premium"] {
+  background:
+    radial-gradient(120% 120% at 100% 0%, #7b5cff33, transparent 60%),
+    linear-gradient(180deg, #1b2440, #10162a);
+  box-shadow: inset 0 0 0 1px #c9a55a59, 0 10px 24px -16px #10162acc;
+  color: #f4ead2;
+}
+
+.chestReward[data-tier="premium"] .answerLabel,
+.chestReward[data-tier="premium"] .muted {
+  color: #c9bfa6;
+}
+
+.rewardCookies {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.rewardCookie {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+.rewardPiece {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rewardPiece span {
+  display: grid;
+  gap: 2px;
+}
+
+.rewardPiece small {
+  opacity: 0.75;
+  font-size: 0.75rem;
+}
+
+.rewardThumb {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 12px;
+  background: radial-gradient(70% 60% at 50% 45%, #f3d38a40, transparent 75%), #ffffff;
+  animation: reward-in 700ms cubic-bezier(.3, 1.6, .5, 1) 300ms backwards;
+}
+
+.chestReward[data-tier="premium"] .rewardThumb {
+  background: radial-gradient(70% 60% at 50% 45%, #f3d38a55, transparent 75%), #0f1528;
+  box-shadow: 0 0 18px #b9a3ff66;
+}
+
+.rewardThumb img {
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+}
+
+@keyframes reward-in {
+  from { opacity: 0; transform: scale(0.4) rotate(-12deg); }
+}
+
 .answerLabel {
   margin: 6px 0 0;
   color: var(--hy-muted);
@@ -1385,6 +1582,7 @@
   }
 
   .slot[data-fresh="true"],
+  .rewardThumb,
   .key[data-latest="true"],
   .key[data-latest="true"]::before,
   .key[data-latest="true"]::after,

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { cleanOutfit, shopItem, type YumiOutfit } from "./catalog";
+import { isMythic } from "./mythicCollection";
 
 /* =========================================================
    Energy cookies, and what they have bought
@@ -107,9 +108,9 @@ export function createSupabaseWallet(supabase: SupabaseClient): ShopWallet {
  * The review screen's wallet: the same rules, in memory, so the whole flow
  * can be tried without an account and without touching anyone's cookies.
  */
-export function createPreviewWallet(startingBalance = 240): ShopWallet {
+export function createPreviewWallet(startingBalance = 240, startOwned: readonly string[] = []): ShopWallet {
   let state: WardrobeState = {
-    earned: startingBalance, paid: 0, game: 0, spent: 0, balance: startingBalance, owned: [], outfit: {},
+    earned: startingBalance, paid: 0, game: 0, spent: 0, balance: startingBalance, owned: [...startOwned], outfit: {},
   };
   const settle = () => new Promise(resolve => setTimeout(resolve, 260));
 
@@ -121,7 +122,8 @@ export function createPreviewWallet(startingBalance = 240): ShopWallet {
     async buy(itemId) {
       await settle();
       const item = shopItem(itemId);
-      if (!item) throw new Error("Unknown item.");
+      /* The vault's pieces are won, never sold: the database refuses them too. */
+      if (!item || isMythic(itemId)) throw new Error("Unknown item.");
       if (state.owned.includes(itemId)) return { status: "owned", state };
       if (state.balance < item.price) return { status: "insufficient", state };
       state = {

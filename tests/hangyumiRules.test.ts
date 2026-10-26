@@ -168,3 +168,25 @@ describe("the preview plays by the server's rules", () => {
       .toEqual({ status: "missing", language: "it", level: "B1" });
   });
 });
+
+describe("reading a Wordvault round", () => {
+  const base = {
+    id: "r1", status: "won", language: "en", level: "B1", partOfSpeech: "noun", hint: "x", hintLanguage: "en",
+    slots: [], guessed: [], wrong: [], misses: 0, keyboard: null, earned: 21, rewards: { letter: 3, word: 9 },
+    today: { day: "2026-10-26", earned: 21, cap: 333, remaining: 312 }, answer: "apple",
+  };
+
+  it("reads the game, the chest, the streak and what the chest gave", () => {
+    const round = readRound({ ...base, game: "wordvault", chest: "premium", streak: 0,
+      chestReward: { tier: "premium", cookies: 42, item: "myth-mjolnir", limited: true } });
+    expect([round.game, round.chest, round.streak]).toEqual(["wordvault", "premium", 0]);
+    expect(round.chestReward).toEqual({ tier: "premium", cookies: 42, item: "myth-mjolnir", limited: true });
+  });
+
+  it("never shows a chest's reward while the word is on, and reads Hangyumi as Hangyumi", () => {
+    const playing = readRound({ ...base, status: "playing", game: "wordvault", chest: "medium",
+      chestReward: { tier: "medium", cookies: 9, item: "x", limited: false } });
+    expect(playing.chestReward).toBeNull();
+    expect(readRound(base)).toMatchObject({ game: "hangyumi", chest: null, streak: null, chestReward: null });
+  });
+});

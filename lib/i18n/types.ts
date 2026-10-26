@@ -2670,6 +2670,17 @@ export type TranslationDictionary = {
     cookiesOne: string;
     cookiesOther: string;
     howEarned: string;
+    /** The Mythic Vault: 33 limited pieces, only from Wordvault's premium chest. */
+    vault: {
+      title: string;
+      note: string;
+      /** {count} owned of {total}. */
+      collected: string;
+      locked: string;
+      /** Said when a locked piece is tapped: where it is found. */
+      hint: string;
+      limited: string;
+    };
     stage: string;
     hint: string;
     views: string;
@@ -2866,6 +2877,60 @@ export type TranslationDictionary = {
       failed: string;
       play: string;
     };
+  };
+  /** Yumi Wordvault｜詞語秘藏: Hangyumi's sister game (Chi, 2026-10-26). Only
+      what it says differently; the rest of its screen reads `hangyumi`. */
+  wordvault: {
+    title: string;
+    /** The name on the game's signboard, where "Yumi Wordvault" would not fit. */
+    short: string;
+    /** Its name in the reader's language, under the title on the games hub. */
+    subtitle: string;
+    open: string;
+    /** Skips the animation that is playing. */
+    skip: string;
+    languageNote: string;
+    /** The energy copies a wrong guess sends out: U, then I, then O. */
+    pieces: { eye: string; arm: string; body: string };
+    nextPiece: string;
+    studio: string;
+    studioWon: string;
+    studioLost: string;
+    won: string;
+    lost: string;
+    missingNote: string;
+    failed: string;
+    offline: string;
+    closed: string;
+    rulesTitle: string;
+    rules: { letters: string; misses: string; cap: string; learning: string; chests: string };
+    /** The streak over the stage: {count} words won in a row. */
+    streak: string;
+    /** What the streak track says to a screen reader. */
+    streakLabel: string;
+    chestMedium: string;
+    chestPremium: string;
+    /** The result card: what this word's chest gave. */
+    rewardTitle: string;
+    /** {count} extra cookies, outside today's 333. */
+    rewardCookies: string;
+    rewardItem: string;
+    rewardLimited: string;
+    rewardAllOwned: string;
+    /** The note over the stage when a chest pays: {count} cookies. */
+    chestPaid: string;
+  };
+  /** The games hub: one key on Home, then Hangyumi or Wordvault. */
+  games: {
+    title: string;
+    open: string;
+    back: string;
+    choose: string;
+    /** Today's cookies from either game: {earned} of {cap}. */
+    today: string;
+    shared: string;
+    hangyumi: { tagline: string; detail: string };
+    wordvault: { tagline: string; detail: string };
   };
 
   /**

@@ -1,6 +1,7 @@
 import { COLLECTION03_ITEMS } from "./collection03";
 import { COLLECTION04_ITEMS } from "./collection04";
 import { CULTURAL_ITEMS } from "./culturalCollection";
+import { MYTHIC_ITEMS } from "./mythicCollection";
 
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 
@@ -228,7 +229,10 @@ export const SHOP_ITEMS: readonly ShopItem[] = [...SHOP_COUNTRIES.flatMap(countr
   })),
 ), ...CULTURAL_ITEMS, ...COLLECTION03_ITEMS, ...COLLECTION04_ITEMS];
 
-const BY_ID = new Map(SHOP_ITEMS.map(item => [item.id, item]));
+/* The 33 limited pieces are not on the shelves (they are not in
+   SHOP_ITEMS, which is the 333), but once owned they are worn like any
+   other: every lookup by id knows them. */
+const BY_ID = new Map([...SHOP_ITEMS, ...MYTHIC_ITEMS].map(item => [item.id, item]));
 
 export function shopItem(id: string | null | undefined): ShopItem | undefined {
   return id ? BY_ID.get(id) : undefined;
@@ -256,7 +260,7 @@ export function itemsFor(
     return FEATURED_IDS.map(id => BY_ID.get(id)!).filter(inCountry);
   }
   if (category === "owned") {
-    return SHOP_ITEMS.filter(item => owned.has(item.id) && inCountry(item));
+    return [...SHOP_ITEMS, ...MYTHIC_ITEMS].filter(item => owned.has(item.id) && inCountry(item));
   }
   const slots = CATEGORY_SLOTS[category];
   return SHOP_ITEMS.filter(item => slots.includes(item.slot) && inCountry(item));

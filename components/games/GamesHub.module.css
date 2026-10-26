@@ -1,0 +1,184 @@
+/*
+  The games hub: Hangyumi's page and signboard (its tokens, its bar), with
+  two cards under it. The studio's card is ivory paper; the vault's is
+  the signboard's lacquered navy with gilt, so the two read apart at a
+  glance. The cards rise into place once, one after the other.
+*/
+
+.hub {
+  gap: 14px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+.choose {
+  margin: 10px 2px 0;
+  color: var(--hy-muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cards {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cards > li {
+  animation: card-in 560ms cubic-bezier(.2, .8, .2, 1) var(--card-delay, 0ms) backwards;
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(16px); }
+}
+
+.card {
+  --card-ink: var(--hy-ink);
+  --card-muted: var(--hy-muted);
+  /* The key surface: paper in Standard, the deck's control grey in Cosmic. */
+  --card-art: var(--hy-key);
+  --card-accent: #c9a55a;
+
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 8.5rem;
+  padding: 18px 18px 18px 16px;
+  border: 1px solid var(--hy-line);
+  border-radius: 22px;
+  background: linear-gradient(180deg, var(--hy-gloss), #0000 38%), var(--hy-card);
+  box-shadow: var(--hy-card-shadow), inset 0 1px 0 var(--hy-gloss);
+  color: var(--card-ink);
+  text-decoration: none;
+  transition: transform 200ms cubic-bezier(.3, 1.6, .5, 1), box-shadow 200ms ease;
+}
+
+.card[data-game="wordvault"] {
+  --card-ink: #f4ead2;
+  --card-muted: #c9bfa6;
+  --card-art: #2a3955;
+  --card-accent: #f3d38a;
+
+  border-color: #c9a55a73;
+  background:
+    radial-gradient(120% 90% at 85% 0%, #f3d38a26, #0000 60%),
+    linear-gradient(180deg, #24324a, #141d2c);
+  box-shadow: 0 14px 28px -18px #141d2ccc, inset 0 0 0 1.5px #c9a55a59, inset 0 1px 0 #ffffff1f;
+}
+
+.card:active {
+  transform: scale(0.985);
+}
+
+.card:focus-visible {
+  outline: 3px solid var(--hy-accent);
+  outline-offset: 3px;
+}
+
+.art {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  background: var(--card-art);
+  box-shadow: inset 0 0 0 1px #0000000f, 0 6px 14px -10px #0000004d;
+  color: var(--card-ink);
+}
+
+.glyph {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.accent {
+  fill: var(--card-accent);
+  stroke: var(--card-accent);
+}
+
+.text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.name small {
+  color: var(--card-accent);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.card[data-game="hangyumi"] .name small {
+  color: var(--card-muted);
+}
+
+.tagline {
+  font-size: 0.9375rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.detail {
+  color: var(--card-muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.go {
+  color: var(--card-muted);
+}
+
+.shared {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 2px 0;
+  color: var(--hy-muted);
+  font-size: 0.875rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.shared span {
+  display: grid;
+  gap: 2px;
+}
+
+.shared small {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.sharedCookie {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cards > li {
+    animation: none;
+  }
+
+  .card {
+    transition: none;
+  }
+}

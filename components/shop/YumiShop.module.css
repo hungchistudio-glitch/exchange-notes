@@ -1287,6 +1287,81 @@
     var(--shop-card);
 }
 
+/* The Mythic Vault (Chi, 2026-10-26): its own shelf, apart from the 333,
+   in the signboard's night lapis with a gilt edge. Sealed pieces stand
+   on it as shadows until they are won. */
+.shelf[data-vault="true"] {
+  --vault-ink: #f4ead2;
+  --vault-muted: #c9bfa6;
+  --vault-gold: #e3c27c;
+
+  margin: 12px -12px 8px;
+  padding: 14px 12px 4px;
+  border-block: 1px solid #c9a55a73;
+  background:
+    radial-gradient(90% 120% at 100% 0%, #7b5cff2e, transparent 60%),
+    radial-gradient(70% 90% at 0% 100%, #f3d38a26, transparent 70%),
+    linear-gradient(180deg, #1b2440, #10162a);
+  color: var(--vault-ink);
+}
+
+.shelf[data-vault="true"] .shelfHeading h3 span,
+.shelf[data-vault="true"] .shelfHeading h3 small {
+  color: var(--vault-muted);
+}
+
+.shelf[data-vault="true"] .shelfHeading h3 {
+  background: linear-gradient(180deg, #fff3cf, #e8ce8c 60%, #c9a55a);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.shelf[data-vault="true"] .shelfHeading h3 > span,
+.shelf[data-vault="true"] .shelfHeading h3 > small {
+  -webkit-text-fill-color: var(--vault-muted);
+}
+
+.card[data-mythic] {
+  --c: var(--vault-gold, #e3c27c);
+  border-color: #c9a55a59;
+  background: linear-gradient(180deg, #ffffff12, #0000 40%), #18203a;
+  box-shadow: 0 10px 22px -16px #000c, inset 0 0 0 1px #c9a55a33;
+  color: var(--vault-ink, #f4ead2);
+}
+
+.card[data-mythic] .thumb {
+  background:
+    radial-gradient(70% 60% at 50% 45%, #f3d38a33, transparent 75%),
+    radial-gradient(120% 100% at 50% 110%, #7b5cff40, transparent 60%),
+    #0f1528;
+}
+
+.card[data-mythic] .price {
+  color: var(--vault-muted, #c9bfa6);
+}
+
+/* A sealed piece: only its outline, a pale shadow on the night shelf with
+   a faint gilt glow; nothing of its colour, material or detail. */
+.sealed img {
+  filter: brightness(0) invert(0.82) drop-shadow(0 0 5px #e3c27c88);
+  opacity: 0.32;
+}
+
+.limitedBadge {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 1;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fbe7b0, #d6ad5c 60%, #b98a3a);
+  color: #241a06;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+}
+
 .shelfHeading {
   display: flex;
   align-items: center;

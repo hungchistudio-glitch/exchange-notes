@@ -30,7 +30,7 @@ import { makeStudioEnvironment } from "./scene";
 const SIZE = 160;
 
 /** Bump when any piece's builder or the thumbnail pose changes. */
-export const THUMBNAIL_VERSION = 7;
+export const THUMBNAIL_VERSION = 8;
 /* Prefixed so the service worker's clean-up on a new release keeps it. */
 const CACHE_NAME = "exchange-notes-shop-thumbnails";
 

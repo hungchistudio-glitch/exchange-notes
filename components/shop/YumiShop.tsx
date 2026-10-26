@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookmarkPlus, Check, ChevronRight, Globe, Layers, Moon, SlidersHorizontal, Sun, X } from "lucide-react";
+import { ArrowLeft, BookmarkPlus, Check, ChevronRight, Globe, Layers, Lock, Moon, SlidersHorizontal, Sun, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -60,6 +60,7 @@ import {
   ENERGY_PER_USD,
   SUPPLY_PACKS_USD,
 } from "@/lib/shop/energy";
+import { MYTHIC_ITEMS, isMythic } from "@/lib/shop/mythicCollection";
 import { markScrolling } from "@/lib/shop/scrollQuiet";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
@@ -228,6 +229,13 @@ export default function YumiShop({
 
   // --------------------------------------------------------- catalogue
   const owned = useMemo(() => new Set(state.owned), [state.owned]);
+  /* The Mythic Vault: 33 limited pieces from Wordvault's premium chest,
+     apart from the 333 (Chi, 2026-10-26). Owned first, then the sealed. */
+  const vaultOwned = useMemo(() => MYTHIC_ITEMS.filter(item => owned.has(item.id)), [owned]);
+  const vaultShelfItems = useMemo(
+    () => [...vaultOwned, ...MYTHIC_ITEMS.filter(item => !owned.has(item.id))],
+    [vaultOwned, owned],
+  );
   /* Where the reader is, then what the filter sheet narrows it to. */
   const here = useMemo(() => browseShop({
     department: category, collection, newOnly, ownedOnly: onlyOwned, owned,
@@ -474,6 +482,7 @@ export default function YumiShop({
         type="button"
         className={styles.card}
         data-collection={collectionOf(item)}
+        data-mythic={isMythic(item.id) ? "owned" : undefined}
         data-coach-target="shop-item"
         aria-pressed={trying}
         disabled={busy || availability !== "open"}
@@ -481,6 +490,7 @@ export default function YumiShop({
       >
         <ShopThumb item={item} className={styles.thumb} />
         {isNewArrival(item) && !trying && !wearing && <span className={styles.newBadge}>{collectionCopy.newItem}</span>}
+        {isMythic(item.id) && !trying && !wearing && <span className={styles.limitedBadge}>{copy.vault.limited}</span>}
         {(trying || wearing) && (
           <span className={styles.tag} data-wearing={wearing ? "true" : "false"}>
             {wearing ? copy.wearing : copy.tryingOn}
@@ -493,6 +503,44 @@ export default function YumiShop({
             : <><EnergyCookie className={styles.priceCookie} />{item.price}</>}
         </span>
       </button>
+    );
+  }
+
+  /** A vault piece not yet won: its shadow on the shelf, never its name or
+   * a try-on. Tapping says where it is found. */
+  function sealedCard(item: ShopItem) {
+    return (
+      <button
+        type="button"
+        className={styles.card}
+        data-mythic="sealed"
+        aria-label={`${copy.vault.locked} · ${copy.vault.title}`}
+        onClick={() => setNotice(copy.vault.hint)}
+      >
+        <ShopThumb item={item} className={`${styles.thumb} ${styles.sealed}`} />
+        <span className={styles.cardName} aria-hidden="true">? ? ?</span>
+        <span className={styles.price}><Lock size={12} strokeWidth={2.2} aria-hidden="true" />{copy.vault.locked}</span>
+      </button>
+    );
+  }
+
+  /** The vault's own shelf: every piece in the showcase, only the won ones in the wardrobe. */
+  function vaultShelf(onlyWon: boolean) {
+    const items = onlyWon ? vaultOwned : vaultShelfItems;
+    if (!items.length) return null;
+    return (
+      <section aria-labelledby="shop-shelf-vault" className={styles.shelf} data-vault="true">
+        <header className={styles.shelfHeading}>
+          <h3 id="shop-shelf-vault">
+            {copy.vault.title}{" "}
+            <span>{fill(copy.vault.collected, { count: vaultOwned.length.toLocaleString(locale), total: MYTHIC_ITEMS.length })}</span>
+            <small>{copy.vault.note}</small>
+          </h3>
+        </header>
+        <ul className={styles.shelfRow}>
+          {items.map(item => <li key={item.id}>{owned.has(item.id) ? card(item) : sealedCard(item)}</li>)}
+        </ul>
+      </section>
     );
   }
 
@@ -697,10 +745,11 @@ export default function YumiShop({
             </p>
           )}
 
-          {shownCount === 0 ? (
+          {shownCount === 0 && !(onlyOwned && vaultOwned.length) ? (
             <p className={styles.empty}>{onlyOwned ? copy.emptyOwned : copy.empty}</p>
           ) : showcase ? (
             <>
+              {vaultShelf(false)}
               {newShelf.length > 0 && (
                 <section aria-labelledby="shop-shelf-new" className={styles.shelf} data-new="true">
                   <header className={styles.shelfHeading}>
@@ -734,14 +783,17 @@ export default function YumiShop({
               ))}
             </>
           ) : (
-            groups.map(group => (
+            <>
+            {onlyOwned && vaultShelf(true)}
+            {groups.map(group => (
               <section key={group.key} aria-labelledby={`shop-department-${group.key}`} className={styles.department}>
                 <h3 id={`shop-department-${group.key}`} className={styles.departmentHeading}>
                   {copy.browse.departments[group.key]} <span>{group.items.length}</span>
                 </h3>
                 <ul className={styles.grid}>{group.items.map(item => <li key={item.id}>{card(item)}</li>)}</ul>
               </section>
-            ))
+            ))}
+            </>
           )}
         </div>
 

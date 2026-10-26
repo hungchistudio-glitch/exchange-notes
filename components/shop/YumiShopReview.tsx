@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { SceneChoice } from "@/lib/shop/atmosphere";
 import { setSceneChoice } from "@/lib/shop/useShopWeather";
+import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
 import { createPreviewWallet } from "@/lib/shop/wallet";
 
 import YumiShop from "./YumiShop";
@@ -16,8 +17,15 @@ import YumiShop from "./YumiShop";
  * CosmicYumiReview for why a review page must not write the reader's real
  * mode).
  */
-export default function YumiShopReview({ startCosmic, sky = null, collection03 = false }: { startCosmic: boolean; sky?: SceneChoice | null; collection03?: boolean }) {
-  const wallet = useMemo(() => createPreviewWallet(collection03 ? 3300 : 240), [collection03]);
+export default function YumiShopReview({ startCosmic, sky = null, collection03 = false, vault = 0 }: {
+  startCosmic: boolean; sky?: SceneChoice | null; collection03?: boolean;
+  /** How many of the Mythic Vault's pieces the preview starts with. */
+  vault?: number;
+}) {
+  const wallet = useMemo(
+    () => createPreviewWallet(collection03 ? 3300 : 240, MYTHIC_ITEMS.slice(0, vault).map(item => item.id)),
+    [collection03, vault],
+  );
   const [isCosmic, setCosmic] = useState(startCosmic);
 
   useEffect(() => {
