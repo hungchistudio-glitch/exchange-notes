@@ -168,7 +168,15 @@ start the live pages call still plays Hangyumi:
 | --- | --- |
 | `20261026200000_wordvault_chests_and_mythic_pieces` | `20261026184719` |
 
-**Eighteen renames across eleven occasions now. `apply_migration` always stamps its
+On 2026-10-26 a Wordvault chest paying the word's whole worth, applied
+before the merge (Chi: "我授權你用 Supabase 套用"). It replaces
+`private.hangyumi_guess` with the same arguments and the same answer:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261027000000_wordvault_chest_full_worth` | `20261026232328` |
+
+**Nineteen renames across twelve occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 
