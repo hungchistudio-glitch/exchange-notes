@@ -67,6 +67,16 @@ export type HangyumiStatus = "playing" | "won" | "lost";
 
 export type HangyumiToday = { day: string; earned: number; cap: number; remaining: number };
 
+/** How one side of the word card reads: IPA, or pinyin and zhuyin for Chinese. */
+export type HangyumiReading = { ipa?: string; pinyin?: string; zhuyin?: string };
+
+/** The finished word's card: its reading, and the word in the other four
+    languages with theirs, written ahead beside the word bank. */
+export type HangyumiCard = {
+  reading: HangyumiReading;
+  translations: Partial<Record<LanguageCode, { text: string; reading: HangyumiReading }>>;
+};
+
 export type HangyumiRound = {
   id: string;
   status: HangyumiStatus;
@@ -86,6 +96,8 @@ export type HangyumiRound = {
   today: HangyumiToday;
   /** Only once the round is over. */
   answer: string | null;
+  /** Only once the round is over, and only for a word whose card is written. */
+  card: HangyumiCard | null;
 };
 
 export type HangyumiPaid = { letter: number; word: number; already: boolean; capped: boolean };
@@ -115,6 +127,28 @@ function readToday(value: unknown): HangyumiToday {
   const cap = count(row.cap) || DAILY_CAP;
   const earned = Math.min(cap, count(row.earned));
   return { day: typeof row.day === "string" ? row.day : "", earned, cap, remaining: Math.max(0, cap - earned) };
+}
+
+function readReading(value: unknown): HangyumiReading {
+  const row = (value ?? {}) as Record<string, unknown>;
+  const reading: HangyumiReading = {};
+  for (const key of ["ipa", "pinyin", "zhuyin"] as const) {
+    if (typeof row[key] === "string" && row[key]) reading[key] = row[key];
+  }
+  return reading;
+}
+
+function readCard(value: unknown): HangyumiCard | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const translations: HangyumiCard["translations"] = {};
+  for (const [language, side] of Object.entries((row.translations ?? {}) as Record<string, unknown>)) {
+    const text = (side as Record<string, unknown> | null)?.text;
+    if (isLanguage(language) && typeof text === "string" && text.trim()) {
+      translations[language] = { text, reading: readReading(side) };
+    }
+  }
+  return { reading: readReading(row), translations };
 }
 
 export function readRound(value: unknown): HangyumiRound {
@@ -149,6 +183,7 @@ export function readRound(value: unknown): HangyumiRound {
     rewards: { letter: count(rewards.letter) || REWARDS[row.level].letter, word: count(rewards.word) || REWARDS[row.level].word },
     today: readToday(row.today),
     answer: status !== "playing" && typeof row.answer === "string" ? row.answer : null,
+    card: status !== "playing" ? readCard(row.card) : null,
   };
 }
 

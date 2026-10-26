@@ -11,7 +11,7 @@ import useOnline from "@/hooks/useOnline";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import {
   KEYBOARDS, LEVELS, MAX_MISSES, PIECES, REWARDS, isLevel, normalizeGuess,
-  type HangyumiLevel, type HangyumiRound,
+  type HangyumiLevel, type HangyumiReading, type HangyumiRound,
 } from "@/lib/hangyumi/rules";
 import { HangyumiClosedError, type HangyumiService, type SaveWord } from "@/lib/hangyumi/service";
 import { setSoundsOn, sounds, soundsOn, unlockSounds } from "@/lib/hangyumi/sounds";
@@ -124,7 +124,13 @@ export default function HangyumiGame({
   const [todayEarned, setTodayEarned] = useState<number | null>(null);
   const [reviewer, setReviewer] = useState(false);
   const [pending, setPending] = useState(false);
-  const [notice, setNotice] = useState("");
+  /* What was just paid, over the studio. Counted, so the same words twice
+     still show twice; each showing fades in, stays six seconds and goes
+     (Chi, 2026-10-26), leaving the studio clean. */
+  const [notice, setNoticeState] = useState({ text: "", run: 0 });
+  const setNotice = useCallback((text: string) => {
+    setNoticeState(current => ({ text, run: text ? current.run + 1 : current.run }));
+  }, []);
   const [bump, setBump] = useState(0);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [outfit, setOutfit] = useState<YumiOutfit | null>(null);
@@ -133,7 +139,7 @@ export default function HangyumiGame({
   const [balance, setBalance] = useState<number | null>(null);
   const shownBalance = useCountUp(balance, reducedMotion);
   /* The finished round's word in the reader's language, for its card. */
-  const [gloss, setGloss] = useState<{ id: string; text: string | null; language: LanguageCode } | null>(null);
+  const [gloss, setGloss] = useState<{ id: string; text: string | null; language: LanguageCode; reading?: HangyumiReading } | null>(null);
   const [deal, setDeal] = useState(0);
 
   const counterRef = useRef<HTMLSpanElement>(null);
@@ -217,7 +223,7 @@ export default function HangyumiGame({
       setPhase("error");
     });
     return () => { cancelled = true; };
-  }, [service, learningLanguage, hintLanguage, level, deal, prefsRead, showRound]);
+  }, [service, learningLanguage, hintLanguage, level, deal, prefsRead, showRound, setNotice]);
 
   const chooseLevel = useCallback((next: HangyumiLevel) => {
     writeStorage(LEVEL_KEY, next);
@@ -362,7 +368,7 @@ export default function HangyumiGame({
       pendingRef.current = false;
       setPending(false);
     }
-  }, [service, copy, flyCookies, reducedMotion, showRound, celebrate]);
+  }, [service, copy, flyCookies, reducedMotion, showRound, celebrate, setNotice]);
 
   const keepWord = useCallback(async () => {
     const current = roundRef.current;
@@ -436,16 +442,24 @@ export default function HangyumiGame({
     return () => window.removeEventListener("keydown", onKey);
   }, [guess, nextWord]);
 
-  // Once a round is over, its word's gloss for the card: in the display
-  // language, or the native one when the display language is the word's.
-  const glossLanguage = round ? resolveSupportLanguage(round.language, hintLanguage, nativeLanguage) : hintLanguage;
+  // Once a round is over, its word's gloss for the card: the word in the
+  // app's display language (Chi, 2026-10-26: "對應的是設定的系統語言翻譯，
+  // 而不是單字意思"), or in the native one when the display language is
+  // the word's own. Written ahead in the word's card, with its reading; a
+  // live translation only for a word that has none.
+  const glossLanguage = round
+    ? hintLanguage !== round.language ? hintLanguage : resolveSupportLanguage(round.language, null, nativeLanguage)
+    : hintLanguage;
   useEffect(() => {
     if (!round || round.status === "playing" || !round.answer || gloss?.id === round.id) return;
     const { id, answer, language } = round;
     const to = glossLanguage;
+    const written = round.card?.translations[to];
     let cancelled = false;
-    queueMicrotask(() => { if (!cancelled) setGloss({ id, text: null, language: to }); });
-    if (!translate) return;
+    queueMicrotask(() => {
+      if (!cancelled) setGloss(written ? { id, text: written.text, language: to, reading: written.reading } : { id, text: null, language: to });
+    });
+    if (written || !translate) return () => { cancelled = true; };
     void translate(answer, language, to).then(text => {
       if (!cancelled && text) setGloss({ id, text, language: to });
     }, () => {});
@@ -486,16 +500,23 @@ export default function HangyumiGame({
           <ArrowLeft size={22} strokeWidth={1.9} aria-hidden="true" />
         </Link>
         {/* The game's signboard, the shop's own: a lacquered plate on two
-            rods, the name in gilt, the station under it. */}
+            rods, the name in gilt, and under it, where the shop says where
+            it orbits, the cookies there are to spend and today's share of
+            the 333 (Chi, 2026-10-26). The flying cookies land on it. */}
         <div className={styles.signArea}>
           <h1 className={styles.sign}>
             <span className={styles.signHooks} aria-hidden="true" />
             <span className={styles.signName}>{copy.title}</span>
             <span className={styles.signOrbit} aria-hidden="true">
-              <span className={styles.signLights}><i /><i /><i /></span>
-              {copy.station}
+              <span className={styles.signWallet} data-bump={bump % 2 ? "a" : "b"} ref={counterRef}>
+                <EnergyCookie className={styles.signCookie} />
+                <b>{shownBalance === null ? "–" : shownBalance.toLocaleString(locale)}</b>
+              </span>
+              <span className={styles.signToday}>· {earned}/333</span>
             </span>
           </h1>
+          {balance !== null && <span className={styles.srOnly}>{fill(copy.balance, { count: balance })}</span>}
+          <span className={styles.srOnly}>{fill(copy.todayLabel, { earned, cap: 333 })}</span>
         </div>
         <button
           type="button"
@@ -563,18 +584,10 @@ export default function HangyumiGame({
       <section className={styles.stageWrap}>
         <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />
         <div className={styles.stageTop}>
-          {/* The cookies there are to spend, as in the shop; today's share of
-              the 333 under it. The flying cookies land here. */}
-          <span className={styles.todayCount} data-bump={bump % 2 ? "a" : "b"} ref={counterRef}>
-            <EnergyCookie className={styles.todayCookie} />
-            <span className={styles.wallet} aria-hidden="true">
-              <b>{shownBalance === null ? "–" : shownBalance.toLocaleString(locale)}</b>
-              <small>{fill(copy.todayShort, { earned, cap: 333 })}</small>
-            </span>
-            {balance !== null && <span className={styles.srOnly}>{fill(copy.balance, { count: balance })}</span>}
-            <span className={styles.srOnly}>{fill(copy.todayLabel, { earned, cap: 333 })}</span>
-          </span>
-          {round && round.earned > 0 && <span className={styles.roundEarned}>{fill(copy.roundEarned, { count: round.earned })}</span>}
+          {/* Replayed for each new total, then gone after six seconds. */}
+          {round && round.earned > 0
+            ? <span key={`${round.id}:${round.earned}`} className={styles.roundEarned}>{fill(copy.roundEarned, { count: round.earned })}</span>
+            : <span />}
           <button type="button" className={styles.info} onClick={() => setRulesOpen(true)} aria-label={copy.rulesTitle} title={copy.rulesTitle}>
             <Info size={18} strokeWidth={1.9} aria-hidden="true" />
           </button>
@@ -600,7 +613,7 @@ export default function HangyumiGame({
             and what was just paid. */}
         <div className={styles.notices}>
           {queuedLevel && <p className={styles.queued}>{fill(copy.nextLevel, { level: queuedLevel })}</p>}
-          <p className={styles.live} aria-live="polite" data-shown={notice ? "true" : "false"}>{notice}</p>
+          <p className={styles.live} aria-live="polite" data-shown={notice.text ? "true" : "false"} data-run={notice.run % 2 ? "a" : "b"}>{notice.text}</p>
         </div>
       </section>
 
@@ -752,11 +765,11 @@ export default function HangyumiGame({
                   /* Without a translation (offline, the day's translations
                      spent), the clue in the display language stands in. */
                   const second = mine?.text
-                    ? { text: mine.text, language: mine.language }
+                    ? { text: mine.text, language: mine.language, reading: mine.reading }
                     : mine ? { text: round.hint, language: round.hintLanguage } : null;
                   return (
                     <HangyumiWordCard
-                      sides={[{ text: round.answer, language: round.language }, ...(second ? [second] : [])]}
+                      sides={[{ text: round.answer, language: round.language, reading: round.card?.reading }, ...(second ? [second] : [])]}
                       pending={!second}
                     />
                   );

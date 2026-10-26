@@ -32,6 +32,8 @@ const key = (value: string) => value.normalize("NFC").toLocaleLowerCase();
    likely to slip into a clue. */
 const SIMPLIFIED = "们这说时为国过还样学发经么见对东头长门问间车马鸟爱当会实现进运动电话请让认识书买卖习写读农业应该个开关钱觉听语区难题欢视务观热办体图华广场备岁变权传营节约师乐号产将处圣复无与气";
 
+const SIMPLIFIED_RE = new RegExp(`[${SIMPLIFIED}]`);
+
 describe("the drafted bank", () => {
   it.each(LANGUAGE_CODES)("%s has 60 words a level, each once", language => {
     const file = bank[language];
@@ -84,6 +86,27 @@ describe("the drafted bank", () => {
         for (const char of answer) expect(clues[1], answer).not.toContain(char);
       }
     }
+  });
+
+  it.each(LANGUAGE_CODES)("%s has a complete card for every word: its reading, and the word in the other four with theirs", language => {
+    const cards = JSON.parse(readFileSync(join(root, "supabase/hangyumi/cards", `${language}.json`), "utf8")) as Record<string, Record<string, unknown>>;
+    const reads = (side: Record<string, unknown>, as: LanguageCode) => as === "zh-TW"
+      ? typeof side.pinyin === "string" && typeof side.zhuyin === "string" && side.pinyin !== "" && side.zhuyin !== ""
+      : typeof side.ipa === "string" && /^\/[^/]+\/$/.test(side.ipa);
+    const gaps: string[] = [];
+    for (const [, answer] of bank[language].words) {
+      const card = cards[answer];
+      if (!card || !reads(card, language)) { gaps.push(`${answer}: reading`); continue; }
+      const translations = (card.translations ?? {}) as Record<string, Record<string, unknown>>;
+      for (const other of LANGUAGE_CODES.filter(code => code !== language)) {
+        const side = translations[other];
+        if (!side || typeof side.text !== "string" || !side.text.trim() || !reads(side, other)) gaps.push(`${answer}: ${other}`);
+        else if (other === "zh-TW" && SIMPLIFIED_RE.test(side.text)) gaps.push(`${answer}: Simplified ${side.text}`);
+      }
+    }
+    expect(gaps).toEqual([]);
+    // Nothing on the card for a word the bank no longer has.
+    expect(Object.keys(cards).sort()).toEqual(bank[language].words.map(([, answer]) => answer).sort());
   });
 
   it("is imported by nothing a browser loads", () => {

@@ -2782,8 +2782,6 @@ export type TranslationDictionary = {
     title: string;
     open: string;
     back: string;
-    /** The station line under the game's signboard, as the shop's says where it orbits. */
-    station: string;
     /** The rules sheet's switch for the game's sound effects. */
     sound: string;
     /** The game's own learning-language key: {language} is the language's name. */
@@ -2794,7 +2792,6 @@ export type TranslationDictionary = {
     levelChoice: string;
     /** The cookies there are to spend, and today's share of the 333. */
     balance: string;
-    todayShort: string;
     /** The level's rewards, beside a cookie: a letter (a character in Chinese), the word. */
     rewardLetter: string;
     rewardChar: string;

@@ -178,19 +178,45 @@
   color: var(--sign-orbit);
 }
 
-.signLights {
+
+
+/* The cookies on the sign: the shop's cookie, the count in gilt, today's
+   share after it in the orbit's quieter ink. */
+.signWallet {
   display: inline-flex;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
 }
 
-.signLights i {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: #ffc96b;
-  box-shadow: 0 0 4px #ffc96b;
-  opacity: 0.85;
+.signWallet b {
+  background: var(--sign-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.signCookie {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.signToday {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.signWallet[data-bump="a"] {
+  animation: bump-a 420ms cubic-bezier(.34, 1.56, .64, 1);
+}
+
+.signWallet[data-bump="b"] {
+  animation: bump-b 420ms cubic-bezier(.34, 1.56, .64, 1);
 }
 
 .signHooks::before,
@@ -510,52 +536,11 @@
   pointer-events: auto;
 }
 
-.todayCount,
 .roundEarned,
 .missesText,
 .info {
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-}
-
-.todayCount {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 2.5rem;
-  padding: 3px 13px 3px 7px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.78);
-  box-shadow: 0 1px 2px #00000014, inset 0 0 0 1px #0000000a;
-  color: #24211b;
-  font-size: 1rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-/* The cookies there are to spend, large; today's share under it. */
-.wallet {
-  display: grid;
-  line-height: 1.05;
-}
-
-.wallet b {
-  font-size: 1.0625rem;
-  font-weight: 800;
-}
-
-.wallet small {
-  color: #8a8376;
-  font-size: 0.6875rem;
-  font-weight: 650;
-}
-
-.todayCount[data-bump="a"] {
-  animation: bump-a 420ms cubic-bezier(.34, 1.56, .64, 1);
-}
-
-.todayCount[data-bump="b"] {
-  animation: bump-b 420ms cubic-bezier(.34, 1.56, .64, 1);
 }
 
 @keyframes bump-a {
@@ -564,11 +549,6 @@
 
 @keyframes bump-b {
   40% { transform: scale(1.12); }
-}
-
-.todayCookie {
-  width: 1.375rem;
-  height: 1.375rem;
 }
 
 .roundEarned {
@@ -582,6 +562,23 @@
   font-size: 0.8125rem;
   font-weight: 750;
   font-variant-numeric: tabular-nums;
+  animation: pill-life-a 6.6s ease both;
+}
+
+/* A note over the studio: fades in, stays six seconds, fades out (Chi,
+   2026-10-26), so the studio is a clean stage again. Two names for one
+   life, so a new note restarts it. Opacity only, kept under reduced
+   motion too. */
+@keyframes pill-life-a {
+  0% { opacity: 0; transform: translateY(-4px); }
+  5%, 95% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+
+@keyframes pill-life-b {
+  0% { opacity: 0; transform: translateY(-4px); }
+  5%, 95% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-4px); }
 }
 
 .info {
@@ -682,17 +679,18 @@
   line-height: 1.35;
   text-align: center;
   opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity 220ms ease, transform 260ms cubic-bezier(.2, .8, .2, 1);
 }
 
 .live[data-shown="false"] {
   visibility: hidden;
 }
 
-.live[data-shown="true"] {
-  opacity: 1;
-  transform: none;
+.live[data-shown="true"][data-run="a"] {
+  animation: pill-life-a 6.6s ease both;
+}
+
+.live[data-shown="true"][data-run="b"] {
+  animation: pill-life-b 6.6s ease both;
 }
 
 /* ---------------------------------------------------------- panels */
@@ -1399,8 +1397,8 @@
   .ghostLine,
   .wordSideGhost,
   .queued,
-  .todayCount[data-bump="a"],
-  .todayCount[data-bump="b"] {
+  .signWallet[data-bump="a"],
+  .signWallet[data-bump="b"] {
     animation: none;
   }
 }
