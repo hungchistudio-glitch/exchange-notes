@@ -65,6 +65,23 @@ describe("reading the server", () => {
     expect(readRound({ ...playing, status: "lost" }).answer).toBe("leaked");
   });
 
+  it("never holds the word's card while the round is on, and reads it once it is over", () => {
+    const card = {
+      ipa: "/efemɛʁ/",
+      translations: { en: { text: "ephemeral", ipa: "/ɪˈfɛmərəl/" }, "zh-TW": { text: "短暫的", pinyin: "duǎn zàn de", zhuyin: "ㄉㄨㄢˇ ㄗㄢˋ ˙ㄉㄜ" }, de: { text: "vergänglich" } },
+    };
+    expect(readRound({ ...playing, card }).card).toBeNull();
+    expect(readRound({ ...playing, status: "won", card }).card).toEqual({
+      reading: { ipa: "/efemɛʁ/" },
+      translations: {
+        en: { text: "ephemeral", reading: { ipa: "/ɪˈfɛmərəl/" } },
+        "zh-TW": { text: "短暫的", reading: { pinyin: "duǎn zàn de", zhuyin: "ㄉㄨㄢˇ ㄗㄢˋ ˙ㄉㄜ" } },
+      },
+    });
+    // A word whose card is not written yet.
+    expect(readRound({ ...playing, status: "lost" }).card).toBeNull();
+  });
+
   it("knows a level with no approved words", () => {
     expect(readStart({ status: "missing", language: "it", level: "C2" })).toEqual({ status: "missing", language: "it", level: "C2" });
   });

@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HangyumiGame from "@/components/hangyumi/HangyumiGame";
+import type { HangyumiCard } from "@/lib/hangyumi/rules";
 import { createPreviewHangyumi, type PracticeWord, type SaveWord } from "@/lib/hangyumi/service";
 
 /* =========================================================
@@ -296,6 +297,29 @@ describe("a round of Hangyumi", () => {
     await waitFor(() => expect(saveWord).toHaveBeenCalledWith(expect.objectContaining({ translation: "ephemeral", translationLanguage: "en" })));
   });
 
+  it("shows the word in the app's display language from its card, with every side's reading, and asks for no translation", async () => {
+    const card: HangyumiCard = {
+      reading: { ipa: "/efemɛʁ/" },
+      translations: {
+        en: { text: "ephemeral", reading: { ipa: "/ɪˈfɛmərəl/" } },
+        "zh-TW": { text: "短暫的", reading: { pinyin: "duǎn zàn de", zhuyin: "ㄉㄨㄢˇ ㄗㄢˋ ˙ㄉㄜ" } },
+      },
+    };
+    const service = createPreviewHangyumi({ words: [{ ...WORDS[0], card }], delayMs: 0 });
+    const translate = vi.fn(async () => "fleeting");
+    const saveWord = vi.fn<SaveWord>(async () => "saved");
+    render(<HangyumiGame service={service} defaultLanguage="fr" translate={translate} saveWord={saveWord} nativeLanguage="zh-TW" />);
+    await screen.findByText("lasting a very short time");
+    for (const char of ["x", "y", "z"]) await guess(char);
+    // English, the display language, though the reader's native one is Chinese.
+    expect(await screen.findByRole("button", { name: "Listen: ephemeral" })).toBeInTheDocument();
+    expect(screen.getByText("/efemɛʁ/")).toBeInTheDocument();
+    expect(screen.getByText("/ɪˈfɛmərəl/")).toBeInTheDocument();
+    expect(translate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Save to vocabulary" }));
+    await waitFor(() => expect(saveWord).toHaveBeenCalledWith(expect.objectContaining({ translation: "ephemeral", translationLanguage: "en" })));
+  });
+
   it("guesses Chinese from a set of characters that holds the answer's", async () => {
     window.localStorage.setItem("hangyumi-level", "B1");
     play({ language: "zh-TW" });
@@ -306,5 +330,45 @@ describe("a round of Hangyumi", () => {
     await guess("旅");
     await guess("行");
     expect(await screen.findByRole("heading", { name: "You freed Yumi!" })).toBeInTheDocument();
+  });
+});
+
+describe("the game's finish", () => {
+  it("hangs the shop's signboard over the game", async () => {
+    play();
+    await screen.findByText("lasting a very short time");
+    expect(screen.getByRole("heading", { level: 1, name: "Hangyumi" })).toBeInTheDocument();
+    // The cookies to spend ride on the sign, under the name.
+    expect(screen.getByText("240")).toBeInTheDocument();
+    expect(screen.getByText("240 energy cookies to spend")).toBeInTheDocument();
+  });
+
+  it("moves only the key and the places of the letter just guessed", async () => {
+    play();
+    await screen.findByText("lasting a very short time");
+    await guess("z");
+    expect(screen.getByRole("button", { name: "z, already guessed" })).toHaveAttribute("data-latest", "true");
+    // A miss blushes the screen's edge.
+    expect(document.querySelector("[class*='missFlash']")).not.toBeNull();
+    await guess("é");
+    expect(screen.getByRole("button", { name: "z, already guessed" })).toHaveAttribute("data-latest", "false");
+    expect(screen.getByRole("button", { name: "é, already guessed" })).toHaveAttribute("data-latest", "true");
+    const word = screen.getByRole("group", { name: "The word" });
+    const fresh = within(word).getAllByText("é").map(letter => letter.closest("[data-fresh]")!);
+    expect(fresh.map(slot => slot.getAttribute("data-fresh"))).toEqual(["true", "true"]);
+    // Each a beat after the one before.
+    expect(fresh.map(slot => (slot as HTMLElement).style.getPropertyValue("--flip-delay"))).toEqual(["0ms", "90ms"]);
+    expect(word.querySelectorAll("[data-fresh='true']")).toHaveLength(2);
+  });
+
+  it("lets the sound effects be switched off, and remembers it", async () => {
+    play();
+    await screen.findByText("lasting a very short time");
+    fireEvent.click(screen.getByRole("button", { name: "How Hangyumi works" }));
+    const toggle = await screen.findByRole("switch", { name: "Sound effects" });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(window.localStorage.getItem("hangyumi-sound")).toBe("off");
   });
 });

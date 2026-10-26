@@ -4,7 +4,7 @@ import type { LanguageCode } from "@/lib/languages";
 
 import {
   DAILY_CAP, MAX_MISSES, REWARDS, readGuess, readStart, readTodayState,
-  type HangyumiGuessResult, type HangyumiLevel, type HangyumiRound, type HangyumiStart, type PartOfSpeech,
+  type HangyumiCard, type HangyumiGuessResult, type HangyumiLevel, type HangyumiRound, type HangyumiStart, type PartOfSpeech,
 } from "./rules";
 
 /* =========================================================
@@ -86,17 +86,18 @@ export type PracticeWord = {
   answer: string;
   partOfSpeech: PartOfSpeech;
   clues: Partial<Record<LanguageCode, string>>;
+  card?: HangyumiCard;
 };
 
 /** Practice words for the review screen only. The real bank never ships to a browser. */
 export const PRACTICE_WORDS: PracticeWord[] = [
-  { language: "en", level: "B1", answer: "well-being", partOfSpeech: "noun", clues: { en: "feeling healthy and happy", "zh-TW": "身心健康、過得好的狀態" } },
-  { language: "en", level: "C2", answer: "ephemeral", partOfSpeech: "adj", clues: { en: "lasting for a very short time", "zh-TW": "只存在很短暫的時間" } },
-  { language: "fr", level: "C1", answer: "éphémère", partOfSpeech: "adj", clues: { en: "lasting a very short time", "zh-TW": "只存在很短的時間" } },
-  { language: "es", level: "B1", answer: "montaña", partOfSpeech: "noun", clues: { en: "a very high hill", "zh-TW": "非常高的山" } },
-  { language: "it", level: "B1", answer: "città", partOfSpeech: "noun", clues: { en: "a large place with many people and buildings", "zh-TW": "人口多、建築密集的大地方" } },
-  { language: "zh-TW", level: "B1", answer: "旅行", partOfSpeech: "noun", clues: { en: "going away from home to visit other places for pleasure", "zh-TW": "離開家，到別的地方去遊玩" } },
-  { language: "zh-TW", level: "C2", answer: "畫蛇添足", partOfSpeech: "idiom", clues: { en: "spoiling something by adding what it did not need", "zh-TW": "多此一舉，反而把事情弄糟" } },
+  { language: "en", level: "B1", answer: "well-being", partOfSpeech: "noun", clues: { en: "feeling healthy and happy", "zh-TW": "身心健康、過得好的狀態" }, card: {"reading": {"ipa": "/ˌwɛlˈbiɪŋ/"}, "translations": {"zh-TW": {"text": "幸福", "reading": {"pinyin": "xìng fú", "zhuyin": "ㄒㄧㄥˋ ㄈㄨˊ"}}, "es": {"text": "bienestar", "reading": {"ipa": "/bjenesˈtaɾ/"}}, "fr": {"text": "bien-être", "reading": {"ipa": "/bjɛ̃nɛtʁ/"}}, "it": {"text": "benessere", "reading": {"ipa": "/beˈnɛssere/"}}}} },
+  { language: "en", level: "C2", answer: "ephemeral", partOfSpeech: "adj", clues: { en: "lasting for a very short time", "zh-TW": "只存在很短暫的時間" }, card: {"reading": {"ipa": "/ɪˈfɛmərəl/"}, "translations": {"zh-TW": {"text": "短暫的", "reading": {"pinyin": "duǎn zàn de", "zhuyin": "ㄉㄨㄢˇ ㄗㄢˋ ˙ㄉㄜ"}}, "es": {"text": "efímero", "reading": {"ipa": "/eˈfimeɾo/"}}, "fr": {"text": "éphémère", "reading": {"ipa": "/efemɛʁ/"}}, "it": {"text": "effimero", "reading": {"ipa": "/efˈfimero/"}}}} },
+  { language: "fr", level: "C1", answer: "éphémère", partOfSpeech: "adj", clues: { en: "lasting a very short time", "zh-TW": "只存在很短的時間" }, card: {"reading": {"ipa": "/efemɛʁ/"}, "translations": {"en": {"text": "ephemeral", "reading": {"ipa": "/ɪˈfɛmərəl/"}}, "zh-TW": {"text": "短暫的", "reading": {"pinyin": "duǎn zàn de", "zhuyin": "ㄉㄨㄢˇ ㄗㄢˋ ˙ㄉㄜ"}}, "es": {"text": "efímero", "reading": {"ipa": "/eˈfimeɾo/"}}, "it": {"text": "effimero", "reading": {"ipa": "/efˈfimero/"}}}} },
+  { language: "es", level: "B1", answer: "montaña", partOfSpeech: "noun", clues: { en: "a very high hill", "zh-TW": "非常高的山" }, card: {"reading": {"ipa": "/monˈtaɲa/"}, "translations": {"en": {"text": "mountain", "reading": {"ipa": "/ˈmaʊntən/"}}, "zh-TW": {"text": "山", "reading": {"pinyin": "shān", "zhuyin": "ㄕㄢ"}}, "fr": {"text": "montagne", "reading": {"ipa": "/mɔ̃taɲ/"}}, "it": {"text": "montagna", "reading": {"ipa": "/monˈtaɲɲa/"}}}} },
+  { language: "it", level: "B1", answer: "città", partOfSpeech: "noun", clues: { en: "a large place with many people and buildings", "zh-TW": "人口多、建築密集的大地方" }, card: {"reading": {"ipa": "/tʃitˈta/"}, "translations": {"en": {"text": "city", "reading": {"ipa": "/ˈsɪti/"}}, "zh-TW": {"text": "城市", "reading": {"pinyin": "chéng shì", "zhuyin": "ㄔㄥˊ ㄕˋ"}}, "es": {"text": "ciudad", "reading": {"ipa": "/sjuˈdad/"}}, "fr": {"text": "ville", "reading": {"ipa": "/vil/"}}}} },
+  { language: "zh-TW", level: "B1", answer: "旅行", partOfSpeech: "noun", clues: { en: "going away from home to visit other places for pleasure", "zh-TW": "離開家，到別的地方去遊玩" }, card: {"reading": {"pinyin": "lǚ xíng", "zhuyin": "ㄌㄩˇ ㄒㄧㄥˊ"}, "translations": {"en": {"text": "travel", "reading": {"ipa": "/ˈtrævəl/"}}, "es": {"text": "viaje", "reading": {"ipa": "/ˈbjaxe/"}}, "fr": {"text": "voyage", "reading": {"ipa": "/vwajaʒ/"}}, "it": {"text": "viaggio", "reading": {"ipa": "/ˈvjaddʒo/"}}}} },
+  { language: "zh-TW", level: "C2", answer: "畫蛇添足", partOfSpeech: "idiom", clues: { en: "spoiling something by adding what it did not need", "zh-TW": "多此一舉，反而把事情弄糟" }, card: {"reading": {"pinyin": "huà shé tiān zú", "zhuyin": "ㄏㄨㄚˋ ㄕㄜˊ ㄊㄧㄢ ㄗㄨˊ"}, "translations": {"en": {"text": "gild the lily", "reading": {"ipa": "/ɡɪld ðə ˈlɪli/"}}, "es": {"text": "pasarse de rosca", "reading": {"ipa": "/paˈsaɾse de ˈroska/"}}, "fr": {"text": "en faire trop", "reading": {"ipa": "/ɑ̃ fɛʁ tʁo/"}}, "it": {"text": "strafare", "reading": {"ipa": "/straˈfare/"}}}} },
 ];
 
 const isLetter = (char: string) => /\p{L}/u.test(char);
@@ -138,6 +139,7 @@ export function createPreviewHangyumi(options: { words?: PracticeWord[]; earnedT
       rewards: REWARDS[round.word.level],
       today: { day, earned: earnedToday, cap: DAILY_CAP, remaining: Math.max(0, DAILY_CAP - earnedToday) },
       answer: round.status === "playing" ? null : round.word.answer,
+      card: round.status === "playing" ? null : round.word.card ?? null,
     };
   }
 

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import usePhonetics from "@/hooks/usePhonetics";
+import type { HangyumiReading } from "@/lib/hangyumi/rules";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { speak, stopSpeech } from "@/lib/speech";
 
@@ -17,13 +18,21 @@ import styles from "./Hangyumi.module.css";
    in the language being learnt with its readings, under it the same word
    in the reader's language, each with its own speaker (Chi, 2026-10-26).
 
+   Each side's reading comes with the word's card, written ahead beside
+   the word bank (IPA, or zhuyin and pinyin), so every side of every word
+   has one; only a side without it asks the phonetics service.
+
    A speaker speaks only when it is pressed. iOS Safari lets speech start
    only inside the tap that asked for it; the word used to be spoken on
    its own as the round ended, outside any tap, and that left every
    speaker on the screen mute for the session.
    ========================================================= */
 
-export type WordCardSide = { text: string; language: LanguageCode };
+export type WordCardSide = { text: string; language: LanguageCode; reading?: HangyumiReading };
+
+/** A reading with nothing in it is no reading: the service is asked instead. */
+const hasReading = (reading?: HangyumiReading): reading is HangyumiReading =>
+  !!reading && Boolean(reading.ipa || reading.pinyin || reading.zhuyin);
 
 export default function HangyumiWordCard({ sides, pending }: {
   /** The word first, then its gloss. */
@@ -34,7 +43,8 @@ export default function HangyumiWordCard({ sides, pending }: {
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.hangyumi;
   const shown = useMemo(() => sides.filter(side => side.text.trim()), [sides]);
-  const phoneticsFor = usePhonetics(shown);
+  const unread = useMemo(() => shown.filter(side => !hasReading(side.reading)), [shown]);
+  const phoneticsFor = usePhonetics(unread);
   const sequence = useRef(0);
   const watchdog = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [audio, setAudio] = useState<{ index: number; started: boolean } | null>(null);
@@ -89,7 +99,7 @@ export default function HangyumiWordCard({ sides, pending }: {
   return (
     <div className={styles.wordCard}>
       {shown.map((side, index) => {
-        const phonetics = phoneticsFor(side);
+        const phonetics = hasReading(side.reading) ? side.reading : phoneticsFor(side);
         const readings = [phonetics?.zhuyin, phonetics?.pinyin, phonetics?.ipa].filter(Boolean).join(" · ");
         const playing = audio?.index === index;
         return (

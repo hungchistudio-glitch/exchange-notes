@@ -17,6 +17,11 @@ import { createClient } from "@supabase/supabase-js";
    refreshes words that are still drafts; a word already approved or
    rejected is left exactly as it was reviewed.
 
+   Each word's card, from supabase/hangyumi/cards/<language>.json (its
+   reading, and the word in the other four languages with theirs), is
+   written to every word, reviewed or not: it is what the finished round
+   shows under the answer, not what was reviewed.
+
      node scripts/hangyumi-seed.mjs            says what it would do
      node scripts/hangyumi-seed.mjs --apply    writes it
 
@@ -55,6 +60,7 @@ const wordKey = (word) => word.normalize("NFC").trim().replace(/\s+/g, " ").toLo
 
 const rows = LANGUAGES.flatMap((language) => {
   const file = JSON.parse(readFileSync(join(root, "supabase/hangyumi", `${language}.json`), "utf8"));
+  const cards = JSON.parse(readFileSync(join(root, "supabase/hangyumi/cards", `${language}.json`), "utf8"));
   return file.words.map(([level, answer, partOfSpeech, ...clues]) => ({
     language,
     level,
@@ -62,26 +68,48 @@ const rows = LANGUAGES.flatMap((language) => {
     part_of_speech: partOfSpeech,
     clues: Object.fromEntries(LANGUAGES.map((clueLanguage, index) => [clueLanguage, clues[index]])),
     source: file.source,
+    card: cards[answer] ?? null,
   }));
 });
 
-const { data: existing, error: readError } = await supabase
-  .from("hangyumi_words")
-  .select("id, language, canonical, status");
-if (readError) throw readError;
+// A page at a time: PostgREST answers at most 1,000 rows, and the bank
+// has 1,200; reading one page took the other 200 for new words.
+const existing = [];
+for (let from = 0; ; from += 1000) {
+  const { data, error } = await supabase
+    .from("hangyumi_words")
+    .select("id, language, canonical, status, card")
+    .order("id")
+    .range(from, from + 999);
+  if (error) throw error;
+  existing.push(...data);
+  if (data.length < 1000) break;
+}
 
 const known = new Map(existing.map((row) => [`${row.language}:${row.canonical}`, row]));
+/** JSON with its keys sorted: jsonb keeps keys in an order of its own. */
+const canonicalJson = (value) =>
+  JSON.stringify(value, (_, inner) =>
+    inner && typeof inner === "object" && !Array.isArray(inner)
+      ? Object.fromEntries(Object.entries(inner).sort(([a], [b]) => (a < b ? -1 : 1)))
+      : inner,
+  );
+
 const inserts = [];
 const updates = [];
+const cardUpdates = [];
 let kept = 0;
 for (const row of rows) {
   const found = known.get(`${row.language}:${wordKey(row.answer)}`);
   if (!found) inserts.push(row);
   else if (found.status === "draft") updates.push({ ...row, id: found.id, updated_at: new Date().toISOString() });
-  else kept += 1;
+  else {
+    kept += 1;
+    if (canonicalJson(found.card) !== canonicalJson(row.card)) cardUpdates.push({ id: found.id, card: row.card });
+  }
 }
 
-console.log(`${rows.length} words in the bank: ${inserts.length} new, ${updates.length} drafts to refresh, ${kept} already reviewed and left alone.`);
+console.log(`${rows.length} words in the bank: ${inserts.length} new, ${updates.length} drafts to refresh, ${kept} already reviewed and left alone but for ${cardUpdates.length} cards to write.`);
 if (!apply) {
   console.log("Nothing written. Run again with --apply.");
   process.exit(0);
@@ -94,5 +122,16 @@ for (let i = 0; i < inserts.length; i += 100) {
 for (let i = 0; i < updates.length; i += 100) {
   const { error } = await supabase.from("hangyumi_words").upsert(updates.slice(i, i + 100), { onConflict: "id" });
   if (error) throw error;
+}
+// One word at a time, ten at once: an update names its row, and an upsert
+// of only the card would have to satisfy every not-null column to insert.
+for (let i = 0; i < cardUpdates.length; i += 10) {
+  const results = await Promise.all(
+    cardUpdates.slice(i, i + 10).map(({ id, card }) =>
+      supabase.from("hangyumi_words").update({ card, updated_at: new Date().toISOString() }).eq("id", id),
+    ),
+  );
+  const failed = results.find((result) => result.error);
+  if (failed) throw failed.error;
 }
 console.log("Written.");
