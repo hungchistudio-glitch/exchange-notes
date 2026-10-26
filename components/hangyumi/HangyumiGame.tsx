@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Check, Info, Languages, Volume2 } from "lucide-react";
+import { ArrowLeft, BookmarkCheck, BookmarkPlus, Check, Info, Languages, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -13,10 +13,10 @@ import {
   KEYBOARDS, LEVELS, MAX_MISSES, PIECES, REWARDS, isLevel, normalizeGuess,
   type HangyumiLevel, type HangyumiRound,
 } from "@/lib/hangyumi/rules";
-import { HangyumiClosedError, type HangyumiService } from "@/lib/hangyumi/service";
+import { HangyumiClosedError, type HangyumiService, type SaveWord } from "@/lib/hangyumi/service";
 import { fill, plural } from "@/lib/i18n/format";
 import {
-  INTERFACE_LANGUAGE_CODE, LANGUAGE_CODES, getLanguage, getLanguageName, resolveSupportLanguage, type LanguageCode,
+  INTERFACE_LANGUAGE_CODE, LANGUAGE_CODES, getLanguage, getLanguageName, type LanguageCode,
 } from "@/lib/languages";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { announceEnergyLanded } from "@/lib/shop/energy";
@@ -36,8 +36,9 @@ import styles from "./Hangyumi.module.css";
 
    The language key beside the difficulty bar changes only the language
    the game deals in (Chi: "單純學習語言的切換"); the app's own learning
-   language is left alone, and the clue stays in the reader's native
-   language, or the next best one when they play in their own.
+   language is left alone. The clue is always in the app's display
+   language, the one chosen in Settings (Chi, 2026-10-26), whatever is
+   being played.
 
    The round in progress is remembered per language and level, so a reload
    or a second tab carries on with the same word rather than dealing a new
@@ -48,10 +49,10 @@ type Props = {
   service: HangyumiService;
   /** The app's learning language: what the game deals in until the reader picks another. */
   defaultLanguage: LanguageCode;
-  /** The reader's native language, for the clue. */
-  nativeLanguage: LanguageCode | null;
   /** The reader's own outfit, put on when a word is won. */
   loadOutfit?: () => Promise<YumiOutfit>;
+  /** Keeps a finished round's word in the reader's vocabulary (Chi). */
+  saveWord?: SaveWord;
   backHref?: string;
   reviewHref?: string;
 };
@@ -80,15 +81,17 @@ function newRoundId() {
 const QWERTY = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 
 export default function HangyumiGame({
-  service, defaultLanguage, nativeLanguage, loadOutfit, backHref = "/home", reviewHref = "/hangyumi/review",
+  service, defaultLanguage, loadOutfit, saveWord, backHref = "/home", reviewHref = "/hangyumi/review",
 }: Props) {
   const { t, language: interfaceLanguage, locale } = useTranslation();
   const [chosenLanguage, setChosenLanguage] = useState<LanguageCode | null>(null);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [levelsOpen, setLevelsOpen] = useState(false);
+  /* The save button's state, for the round it belongs to. */
+  const [saving, setSaving] = useState<{ id: string; state: "saving" | "saved" | "duplicate" | "failed" } | null>(null);
   const levelsRef = useRef<HTMLDivElement>(null);
   const learningLanguage = chosenLanguage ?? defaultLanguage;
-  const hintLanguage = resolveSupportLanguage(learningLanguage, INTERFACE_LANGUAGE_CODE[interfaceLanguage], nativeLanguage);
+  const hintLanguage = INTERFACE_LANGUAGE_CODE[interfaceLanguage];
   const copy = t.hangyumi;
   const online = useOnline();
   const reducedMotion = useReducedMotion();
@@ -256,6 +259,24 @@ export default function HangyumiGame({
       setPending(false);
     }
   }, [service, copy, flyCookies, reducedMotion]);
+
+  const keepWord = useCallback(async () => {
+    const current = roundRef.current;
+    if (!saveWord || !current?.answer || current.status === "playing") return;
+    setSaving({ id: current.id, state: "saving" });
+    try {
+      const result = await saveWord({
+        answer: current.answer,
+        language: current.language,
+        partOfSpeech: current.partOfSpeech,
+        hint: current.hint,
+        hintLanguage: current.hintLanguage,
+      });
+      setSaving({ id: current.id, state: result });
+    } catch {
+      setSaving({ id: current.id, state: "failed" });
+    }
+  }, [saveWord]);
 
   // The difficulty folds away again on a tap anywhere else, or Escape.
   useEffect(() => {
@@ -536,6 +557,32 @@ export default function HangyumiGame({
                   </button>
                 )}
               </div>
+              {saveWord && (() => {
+                const state = saving?.id === round.id ? saving.state : null;
+                const kept = state === "saved" || state === "duplicate";
+                return (
+                  <>
+                    <button
+                      type="button"
+                      className={styles.saveWord}
+                      data-kept={kept ? "true" : "false"}
+                      disabled={kept || state === "saving"}
+                      onClick={() => void keepWord()}
+                    >
+                      {kept
+                        ? <BookmarkCheck size={18} strokeWidth={2} aria-hidden="true" />
+                        : <BookmarkPlus size={18} strokeWidth={2} aria-hidden="true" />}
+                      <span>
+                        {state === "saving" ? copy.savingWord
+                          : state === "saved" ? copy.savedWord
+                            : state === "duplicate" ? copy.alreadySaved
+                              : copy.saveWord}
+                      </span>
+                    </button>
+                    {state === "failed" && <p className={styles.saveError} role="alert">{copy.saveFailed}</p>}
+                  </>
+                );
+              })()}
               <button type="button" className={styles.primary} onClick={nextWord}>{copy.next}</button>
             </section>
           )}

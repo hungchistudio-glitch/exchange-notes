@@ -21,6 +21,19 @@ import {
 
 export type HangyumiToday = ReturnType<typeof readTodayState>;
 
+/** A finished round's word, as the reader asks to keep it. */
+export type SavableWord = {
+  answer: string;
+  language: LanguageCode;
+  partOfSpeech: PartOfSpeech;
+  /** The clue, kept as the gloss when no translation can be had. */
+  hint: string;
+  hintLanguage: LanguageCode;
+};
+
+/** "duplicate": it was already in the reader's vocabulary, which is what they wanted. */
+export type SaveWord = (word: SavableWord) => Promise<"saved" | "duplicate">;
+
 export type HangyumiService = {
   start(input: { roundId: string; language: LanguageCode; level: HangyumiLevel; hintLanguage: LanguageCode }): Promise<HangyumiStart>;
   guess(roundId: string, letter: string): Promise<HangyumiGuessResult>;
@@ -192,5 +205,17 @@ export function createPreviewHangyumi(options: { words?: PracticeWord[]; earnedT
       await settle();
       return { day, earned: earnedToday, cap: DAILY_CAP, remaining: Math.max(0, DAILY_CAP - earnedToday), reviewer: false, approved: {} };
     },
+  };
+}
+
+/** The review screen's save: kept in memory only, nobody's vocabulary is touched. */
+export function createPreviewSaveWord(delayMs = 300): SaveWord {
+  const kept = new Set<string>();
+  return async word => {
+    await new Promise(resolve => setTimeout(resolve, delayMs));
+    const key = `${word.language}:${word.answer.normalize("NFC").toLocaleLowerCase()}`;
+    if (kept.has(key)) return "duplicate";
+    kept.add(key);
+    return "saved";
   };
 }
