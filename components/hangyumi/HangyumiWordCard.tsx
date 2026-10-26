@@ -30,6 +30,10 @@ import styles from "./Hangyumi.module.css";
 
 export type WordCardSide = { text: string; language: LanguageCode; reading?: HangyumiReading };
 
+/** A reading with nothing in it is no reading: the service is asked instead. */
+const hasReading = (reading?: HangyumiReading): reading is HangyumiReading =>
+  !!reading && Boolean(reading.ipa || reading.pinyin || reading.zhuyin);
+
 export default function HangyumiWordCard({ sides, pending }: {
   /** The word first, then its gloss. */
   sides: WordCardSide[];
@@ -39,7 +43,7 @@ export default function HangyumiWordCard({ sides, pending }: {
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.hangyumi;
   const shown = useMemo(() => sides.filter(side => side.text.trim()), [sides]);
-  const unread = useMemo(() => shown.filter(side => !side.reading), [shown]);
+  const unread = useMemo(() => shown.filter(side => !hasReading(side.reading)), [shown]);
   const phoneticsFor = usePhonetics(unread);
   const sequence = useRef(0);
   const watchdog = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -95,7 +99,7 @@ export default function HangyumiWordCard({ sides, pending }: {
   return (
     <div className={styles.wordCard}>
       {shown.map((side, index) => {
-        const phonetics = side.reading ?? phoneticsFor(side);
+        const phonetics = hasReading(side.reading) ? side.reading : phoneticsFor(side);
         const readings = [phonetics?.zhuyin, phonetics?.pinyin, phonetics?.ipa].filter(Boolean).join(" · ");
         const playing = audio?.index === index;
         return (

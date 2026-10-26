@@ -32,9 +32,21 @@ export function setSoundsOn(on: boolean) {
   }
 }
 
-/** Call from inside a tap: makes or wakes the audio context. */
+/** Call from inside a tap: makes or wakes the audio context. Switched
+    off, it touches no audio at all, so music playing elsewhere is left
+    alone. */
 export function unlockSounds() {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !soundsOn()) return;
+  // Safari 17+: an ambient session mixes with other audio and keeps to
+  // the silent switch.
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+  if (session && session.type !== "ambient") {
+    try {
+      session.type = "ambient";
+    } catch {
+      // Older Safari: Web Audio is ambient there already.
+    }
+  }
   const Constructor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Constructor) return;
   try {
