@@ -492,6 +492,13 @@ export function createWordvaultStudio(
   ring.rotation.x = -Math.PI / 2;
   ring.visible = false;
   set.add(ring);
+  /* And round the chest's plinth when it changes for the next word. */
+  const chestRingMaterial = ringMaterial.clone();
+  const chestRing = new THREE.Mesh(ring.geometry, chestRingMaterial);
+  chestRing.rotation.x = -Math.PI / 2;
+  chestRing.position.set(CHEST_X, 0.25, 0);
+  chestRing.visible = false;
+  set.add(chestRing);
 
   // ------------------------------------------------------------ state
   /* What the scene shows when nothing plays. */
@@ -509,6 +516,9 @@ export function createWordvaultStudio(
   let arrived = false;
   let entry: { started: number; landed: boolean } | null = null;
   let readyAt = 0;
+  /* The chest changing for the next word, and whether it has changed yet. */
+  let swap: { started: number; to: VaultScene["chest"] & string; dressed: boolean } | null = null;
+  const SWAP_MS = 460;
 
   function setBusy(next: boolean) {
     if (busy === next) return;
@@ -574,9 +584,47 @@ export function createWordvaultStudio(
     pillarMaterial.opacity = tier === "premium" ? 0.32 * open : 0;
   }
 
+  /*
+   * The chest the next word holds. Once she is here, a change is not a cut
+   * from one chest to another (Chi, 2026-10-26: "箱蓋闔上時閃光變身"): the
+   * closed chest swells a little, light rings out round its plinth, and at
+   * the top of the swell it is the other chest.
+   */
+  function retier(next: "normal" | "medium" | "premium") {
+    if (swap?.to === next) return;
+    if (next === tier && !swap) return;
+    if (!arrived || reduced || disposed) {
+      swap = null;
+      dress(next);
+      return;
+    }
+    swap = { started: performance.now(), to: next, dressed: false };
+    wake();
+  }
+
+  function poseSwap(now: number) {
+    if (!swap) return;
+    const u = clamp01((now - swap.started) / SWAP_MS);
+    if (u >= 0.4 && !swap.dressed) {
+      swap.dressed = true;
+      dress(swap.to);
+      poseChest(lidOpen);
+    }
+    chest.scale.setScalar(1 + 0.12 * Math.sin(Math.PI * u) * (1 - 0.4 * u));
+    chestRing.visible = u < 1;
+    chestRing.scale.setScalar(4.2 + easeOut(u) * 3.2);
+    chestRingMaterial.opacity = 0.65 * (1 - u);
+    treasureLight.intensity = Math.max(treasureLight.intensity, 9 * Math.sin(Math.PI * u));
+    if (u >= 1) {
+      swap = null;
+      chest.scale.setScalar(1);
+      poseChest(lidOpen);
+    }
+  }
+
   /** The scene as `rest` says, with nothing in flight. */
   function settle() {
-    dress(rest.chest ?? "normal");
+    retier(rest.chest ?? "normal");
     at = rest.progress;
     lidOpen = rest.status === "won" ? 1 : 0;
     model.visible = arrived;
@@ -589,6 +637,9 @@ export function createWordvaultStudio(
       copy.visible = rest.status === "playing" && i < rest.misses;
       copy.position.copy(landings[i]);
       copy.rotation.set(0, i * 0.7, Math.PI / 2 * (i === 1 ? 1 : 0));
+      /* Their size too: coming home shrinks them, and a round picked up
+         with copies already out would show them shrunk. */
+      copy.scale.setScalar(i === 0 ? SCALE * 0.55 : SCALE * 0.75);
     });
     keyGroup.visible = false;
     glyphs.forEach(glyph => { glyph.mesh.visible = false; });
@@ -767,11 +818,12 @@ export function createWordvaultStudio(
         settle();
       }
     }
+    poseSwap(now);
     if (starRing.visible) starRing.rotation.y += dt * 0.6;
     rig.sync(dt, reduced);
     renderer.render(scene, camera);
     /* The premium chest's stars keep turning while it waits. */
-    if (live || reset || entry || (starRing.visible && !reduced)) frame = requestAnimationFrame(tick);
+    if (live || reset || entry || swap || (starRing.visible && !reduced)) frame = requestAnimationFrame(tick);
   }
 
   function wake() {

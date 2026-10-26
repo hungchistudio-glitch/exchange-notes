@@ -109,6 +109,23 @@ describe("Wordvault's chests (the server's rules, as the preview plays them)", (
     expect((await service.today()).earned).toBe(21);
   });
 
+  it("pays the word's whole worth even when the round paid nothing: past the 333, or a word already paid", async () => {
+    // Chi, 2026-10-26: a chest always holds cookies ("照這個字的完整價值算").
+    const capped = vault({ streak: 3, earnedToday: 333 });
+    await deal(capped, "c4");
+    const result = await win(capped, "c4");
+    expect(result.earned).toBe(0);
+    expect(result.chestReward).toMatchObject({ tier: "medium", cookies: 21 });
+
+    const again = vault({ streak: 2 });
+    await deal(again, "first");
+    await win(again, "first");
+    expect((await deal(again, "same-word")).chest).toBe("medium");
+    const repeat = await win(again, "same-word");
+    expect(repeat.earned).toBe(0);
+    expect(repeat.chestReward).toMatchObject({ tier: "medium", cookies: 21 });
+  });
+
   it("holds a premium chest on the seventh: three times, a Mythic Vault piece, and the streak starts again", async () => {
     const service = vault({ streak: 6 });
     expect((await deal(service, "w7")).chest).toBe("premium");

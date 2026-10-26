@@ -72,10 +72,13 @@ export function LearningLanguageProvider({
   children,
   initialLearningLanguage,
   initialNativeLanguage,
+  refreshOnMount = false,
 }: {
   children: ReactNode;
   initialLearningLanguage: unknown;
   initialNativeLanguage?: unknown;
+  /** The server could not read the profile: the defaults stand in until it is read here. */
+  refreshOnMount?: boolean;
 }) {
   const [pair, setPair] = useState<readonly [LanguageCode, LanguageCode]>(() =>
     toLearningPair(initialLearningLanguage, initialNativeLanguage),
@@ -119,6 +122,13 @@ export function LearningLanguageProvider({
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!refreshOnMount) return;
+    let cancelled = false;
+    queueMicrotask(() => { if (!cancelled) void refresh(); });
+    return () => { cancelled = true; };
+  }, [refreshOnMount, refresh]);
 
   useEffect(() => {
     function handleFocus() {

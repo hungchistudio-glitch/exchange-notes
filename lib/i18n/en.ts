@@ -3058,7 +3058,7 @@ const english: TranslationDictionary = {
       misses: "A wrong guess sends out a copy of her U, then her I, then her O. Three, and the round ends; the copies always come home, and what you won stays.",
       cap: "Up to 333 cookies a day, shared with Hangyumi, and a word pays only once a day in either game.",
       learning: "Yumi Wordvault doesn't change your saved words or your review history.",
-      chests: "Win three words in a row and the fourth holds a medium chest: the round's cookies twice over and a shop piece you don't own. Six in a row, and the seventh holds a premium chest: three times the cookies and a piece from the Mythic Vault. A chest's extra cookies don't count toward the 333.",
+      chests: "Win three words in a row and the fourth holds a medium chest: the word's cookies twice over and a shop piece you don't own. Six in a row, and the seventh holds a premium chest: three times the cookies and a piece from the Mythic Vault. A chest pays the word's full worth even on a word already paid today, and its extra cookies don't count toward the 333.",
     },
     streak: "{count} in a row",
     streakLabel: "{count} words won in a row. The fourth word holds a medium chest, the seventh a premium one.",

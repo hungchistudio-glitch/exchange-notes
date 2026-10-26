@@ -30,6 +30,22 @@ type ProtectedLayoutProps = {
   children: ReactNode;
 };
 
+/*
+ * A read that failed is asked once more, a moment later. PostgREST now and
+ * then refuses a token the proxy minted a moment before (PGRST303, seen five
+ * times in a day on 2026-10-26, always one of the two reads below and never
+ * both): its clock a little behind the auth server's, the new token is not
+ * valid yet. A quarter of a second later it is.
+ */
+async function askTwice<T extends { error: unknown }>(
+  read: () => PromiseLike<T>,
+): Promise<T> {
+  const first = await read();
+  if (!first.error) return first;
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  return read();
+}
+
 export default async function ProtectedLayout({
   children,
 }: ProtectedLayoutProps) {
@@ -69,23 +85,35 @@ export default async function ProtectedLayout({
    */
   const [profileResult, preferencesResult, cookieInterfaceMode] =
     await Promise.all([
-      supabase
-        .from("profiles")
-        .select(
-          "onboarding_completed, learning_language, native_language, interface_mode",
-        )
-        .eq("id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("profiles")
-        .select("app_preferences")
-        .eq("id", user.id)
-        .maybeSingle(),
+      askTwice(() =>
+        supabase
+          .from("profiles")
+          .select(
+            "onboarding_completed, learning_language, native_language, interface_mode",
+          )
+          .eq("id", user.id)
+          .maybeSingle(),
+      ),
+      askTwice(() =>
+        supabase
+          .from("profiles")
+          .select("app_preferences")
+          .eq("id", user.id)
+          .maybeSingle(),
+      ),
       getServerInterfaceMode(),
     ]);
 
   const profile = profileResult.data;
   const preferencesRow = preferencesResult.data;
+  /*
+   * Not read is not empty. A profile that could not be read leaves the
+   * language to be asked for again once the page is up, and settings that
+   * could not be read are left for the client to read, never taken for an
+   * account that has none (which would write this device's over them).
+   */
+  const profileUnread = Boolean(profileResult.error);
+  const preferencesUnread = Boolean(preferencesResult.error);
 
   if (profile && !profile.onboarding_completed) {
     redirect("/onboarding");
@@ -110,6 +138,7 @@ export default async function ProtectedLayout({
       <LearningLanguageProvider
         initialLearningLanguage={initialLearningLanguage}
         initialNativeLanguage={initialNativeLanguage}
+        refreshOnMount={profileUnread}
       >
         {/*
           Only rendered on the rare disagreement above — a device that has not
@@ -135,7 +164,7 @@ export default async function ProtectedLayout({
         */}
         <AccountPreferencesSync
           userId={user.id}
-          stored={preferencesRow?.app_preferences ?? null}
+          stored={preferencesUnread ? undefined : (preferencesRow?.app_preferences ?? null)}
         />
 
         <DeviceTimeZoneSync userId={user.id} />
