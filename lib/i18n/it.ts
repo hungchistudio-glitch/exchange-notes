@@ -2860,7 +2860,7 @@ const italian: TranslationDictionary = {
       misses: "Un errore lancia una copia della sua U, poi della sua I, poi della sua O. Alla terza, il turno finisce; le copie tornano sempre e ciò che hai vinto resta.",
       cap: "Fino a 333 biscotti al giorno, condivisi con Hangyumi, e una parola paga una sola volta al giorno, in uno qualsiasi dei due giochi.",
       learning: "Yumi Wordvault non cambia le tue parole salvate né la cronologia di ripasso.",
-      chests: "Indovina tre parole di fila e la quarta nasconde uno scrigno medio: i biscotti del turno raddoppiati e un pezzo del negozio che non hai. Sei di fila e la settima nasconde uno scrigno premium: i biscotti triplicati e un pezzo del Tesoro dei Miti. I biscotti in più dello scrigno non contano nei 333.",
+      chests: "Indovina tre parole di fila e la quarta nasconde uno scrigno medio: i biscotti della parola raddoppiati e un pezzo del negozio che non hai. Sei di fila e la settima nasconde uno scrigno premium: i biscotti triplicati e un pezzo del Tesoro dei Miti. Lo scrigno paga il valore intero della parola anche se oggi è già stata pagata, e i suoi biscotti in più non contano nei 333.",
     },
     streak: "{count} di fila",
     streakLabel: "{count} parole indovinate di fila. La quarta nasconde uno scrigno medio, la settima uno premium.",

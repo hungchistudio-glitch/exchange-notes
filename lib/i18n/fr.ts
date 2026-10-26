@@ -2860,7 +2860,7 @@ const french: TranslationDictionary = {
       misses: "Une erreur lance une copie de son U, puis de son I, puis de son O. À trois, la manche s’arrête ; les copies reviennent toujours et vos gains restent.",
       cap: "Jusqu’à 333 biscuits par jour, partagés avec Hangyumi, et un mot ne rapporte qu’une fois par jour, dans l’un ou l’autre jeu.",
       learning: "Yumi Wordvault ne change ni vos mots enregistrés ni votre historique de révision.",
-      chests: "Trois mots trouvés d’affilée, et le quatrième cache un coffre moyen : les biscuits de la manche doublés et une pièce de la boutique que vous n’avez pas. Six d’affilée, et le septième cache un coffre premium : les biscuits triplés et une pièce du Trésor des Mythes. Les biscuits en plus du coffre ne comptent pas dans les 333.",
+      chests: "Trois mots trouvés d’affilée, et le quatrième cache un coffre moyen : les biscuits du mot doublés et une pièce de la boutique que vous n’avez pas. Six d’affilée, et le septième cache un coffre premium : les biscuits triplés et une pièce du Trésor des Mythes. Le coffre paie la valeur entière du mot, même déjà payé aujourd’hui, et ses biscuits en plus ne comptent pas dans les 333.",
     },
     streak: "{count} d’affilée",
     streakLabel: "{count} mots trouvés d’affilée. Le quatrième cache un coffre moyen, le septième un coffre premium.",

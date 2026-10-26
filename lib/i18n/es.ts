@@ -3054,7 +3054,7 @@ const spanish: TranslationDictionary = {
       misses: "Un error lanza una copia de su U, luego de su I y luego de su O. Con tres, la ronda termina; las copias siempre vuelven y lo ganado se queda.",
       cap: "Hasta 333 galletas al día, compartidas con Hangyumi, y cada palabra paga solo una vez al día en cualquiera de los dos juegos.",
       learning: "Yumi Wordvault no cambia tus palabras guardadas ni tu historial de repaso.",
-      chests: "Gana tres palabras seguidas y la cuarta trae un cofre mediano: las galletas de la ronda por dos y una pieza de la tienda que aún no tienes. Seis seguidas y la séptima trae un cofre prémium: el triple de galletas y una pieza del Tesoro Mítico. Las galletas extra del cofre no cuentan para las 333.",
+      chests: "Gana tres palabras seguidas y la cuarta trae un cofre mediano: las galletas de la palabra por dos y una pieza de la tienda que aún no tienes. Seis seguidas y la séptima trae un cofre prémium: el triple de galletas y una pieza del Tesoro Mítico. El cofre paga el valor completo de la palabra aunque ya la hayas cobrado hoy, y sus galletas extra no cuentan para las 333.",
     },
     streak: "{count} seguidas",
     streakLabel: "{count} palabras ganadas seguidas. La cuarta trae un cofre mediano y la séptima uno prémium.",

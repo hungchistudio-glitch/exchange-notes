@@ -177,8 +177,9 @@ export function createPreviewHangyumi(options: {
     return { paid, already: false, capped: paid < amount };
   }
 
-  /* The chest, as private.hangyumi_guess opens it: x2 or x3 of the round
-     outside the 333, and a piece the reader does not own. */
+  /* The chest, as private.hangyumi_guess opens it: the word's whole worth
+     (every letter and the word bonus, paid today or not) once again or
+     twice again, outside the 333, and a piece the reader does not own. */
   function finishChest(round: PreviewRound) {
     if (round.status === "won") {
       const tier: ChestTier = round.chest === "medium" && streak === 3 ? "medium"
@@ -186,7 +187,9 @@ export function createPreviewHangyumi(options: {
       let cookies = 0;
       let item: string | null = null;
       if (tier !== "normal") {
-        cookies = round.earned * (tier === "medium" ? 1 : 2);
+        const letters = new Set([...round.word.answer].filter(isLetter).map(lower)).size;
+        const worth = letters * REWARDS[round.word.level].letter + REWARDS[round.word.level].word;
+        cookies = worth * (tier === "medium" ? 1 : 2);
         balance += cookies;
         const pool = (tier === "premium" ? MYTHIC_ITEMS : SHOP_ITEMS).map(i => i.id).filter(id => !owned.has(id));
         if (pool.length) {

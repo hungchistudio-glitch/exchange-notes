@@ -26,7 +26,11 @@ import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   userId: string;
-  /** `profiles.app_preferences` as loaded on the server, or null if unset. */
+  /**
+   * `profiles.app_preferences` as loaded on the server, null if unset, or
+   * undefined if the server could not read it. Unread is not unset: taken
+   * for unset, it carried this device's settings over the account's.
+   */
   stored: unknown;
 };
 
@@ -89,64 +93,90 @@ export default function AccountPreferencesSync({ userId, stored }: Props) {
       timer = window.setTimeout(write, WRITE_DEBOUNCE_MS);
     };
 
-    /*
-     * First run decides which side is the source of truth.
-     *
-     * An account that has never stored preferences adopts whatever this
-     * device already had, so the settings someone picked before this existed
-     * are carried up rather than reset. Otherwise the account wins — that is
-     * the whole point, and it is what makes a fresh device or a cleared
-     * browser come back with the right settings.
-     */
-    if (isEmptyPreferences(stored)) {
-      lastWrittenRef.current = null;
-      clearChosenBeforeSignIn();
-      write();
-    } else {
-      applyingRef.current = true;
+    const firstRun = (stored: unknown) => {
       /*
-       * Everything except what the reader chose on the way in.
+       * First run decides which side is the source of truth.
        *
-       * "The account wins" is about ambient state: settings nobody said
-       * anything about on this device, which the account is there to replace.
-       * A language picked on the landing page thirty seconds ago is not that,
-       * and overriding it is the app contradicting something the reader just
-       * did — visibly, as a flash of the right language before the wrong one.
+       * An account that has never stored preferences adopts whatever this
+       * device already had, so the settings someone picked before this existed
+       * are carried up rather than reset. Otherwise the account wins — that is
+       * the whole point, and it is what makes a fresh device or a cleared
+       * browser come back with the right settings.
        */
-      const chosen = readChosenBeforeSignIn();
-      const storedPreferences = applyChosenFields(
-        parseAccountPreferences(stored),
-        readLocalPreferences(),
-        chosen,
-      );
+      if (isEmptyPreferences(stored)) {
+        lastWrittenRef.current = null;
+        clearChosenBeforeSignIn();
+        write();
+      } else {
+        applyingRef.current = true;
+        /*
+         * Everything except what the reader chose on the way in.
+         *
+         * "The account wins" is about ambient state: settings nobody said
+         * anything about on this device, which the account is there to replace.
+         * A language picked on the landing page thirty seconds ago is not that,
+         * and overriding it is the app contradicting something the reader just
+         * did — visibly, as a flash of the right language before the wrong one.
+         */
+        const chosen = readChosenBeforeSignIn();
+        const storedPreferences = applyChosenFields(
+          parseAccountPreferences(stored),
+          readLocalPreferences(),
+          chosen,
+        );
 
-      void loadTranslations(storedPreferences.interfaceLanguage)
-        .then(() => {
-          if (cancelled) return;
+        void loadTranslations(storedPreferences.interfaceLanguage)
+          .then(() => {
+            if (cancelled) return;
 
-          applyPreferencesLocally(storedPreferences);
-          lastWrittenRef.current = readLocalPreferences();
+            applyPreferencesLocally(storedPreferences);
+            lastWrittenRef.current = readLocalPreferences();
 
-          /*
-           * Spent, and carried up. Clearing first means a failed write does
-           * not leave a standing preference on a shared computer for whoever
-           * signs in next; the sync retries on the reader's next change.
-           */
-          if (chosen.length > 0) {
-            clearChosenBeforeSignIn();
-            lastWrittenRef.current = null;
-            write();
-          }
+            /*
+             * Spent, and carried up. Clearing first means a failed write does
+             * not leave a standing preference on a shared computer for whoever
+             * signs in next; the sync retries on the reader's next change.
+             */
+            if (chosen.length > 0) {
+              clearChosenBeforeSignIn();
+              lastWrittenRef.current = null;
+              write();
+            }
 
-          // Cleared after the events from applying have been delivered.
-          window.setTimeout(() => {
+            // Cleared after the events from applying have been delivered.
+            window.setTimeout(() => {
+              applyingRef.current = false;
+            }, 0);
+          })
+          .catch((error) => {
             applyingRef.current = false;
-          }, 0);
-        })
-        .catch((error) => {
-          applyingRef.current = false;
-          console.error("Could not load the account's interface language.", error);
+            console.error("Could not load the account's interface language.", error);
+          });
+      }
+    };
+
+    /*
+     * The server could not read the account's settings (its token refused
+     * for a moment, PGRST303, or the database out of reach): asked again
+     * from here. If this fails too, the first run is skipped rather than
+     * guessed: nothing is written until the reader changes something.
+     */
+    if (stored === undefined) {
+      void supabase
+        .from("profiles")
+        .select("app_preferences")
+        .eq("id", userId)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (cancelled) return;
+          if (error) {
+            console.error("Could not read the account's preferences.", error);
+            return;
+          }
+          firstRun((data as { app_preferences?: unknown } | null)?.app_preferences ?? null);
         });
+    } else {
+      firstRun(stored);
     }
 
     const unsubscribes = [
