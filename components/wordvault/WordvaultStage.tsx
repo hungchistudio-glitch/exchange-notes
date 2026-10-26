@@ -13,8 +13,14 @@ import styles from "@/components/hangyumi/Hangyumi.module.css";
 
 type Props = {
   round: HangyumiRound | null;
-  /** What she wears from the shop, from the first frame. */
+  /** What she wears from the shop, from the moment she arrives. */
   outfit: YumiOutfit | null;
+  /** The wallet has been read (or could not be): she can be dressed. */
+  dressed: boolean;
+  /** The first deal has come back, whatever it held: she can come in. */
+  dealt: boolean;
+  /** She has touched the stone, or there is no studio to arrive in. */
+  onArrived: () => void;
   label: string;
   skipLabel: string;
 };
@@ -32,21 +38,62 @@ const sceneOf = (round: HangyumiRound): VaultScene => ({
  * once the page is up (three.js and the outfit builders are a large
  * download), and a flat drawing stands in only where WebGL cannot be had.
  *
+ * She arrives once (Chi, 2026-10-26): the set is compiled before the
+ * canvas fades in, so it comes in empty and whole; when the wallet says
+ * what she wears and the first word is dealt, she is dressed out of sight
+ * and drops in, and the page lays the clue and the keys out as she lands.
+ * A wallet that has not answered in WALLET_WAIT_MS no longer holds her up:
+ * she comes as she is and dresses when it does. A studio built again (the
+ * GPU took the canvas back) finds her already there.
+ *
  * The stage reads the show off the round itself: the round before a guess
  * and the round after it say how many steps she takes and which copy
  * flies (lib/wordvault/presentation.ts). A new word walks her back and
  * closes the lid. Anything playing can be skipped; the cookies were paid
  * before the show began, by the server, and skipping changes nothing.
  */
-export default function WordvaultStage({ round, outfit, label, skipLabel }: Props) {
+const WALLET_WAIT_MS = 2500;
+
+export default function WordvaultStage({ round, outfit, dressed, dealt, onArrived, label, skipLabel }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const studioRef = useRef<WordvaultStudio | null>(null);
   const shownRef = useRef<HangyumiRound | null>(null);
-  const latestRef = useRef({ round, outfit });
+  const latestRef = useRef({ round, outfit, dressed, dealt, onArrived });
+  /* The studio is drawn and showing; she has been sent for. */
+  const readyRef = useRef(false);
+  const sentRef = useRef(false);
   const [live, setLive] = useState(false);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [walletLate, setWalletLate] = useState(false);
   const reducedMotion = useReducedMotion();
+
+  /* Sends for her once everything she arrives with is here. */
+  const arriveRef = useRef(() => {});
+  useEffect(() => {
+    arriveRef.current = () => {
+      const studio = studioRef.current;
+      const latest = latestRef.current;
+      if (!studio || !readyRef.current || sentRef.current || !latest.dealt) return;
+      if (!latest.dressed && !walletLate) return;
+      sentRef.current = true;
+      studio.arrive(latest.dressed ? latest.outfit : null);
+    };
+  });
+
+  useEffect(() => {
+    latestRef.current.dressed = dressed;
+    latestRef.current.dealt = dealt;
+    latestRef.current.onArrived = onArrived;
+    arriveRef.current();
+  }, [dressed, dealt, onArrived, walletLate]);
+
+  /* The wallet's wait, counted from the deal. */
+  useEffect(() => {
+    if (!dealt || dressed) return;
+    const timer = window.setTimeout(() => setWalletLate(true), WALLET_WAIT_MS);
+    return () => window.clearTimeout(timer);
+  }, [dealt, dressed]);
 
   // A guess, a new word, or the same round picked up again.
   useEffect(() => {
@@ -62,9 +109,10 @@ export default function WordvaultStage({ round, outfit, label, skipLabel }: Prop
     }
   }, [round]);
 
+  /* Once she is there; before, she is dressed as she arrives. */
   useEffect(() => {
     latestRef.current.outfit = outfit;
-    studioRef.current?.wear(outfit);
+    if (sentRef.current) studioRef.current?.wear(outfit);
   }, [outfit]);
 
   useEffect(() => {
@@ -77,19 +125,30 @@ export default function WordvaultStage({ round, outfit, label, skipLabel }: Prop
     const build = () => {
       if (cancelled || !create) return;
       studioRef.current?.dispose();
-      const studio = create(canvas, { reducedMotion, onBusy: next => { if (!cancelled) setBusy(next); } });
+      readyRef.current = false;
+      const studio = create(canvas, {
+        reducedMotion,
+        onBusy: next => { if (!cancelled) setBusy(next); },
+        onArrived: () => { if (!cancelled) latestRef.current.onArrived(); },
+      });
       studioRef.current = studio;
       if (!studio) {
         setLive(false);
         setFailed(true);
+        latestRef.current.onArrived();
         return;
       }
-      studio.wear(latestRef.current.outfit);
       const current = latestRef.current.round;
       shownRef.current = current;
       if (current) studio.show(sceneOf(current));
-      setFailed(false);
-      setLive(true);
+      void studio.ready().then(() => {
+        if (cancelled || studioRef.current !== studio) return;
+        readyRef.current = true;
+        setFailed(false);
+        setLive(true);
+        if (sentRef.current) studio.arrive(latestRef.current.outfit, { instant: true });
+        else arriveRef.current();
+      });
     };
 
     /* The GPU can take the canvas back; the drawing stands in until the
@@ -99,6 +158,7 @@ export default function WordvaultStage({ round, outfit, label, skipLabel }: Prop
       setLive(false);
       setFailed(true);
       setBusy(false);
+      latestRef.current.onArrived();
     };
     canvas.addEventListener("webglcontextlost", lost);
     canvas.addEventListener("webglcontextrestored", build);
@@ -106,7 +166,11 @@ export default function WordvaultStage({ round, outfit, label, skipLabel }: Prop
     void import("@/lib/wordvault/studio").then(studio => {
       create = studio.createWordvaultStudio;
       build();
-    }, () => { if (!cancelled) setFailed(true); });
+    }, () => {
+      if (cancelled) return;
+      setFailed(true);
+      latestRef.current.onArrived();
+    });
     return () => {
       cancelled = true;
       canvas.removeEventListener("webglcontextlost", lost);

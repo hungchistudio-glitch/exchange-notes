@@ -119,6 +119,19 @@ export default function HangyumiGame({
   /* The page's way in: its bands rise into place once, on arrival, and
      never again for a new word (Chi: "進入遊戲頁…加一個簡單的動畫"). */
   const [entering, setEntering] = useState(true);
+  /* Wordvault's way in (Chi, 2026-10-26): the bar and the empty studio
+     first; the clue, the word and the keys only as Yumi lands on the path,
+     one after another ("landing"), and then never again. Hangyumi's line
+     lowers in on its own, so it is "done" from the start. */
+  const [arrival, setArrival] = useState<"waiting" | "landing" | "done">(game === "wordvault" ? "waiting" : "done");
+  const waitingRef = useRef(game === "wordvault");
+  const arrive = useCallback(() => {
+    if (!waitingRef.current) return;
+    waitingRef.current = false;
+    setArrival("landing");
+  }, []);
+  /* The wallet has answered, or failed to: what she wears is known. */
+  const [walletRead, setWalletRead] = useState(!loadWallet);
   /* Each wrong guess flashes the screen's edge; counted so each one replays. */
   const [flash, setFlash] = useState(0);
   const [soundOn, setSoundOn] = useState(true);
@@ -218,7 +231,8 @@ export default function HangyumiGame({
       if (cancelled) return;
       setOutfit(wallet.outfit);
       setBalance(wallet.balance);
-    }, () => {});
+      setWalletRead(true);
+    }, () => { if (!cancelled) setWalletRead(true); });
     return () => { cancelled = true; };
   }, [service, loadWallet]);
 
@@ -343,6 +357,8 @@ export default function HangyumiGame({
     const current = roundRef.current;
     const letter = normalizeGuess(raw);
     if (!current || current.status !== "playing" || !letter || pendingRef.current) return;
+    /* Not before the keys are there to be seen. */
+    if (waitingRef.current) return;
     if (current.guessed.includes(letter)) return;
     if (current.keyboard && !current.keyboard.includes(letter)) return;
     pendingRef.current = true;
@@ -431,6 +447,19 @@ export default function HangyumiGame({
     const timer = window.setTimeout(() => setEntering(false), 1000);
     return () => window.clearTimeout(timer);
   }, []);
+
+  /* The cascade runs once and leaves nothing behind; and if the studio
+     never says she landed, the page does not wait on it for ever. */
+  useEffect(() => {
+    if (arrival === "landing") {
+      const timer = window.setTimeout(() => setArrival("done"), 900);
+      return () => window.clearTimeout(timer);
+    }
+    if (arrival === "waiting" && phase !== "loading") {
+      const timer = window.setTimeout(arrive, 6000);
+      return () => window.clearTimeout(timer);
+    }
+  }, [arrival, phase, arrive]);
 
   // The difficulty folds away again on a tap anywhere else, or Escape.
   useEffect(() => {
@@ -527,7 +556,7 @@ export default function HangyumiGame({
   const earned = todayEarned ?? round?.today.earned ?? 0;
 
   return (
-    <div className={styles.page} data-status={status} data-entering={entering ? "true" : "false"}>
+    <div className={styles.page} data-status={status} data-entering={entering ? "true" : "false"} data-arrival={arrival}>
       {/* The language and level keys wait for what was saved, so they never
           show B1 for a moment on the way to the level last played. */}
       <header className={styles.bar} data-prefs={prefsRead ? "read" : "pending"}>
@@ -620,7 +649,17 @@ export default function HangyumiGame({
           today's cookies and the rules up top, the pieces hung below. */}
       <section className={styles.stageWrap}>
         {game === "wordvault"
-          ? <WordvaultStage round={round} outfit={outfit} label={stageLabel} skipLabel={t.wordvault.skip} />
+          ? (
+            <WordvaultStage
+              round={round}
+              outfit={outfit}
+              dressed={walletRead}
+              dealt={phase !== "loading"}
+              onArrived={arrive}
+              label={stageLabel}
+              skipLabel={t.wordvault.skip}
+            />
+          )
           : <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />}
         <div className={styles.stageTop}>
           <span className={styles.stageTopLeft}>

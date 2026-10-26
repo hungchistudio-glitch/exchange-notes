@@ -412,6 +412,37 @@
   animation: hy-enter 600ms cubic-bezier(.2, .8, .2, 1) 150ms both;
 }
 
+/* Wordvault's way in (Chi, 2026-10-26): until Yumi has landed on the path
+   the page is the bar and the empty studio; as she lands, the notes on
+   the studio fade up and the clue, the word and the keys rise one after
+   another. Hidden, not removed, so nothing moves when they come. */
+.page[data-arrival="waiting"] > .below > *,
+.page[data-arrival="waiting"] .stageTop,
+.page[data-arrival="waiting"] .stageBottom {
+  visibility: hidden;
+}
+
+.page[data-arrival="landing"] .stageTop,
+.page[data-arrival="landing"] .stageBottom {
+  animation: hy-fade 420ms ease both;
+}
+
+.page[data-arrival="landing"] > .below > :nth-child(1) {
+  animation: hy-enter 560ms cubic-bezier(.2, .8, .2, 1) 40ms both;
+}
+
+.page[data-arrival="landing"] > .below > :nth-child(2) {
+  animation: hy-enter 560ms cubic-bezier(.2, .8, .2, 1) 130ms both;
+}
+
+.page[data-arrival="landing"] > .below > :nth-child(n + 3) {
+  animation: hy-enter 560ms cubic-bezier(.2, .8, .2, 1) 220ms both;
+}
+
+@keyframes hy-fade {
+  from { opacity: 0; }
+}
+
 @keyframes hy-enter {
   from { opacity: 0; transform: translateY(18px); }
 }
@@ -1591,6 +1622,9 @@
   .page[data-status="lost"]::after,
   .levels[data-open="true"] .level[data-chosen="false"],
   .page[data-entering="true"] > *,
+  .page[data-arrival="landing"] .stageTop,
+  .page[data-arrival="landing"] .stageBottom,
+  .page[data-arrival="landing"] > .below > *,
   .ghostPill,
   .ghostLine,
   .wordSideGhost,
