@@ -2995,7 +2995,7 @@ const spanish: TranslationDictionary = {
     close: "Cerrar",
     reviewPage: {
       title: "Banco de palabras de Hangyumi",
-      intro: "Solo se reparten palabras aprobadas. Cada nivel necesita 30 por idioma.",
+      intro: "Solo se reparten palabras aprobadas. Cada nivel necesita 60 por idioma.",
       onlyReviewers: "Solo un revisor de palabras puede abrir esta página.",
       counts: "{approved} aprobadas · {draft} borradores · {rejected} rechazadas",
       missingCell: "Faltan {count}",

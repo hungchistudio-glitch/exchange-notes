@@ -10,7 +10,8 @@ import { LANGUAGE_CODES, type LanguageCode } from "@/lib/languages";
    Hangyumi's drafted word bank (supabase/hangyumi/*.json)
 
    Chi chose a bank written in advance and approved on a review page:
-   30 words a level in each of the five languages, every one with a clue
+   60 words a level in each of the five languages (30 until Chi asked
+   for more on 2026-10-26), every one with a clue
    in all five that does not give the word away. Every Chinese character
    in it must be Traditional. And no page may import it, or the answers
    would ship to the browser.
@@ -32,13 +33,13 @@ const key = (value: string) => value.normalize("NFC").toLocaleLowerCase();
 const SIMPLIFIED = "们这说时为国过还样学发经么见对东头长门问间车马鸟爱当会实现进运动电话请让认识书买卖习写读农业应该个开关钱觉听语区难题欢视务观热办体图华广场备岁变权传营节约师乐号产将处圣复无与气";
 
 describe("the drafted bank", () => {
-  it.each(LANGUAGE_CODES)("%s has 30 words a level, each once", language => {
+  it.each(LANGUAGE_CODES)("%s has 60 words a level, each once", language => {
     const file = bank[language];
     expect(file.language).toBe(language);
     expect(file.columns).toEqual(["level", "answer", "partOfSpeech", ...LANGUAGE_CODES]);
     expect(file.source.length).toBeGreaterThan(10);
     for (const level of LEVELS) {
-      expect(file.words.filter(([lvl]) => lvl === level)).toHaveLength(30);
+      expect(file.words.filter(([lvl]) => lvl === level)).toHaveLength(60);
     }
     const keys = file.words.map(([, answer]) => key(answer));
     expect(new Set(keys).size).toBe(keys.length);

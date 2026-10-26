@@ -31,8 +31,8 @@ describe("the word bank's review page", () => {
     render(<HangyumiWordReview review={review} />);
     expect(await screen.findByText("1 approved · 2 drafts · 0 rejected")).toBeInTheDocument();
     const b1 = screen.getByRole("button", { name: /B1/ });
-    expect(within(b1).getByText("1/30")).toBeInTheDocument();
-    expect(within(b1).getByText("29 more needed")).toBeInTheDocument();
+    expect(within(b1).getByText("1/60")).toBeInTheDocument();
+    expect(within(b1).getByText("59 more needed")).toBeInTheDocument();
 
     const journey = screen.getByText("journey").closest("li")!;
     fireEvent.click(within(journey).getByRole("button", { name: "Approve" }));

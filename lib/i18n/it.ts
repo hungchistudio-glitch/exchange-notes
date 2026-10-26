@@ -2801,7 +2801,7 @@ const italian: TranslationDictionary = {
     close: "Chiudi",
     reviewPage: {
       title: "Banca delle parole di Hangyumi",
-      intro: "Si distribuiscono solo parole approvate. Ogni livello ne richiede 30 per lingua.",
+      intro: "Si distribuiscono solo parole approvate. Ogni livello ne richiede 60 per lingua.",
       onlyReviewers: "Solo un revisore delle parole può aprire questa pagina.",
       counts: "{approved} approvate · {draft} bozze · {rejected} rifiutate",
       missingCell: "Ne mancano {count}",

@@ -2801,7 +2801,7 @@ const french: TranslationDictionary = {
     close: "Fermer",
     reviewPage: {
       title: "Banque de mots de Hangyumi",
-      intro: "Seuls les mots approuvés sont distribués. Chaque niveau en demande 30 par langue.",
+      intro: "Seuls les mots approuvés sont distribués. Chaque niveau en demande 60 par langue.",
       onlyReviewers: "Seul un relecteur de mots peut ouvrir cette page.",
       counts: "{approved} approuvés · {draft} brouillons · {rejected} refusés",
       missingCell: "Encore {count}",

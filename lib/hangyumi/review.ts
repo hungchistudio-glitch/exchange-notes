@@ -33,7 +33,7 @@ export class NotReviewerError extends Error {
 }
 
 /** A level needs this many approved words in each language. */
-export const WORDS_PER_CELL = 30;
+export const WORDS_PER_CELL = 60;
 
 export function readReviewWords(value: unknown): ReviewWord[] {
   if (!Array.isArray(value)) return [];

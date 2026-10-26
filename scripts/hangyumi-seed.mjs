@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 /* =========================================================
    Bring Hangyumi's drafted word bank into the database
 
-   The bank is written in supabase/hangyumi/<language>.json, 30 words a
+   The bank is written in supabase/hangyumi/<language>.json, 60 words a
    level in each of the five languages, and checked by
    tests/hangyumiBank.test.ts. It lives outside lib/ and app/ so no page
    can import it: the answers must never reach a browser.
