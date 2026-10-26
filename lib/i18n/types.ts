@@ -2788,7 +2788,15 @@ export type TranslationDictionary = {
     languageNote: string;
     level: string;
     levelChoice: string;
-    levelRewards: string;
+    /** The cookies there are to spend, and today's share of the 333. */
+    balance: string;
+    todayShort: string;
+    /** The level's rewards, beside a cookie: a letter (a character in Chinese), the word. */
+    rewardLetter: string;
+    rewardChar: string;
+    rewardWord: string;
+    stop: string;
+    soundFailed: string;
     nextLevel: string;
     clue: string;
     partsOfSpeech: { noun: string; verb: string; adj: string; adv: string; idiom: string };

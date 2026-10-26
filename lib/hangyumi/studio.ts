@@ -284,7 +284,10 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   let sandLeft = 0;
   let sandRight = 1;
 
-  const FREE_MS = 1100;
+  const FREE_MS = 1300;
+  /* Two whole turns while she falls, and the moment in them she is dressed. */
+  const TRANSFORM_TURN = Math.PI * 4;
+  const DRESS_AT = Math.PI * 2.5;
   const BLINK_MS = 190;
   /* The struggle starts once the body has landed, and is over by this. */
   const STRUGGLE_DELAY = 0.45;
@@ -392,6 +395,24 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
     // Leaving after a win: faster and faster, smaller and smaller, gone.
     let size = 1;
     model.rotation.y = 0;
+    if (free > 0 && !reduced && !exit) {
+      /* Freed, she turns as she falls (Chi: "一邊落下一邊旋轉"): two turns,
+         fast at first, settling to face us as she lands. */
+      model.rotation.y = TRANSFORM_TURN * (1 - (1 - fall) ** 3);
+    }
+    /* She changes into her own clothes edge-on in the second turn, where
+       the change cannot be seen happening, with a burst of gold; without
+       motion, simply once she is down. */
+    if (pendingOutfit && (free === 1 || (!reduced && free > 0 && model.rotation.y >= DRESS_AT))) {
+      for (const piece of rig.apply(pendingOutfit)) piece.traverse(o => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
+      wearing = true;
+      pendingOutfit = null;
+      if (!reduced && free < 1) {
+        grains.load(glints());
+        grainsAt = now;
+        grainsActive = true;
+      }
+    }
     if (exit?.kind === "spin") {
       const p = clamp01((now - exit.at) / SPIN_MS);
       model.rotation.y = p ** 3 * Math.PI * 6;
@@ -404,11 +425,6 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
       ? -(sandLeft - 0.1 + (sandRight - sandLeft + 0.2) * clamp01((now - exit.at) / 1000 / SAND_SWEEP))
       : NO_CLIP;
 
-    if (free === 1 && pendingOutfit) {
-      for (const piece of rig.apply(pendingOutfit)) piece.traverse(o => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
-      wearing = true;
-      pendingOutfit = null;
-    }
 
     /* Her kicks shake the whole line, a little. */
     const jolt = env * 0.045 * Math.sin(t * Math.PI * 2 * 8.7);

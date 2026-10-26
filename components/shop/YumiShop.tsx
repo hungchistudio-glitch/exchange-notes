@@ -71,6 +71,7 @@ import ShopCollectionSwitch, { SHOP_COLLECTION_TILES } from "./ShopCollectionSwi
 import ShopFilterSheet from "./ShopFilterSheet";
 import ShopIntroduction from "./ShopIntroduction";
 import ShopThumb from "./ShopThumb";
+import useShopReveal from "./useShopReveal";
 import styles from "./YumiShop.module.css";
 
 /* =========================================================
@@ -169,6 +170,8 @@ export default function YumiShop({
   );
   const pageRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  const catalogRef = useRef<HTMLElement>(null);
+  useShopReveal(catalogRef, `.${styles.grid} > li, .${styles.shelfRow} > li`);
   const signRef = useRef<HTMLHeadingElement>(null);
 
   // The brass sign responds to collection choices only; no idle timer or
@@ -570,7 +573,7 @@ export default function YumiShop({
         />
       </div>
 
-      <section className={styles.catalog} aria-label={copy.title}>
+      <section ref={catalogRef} className={styles.catalog} aria-label={copy.title} data-reveal="on">
         {preview && <p className={styles.previewBadge}>{copy.preview}</p>}
         <ShopIntroduction openLabel={copy.boutique.openStory} closeLabel={copy.boutique.closeStory}>
           <aside className={styles.keeperNote} aria-label={copy.boutique.curator}>

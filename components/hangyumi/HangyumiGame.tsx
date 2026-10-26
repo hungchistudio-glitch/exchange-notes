@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookmarkCheck, BookmarkPlus, Check, Info, Languages, Volume2 } from "lucide-react";
+import { ArrowLeft, BookmarkCheck, BookmarkPlus, Check, Info, Languages } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -16,13 +16,13 @@ import {
 import { HangyumiClosedError, type HangyumiService, type SaveWord } from "@/lib/hangyumi/service";
 import { fill, plural } from "@/lib/i18n/format";
 import {
-  INTERFACE_LANGUAGE_CODE, LANGUAGE_CODES, getLanguage, getLanguageName, type LanguageCode,
+  INTERFACE_LANGUAGE_CODE, LANGUAGE_CODES, getLanguage, getLanguageName, resolveSupportLanguage, type LanguageCode,
 } from "@/lib/languages";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { announceEnergyLanded } from "@/lib/shop/energy";
-import { speak, speechSupported } from "@/lib/speech";
 
 import HangyumiStage from "./HangyumiStage";
+import HangyumiWordCard from "./HangyumiWordCard";
 import styles from "./Hangyumi.module.css";
 
 /* =========================================================
@@ -50,8 +50,12 @@ type Props = {
   service: HangyumiService;
   /** The app's learning language: what the game deals in until the reader picks another. */
   defaultLanguage: LanguageCode;
-  /** The reader's own outfit, put on when a word is won. */
-  loadOutfit?: () => Promise<YumiOutfit>;
+  /** The reader's wallet: the outfit put on when a word is won, and the cookies there are to spend. */
+  loadWallet?: () => Promise<{ outfit: YumiOutfit; balance: number }>;
+  /** The word's gloss for its card, or null when none can be had. */
+  translate?: (text: string, from: LanguageCode, to: LanguageCode) => Promise<string | null>;
+  /** The reader's native language: the card's second side when the display language is the one being learnt. */
+  nativeLanguage?: LanguageCode | null;
   /** Keeps a finished round's word in the reader's vocabulary (Chi). */
   saveWord?: SaveWord;
   backHref?: string;
@@ -88,7 +92,7 @@ function newRoundId() {
 const QWERTY = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 
 export default function HangyumiGame({
-  service, defaultLanguage, loadOutfit, saveWord, backHref = "/home", reviewHref = "/hangyumi/review",
+  service, defaultLanguage, loadWallet, translate, nativeLanguage, saveWord, backHref = "/home", reviewHref = "/hangyumi/review",
 }: Props) {
   const { t, language: interfaceLanguage, locale } = useTranslation();
   const [chosenLanguage, setChosenLanguage] = useState<LanguageCode | null>(null);
@@ -118,11 +122,16 @@ export default function HangyumiGame({
   const [bump, setBump] = useState(0);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [outfit, setOutfit] = useState<YumiOutfit | null>(null);
+  /* The cookies there are to spend: the number the pill counts to, and
+     the number it is showing on the way there. */
+  const [balance, setBalance] = useState<number | null>(null);
+  const shownBalance = useCountUp(balance, reducedMotion);
+  /* The finished round's word in the reader's language, for its card. */
+  const [gloss, setGloss] = useState<{ id: string; text: string | null; language: LanguageCode } | null>(null);
   const [deal, setDeal] = useState(0);
 
   const counterRef = useRef<HTMLSpanElement>(null);
   const flightRef = useRef<HTMLDivElement>(null);
-  const spokenRef = useRef<string | null>(null);
   const roundRef = useRef<HangyumiRound | null>(null);
   const pendingRef = useRef(false);
 
@@ -170,9 +179,13 @@ export default function HangyumiGame({
       setTodayEarned(today.earned);
       setReviewer(today.reviewer);
     }, () => {});
-    void loadOutfit?.().then(worn => { if (!cancelled) setOutfit(worn); }, () => {});
+    void loadWallet?.().then(wallet => {
+      if (cancelled) return;
+      setOutfit(wallet.outfit);
+      setBalance(wallet.balance);
+    }, () => {});
     return () => { cancelled = true; };
-  }, [service, loadOutfit]);
+  }, [service, loadWallet]);
 
   // Deal (or pick up) the round for this language and level.
   useEffect(() => {
@@ -192,7 +205,6 @@ export default function HangyumiGame({
       showRound(started);
       setTodayEarned(started.today.earned);
       setPhase("ready");
-      spokenRef.current = started.status === "playing" ? null : started.id;
     }, error => {
       if (cancelled) return;
       setFailure(error instanceof HangyumiClosedError ? "closed" : "failed");
@@ -289,9 +301,13 @@ export default function HangyumiGame({
       else if (result.paid.capped && paid > 0) messages.push(fill(copy.capped, { count: paid }));
       if (result.paid.already) messages.push(copy.alreadyPaid);
       setNotice(messages.join(" "));
-      // The count moves when the last cookie lands; without a flight, now.
-      if (paid === 0 || reducedMotion) setTodayEarned(result.today.earned);
-      else window.setTimeout(() => setTodayEarned(result.today.earned), 640);
+      // The counts move when the last cookie lands; without a flight, now.
+      const land = () => {
+        setTodayEarned(result.today.earned);
+        if (result.balance !== null) setBalance(result.balance);
+      };
+      if (paid === 0 || reducedMotion) land();
+      else window.setTimeout(land, 640);
     } catch (error) {
       setFailure(error instanceof HangyumiClosedError ? "closed" : "failed");
       setNotice(copy.failed);
@@ -312,12 +328,16 @@ export default function HangyumiGame({
         partOfSpeech: current.partOfSpeech,
         hint: current.hint,
         hintLanguage: current.hintLanguage,
+        ...(gloss?.id === current.id && gloss.text
+          ? { translation: gloss.text, translationLanguage: gloss.language }
+          : {}),
       });
       setSaving({ id: current.id, state: result });
+      if (result === "saved") void loadWallet?.().then(wallet => setBalance(wallet.balance), () => {});
     } catch {
       setSaving({ id: current.id, state: "failed" });
     }
-  }, [saveWord]);
+  }, [saveWord, loadWallet, gloss]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setEntering(false), 1000);
@@ -369,12 +389,21 @@ export default function HangyumiGame({
     return () => window.removeEventListener("keydown", onKey);
   }, [guess, nextWord]);
 
-  // Once a round is over, say the word.
+  // Once a round is over, its word's gloss for the card: in the display
+  // language, or the native one when the display language is the word's.
+  const glossLanguage = round ? resolveSupportLanguage(round.language, hintLanguage, nativeLanguage) : hintLanguage;
   useEffect(() => {
-    if (!round || round.status === "playing" || !round.answer || spokenRef.current === round.id) return;
-    spokenRef.current = round.id;
-    if (speechSupported()) speak(round.answer, getLanguage(round.language).speechTag);
-  }, [round]);
+    if (!round || round.status === "playing" || !round.answer || gloss?.id === round.id) return;
+    const { id, answer, language } = round;
+    const to = glossLanguage;
+    let cancelled = false;
+    queueMicrotask(() => { if (!cancelled) setGloss({ id, text: null, language: to }); });
+    if (!translate) return;
+    void translate(answer, language, to).then(text => {
+      if (!cancelled && text) setGloss({ id, text, language: to });
+    }, () => {});
+    return () => { cancelled = true; };
+  }, [round, gloss?.id, glossLanguage, translate]);
 
   const languageName = getLanguageName(learningLanguage, interfaceLanguage);
   const shownLevel = queuedLevel ?? level;
@@ -473,9 +502,15 @@ export default function HangyumiGame({
       <section className={styles.stageWrap}>
         <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />
         <div className={styles.stageTop}>
+          {/* The cookies there are to spend, as in the shop; today's share of
+              the 333 under it. The flying cookies land here. */}
           <span className={styles.todayCount} data-bump={bump % 2 ? "a" : "b"} ref={counterRef}>
             <EnergyCookie className={styles.todayCookie} />
-            <span aria-hidden="true">{earned}<small> / 333</small></span>
+            <span className={styles.wallet} aria-hidden="true">
+              <b>{shownBalance === null ? "–" : shownBalance.toLocaleString(locale)}</b>
+              <small>{fill(copy.todayShort, { earned, cap: 333 })}</small>
+            </span>
+            {balance !== null && <span className={styles.srOnly}>{fill(copy.balance, { count: balance })}</span>}
             <span className={styles.srOnly}>{fill(copy.todayLabel, { earned, cap: 333 })}</span>
           </span>
           {round && round.earned > 0 && <span className={styles.roundEarned}>{fill(copy.roundEarned, { count: round.earned })}</span>}
@@ -565,7 +600,12 @@ export default function HangyumiGame({
             <section className={styles.clue} aria-label={copy.clue}>
               <div className={styles.clueHead}>
                 <span className={styles.pos}>{copy.partsOfSpeech[round.partOfSpeech]}</span>
-                <span className={styles.rewardNote}>{fill(copy.levelRewards, { letter: round.rewards.letter, word: round.rewards.word })}</span>
+                <span className={styles.rewardChip}>
+                  <EnergyCookie className={styles.rewardCookie} />
+                  {fill(isChinese ? copy.rewardChar : copy.rewardLetter, { count: round.rewards.letter })}
+                  <i aria-hidden="true">·</i>
+                  {fill(copy.rewardWord, { count: round.rewards.word })}
+                </span>
               </div>
               <p className={styles.hint} lang={getLanguage(round.hintLanguage).htmlLang}>{round.hint}</p>
             <div
@@ -635,20 +675,20 @@ export default function HangyumiGame({
                       : copy.lostBodyNone}
                 </p>
                 <p className={styles.answerLabel}>{copy.answer}</p>
-                <div className={styles.answerRow}>
-                  <span className={styles.answer} lang={getLanguage(round.language).htmlLang}>{round.answer}</span>
-                  {speechSupported() && round.answer && (
-                    <button
-                      type="button"
-                      className={styles.listen}
-                      onClick={() => speak(round.answer!, getLanguage(round.language).speechTag)}
-                      aria-label={copy.listen}
-                      title={copy.listen}
-                    >
-                      <Volume2 size={20} strokeWidth={1.9} aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
+                {round.answer && (() => {
+                  const mine = gloss?.id === round.id ? gloss : null;
+                  /* Without a translation (offline, the day's translations
+                     spent), the clue in the display language stands in. */
+                  const second = mine?.text
+                    ? { text: mine.text, language: mine.language }
+                    : mine ? { text: round.hint, language: round.hintLanguage } : null;
+                  return (
+                    <HangyumiWordCard
+                      sides={[{ text: round.answer, language: round.language }, ...(second ? [second] : [])]}
+                      pending={!second}
+                    />
+                  );
+                })()}
                 {saveWord && (() => {
                   const state = saving?.id === round.id ? saving.state : null;
                   const kept = state === "saved" || state === "duplicate";
@@ -721,4 +761,33 @@ export default function HangyumiGame({
       </BottomSheet>
     </div>
   );
+}
+
+/**
+ * A number that counts its way to where it is told to be, so cookies
+ * landing are seen arriving. Jumps straight there the first time, and
+ * under reduced motion.
+ */
+function useCountUp(target: number | null, reducedMotion: boolean) {
+  const [shown, setShown] = useState(target);
+  const shownRef = useRef(target);
+  useEffect(() => {
+    if (target === null) return;
+    const from = shownRef.current;
+    if (from === null || reducedMotion || from === target) {
+      shownRef.current = target;
+      queueMicrotask(() => setShown(target));
+      return;
+    }
+    const start = performance.now();
+    let frame = requestAnimationFrame(function step(now) {
+      const t = Math.min(1, (now - start) / 650);
+      const value = Math.round(from + (target - from) * (1 - Math.pow(1 - t, 3)));
+      shownRef.current = value;
+      setShown(value);
+      if (t < 1) frame = requestAnimationFrame(step);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [target, reducedMotion]);
+  return shown;
 }

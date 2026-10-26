@@ -29,6 +29,9 @@ export type SavableWord = {
   /** The clue, kept as the gloss when no translation can be had. */
   hint: string;
   hintLanguage: LanguageCode;
+  /** The gloss the word's card already fetched, so saving does not ask again. */
+  translation?: string;
+  translationLanguage?: LanguageCode;
 };
 
 /** "duplicate": it was already in the reader's vocabulary, which is what they wanted. */

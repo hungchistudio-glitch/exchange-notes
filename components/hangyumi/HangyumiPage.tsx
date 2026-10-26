@@ -5,7 +5,7 @@ import { useCallback, useMemo } from "react";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { createSupabaseHangyumi, type SaveWord } from "@/lib/hangyumi/service";
-import { INTERFACE_LANGUAGE_CODE, resolveSupportLanguage } from "@/lib/languages";
+import { INTERFACE_LANGUAGE_CODE, resolveSupportLanguage, type LanguageCode } from "@/lib/languages";
 import { createSupabaseWallet } from "@/lib/shop/wallet";
 import { createClient } from "@/lib/supabase/client";
 import { DuplicateVocabularyError, createVocabularyEntry } from "@/lib/vocabulary/createEntry";
@@ -18,7 +18,25 @@ export default function HangyumiPage() {
   const { language: interfaceLanguage } = useTranslation();
   const supabase = useMemo(() => createClient(), []);
   const service = useMemo(() => createSupabaseHangyumi(supabase), [supabase]);
-  const loadOutfit = useCallback(async () => (await createSupabaseWallet(supabase).load()).outfit, [supabase]);
+  const loadWallet = useCallback(async () => {
+    const state = await createSupabaseWallet(supabase).load();
+    return { outfit: state.outfit, balance: state.balance };
+  }, [supabase]);
+
+  /* A word's gloss through the app's cached translation; null when none can be had. */
+  const translate = useCallback(async (text: string, from: LanguageCode, to: LanguageCode) => {
+    try {
+      const response = await fetch("/api/text-translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texts: [text], from, to }),
+      });
+      const body = (await response.json()) as { texts?: Record<string, string> };
+      return body.texts?.[text]?.trim() || null;
+    } catch {
+      return null;
+    }
+  }, []);
 
   /*
    * A finished round's word, into the vocabulary through the same door as
@@ -31,19 +49,9 @@ export default function HangyumiPage() {
   const saveWord = useCallback<SaveWord>(async word => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not signed in.");
-    const target = resolveSupportLanguage(word.language, INTERFACE_LANGUAGE_CODE[interfaceLanguage], nativeLanguage);
-    let translation = "";
-    try {
-      const response = await fetch("/api/text-translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texts: [word.answer], from: word.language, to: target }),
-      });
-      const body = (await response.json()) as { texts?: Record<string, string> };
-      translation = body.texts?.[word.answer]?.trim() ?? "";
-    } catch {
-      translation = "";
-    }
+    const target = word.translationLanguage
+      ?? resolveSupportLanguage(word.language, INTERFACE_LANGUAGE_CODE[interfaceLanguage], nativeLanguage);
+    const translation = word.translation ?? (await translate(word.answer, word.language, target)) ?? "";
     const glossLanguage = translation ? target : word.hintLanguage;
     try {
       await createVocabularyEntry({
@@ -65,13 +73,15 @@ export default function HangyumiPage() {
       if (error instanceof DuplicateVocabularyError) return "duplicate";
       throw error;
     }
-  }, [supabase, interfaceLanguage, nativeLanguage]);
+  }, [supabase, interfaceLanguage, nativeLanguage, translate]);
 
   return (
     <HangyumiGame
       service={service}
       defaultLanguage={learningLanguage}
-      loadOutfit={loadOutfit}
+      loadWallet={loadWallet}
+      translate={translate}
+      nativeLanguage={nativeLanguage}
       saveWord={saveWord}
     />
   );
