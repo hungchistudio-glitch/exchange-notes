@@ -159,7 +159,16 @@ from the version read back.
 So was `20261025222501_hangyumi_hint_follows_display_language`, the next day's
 change to the clue's language.
 
-**Seventeen renames across ten occasions now. `apply_migration` always stamps its
+On 2026-10-26 Yumi Wordvault's streak chests and the 33 Mythic Vault
+pieces, applied before the merge (Chi: "我授權你用 Supabase 套用"). Every
+column and table is new, the 33 rows are unbuyable, and the four-argument
+start the live pages call still plays Hangyumi:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261026200000_wordvault_chests_and_mythic_pieces` | `20261026184719` |
+
+**Eighteen renames across eleven occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 
