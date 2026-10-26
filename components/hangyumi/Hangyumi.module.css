@@ -234,21 +234,17 @@
   }
 }
 
-.queued {
-  margin: -6px 0 0;
-  color: var(--hy-muted);
-  font-size: 0.8125rem;
-  text-align: end;
-}
 
 /* ---------------------------------------------------------- the studio */
 
-/* Grows into whatever the other bands leave, between a floor and a ceiling. */
+/* One height per screen, set by the screen alone: nothing below it, no
+   state of the game and no animation can make Yumi grow or shrink (Chi,
+   2026-10-26). svh, not dvh, so a phone's toolbar sliding away on scroll
+   does not resize her either. */
 .stageWrap {
   position: relative;
-  flex: 1 1 auto;
-  min-height: clamp(11.5rem, 30dvh, 15rem);
-  max-height: 26rem;
+  flex: none;
+  height: clamp(13rem, 36svh, 22rem);
   overflow: hidden;
   border-radius: 28px;
   background: #f7f6f2;
@@ -448,12 +444,39 @@
   display: none;
 }
 
-/* A word on what was paid, fading over the studio rather than taking a row. */
-.live {
+/* What comes next and what was paid, over the studio rather than in rows. */
+.notices {
   position: absolute;
   top: 3.25rem;
-  left: 50%;
-  max-width: calc(100% - 24px);
+  left: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.queued {
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.86);
+  box-shadow: 0 1px 2px #00000014, inset 0 0 0 1px #0000000a;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: #24211b;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  animation: notice-in 260ms cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes notice-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+.live {
+  max-width: 100%;
   margin: 0;
   padding: 6px 12px;
   border-radius: 999px;
@@ -464,14 +487,17 @@
   line-height: 1.35;
   text-align: center;
   opacity: 0;
-  transform: translate(-50%, -4px);
+  transform: translateY(-4px);
   transition: opacity 220ms ease, transform 260ms cubic-bezier(.2, .8, .2, 1);
-  pointer-events: none;
+}
+
+.live[data-shown="false"] {
+  visibility: hidden;
 }
 
 .live[data-shown="true"] {
   opacity: 1;
-  transform: translate(-50%, 0);
+  transform: none;
 }
 
 /* ---------------------------------------------------------- panels */
@@ -677,6 +703,41 @@
   color: var(--hy-on-accent);
 }
 
+/* Placeholders while a word is dealt: the same boxes, empty and quiet. */
+.key[data-ghost="true"] {
+  display: grid;
+  place-items: center;
+  color: var(--hy-muted);
+  opacity: 0.45;
+}
+
+.slot[data-ghost="true"] {
+  opacity: 0.35;
+}
+
+.ghostPill,
+.ghostLine {
+  display: block;
+  border-radius: 999px;
+  background: var(--hy-line);
+  animation: ghost 1.4s ease-in-out infinite;
+}
+
+.ghostPill {
+  width: 4.5rem;
+  height: 1.25rem;
+}
+
+.ghostLine {
+  width: 70%;
+  height: 1rem;
+  margin: 0.2rem 0;
+}
+
+@keyframes ghost {
+  50% { opacity: 0.45; }
+}
+
 .key[data-used="miss"] {
   opacity: 0.32;
   text-decoration: line-through;
@@ -848,6 +909,9 @@
 
   .slot[data-filled="true"],
   .levels[data-open="true"] .level[data-chosen="false"],
+  .ghostPill,
+  .ghostLine,
+  .queued,
   .todayCount[data-bump="a"],
   .todayCount[data-bump="b"] {
     animation: none;
