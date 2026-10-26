@@ -2955,7 +2955,7 @@ const traditionalChinese: TranslationDictionary = {
     close: "關閉",
     reviewPage: {
       title: "Hangyumi 單字庫",
-      intro: "只有通過審核的單字才會出題。每種語言的每個難度需要 30 個。",
+      intro: "只有通過審核的單字才會出題。每種語言的每個難度需要 60 個。",
       onlyReviewers: "只有單字審核者可以打開這一頁。",
       counts: "已核准 {approved} · 草稿 {draft} · 已退回 {rejected}",
       missingCell: "還差 {count} 個",

@@ -2999,7 +2999,7 @@ const english: TranslationDictionary = {
     close: "Close",
     reviewPage: {
       title: "Hangyumi word bank",
-      intro: "Only approved words are dealt. Each level needs 30 per language.",
+      intro: "Only approved words are dealt. Each level needs 60 per language.",
       onlyReviewers: "Only a word reviewer can open this page.",
       counts: "{approved} approved · {draft} drafts · {rejected} rejected",
       missingCell: "{count} more needed",
