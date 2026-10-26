@@ -5,12 +5,13 @@ import { useMemo } from "react";
 import { createPreviewHangyumi, createPreviewSaveWord } from "@/lib/hangyumi/service";
 import type { LanguageCode } from "@/lib/languages";
 
-import HangyumiGame from "./HangyumiGame";
+import HangyumiGame, { type GameKind } from "./HangyumiGame";
 
 /** The game against the in-memory service and its practice words. */
-export default function HangyumiGameReview({ learningLanguage, earnedToday }: {
+export default function HangyumiGameReview({ learningLanguage, earnedToday, game = "hangyumi" }: {
   learningLanguage: LanguageCode;
   earnedToday: number;
+  game?: GameKind;
 }) {
   const service = useMemo(() => createPreviewHangyumi({ earnedToday }), [earnedToday]);
   const loadWallet = useMemo(() => async () => ({ outfit: { head: "beret" }, balance: 240 }), []);
@@ -21,7 +22,8 @@ export default function HangyumiGameReview({ learningLanguage, earnedToday }: {
       defaultLanguage={learningLanguage}
       loadWallet={loadWallet}
       saveWord={saveWord}
-      backHref="/hangyumi-review"
+      backHref="/games-review"
+      game={game}
     />
   );
 }

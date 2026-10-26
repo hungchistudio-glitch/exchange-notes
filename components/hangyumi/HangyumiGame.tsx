@@ -22,6 +22,9 @@ import {
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { announceEnergyLanded } from "@/lib/shop/energy";
 
+import WordvaultStage from "@/components/wordvault/WordvaultStage";
+import { VAULT_PIECES } from "@/lib/wordvault/presentation";
+
 import HangyumiStage from "./HangyumiStage";
 import HangyumiWordCard from "./HangyumiWordCard";
 import styles from "./Hangyumi.module.css";
@@ -45,7 +48,14 @@ import styles from "./Hangyumi.module.css";
    The round in progress is remembered per language and level, so a reload
    or a second tab carries on with the same word rather than dealing a new
    one (the server deals once per round id).
+
+   The same screen plays Yumi Wordvault｜詞語秘藏 (Chi, 2026-10-26): the
+   same bank, server, cookies and 333 a day, shared between the two games,
+   the same language and level, with its own stage, its own words for what
+   happens, and its own round in progress. Only `game` tells them apart.
    ========================================================= */
+
+export type GameKind = "hangyumi" | "wordvault";
 
 type Props = {
   service: HangyumiService;
@@ -61,6 +71,8 @@ type Props = {
   saveWord?: SaveWord;
   backHref?: string;
   reviewHref?: string;
+  /** Which game the screen plays; Hangyumi unless told. */
+  game?: GameKind;
 };
 
 type Phase = "loading" | "ready" | "missing" | "error";
@@ -72,7 +84,10 @@ const LANGUAGE_KEY = "hangyumi-language";
 const LANGUAGE_BASE_KEY = "hangyumi-language-base";
 const isLanguageCode = (value: unknown): value is LanguageCode =>
   typeof value === "string" && (LANGUAGE_CODES as readonly string[]).includes(value);
-const roundKey = (language: LanguageCode, level: HangyumiLevel) => `hangyumi-round:${language}:${level}`;
+/* Each game keeps its own word in progress: a Hangyumi round is never
+   picked up in Wordvault, or the other way round. */
+const roundKey = (game: GameKind, language: LanguageCode, level: HangyumiLevel) =>
+  game === "hangyumi" ? `hangyumi-round:${language}:${level}` : `${game}-round:${language}:${level}`;
 
 function readStorage(key: string): string | null {
   try { return window.localStorage.getItem(key); } catch { return null; }
@@ -94,6 +109,7 @@ const QWERTY = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 
 export default function HangyumiGame({
   service, defaultLanguage, loadWallet, translate, nativeLanguage, saveWord, backHref = "/home", reviewHref = "/hangyumi/review",
+  game = "hangyumi",
 }: Props) {
   const { t, language: interfaceLanguage, locale } = useTranslation();
   const [chosenLanguage, setChosenLanguage] = useState<LanguageCode | null>(null);
@@ -112,7 +128,13 @@ export default function HangyumiGame({
   const levelsRef = useRef<HTMLDivElement>(null);
   const learningLanguage = chosenLanguage ?? defaultLanguage;
   const hintLanguage = INTERFACE_LANGUAGE_CODE[interfaceLanguage];
-  const copy = t.hangyumi;
+  /* Wordvault says what happens in its own words; everything else is shared. */
+  const copy = useMemo(() => game === "wordvault"
+    ? { ...t.hangyumi, ...t.wordvault, rules: { ...t.hangyumi.rules, ...t.wordvault.rules } }
+    : t.hangyumi, [game, t]);
+  const pieces = game === "wordvault" ? VAULT_PIECES : PIECES;
+  /* "Yumi Wordvault" is too long for the sign on a phone; it says Wordvault. */
+  const signTitle = game === "wordvault" ? t.wordvault.short : copy.title;
   const online = useOnline();
   const reducedMotion = useReducedMotion();
 
@@ -203,7 +225,7 @@ export default function HangyumiGame({
   useEffect(() => {
     if (!prefsRead) return;
     let cancelled = false;
-    const key = roundKey(learningLanguage, level);
+    const key = roundKey(game, learningLanguage, level);
     const id = readStorage(key) ?? newRoundId();
     writeStorage(key, id);
     queueMicrotask(() => { if (!cancelled) { setPhase("loading"); setNotice(""); } });
@@ -223,7 +245,7 @@ export default function HangyumiGame({
       setPhase("error");
     });
     return () => { cancelled = true; };
-  }, [service, learningLanguage, hintLanguage, level, deal, prefsRead, showRound, setNotice]);
+  }, [service, learningLanguage, hintLanguage, level, deal, prefsRead, showRound, setNotice, game]);
 
   const chooseLevel = useCallback((next: HangyumiLevel) => {
     writeStorage(LEVEL_KEY, next);
@@ -253,11 +275,11 @@ export default function HangyumiGame({
 
   const nextWord = useCallback(() => {
     const nextLevel = queuedLevel ?? level;
-    writeStorage(roundKey(learningLanguage, nextLevel), newRoundId());
+    writeStorage(roundKey(game, learningLanguage, nextLevel), newRoundId());
     setQueuedLevel(null);
     setLevel(nextLevel);
     setDeal(n => n + 1);
-  }, [queuedLevel, level, learningLanguage]);
+  }, [queuedLevel, level, learningLanguage, game]);
 
   const flyCookies = useCallback((from: DOMRect | null, amount: number) => {
     const layer = flightRef.current;
@@ -328,6 +350,14 @@ export default function HangyumiGame({
     sounds.tap();
     try {
       const result = await service.guess(current.id, letter);
+      /* The reader moved to another language or level while the guess was
+         out: the old round's answer must not replace the new one. What it
+         paid still counts. */
+      if (roundRef.current?.id !== current.id) {
+        setTodayEarned(result.today.earned);
+        if (result.balance !== null) setBalance(result.balance);
+        return;
+      }
       showRound(result);
       if (!result.repeat) {
         if (result.status === "won") {
@@ -487,7 +517,7 @@ export default function HangyumiGame({
   let flipCount = 0;
   const status = round?.status ?? "playing";
   const stageLabel = status === "won" ? copy.studioWon : status === "lost" ? copy.studioLost : fill(copy.studio, { count: misses });
-  const nextPiece = status === "playing" && misses < MAX_MISSES ? copy.pieces[PIECES[misses]] : null;
+  const nextPiece = status === "playing" && misses < MAX_MISSES ? copy.pieces[pieces[misses]] : null;
   const missesLeft = MAX_MISSES - misses;
   const earned = todayEarned ?? round?.today.earned ?? 0;
 
@@ -506,7 +536,9 @@ export default function HangyumiGame({
         <div className={styles.signArea}>
           <h1 className={styles.sign}>
             <span className={styles.signHooks} aria-hidden="true" />
-            <span className={styles.signName}>{copy.title}</span>
+            {signTitle === copy.title
+              ? <span className={styles.signName}>{copy.title}</span>
+              : <><span className={styles.signName} aria-hidden="true">{signTitle}</span><span className={styles.srOnly}>{copy.title}</span></>}
             <span className={styles.signOrbit} aria-hidden="true">
               <span className={styles.signWallet} data-bump={bump % 2 ? "a" : "b"} ref={counterRef}>
                 <EnergyCookie className={styles.signCookie} />
@@ -582,7 +614,9 @@ export default function HangyumiGame({
       {/* The studio, with what is happening on it laid over its corners:
           today's cookies and the rules up top, the pieces hung below. */}
       <section className={styles.stageWrap}>
-        <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />
+        {game === "wordvault"
+          ? <WordvaultStage round={round} outfit={outfit} label={stageLabel} skipLabel={t.wordvault.skip} />
+          : <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />}
         <div className={styles.stageTop}>
           {/* Replayed for each new total, then gone after six seconds. */}
           {round && round.earned > 0
@@ -595,7 +629,7 @@ export default function HangyumiGame({
         {phase === "ready" && round && (
           <div className={styles.stageBottom}>
             <span className={styles.pieces} aria-hidden="true">
-              {PIECES.map((piece, index) => (
+              {pieces.map((piece, index) => (
                 <span key={piece} className={styles.piece} data-hung={misses > index || round.status === "lost" ? "true" : "false"} data-piece={piece}>
                   {piece === "eye" ? "O" : piece === "arm" ? "I" : "U"}
                 </span>

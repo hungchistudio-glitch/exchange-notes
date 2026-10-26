@@ -2867,6 +2867,45 @@ export type TranslationDictionary = {
       play: string;
     };
   };
+  /** Yumi Wordvault｜詞語秘藏: Hangyumi's sister game (Chi, 2026-10-26). Only
+      what it says differently; the rest of its screen reads `hangyumi`. */
+  wordvault: {
+    title: string;
+    /** The name on the game's signboard, where "Yumi Wordvault" would not fit. */
+    short: string;
+    /** Its name in the reader's language, under the title on the games hub. */
+    subtitle: string;
+    open: string;
+    /** Skips the animation that is playing. */
+    skip: string;
+    languageNote: string;
+    /** The energy copies a wrong guess sends out: U, then I, then O. */
+    pieces: { eye: string; arm: string; body: string };
+    nextPiece: string;
+    studio: string;
+    studioWon: string;
+    studioLost: string;
+    won: string;
+    lost: string;
+    missingNote: string;
+    failed: string;
+    offline: string;
+    closed: string;
+    rulesTitle: string;
+    rules: { letters: string; misses: string; cap: string; learning: string };
+  };
+  /** The games hub: one key on Home, then Hangyumi or Wordvault. */
+  games: {
+    title: string;
+    open: string;
+    back: string;
+    choose: string;
+    /** Today's cookies from either game: {earned} of {cap}. */
+    today: string;
+    shared: string;
+    hangyumi: { tagline: string; detail: string };
+    wordvault: { tagline: string; detail: string };
+  };
 
   /**
    * Yumi's bilingual hello (lib/hello): the public invitation page, its

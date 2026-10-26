@@ -9,7 +9,8 @@ import { reviewRouteOnly } from "@/lib/reviewRoutes";
  *
  * ?lang=fr (en, zh-TW, es, fr, it) picks the language being learnt, and
  * ?today=330 starts the day nearly capped, to see a short payment. The
- * clue is in the interface language, as in the game.
+ * clue is in the interface language, as in the game. ?game=wordvault plays
+ * Yumi Wordvault on the same screen.
  */
 export const metadata = {
   title: "Hangyumi review",
@@ -20,11 +21,11 @@ const asLanguage = (value: string | undefined, fallback: LanguageCode): Language
   (LANGUAGE_CODES as readonly string[]).includes(value ?? "") ? (value as LanguageCode) : fallback;
 
 export default async function HangyumiReviewPage({ searchParams }: {
-  searchParams: Promise<{ lang?: string; today?: string }>;
+  searchParams: Promise<{ lang?: string; today?: string; game?: string }>;
 }) {
   reviewRouteOnly();
   const params = await searchParams;
   const learning = asLanguage(params.lang, "en");
   const today = Math.max(0, Math.min(333, Number(params.today) || 0));
-  return <HangyumiGameReview learningLanguage={learning} earnedToday={today} />;
+  return <HangyumiGameReview learningLanguage={learning} earnedToday={today} game={params.game === "wordvault" ? "wordvault" : "hangyumi"} />;
 }

@@ -1,0 +1,647 @@
+import * as THREE from "three";
+
+import type { YumiOutfit } from "@/lib/shop/catalog";
+import { ARM_ROOT, EYE_REST, buildYumiActor } from "@/lib/yumi3d/actor";
+import { SHELL_RADIUS, TUBE_RADIUS } from "@/lib/yumi3d/anatomy";
+import { createOutfitRig } from "@/lib/yumi3d/outfit";
+import { makeStudioEnvironment } from "@/lib/yumi3d/scene";
+
+import type { VaultBeat } from "./presentation";
+
+/* =========================================================
+   Wordvault's studio: the real Yumi on the path to a chest
+
+   Hangyumi's white studio, warmed to ivory, with the same key light high
+   on the right. A stone path runs from the front left back into the room
+   with nine brass inlays that light as she passes them; at its end a
+   lacquered chest in the shop's signboard navy, banded in brass, sits on
+   a low plinth. The whole set is turned into the depth, so on a phone's
+   near-square stage it fills the frame instead of lying in a thin band.
+
+   Yumi is herself, in what she wears from the shop, from the first frame
+   (in Hangyumi she dresses only once freed). Each place a right letter
+   fills moves her one hop along the path. A wrong letter sends a copy of
+   part of her, in warm gold light, at the chest: her U, then her I, then
+   her O. It strikes, bounces and lies on the floor until the round ends,
+   when every copy comes home to her. Won, the word's letters rise, gather
+   into a brass key, the key turns in the lock and the lid opens on a
+   burst of light and coins.
+
+   Built from lib/yumi3d/actor.ts like Hangyumi's, so she cannot drift from
+   herself. Renders only while something moves, and not at all while the
+   page is hidden.
+   ========================================================= */
+
+export type VaultScene = {
+  /** How far along the path she stands, 0 to 1. */
+  progress: number;
+  /** Copies lying on the floor: the wrong guesses so far. */
+  misses: number;
+  status: "playing" | "won" | "lost";
+  /** The word, for the letters that become the key. */
+  answer: string;
+};
+
+export type WordvaultStudio = {
+  /** Where the round stands, with no show: dealt, picked up, or skipped to. */
+  show(scene: VaultScene, options?: { reset?: boolean }): void;
+  /** Plays a guess's beats, ending where `scene` says. */
+  play(beats: VaultBeat[], scene: VaultScene): void;
+  /** Ends whatever is playing, where it would have ended. */
+  skip(): void;
+  wear(outfit: YumiOutfit | null): void;
+  dispose(): void;
+};
+
+const BACKDROP = 0xf3efe6;
+const SCALE = 0.56;
+/** The set's turn: its path runs along its own x, into the room. */
+const SET_TURN = 0.52;
+const PATH_TOP = 0.16;
+/** Upright on the path: the bottom of her C on the stone. */
+const STAND_Y = PATH_TOP + (SHELL_RADIUS + TUBE_RADIUS) * SCALE;
+const START_X = -3.9;
+const END_X = 0.55;
+const CHEST_X = 3.35;
+const INLAYS = 9;
+
+const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
+const easeOut = (t: number) => 1 - (1 - t) ** 3;
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
+const pathX = (progress: number) => START_X + (END_X - START_X) * progress;
+
+export function createWordvaultStudio(
+  canvas: HTMLCanvasElement,
+  options: { reducedMotion?: boolean; onBusy?: (busy: boolean) => void } = {},
+): WordvaultStudio | null {
+  let renderer: THREE.WebGLRenderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  } catch {
+    return null;
+  }
+  const reduced = options.reducedMotion ?? false;
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.02;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(BACKDROP);
+  scene.fog = new THREE.Fog(BACKDROP, 24, 44);
+  const environment = makeStudioEnvironment(renderer);
+  scene.environment = environment;
+
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+  /* Everything on the stage stands in the set, turned into the room. */
+  const set = new THREE.Group();
+  set.rotation.y = SET_TURN;
+  scene.add(set);
+
+  // ------------------------------------------------------------- light
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b2a6, 0.55));
+  const key = new THREE.DirectionalLight(0xfff8ee, 3.2);
+  key.position.set(7.5, 11, 6);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  Object.assign(key.shadow.camera, { left: -9, right: 9, top: 8, bottom: -6, near: 1, far: 40 });
+  key.shadow.bias = -0.0008;
+  key.shadow.normalBias = 0.02;
+  key.shadow.radius = 3;
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0xffffff, 1);
+  rim.position.set(6, 3, -4);
+  scene.add(rim);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.3);
+  fill.position.set(-6, 2, 4);
+  scene.add(fill);
+  /* The chest's own glow, lit only as it opens. */
+  const treasureLight = new THREE.PointLight(0xffc96b, 0, 7, 1.6);
+  treasureLight.position.set(CHEST_X, 1.9, 0.4);
+  set.add(treasureLight);
+
+  // ------------------------------------------------------- materials
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: BACKDROP, roughness: 1, metalness: 0 });
+  const stone = new THREE.MeshStandardMaterial({ color: 0xdcd5c6, metalness: 0.04, roughness: 0.6 });
+  const brass = new THREE.MeshStandardMaterial({ color: 0xc9a55a, metalness: 0.85, roughness: 0.28, envMapIntensity: 1 });
+  /* The shop's signboard navy, lacquered. */
+  const lacquer = new THREE.MeshPhysicalMaterial({
+    color: 0x1f2b40, metalness: 0.35, roughness: 0.32, clearcoat: 0.7, clearcoatRoughness: 0.2, envMapIntensity: 0.7,
+  });
+  const inside = new THREE.MeshStandardMaterial({ color: 0x3a2412, roughness: 0.9, emissive: 0xffb347, emissiveIntensity: 0 });
+  const energy = new THREE.MeshStandardMaterial({
+    color: 0xf3d38a, emissive: 0xe0a83c, emissiveIntensity: 0.7, metalness: 0.4, roughness: 0.25,
+    transparent: true, opacity: 0.88,
+  });
+
+  const solid = <M extends THREE.Mesh>(mesh: M, parent: THREE.Object3D = scene) => {
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
+  };
+
+  // ---------------------------------------------------- floor and path
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), floorMaterial);
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  const path = solid(new THREE.Mesh(new THREE.BoxGeometry(END_X - START_X + 2.2, PATH_TOP, 1.7), stone), set);
+  path.position.set((START_X + END_X) / 2 - 0.1, PATH_TOP / 2, 0);
+  const inlayGeometry = new THREE.BoxGeometry(0.34, 0.02, 1.1);
+  const inlays: THREE.MeshStandardMaterial[] = [];
+  for (let i = 0; i < INLAYS; i++) {
+    const material = brass.clone();
+    material.emissive = new THREE.Color(0xffb347);
+    material.emissiveIntensity = 0;
+    inlays.push(material);
+    const inlay = new THREE.Mesh(inlayGeometry, material);
+    inlay.receiveShadow = true;
+    inlay.position.set(pathX((i + 1) / (INLAYS + 1)), PATH_TOP + 0.01, 0);
+    set.add(inlay);
+  }
+
+  // ------------------------------------------------------------ chest
+  const plinth = solid(new THREE.Mesh(new THREE.CylinderGeometry(1.55, 1.65, 0.24, 64), stone), set);
+  plinth.position.set(CHEST_X, 0.12, 0);
+  const chest = new THREE.Group();
+  chest.position.set(CHEST_X, 0.24, 0);
+  /* Turned a little back toward her, as she comes up the path. */
+  chest.rotation.y = -0.35;
+  set.add(chest);
+  const W = 1.9, H = 1.05, D = 1.25;
+  const body = solid(new THREE.Mesh(new THREE.BoxGeometry(W, H, D), lacquer), chest);
+  body.position.y = H / 2;
+  const hollow = new THREE.Mesh(new THREE.BoxGeometry(W - 0.16, 0.04, D - 0.16), inside);
+  hollow.position.y = H - 0.03;
+  chest.add(hollow);
+  for (const x of [-W / 2 + 0.22, W / 2 - 0.22]) {
+    const band = solid(new THREE.Mesh(new THREE.BoxGeometry(0.12, H + 0.02, D + 0.04), brass), chest);
+    band.position.set(x, H / 2, 0);
+  }
+  const foot = solid(new THREE.Mesh(new THREE.BoxGeometry(W + 0.06, 0.08, D + 0.06), brass), chest);
+  foot.position.y = 0.04;
+  /* The lid: a half barrel hinged along the back edge. */
+  const hinge = new THREE.Group();
+  hinge.position.set(0, H, -D / 2);
+  chest.add(hinge);
+  const lidGeometry = new THREE.CylinderGeometry(D / 2, D / 2, W, 40, 1, false, 0, Math.PI);
+  lidGeometry.rotateZ(Math.PI / 2);
+  lidGeometry.rotateX(-Math.PI / 2);
+  const lid = solid(new THREE.Mesh(lidGeometry, lacquer), hinge);
+  lid.position.set(0, 0, D / 2);
+  for (const x of [-W / 2 + 0.22, W / 2 - 0.22]) {
+    const strap = new THREE.CylinderGeometry(D / 2 + 0.02, D / 2 + 0.02, 0.12, 40, 1, false, 0, Math.PI);
+    strap.rotateZ(Math.PI / 2);
+    strap.rotateX(-Math.PI / 2);
+    const mesh = solid(new THREE.Mesh(strap, brass), hinge);
+    mesh.position.set(x, 0, D / 2);
+  }
+  const lockPlate = solid(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.5, 0.06), brass), chest);
+  lockPlate.position.set(0, H - 0.22, D / 2 + 0.03);
+  const keyhole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.05, 0.08, 16),
+    new THREE.MeshStandardMaterial({ color: 0x0b0f17, roughness: 0.6 }),
+  );
+  keyhole.rotation.x = Math.PI / 2;
+  keyhole.position.set(0, H - 0.18, D / 2 + 0.05);
+  chest.add(keyhole);
+  /* The keyhole, in the set's frame. */
+  const LOCK = new THREE.Vector3(0, H - 0.18, D / 2 + 0.12).applyAxisAngle(new THREE.Vector3(0, 1, 0), chest.rotation.y)
+    .add(chest.position);
+
+  /* Coins that leap out as it opens. */
+  const coinGeometry = new THREE.CylinderGeometry(0.16, 0.16, 0.045, 28);
+  const coins = Array.from({ length: 9 }, (_, i) => {
+    const coin = solid(new THREE.Mesh(coinGeometry, brass), set);
+    coin.visible = false;
+    const angle = (i / 9) * Math.PI * 2;
+    return { coin, dx: Math.cos(angle) * (0.5 + (i % 3) * 0.25), dz: Math.sin(angle) * 0.45 + 0.35, rise: 1.5 + (i % 4) * 0.3 };
+  });
+
+  // ------------------------------------------------------------ Yumi
+  const actor = buildYumiActor();
+  const { model, yuGroup, arm, armCollar, eyeGroup, lookGroup, pupil, shellMaterial } = actor;
+  model.scale.setScalar(SCALE);
+  model.position.set(START_X, STAND_Y, 0);
+  /* She faces us, a little toward the chest, however the set is turned. */
+  model.rotation.y = -SET_TURN + 0.18;
+  set.add(model);
+  /* Her arm from the C's spine to the eye, as she stands at rest. */
+  const toEye = EYE_REST.clone().sub(ARM_ROOT);
+  arm.position.copy(ARM_ROOT);
+  arm.scale.set(1, toEye.length(), 1);
+  arm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), toEye.clone().normalize());
+  armCollar.position.copy(ARM_ROOT);
+  model.traverse(object => {
+    const mesh = object as THREE.Mesh;
+    if (mesh.isMesh && mesh.material && (mesh.material as THREE.Material).visible !== false) mesh.castShadow = true;
+  });
+  const rig = createOutfitRig({ model, eyeGroup, lookGroup, pupil, shellMaterial });
+
+  // -------------------------------------------------- the energy copies
+  /* Her U, I and O, in light: the same shapes, never her own parts. */
+  const copies = [yuGroup, arm, eyeGroup].map((part, index) => {
+    const group = new THREE.Group();
+    const clone = part.clone(true);
+    clone.position.set(0, 0, 0);
+    clone.quaternion.identity();
+    clone.rotation.set(0, 0, 0);
+    if (index === 1) clone.scale.set(1, 1.7, 1);
+    else clone.scale.setScalar(1);
+    if (index === 1) clone.position.y = -0.85;
+    clone.traverse(object => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const hidden = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).every(m => m.visible === false);
+      mesh.visible = !hidden;
+      mesh.material = energy;
+      mesh.castShadow = true;
+    });
+    group.add(clone);
+    group.scale.setScalar(index === 0 ? SCALE * 0.55 : SCALE * 0.75);
+    group.visible = false;
+    set.add(group);
+    return group;
+  });
+  /* Where each lies after striking the chest. */
+  const landings = [
+    new THREE.Vector3(CHEST_X - 1.55, 0.36, 1.15),
+    new THREE.Vector3(CHEST_X - 0.95, 0.12, 1.55),
+    new THREE.Vector3(CHEST_X - 2.05, 0.34, 1.45),
+  ];
+
+  // ------------------------------------------------------- the key
+  const keyGroup = new THREE.Group();
+  keyGroup.visible = false;
+  set.add(keyGroup);
+  const bow = solid(new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.05, 12, 36), brass), keyGroup);
+  bow.position.y = 0.42;
+  const shaft = solid(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 12), brass), keyGroup);
+  shaft.position.y = -0.04;
+  for (let i = 0; i < 2; i++) {
+    const tooth = solid(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.07), brass), keyGroup);
+    tooth.position.set(0.08, -0.24 - i * 0.13, 0);
+  }
+  const KEY_AT = new THREE.Vector3(CHEST_X - 0.9, 2.7, 0.9);
+  const KEY_SIZE = 1.7;
+  set.updateMatrixWorld(true);
+  /* The letters fly in the world, facing us; where the key forms, there. */
+  const keyWorld = set.localToWorld(KEY_AT.clone());
+  const glyphHome = set.localToWorld(new THREE.Vector3(-0.6, 1.2, 2.4));
+
+  /* The word's letters, which rise and become the key. */
+  const glyphs: { mesh: THREE.Mesh; texture: THREE.CanvasTexture; material: THREE.MeshBasicMaterial }[] = [];
+  const glyphGeometry = new THREE.PlaneGeometry(0.5, 0.5);
+  function setGlyphs(answer: string) {
+    for (const glyph of glyphs) {
+      scene.remove(glyph.mesh);
+      glyph.texture.dispose();
+      glyph.material.dispose();
+    }
+    glyphs.length = 0;
+    for (const char of Array.from(answer).filter(c => c.trim()).slice(0, 18)) {
+      const paper = document.createElement("canvas");
+      paper.width = paper.height = 128;
+      const ink = paper.getContext("2d");
+      if (!ink) continue;
+      ink.fillStyle = "#b8883a";
+      ink.font = "600 86px Georgia, 'Noto Serif TC', serif";
+      ink.textAlign = "center";
+      ink.textBaseline = "middle";
+      ink.fillText(char, 64, 68);
+      const texture = new THREE.CanvasTexture(paper);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, fog: false });
+      const mesh = new THREE.Mesh(glyphGeometry, material);
+      mesh.visible = false;
+      scene.add(mesh);
+      glyphs.push({ mesh, texture, material });
+    }
+  }
+
+  // ------------------------------------------------------------ state
+  /* What the scene shows when nothing plays. */
+  let rest: VaultScene = { progress: 0, misses: 0, status: "playing", answer: "" };
+  let at = 0;
+  let lidOpen = 0;
+  type Live = { beat: VaultBeat; from: number; started: number };
+  let queue: VaultBeat[] = [];
+  let live: Live | null = null;
+  /* Between words: the lid closes and she walks back. */
+  let reset: { from: number; lid: number; started: number } | null = null;
+  let busy = false;
+
+  function setBusy(next: boolean) {
+    if (busy === next) return;
+    busy = next;
+    options.onBusy?.(next);
+  }
+
+  function light(progressAt: number) {
+    inlays.forEach((material, i) => {
+      const here = (i + 1) / (INLAYS + 1);
+      material.emissiveIntensity = progressAt + 1e-6 >= here ? 0.55 : 0;
+    });
+  }
+
+  function poseYumi(x: number, hop = 0, lean = 0) {
+    model.position.set(x, STAND_Y + hop, 0);
+    model.rotation.z = lean;
+  }
+
+  function poseChest(open: number) {
+    hinge.rotation.x = -1.95 * open;
+    inside.emissiveIntensity = 1.2 * open;
+    treasureLight.intensity = 9 * open;
+  }
+
+  /** The scene as `rest` says, with nothing in flight. */
+  function settle() {
+    at = rest.progress;
+    lidOpen = rest.status === "won" ? 1 : 0;
+    poseYumi(pathX(at));
+    light(at);
+    poseChest(lidOpen);
+    copies.forEach((copy, i) => {
+      copy.visible = rest.status === "playing" && i < rest.misses;
+      copy.position.copy(landings[i]);
+      copy.rotation.set(0, i * 0.7, Math.PI / 2 * (i === 1 ? 1 : 0));
+    });
+    keyGroup.visible = false;
+    glyphs.forEach(glyph => { glyph.mesh.visible = false; });
+    coins.forEach(({ coin }, i) => {
+      coin.visible = rest.status === "won";
+      coin.position.set(CHEST_X - 0.5 + (i % 5) * 0.25, 0.24 + H + 0.03 + Math.floor(i / 5) * 0.05, -0.15 + (i % 2) * 0.25);
+      coin.rotation.set(0, i, 0);
+    });
+  }
+
+  const scratch = new THREE.Vector3();
+
+  function animate(beat: VaultBeat, from: number, t: number) {
+    switch (beat.phase) {
+      case "step": {
+        const q = easeInOut(t);
+        at = from + (beat.progress - from) * q;
+        poseYumi(pathX(at), Math.sin(t * Math.PI) * 0.32, -Math.sin(t * Math.PI) * 0.08);
+        light(at);
+        break;
+      }
+      case "projectile": {
+        const i = beat.piece ?? 0;
+        const copy = copies[i];
+        copy.visible = true;
+        const start = scratch.set(model.position.x + 0.3, STAND_Y + 0.4, 0.2);
+        const impact = new THREE.Vector3(CHEST_X - W / 2 - 0.05, 0.24 + H * 0.6, 0.45);
+        if (t < 0.5) {
+          const u = t / 0.5;
+          copy.position.copy(start).lerp(impact, u);
+          copy.position.y += Math.sin(u * Math.PI) * 1.6;
+          copy.scale.setScalar((i === 0 ? SCALE * 0.55 : SCALE * 0.75) * (0.4 + 0.6 * clamp01(u * 3)));
+        } else {
+          const u = (t - 0.5) / 0.5;
+          copy.position.copy(impact).lerp(landings[i], easeOut(u));
+          copy.position.y += Math.abs(Math.sin(u * Math.PI * 2)) * 0.5 * (1 - u);
+        }
+        copy.rotation.set(t * 7, t * 9 + i * 0.7, t * 4);
+        /* The chest takes the blow. */
+        chest.rotation.z = t > 0.5 ? Math.sin((t - 0.5) * 38) * (1 - t) * 0.1 : 0;
+        poseYumi(pathX(at), 0, t < 0.25 ? -Math.sin((t / 0.25) * Math.PI) * 0.12 : 0);
+        break;
+      }
+      case "restore": {
+        const q = easeInOut(t);
+        copies.forEach((copy, i) => {
+          if (i >= rest.misses) return;
+          const home = scratch.set(model.position.x, STAND_Y + 0.3, 0);
+          copy.position.copy(landings[i]).lerp(home, q);
+          copy.position.y += Math.sin(t * Math.PI) * 1.3;
+          copy.rotation.y += 0.08;
+          copy.scale.setScalar((i === 0 ? SCALE * 0.55 : SCALE * 0.75) * (1 - 0.85 * q));
+          copy.visible = t < 0.97;
+        });
+        if (t > 0.85) poseYumi(pathX(at), Math.sin(((t - 0.85) / 0.15) * Math.PI) * 0.12);
+        break;
+      }
+      case "key": {
+        const gather = clamp01(t / 0.7);
+        const across = scratch.set(1, 0, 0).applyQuaternion(camera.quaternion);
+        glyphs.forEach((glyph, i) => {
+          const spread = (i - (glyphs.length - 1) / 2) * 0.5;
+          const startPos = glyphHome.clone().addScaledVector(across, spread);
+          glyph.mesh.visible = gather < 1;
+          glyph.mesh.position.copy(startPos).lerp(keyWorld, easeInOut(clamp01(gather * 1.15 - i * 0.02)));
+          glyph.mesh.position.y += Math.sin(gather * Math.PI) * 0.6;
+          glyph.mesh.scale.setScalar(1 - 0.75 * easeInOut(gather));
+          glyph.mesh.quaternion.copy(camera.quaternion);
+          glyph.material.opacity = 1 - clamp01((gather - 0.8) / 0.2);
+        });
+        const grow = clamp01((t - 0.55) / 0.3);
+        keyGroup.visible = grow > 0;
+        keyGroup.position.copy(KEY_AT);
+        keyGroup.rotation.set(0, t * Math.PI * 3, 0);
+        keyGroup.scale.setScalar(Math.max(0.001, KEY_SIZE * easeOut(grow)));
+        break;
+      }
+      case "unlock": {
+        const travel = easeInOut(clamp01(t / 0.45));
+        const turn = clamp01((t - 0.45) / 0.15);
+        keyGroup.visible = t < 0.72;
+        keyGroup.position.copy(KEY_AT).lerp(LOCK, travel);
+        keyGroup.rotation.set(Math.PI / 2 * travel, 0, -turn * Math.PI / 2);
+        keyGroup.scale.setScalar(KEY_SIZE * (1 - 0.45 * travel));
+        lidOpen = easeOut(clamp01((t - 0.6) / 0.4));
+        poseChest(lidOpen);
+        coins.forEach(({ coin, dx, dz, rise }) => {
+          const u = clamp01((t - 0.65) / 0.35);
+          coin.visible = u > 0;
+          coin.position.set(CHEST_X + dx * u, 0.24 + H + rise * Math.sin(u * Math.PI * 0.85), dz * u);
+          coin.rotation.set(u * 9, u * 5, 0);
+        });
+        break;
+      }
+      case "celebrate": {
+        poseYumi(pathX(at), Math.abs(Math.sin(t * Math.PI * 2)) * 0.35, Math.sin(t * Math.PI * 2) * 0.06);
+        coins.forEach(({ coin, dx, dz }, i) => {
+          coin.position.set(CHEST_X + dx, 0.06 + 0.03 * (i % 3), dz + 0.2);
+          coin.rotation.set(Math.PI / 2 * (1 - easeOut(t)) + (i % 2) * 0.2, i, 0);
+        });
+        break;
+      }
+      case "recover": {
+        poseYumi(pathX(at), Math.sin(t * Math.PI) * 0.22, Math.sin(t * Math.PI * 3) * 0.05 * (1 - t));
+        break;
+      }
+    }
+  }
+
+  function startNext(now: number) {
+    const beat = queue.shift();
+    live = beat ? { beat, from: at, started: now } : null;
+    if (!live) {
+      settle();
+      setBusy(false);
+    }
+  }
+
+  function finish() {
+    queue = [];
+    live = null;
+    reset = null;
+    settle();
+    setBusy(false);
+    render();
+  }
+
+  // -------------------------------------------------------- rendering
+  let frame = 0;
+  let last = performance.now();
+  let disposed = false;
+
+  function render() {
+    if (disposed) return;
+    rig.sync(0, reduced);
+    renderer.render(scene, camera);
+  }
+
+  function tick(now: number) {
+    frame = 0;
+    if (disposed || document.hidden) return;
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (reset) {
+      const t = clamp01((now - reset.started) / 700);
+      const q = easeInOut(t);
+      at = reset.from * (1 - q);
+      poseYumi(pathX(at), Math.abs(Math.sin(t * Math.PI * 3)) * 0.12 * (1 - t));
+      light(at);
+      lidOpen = reset.lid * (1 - q);
+      poseChest(lidOpen);
+      if (t >= 1) {
+        reset = null;
+        settle();
+      }
+    }
+    if (live) {
+      const t = clamp01((now - live.started) / 1000 / live.beat.seconds);
+      animate(live.beat, live.from, t);
+      if (t >= 1) {
+        at = live.beat.progress;
+        startNext(now);
+      }
+    }
+    rig.sync(dt, reduced);
+    renderer.render(scene, camera);
+    if (live || reset) frame = requestAnimationFrame(tick);
+  }
+
+  function wake() {
+    if (disposed || frame || document.hidden) return;
+    last = performance.now();
+    frame = requestAnimationFrame(tick);
+  }
+
+  function fit() {
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (!width || !height) return;
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    /* Far enough to keep the path, the chest and the key in frame, however narrow. */
+    const halfV = THREE.MathUtils.degToRad(camera.fov / 2);
+    const halfH = Math.atan(Math.tan(halfV) * camera.aspect);
+    /* The sphere overstates a long, low set; 0.8 of it keeps the margins even. */
+    const distance = (bounds.radius * 0.8) / Math.sin(Math.min(halfV, halfH));
+    camera.position.copy(bounds.center).addScaledVector(VIEW, distance);
+    camera.lookAt(bounds.center);
+    camera.updateProjectionMatrix();
+    render();
+  }
+
+  /* What the camera frames: the path, the chest and the air the key forms in. */
+  const bounds = new THREE.Box3().setFromObject(set).expandByPoint(keyWorld).getBoundingSphere(new THREE.Sphere());
+  /* A little low, so the set sits under the notes laid over the top of the stage. */
+  bounds.center.y -= 0.2;
+  const VIEW = new THREE.Vector3(0.12, 0.42, 1).normalize();
+
+  const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(fit);
+  observer?.observe(canvas);
+  const onVisibility = () => { if (!document.hidden) { fit(); wake(); } };
+  document.addEventListener("visibilitychange", onVisibility);
+  settle();
+  fit();
+
+  return {
+    show(next, { reset: walkBack = false } = {}) {
+      queue = [];
+      live = null;
+      const before = at;
+      const lid = lidOpen;
+      rest = next;
+      setGlyphs(next.answer);
+      if (walkBack && !reduced && (before > 0.01 || lid > 0.01) && next.progress === 0) {
+        /* Copies and coins of the last word go; she walks back as the lid closes. */
+        copies.forEach(copy => { copy.visible = false; });
+        coins.forEach(({ coin }) => { coin.visible = false; });
+        keyGroup.visible = false;
+        reset = { from: before, lid, started: performance.now() };
+        setBusy(false);
+        wake();
+        return;
+      }
+      reset = null;
+      settle();
+      setBusy(false);
+      render();
+    },
+    play(beats, next) {
+      rest = next;
+      if (next.answer) setGlyphs(next.answer);
+      if (reduced || beats.length === 0) {
+        finish();
+        return;
+      }
+      reset = null;
+      queue = [...beats];
+      setBusy(true);
+      startNext(performance.now());
+      wake();
+    },
+    skip() {
+      if (live || queue.length || reset) finish();
+    },
+    wear(outfit) {
+      for (const piece of rig.apply(outfit ?? {})) {
+        piece.traverse(object => { if ((object as THREE.Mesh).isMesh) object.castShadow = true; });
+      }
+      render();
+    },
+    dispose() {
+      disposed = true;
+      if (frame) cancelAnimationFrame(frame);
+      observer?.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+      rig.dispose();
+      setGlyphs("");
+      glyphGeometry.dispose();
+      const geometries = new Set<THREE.BufferGeometry>();
+      const materials = new Set<THREE.Material>();
+      scene.traverse(object => {
+        const mesh = object as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        geometries.add(mesh.geometry);
+        for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+      });
+      geometries.forEach(geometry => geometry.dispose());
+      materials.forEach(material => material.dispose());
+      environment.dispose();
+      renderer.dispose();
+    },
+  };
+}

@@ -10,10 +10,12 @@ import { createSupabaseWallet } from "@/lib/shop/wallet";
 import { createClient } from "@/lib/supabase/client";
 import { DuplicateVocabularyError, createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 
-import HangyumiGame from "./HangyumiGame";
+import HangyumiGame, { type GameKind } from "./HangyumiGame";
 
-/** Hangyumi as a signed-in reader plays it: their language, their cookies, their Yumi. */
-export default function HangyumiPage() {
+/** Hangyumi (or Yumi Wordvault) as a signed-in reader plays it: their
+    language, their cookies, their Yumi. Both are entered from the games
+    hub, and go back to it. */
+export default function HangyumiPage({ game = "hangyumi" }: { game?: GameKind }) {
   const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
   const { language: interfaceLanguage } = useTranslation();
   const supabase = useMemo(() => createClient(), []);
@@ -83,6 +85,8 @@ export default function HangyumiPage() {
       translate={translate}
       nativeLanguage={nativeLanguage}
       saveWord={saveWord}
+      game={game}
+      backHref="/games"
     />
   );
 }

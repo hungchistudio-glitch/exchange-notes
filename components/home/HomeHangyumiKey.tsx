@@ -11,10 +11,11 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import styles from "./HomeShopKey.module.css";
 
 /**
- * The way into Hangyumi, beside the shop's key in Home's top corner (Chi,
+ * The way into the games, beside the shop's key in Home's top corner (Chi,
  * 2026-10-25: a minimal line icon next to the shop). It is the shop key's
  * twin in every way but its mark: the same target, the same ink, stepping
- * away and hiding with it.
+ * away and hiding with it. One key for both games (Chi, 2026-10-26): it
+ * opens the hub, where Hangyumi and Yumi Wordvault are chosen.
  */
 export default function HomeHangyumiKey() {
   const { isCosmic } = useInterfaceMode();
@@ -25,13 +26,13 @@ export default function HomeHangyumiKey() {
   return (
     <Link
       ref={linkRef}
-      href="/hangyumi"
+      href="/games"
       className={styles.key}
       data-home-hangyumi-key=""
       data-slot="hangyumi"
       data-cosmic={isCosmic ? "true" : "false"}
-      aria-label={t.hangyumi.open}
-      title={t.hangyumi.open}
+      aria-label={t.games.open}
+      title={t.games.open}
     >
       <HangyumiGlyph className={styles.bag} accentClassName={styles.clasp} />
     </Link>
