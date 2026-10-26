@@ -226,6 +226,48 @@ describe("a round of Hangyumi", () => {
     expect(screen.queryByRole("button", { name: "p, already guessed", hidden: true })).toBeNull();
   });
 
+  it("lets Enter on a button press only that button, and elsewhere deal the next word", async () => {
+    const saveWord = vi.fn<SaveWord>(async () => "saved");
+    play({ saveWord });
+    await screen.findByText("lasting a very short time");
+    for (const char of ["x", "y", "z"]) await guess(char);
+    const keep = await screen.findByRole("button", { name: "Save to vocabulary" });
+    keep.focus();
+    await act(async () => {
+      fireEvent.keyDown(keep, { key: "Enter" });
+      // Long enough for a next word to have been dealt, had one been asked for.
+      await new Promise(resolve => setTimeout(resolve, 60));
+    });
+    // Still the finished round: Enter on the button did not deal a word.
+    expect(screen.getByRole("heading", { name: "Yumi is hung" })).toBeInTheDocument();
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    });
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "Yumi is hung" })).toBeNull());
+  });
+
+  it("lets the game's own language give way when the app's learning language changes", async () => {
+    const service = createPreviewHangyumi({ words: WORDS, delayMs: 0 });
+    const { rerender } = render(<HangyumiGame service={service} defaultLanguage="fr" />);
+    await screen.findByText("lasting a very short time");
+    fireEvent.click(screen.getByRole("button", { name: "Learning language: French" }));
+    fireEvent.click(await screen.findByRole("radio", { name: /中文/ }));
+    expect(window.localStorage.getItem("hangyumi-language")).toBe("zh-TW");
+    expect(window.localStorage.getItem("hangyumi-language-base")).toBe("fr");
+
+    rerender(<HangyumiGame service={service} defaultLanguage="es" />);
+    expect(await screen.findByRole("button", { name: "Learning language: Spanish" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("hangyumi-language")).toBeNull();
+  });
+
+  it("forgets a game language chosen while the app learnt something else", async () => {
+    window.localStorage.setItem("hangyumi-language", "zh-TW");
+    window.localStorage.setItem("hangyumi-language-base", "it");
+    play();
+    expect(await screen.findByRole("button", { name: "Learning language: French" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("hangyumi-language")).toBeNull();
+  });
+
   it("guesses Chinese from a set of characters that holds the answer's", async () => {
     window.localStorage.setItem("hangyumi-level", "B1");
     play({ language: "zh-TW" });

@@ -36,7 +36,8 @@ import styles from "./Hangyumi.module.css";
 
    The language key beside the difficulty bar changes only the language
    the game deals in (Chi: "單純學習語言的切換"); the app's own learning
-   language is left alone. The clue is always in the app's display
+   language is left alone, and when that changes in Settings the game's
+   choice gives way to it. The clue is always in the app's display
    language, the one chosen in Settings (Chi, 2026-10-26), whatever is
    being played.
 
@@ -61,6 +62,9 @@ type Phase = "loading" | "ready" | "missing" | "error";
 
 const LEVEL_KEY = "hangyumi-level";
 const LANGUAGE_KEY = "hangyumi-language";
+/* The app's learning language when the game's own was chosen: once the
+   app's changes, the game's choice gives way to it (Chi, 2026-10-26). */
+const LANGUAGE_BASE_KEY = "hangyumi-language-base";
 const isLanguageCode = (value: unknown): value is LanguageCode =>
   typeof value === "string" && (LANGUAGE_CODES as readonly string[]).includes(value);
 const roundKey = (language: LanguageCode, level: HangyumiLevel) => `hangyumi-round:${language}:${level}`;
@@ -70,6 +74,9 @@ function readStorage(key: string): string | null {
 }
 function writeStorage(key: string, value: string) {
   try { window.localStorage.setItem(key, value); } catch { /* private mode: the round is simply not remembered */ }
+}
+function removeStorage(key: string) {
+  try { window.localStorage.removeItem(key); } catch { /* nothing was kept */ }
 }
 function newRoundId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -130,15 +137,31 @@ export default function HangyumiGame({
   // Nothing is dealt before they are read: dealing B1 first and then the
   // saved level flashed the wrong chip and started a round for nothing.
   const [prefsRead, setPrefsRead] = useState(false);
+  const appLanguageRef = useRef(defaultLanguage);
   useEffect(() => {
     const saved = readStorage(LEVEL_KEY);
     const savedLanguage = readStorage(LANGUAGE_KEY);
+    // Chosen while the app was learning something else: the app has moved on.
+    const stillCurrent = readStorage(LANGUAGE_BASE_KEY) === appLanguageRef.current;
+    if (!stillCurrent) {
+      removeStorage(LANGUAGE_KEY);
+      removeStorage(LANGUAGE_BASE_KEY);
+    }
     queueMicrotask(() => {
       if (isLevel(saved)) setLevel(saved);
-      if (isLanguageCode(savedLanguage)) setChosenLanguage(savedLanguage);
+      if (stillCurrent && isLanguageCode(savedLanguage)) setChosenLanguage(savedLanguage);
       setPrefsRead(true);
     });
   }, []);
+
+  // The app's learning language changed while the game was open.
+  useEffect(() => {
+    if (appLanguageRef.current === defaultLanguage) return;
+    appLanguageRef.current = defaultLanguage;
+    removeStorage(LANGUAGE_KEY);
+    removeStorage(LANGUAGE_BASE_KEY);
+    queueMicrotask(() => setChosenLanguage(null));
+  }, [defaultLanguage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,8 +214,15 @@ export default function HangyumiGame({
   }, [level]);
 
   const chooseLanguage = useCallback((next: LanguageCode) => {
-    writeStorage(LANGUAGE_KEY, next);
-    setChosenLanguage(next);
+    if (next === appLanguageRef.current) {
+      removeStorage(LANGUAGE_KEY);
+      removeStorage(LANGUAGE_BASE_KEY);
+      setChosenLanguage(null);
+    } else {
+      writeStorage(LANGUAGE_KEY, next);
+      writeStorage(LANGUAGE_BASE_KEY, appLanguageRef.current);
+      setChosenLanguage(next);
+    }
     setQueuedLevel(null);
     setLanguageOpen(false);
   }, []);
@@ -322,6 +352,9 @@ export default function HangyumiGame({
       if (document.querySelector("[aria-modal='true']")) return;
       const current = roundRef.current;
       if (!current) return;
+      // Enter on a button (keep the word, listen) is that button's own;
+      // anywhere else, once the round is over, it deals the next word.
+      if (event.key === "Enter" && target instanceof Element && target.closest("button, a, [role='button']")) return;
       if (event.key === "Enter" && current.status !== "playing") {
         event.preventDefault();
         nextWord();
