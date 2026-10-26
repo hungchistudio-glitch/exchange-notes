@@ -1,10 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { LanguageCode } from "@/lib/languages";
+import { SHOP_ITEMS } from "@/lib/shop/catalog";
+import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
 
 import {
   DAILY_CAP, MAX_MISSES, REWARDS, readGuess, readStart, readTodayState,
-  type HangyumiCard, type HangyumiGuessResult, type HangyumiLevel, type HangyumiRound, type HangyumiStart, type PartOfSpeech,
+  type ChestReward, type ChestTier, type HangyumiCard, type HangyumiGame, type HangyumiGuessResult, type HangyumiLevel, type HangyumiRound, type HangyumiStart, type PartOfSpeech,
 } from "./rules";
 
 /* =========================================================
@@ -38,7 +40,7 @@ export type SavableWord = {
 export type SaveWord = (word: SavableWord) => Promise<"saved" | "duplicate">;
 
 export type HangyumiService = {
-  start(input: { roundId: string; language: LanguageCode; level: HangyumiLevel; hintLanguage: LanguageCode }): Promise<HangyumiStart>;
+  start(input: { roundId: string; language: LanguageCode; level: HangyumiLevel; hintLanguage: LanguageCode; game?: HangyumiGame }): Promise<HangyumiStart>;
   guess(roundId: string, letter: string): Promise<HangyumiGuessResult>;
   today(): Promise<HangyumiToday>;
 };
@@ -64,9 +66,12 @@ export function createSupabaseHangyumi(supabase: SupabaseClient): HangyumiServic
   }
 
   return {
-    async start({ roundId, language, level, hintLanguage }) {
+    async start({ roundId, language, level, hintLanguage, game = "hangyumi" }) {
+      /* Hangyumi through the four-argument start, which every deployed page
+         calls; Wordvault through the one that knows the game. */
       return readStart(await call("hangyumi_start", {
         p_round_id: roundId, p_language: language, p_level: level, p_hint_language: hintLanguage,
+        ...(game === "wordvault" ? { p_game: game } : {}),
       }));
     },
     async guess(roundId, letter) {
@@ -103,10 +108,20 @@ export const PRACTICE_WORDS: PracticeWord[] = [
 const isLetter = (char: string) => /\p{L}/u.test(char);
 const lower = (value: string) => value.normalize("NFC").toLocaleLowerCase();
 
-type PreviewRound = { id: string; word: PracticeWord; hintLanguage: LanguageCode; guessed: string[]; misses: number; status: HangyumiRound["status"]; earned: number; keyboard: string[] | null };
+type PreviewRound = {
+  id: string; word: PracticeWord; hintLanguage: LanguageCode; guessed: string[]; misses: number;
+  status: HangyumiRound["status"]; earned: number; keyboard: string[] | null;
+  game: HangyumiGame; chest: ChestTier | null; chestReward: ChestReward | null; abandoned: boolean;
+};
 
 /** The same rules as the server, in memory, with nothing written anywhere. */
-export function createPreviewHangyumi(options: { words?: PracticeWord[]; earnedToday?: number; delayMs?: number } = {}): HangyumiService {
+export function createPreviewHangyumi(options: {
+  words?: PracticeWord[]; earnedToday?: number; delayMs?: number;
+  /** Wordvault: words already won in a row, and the pieces already owned. */
+  streak?: number; owned?: readonly string[];
+  /** Picks a chest's piece from those on offer; random unless a test says. */
+  pick?: (ids: string[]) => string;
+} = {}): HangyumiService {
   const words = options.words ?? PRACTICE_WORDS;
   const rounds = new Map<string, PreviewRound>();
   const awards = new Set<string>();
@@ -116,6 +131,9 @@ export function createPreviewHangyumi(options: { words?: PracticeWord[]; earnedT
   const settle = () => new Promise(resolve => setTimeout(resolve, delay));
   const day = new Date().toISOString().slice(0, 10);
   let turn = 0;
+  let streak = options.streak ?? 0;
+  const owned = new Set(options.owned ?? []);
+  const pick = options.pick ?? (ids => ids[Math.floor(Math.random() * ids.length)]);
 
   function state(round: PreviewRound): HangyumiRound {
     const chars = [...round.word.answer.normalize("NFC")];
@@ -140,6 +158,10 @@ export function createPreviewHangyumi(options: { words?: PracticeWord[]; earnedT
       today: { day, earned: earnedToday, cap: DAILY_CAP, remaining: Math.max(0, DAILY_CAP - earnedToday) },
       answer: round.status === "playing" ? null : round.word.answer,
       card: round.status === "playing" ? null : round.word.card ?? null,
+      game: round.game,
+      chest: round.chest,
+      streak: round.game === "wordvault" ? streak : null,
+      chestReward: round.status === "playing" ? null : round.chestReward,
     };
   }
 
@@ -155,8 +177,33 @@ export function createPreviewHangyumi(options: { words?: PracticeWord[]; earnedT
     return { paid, already: false, capped: paid < amount };
   }
 
+  /* The chest, as private.hangyumi_guess opens it: x2 or x3 of the round
+     outside the 333, and a piece the reader does not own. */
+  function finishChest(round: PreviewRound) {
+    if (round.status === "won") {
+      const tier: ChestTier = round.chest === "medium" && streak === 3 ? "medium"
+        : round.chest === "premium" && streak === 6 ? "premium" : "normal";
+      let cookies = 0;
+      let item: string | null = null;
+      if (tier !== "normal") {
+        cookies = round.earned * (tier === "medium" ? 1 : 2);
+        balance += cookies;
+        const pool = (tier === "premium" ? MYTHIC_ITEMS : SHOP_ITEMS).map(i => i.id).filter(id => !owned.has(id));
+        if (pool.length) {
+          item = pick(pool);
+          owned.add(item);
+        }
+      }
+      round.chestReward = { tier, cookies, item, limited: tier === "premium" && item !== null };
+      streak = streak + 1 >= 7 ? 0 : streak + 1;
+    } else {
+      round.chestReward = { tier: round.chest ?? "normal", cookies: 0, item: null, limited: false };
+      streak = 0;
+    }
+  }
+
   return {
-    async start({ roundId, language, level, hintLanguage }) {
+    async start({ roundId, language, level, hintLanguage, game = "hangyumi" }) {
       await settle();
       const existing = rounds.get(roundId);
       if (existing) return state(existing);
@@ -169,7 +216,22 @@ export function createPreviewHangyumi(options: { words?: PracticeWord[]; earnedT
         const extra = [..."山海光日月星雲風心學文天地時人路城夜雨花"].filter(c => !answerChars.includes(c));
         keyboard = [...answerChars, ...extra.slice(0, Math.max(0, 16 - answerChars.length))].sort(() => Math.random() - 0.5);
       }
-      const round: PreviewRound = { id: roundId, word, hintLanguage, guessed: [], misses: 0, status: "playing", earned: 0, keyboard };
+      /* The server's rules (private.hangyumi_start): a Wordvault word left
+         half-guessed ends the streak, and the streak names the chest. */
+      let chest: ChestTier | null = null;
+      if (game === "wordvault") {
+        const abandoned = [...rounds.values()].filter(r =>
+          r.game === "wordvault" && r.status === "playing" && r.guessed.length > 0 && !r.abandoned);
+        if (abandoned.length) {
+          abandoned.forEach(r => { r.chest = "normal"; r.abandoned = true; });
+          streak = 0;
+        }
+        chest = streak === 3 ? "medium" : streak === 6 ? "premium" : "normal";
+      }
+      const round: PreviewRound = {
+        id: roundId, word, hintLanguage, guessed: [], misses: 0, status: "playing", earned: 0, keyboard,
+        game, chest, chestReward: null, abandoned: false,
+      };
       rounds.set(roundId, round);
       return state(round);
     },
@@ -204,6 +266,7 @@ export function createPreviewHangyumi(options: { words?: PracticeWord[]; earnedT
         if (round.misses >= MAX_MISSES) round.status = "lost";
       }
       round.earned += paid.letter + paid.word;
+      if (round.game === "wordvault" && round.status !== "playing") finishChest(round);
       return { ...state(round), hit, repeat: false, paid, balance };
     },
     async today() {

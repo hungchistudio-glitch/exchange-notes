@@ -40,6 +40,8 @@ export type VaultScene = {
   status: "playing" | "won" | "lost";
   /** The word, for the letters that become the key. */
   answer: string;
+  /** The chest this word holds: medium the fourth word in a row, premium the seventh. */
+  chest?: "normal" | "medium" | "premium" | null;
 };
 
 export type WordvaultStudio = {
@@ -133,6 +135,9 @@ export function createWordvaultStudio(
     color: 0x1f2b40, metalness: 0.35, roughness: 0.32, clearcoat: 0.7, clearcoatRoughness: 0.2, envMapIntensity: 0.7,
   });
   const inside = new THREE.MeshStandardMaterial({ color: 0x3a2412, roughness: 0.9, emissive: 0xffb347, emissiveIntensity: 0 });
+  /* The chest's own trim, apart from the path's brass, so a tier can gild it. */
+  const trim = brass.clone();
+  const lockStone = new THREE.MeshPhysicalMaterial({ color: 0xc9a55a, metalness: 0.85, roughness: 0.28 });
   const energy = new THREE.MeshStandardMaterial({
     color: 0xf3d38a, emissive: 0xe0a83c, emissiveIntensity: 0.7, metalness: 0.4, roughness: 0.25,
     transparent: true, opacity: 0.88,
@@ -181,10 +186,10 @@ export function createWordvaultStudio(
   hollow.position.y = H - 0.03;
   chest.add(hollow);
   for (const x of [-W / 2 + 0.22, W / 2 - 0.22]) {
-    const band = solid(new THREE.Mesh(new THREE.BoxGeometry(0.12, H + 0.02, D + 0.04), brass), chest);
+    const band = solid(new THREE.Mesh(new THREE.BoxGeometry(0.12, H + 0.02, D + 0.04), trim), chest);
     band.position.set(x, H / 2, 0);
   }
-  const foot = solid(new THREE.Mesh(new THREE.BoxGeometry(W + 0.06, 0.08, D + 0.06), brass), chest);
+  const foot = solid(new THREE.Mesh(new THREE.BoxGeometry(W + 0.06, 0.08, D + 0.06), trim), chest);
   foot.position.y = 0.04;
   /* The lid: a half barrel hinged along the back edge. */
   const hinge = new THREE.Group();
@@ -199,10 +204,10 @@ export function createWordvaultStudio(
     const strap = new THREE.CylinderGeometry(D / 2 + 0.02, D / 2 + 0.02, 0.12, 40, 1, false, 0, Math.PI);
     strap.rotateZ(Math.PI / 2);
     strap.rotateX(-Math.PI / 2);
-    const mesh = solid(new THREE.Mesh(strap, brass), hinge);
+    const mesh = solid(new THREE.Mesh(strap, trim), hinge);
     mesh.position.set(x, 0, D / 2);
   }
-  const lockPlate = solid(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.5, 0.06), brass), chest);
+  const lockPlate = solid(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.5, 0.06), lockStone), chest);
   lockPlate.position.set(0, H - 0.22, D / 2 + 0.03);
   const keyhole = new THREE.Mesh(
     new THREE.CylinderGeometry(0.05, 0.05, 0.08, 16),
@@ -214,6 +219,114 @@ export function createWordvaultStudio(
   /* The keyhole, in the set's frame. */
   const LOCK = new THREE.Vector3(0, H - 0.18, D / 2 + 0.12).applyAxisAngle(new THREE.Vector3(0, 1, 0), chest.rotation.y)
     .add(chest.position);
+
+  /* The premium chest's own sky: a ring of stars turning round it, and a
+     pillar of light that rises as it opens. */
+  const starRing = new THREE.Group();
+  starRing.position.set(CHEST_X, 0.24 + H + 0.55, 0);
+  set.add(starRing);
+  const starMaterial = new THREE.MeshStandardMaterial({ color: 0xfff3c4, emissive: 0xffd36b, emissiveIntensity: 1.4 });
+  const ringLine = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.012, 6, 96), starMaterial);
+  ringLine.rotation.x = Math.PI / 2;
+  starRing.add(ringLine);
+  for (let i = 0; i < 9; i += 1) {
+    const a = (i / 9) * Math.PI * 2;
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(i % 3 ? 0.05 : 0.08, 0), starMaterial);
+    star.position.set(Math.cos(a) * 1.35, 0, Math.sin(a) * 1.35);
+    starRing.add(star);
+  }
+  starRing.rotation.z = 0.18;
+  starRing.visible = false;
+  const pillarMaterial = new THREE.MeshBasicMaterial({
+    color: 0xfff1c8, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, fog: false,
+  });
+  const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.95, 6, 40, 1, true), pillarMaterial);
+  pillar.position.set(CHEST_X, 0.24 + H + 3, 0);
+  pillar.visible = false;
+  set.add(pillar);
+
+  /* Each tier of chest in its own materials (Chi, 2026-10-26: "材質與光效
+     逐級升級"): the signboard's navy lacquer and brass; white porcelain
+     with gilt and a jade lock; obsidian strewn with stars, veined in gold. */
+  const starfield = (() => {
+    const paper = document.createElement("canvas");
+    paper.width = paper.height = 256;
+    const ink = paper.getContext("2d");
+    if (ink) {
+      ink.fillStyle = "#0b0b16";
+      ink.fillRect(0, 0, 256, 256);
+      let seed = 3301;
+      const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+      for (let i = 0; i < 160; i += 1) {
+        ink.fillStyle = `rgba(${rand() > 0.7 ? "255,214,130" : "220,226,255"},${0.4 + rand() * 0.6})`;
+        ink.fillRect(rand() * 256, rand() * 256, 1 + rand() * 1.6, 1 + rand() * 1.6);
+      }
+      ink.strokeStyle = "rgba(227,194,124,0.75)";
+      ink.lineWidth = 1.4;
+      for (let k = 0; k < 4; k += 1) {
+        ink.beginPath();
+        let x = rand() * 256;
+        ink.moveTo(x, 0);
+        for (let y = 0; y < 256; y += 24) { x += (rand() - 0.5) * 50; ink.lineTo(x, y); }
+        ink.stroke();
+      }
+    }
+    const texture = new THREE.CanvasTexture(paper);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  })();
+  let tier: "normal" | "medium" | "premium" = "normal";
+  function dress(next: "normal" | "medium" | "premium") {
+    tier = next;
+    if (next === "medium") {
+      lacquer.color.set(0xf6f2ea);
+      lacquer.map = null;
+      lacquer.metalness = 0.05;
+      lacquer.roughness = 0.18;
+      lacquer.clearcoat = 1;
+      lacquer.emissive.set(0x000000);
+      trim.color.set(0xf0c35a);
+      trim.emissive.set(0xa06a10);
+      trim.emissiveIntensity = 0.25;
+      lockStone.color.set(0x3fae86);
+      lockStone.metalness = 0.1;
+      lockStone.roughness = 0.2;
+      lockStone.clearcoat = 1;
+    } else if (next === "premium") {
+      lacquer.color.set(0xffffff);
+      lacquer.map = starfield;
+      lacquer.metalness = 0.45;
+      lacquer.roughness = 0.14;
+      lacquer.clearcoat = 1;
+      lacquer.emissive.set(0x1a1230);
+      lacquer.emissiveIntensity = 0.5;
+      trim.color.set(0xf3d38a);
+      trim.emissive.set(0xe0a030);
+      trim.emissiveIntensity = 0.55;
+      lockStone.color.set(0x7b5cff);
+      lockStone.metalness = 0.2;
+      lockStone.roughness = 0.15;
+      lockStone.clearcoat = 1;
+    } else {
+      lacquer.color.set(0x1f2b40);
+      lacquer.map = null;
+      lacquer.metalness = 0.35;
+      lacquer.roughness = 0.32;
+      lacquer.clearcoat = 0.7;
+      lacquer.emissive.set(0x000000);
+      trim.color.set(0xc9a55a);
+      trim.emissive.set(0x000000);
+      trim.emissiveIntensity = 0;
+      lockStone.color.set(0xc9a55a);
+      lockStone.metalness = 0.85;
+      lockStone.roughness = 0.28;
+      lockStone.clearcoat = 0;
+    }
+    lacquer.needsUpdate = true;
+    starRing.visible = next === "premium";
+    inside.emissive.set(next === "premium" ? 0xb9a3ff : 0xffb347);
+    treasureLight.color.set(next === "premium" ? 0xe8dcff : 0xffc96b);
+  }
 
   /* Coins that leap out as it opens. */
   const coinGeometry = new THREE.CylinderGeometry(0.16, 0.16, 0.045, 28);
@@ -358,11 +471,14 @@ export function createWordvaultStudio(
   function poseChest(open: number) {
     hinge.rotation.x = -1.95 * open;
     inside.emissiveIntensity = 1.2 * open;
-    treasureLight.intensity = 9 * open;
+    treasureLight.intensity = (tier === "premium" ? 14 : tier === "medium" ? 11 : 9) * open;
+    pillar.visible = tier === "premium" && open > 0.01;
+    pillarMaterial.opacity = tier === "premium" ? 0.32 * open : 0;
   }
 
   /** The scene as `rest` says, with nothing in flight. */
   function settle() {
+    dress(rest.chest ?? "normal");
     at = rest.progress;
     lidOpen = rest.status === "won" ? 1 : 0;
     poseYumi(pathX(at));
@@ -497,6 +613,7 @@ export function createWordvaultStudio(
     settle();
     setBusy(false);
     render();
+    wake();
   }
 
   // -------------------------------------------------------- rendering
@@ -536,9 +653,11 @@ export function createWordvaultStudio(
         startNext(now);
       }
     }
+    if (starRing.visible) starRing.rotation.y += dt * 0.6;
     rig.sync(dt, reduced);
     renderer.render(scene, camera);
-    if (live || reset) frame = requestAnimationFrame(tick);
+    /* The premium chest's stars keep turning while it waits. */
+    if (live || reset || (starRing.visible && !reduced)) frame = requestAnimationFrame(tick);
   }
 
   function wake() {
@@ -599,6 +718,7 @@ export function createWordvaultStudio(
       settle();
       setBusy(false);
       render();
+      wake();
     },
     play(beats, next) {
       rest = next;

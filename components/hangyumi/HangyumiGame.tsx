@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import EnergyCookie from "@/components/shop/EnergyCookie";
+import ShopThumb from "@/components/shop/ShopThumb";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useOnline from "@/hooks/useOnline";
 import useReducedMotion from "@/hooks/useReducedMotion";
@@ -19,7 +20,7 @@ import { fill, plural } from "@/lib/i18n/format";
 import {
   INTERFACE_LANGUAGE_CODE, LANGUAGE_CODES, getLanguage, getLanguageName, resolveSupportLanguage, type LanguageCode,
 } from "@/lib/languages";
-import type { YumiOutfit } from "@/lib/shop/catalog";
+import { shopItem, type YumiOutfit } from "@/lib/shop/catalog";
 import { announceEnergyLanded } from "@/lib/shop/energy";
 
 import WordvaultStage from "@/components/wordvault/WordvaultStage";
@@ -229,7 +230,7 @@ export default function HangyumiGame({
     const id = readStorage(key) ?? newRoundId();
     writeStorage(key, id);
     queueMicrotask(() => { if (!cancelled) { setPhase("loading"); setNotice(""); } });
-    service.start({ roundId: id, language: learningLanguage, level, hintLanguage }).then(started => {
+    service.start({ roundId: id, language: learningLanguage, level, hintLanguage, game }).then(started => {
       if (cancelled) return;
       if (started.status === "missing") {
         showRound(null);
@@ -373,10 +374,14 @@ export default function HangyumiGame({
           setFlash(n => n + 1);
         }
       }
-      const paid = result.paid.letter + result.paid.word;
+      /* A Wordvault chest's extra cookies fly with the round's, and are
+         said apart: they are outside the 333. */
+      const chestCookies = result.chestReward?.cookies ?? 0;
+      const paid = result.paid.letter + result.paid.word + chestCookies;
       const messages: string[] = [];
       if (paid > 0) {
         if (result.paid.word > 0) messages.push(fill(copy.wordPaid, { count: result.paid.word }));
+        if (chestCookies > 0) messages.push(fill(t.wordvault.chestPaid, { count: chestCookies }));
         flyCookies(from, paid);
         announceEnergyLanded(paid);
       }
@@ -398,7 +403,7 @@ export default function HangyumiGame({
       pendingRef.current = false;
       setPending(false);
     }
-  }, [service, copy, flyCookies, reducedMotion, showRound, celebrate, setNotice]);
+  }, [service, copy, t, flyCookies, reducedMotion, showRound, celebrate, setNotice]);
 
   const keepWord = useCallback(async () => {
     const current = roundRef.current;
@@ -618,10 +623,33 @@ export default function HangyumiGame({
           ? <WordvaultStage round={round} outfit={outfit} label={stageLabel} skipLabel={t.wordvault.skip} />
           : <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />}
         <div className={styles.stageTop}>
-          {/* Replayed for each new total, then gone after six seconds. */}
-          {round && round.earned > 0
-            ? <span key={`${round.id}:${round.earned}`} className={styles.roundEarned}>{fill(copy.roundEarned, { count: round.earned })}</span>
-            : <span />}
+          <span className={styles.stageTopLeft}>
+            {/* Wordvault's streak: seven steps, the fourth and the seventh
+                chests; the step this word is, lit; and the chest it holds. */}
+            {game === "wordvault" && round && round.streak !== null && (
+              <span className={styles.streak} role="img" aria-label={fill(t.wordvault.streakLabel, { count: round.streak })}>
+                <span className={styles.streakPips} aria-hidden="true">
+                  {Array.from({ length: 7 }, (_, i) => (
+                    <i
+                      key={i}
+                      data-done={i < (round.streak ?? 0) ? "true" : "false"}
+                      data-now={round.status === "playing" && i === round.streak ? "true" : "false"}
+                      data-chest={i === 3 ? "medium" : i === 6 ? "premium" : undefined}
+                    />
+                  ))}
+                </span>
+                {round.status === "playing" && round.chest && round.chest !== "normal" && (
+                  <b data-chest={round.chest} aria-hidden="true">
+                    {round.chest === "medium" ? t.wordvault.chestMedium : t.wordvault.chestPremium}
+                  </b>
+                )}
+              </span>
+            )}
+            {/* Replayed for each new total, then gone after six seconds. */}
+            {round && round.earned > 0
+              ? <span key={`${round.id}:${round.earned}`} className={styles.roundEarned}>{fill(copy.roundEarned, { count: round.earned })}</span>
+              : <span />}
+          </span>
           <button type="button" className={styles.info} onClick={() => setRulesOpen(true)} aria-label={copy.rulesTitle} title={copy.rulesTitle}>
             <Info size={18} strokeWidth={1.9} aria-hidden="true" />
           </button>
@@ -793,6 +821,34 @@ export default function HangyumiGame({
                       ? plural(round.earned, locale, copy.lostBodyOne, copy.lostBodyOther, { count: round.earned })
                       : copy.lostBodyNone}
                 </p>
+                {game === "wordvault" && round.status === "won" && round.chestReward && round.chestReward.tier !== "normal" && (() => {
+                  const reward = round.chestReward;
+                  const piece = shopItem(reward.item);
+                  return (
+                    <div className={styles.chestReward} data-tier={reward.tier}>
+                      <p className={styles.answerLabel}>
+                        {t.wordvault.rewardTitle} · {reward.tier === "medium" ? t.wordvault.chestMedium : t.wordvault.chestPremium}
+                      </p>
+                      {reward.cookies > 0 && (
+                        <p className={styles.rewardCookies}>
+                          <EnergyCookie className={styles.rewardCookie} />
+                          {fill(t.wordvault.rewardCookies, { count: reward.cookies })}
+                        </p>
+                      )}
+                      {piece ? (
+                        <div className={styles.rewardPiece}>
+                          <ShopThumb item={piece} className={styles.rewardThumb} />
+                          <span>
+                            <b>{piece.names[interfaceLanguage]}</b>
+                            <small>{reward.limited ? `${t.wordvault.rewardLimited} · ` : ""}{t.wordvault.rewardItem}</small>
+                          </span>
+                        </div>
+                      ) : (
+                        <p className={styles.muted}>{t.wordvault.rewardAllOwned}</p>
+                      )}
+                    </div>
+                  );
+                })()}
                 <p className={styles.answerLabel}>{copy.answer}</p>
                 {round.answer && (() => {
                   const mine = gloss?.id === round.id ? gloss : null;
@@ -878,6 +934,7 @@ export default function HangyumiGame({
           <li>{copy.rules.cap}</li>
           {!isChinese && <li>{copy.rules.accents}</li>}
           <li>{copy.rules.learning}</li>
+          {game === "wordvault" && <li>{t.wordvault.rules.chests}</li>}
         </ul>
         <button
           type="button"

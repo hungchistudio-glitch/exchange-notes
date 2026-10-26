@@ -85,3 +85,67 @@ describe("Wordvault's rounds", () => {
     }
   });
 });
+
+describe("Wordvault's chests (the server's rules, as the preview plays them)", () => {
+  const vault = (options: Parameters<typeof createPreviewHangyumi>[0] = {}) =>
+    createPreviewHangyumi({ words: [word], delayMs: 0, pick: ids => ids[0], ...options });
+  const deal = async (service: ReturnType<typeof createPreviewHangyumi>, id: string) =>
+    (await service.start({ roundId: id, language: "en", level: "B1", hintLanguage: "en", game: "wordvault" })) as HangyumiRound;
+  const win = async (service: ReturnType<typeof createPreviewHangyumi>, id: string) => {
+    let result;
+    for (const char of ["a", "p", "l", "e"]) result = await service.guess(id, char);
+    return result!;
+  };
+
+  it("holds a medium chest on the fourth word in a row: twice the cookies, outside the 333, and a shop piece", async () => {
+    const service = vault({ streak: 3 });
+    expect((await deal(service, "w4")).chest).toBe("medium");
+    const result = await win(service, "w4");
+    expect(result.earned).toBe(21);
+    expect(result.chestReward).toEqual({ tier: "medium", cookies: 21, item: expect.any(String), limited: false });
+    expect(result.chestReward!.item!.startsWith("myth-")).toBe(false);
+    expect(result.streak).toBe(4);
+    // The extra cookies are not today's: the 333 counts only the round.
+    expect((await service.today()).earned).toBe(21);
+  });
+
+  it("holds a premium chest on the seventh: three times, a Mythic Vault piece, and the streak starts again", async () => {
+    const service = vault({ streak: 6 });
+    expect((await deal(service, "w7")).chest).toBe("premium");
+    const result = await win(service, "w7");
+    expect(result.chestReward).toEqual({ tier: "premium", cookies: 42, item: "myth-olympus-marble", limited: true });
+    expect(result.streak).toBe(0);
+  });
+
+  it("gives cookies alone once every piece it could hold is owned", async () => {
+    const all = (await import("@/lib/shop/mythicCollection")).MYTHIC_ITEMS.map(item => item.id);
+    const service = vault({ streak: 6, owned: all });
+    await deal(service, "w7");
+    expect((await win(service, "w7")).chestReward).toEqual({ tier: "premium", cookies: 42, item: null, limited: false });
+  });
+
+  it("ends the streak on a loss", async () => {
+    const service = vault({ streak: 5 });
+    await deal(service, "r");
+    for (const char of ["x", "y", "z"]) await service.guess("r", char);
+    expect((await deal(service, "next")).streak).toBe(0);
+  });
+
+  it("ends the streak once for a word left half-guessed, and not again", async () => {
+    const service = vault({ streak: 3 });
+    expect((await deal(service, "first")).chest).toBe("medium");
+    await service.guess("first", "p");
+    // Off to another word with that one half-guessed: the streak is gone.
+    const second = await deal(service, "second");
+    expect([second.streak, second.chest]).toEqual([0, "normal"]);
+    // A third word is not punished for the same abandoned one.
+    await win(service, "second");
+    expect((await deal(service, "third")).streak).toBe(1);
+  });
+
+  it("keeps Hangyumi out of it: no chest, no streak", async () => {
+    const service = vault({ streak: 3 });
+    const round = (await service.start({ roundId: "h", language: "en", level: "B1", hintLanguage: "en" })) as HangyumiRound;
+    expect([round.game, round.chest, round.streak]).toEqual(["hangyumi", null, null]);
+  });
+});

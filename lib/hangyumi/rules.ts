@@ -77,6 +77,14 @@ export type HangyumiCard = {
   translations: Partial<Record<LanguageCode, { text: string; reading: HangyumiReading }>>;
 };
 
+/** The chest a Wordvault word holds: medium the fourth word in a row, premium the seventh. */
+export type ChestTier = "normal" | "medium" | "premium";
+
+/** What a finished Wordvault word's chest gave: cookies outside the 333, and a piece. */
+export type ChestReward = { tier: ChestTier; cookies: number; item: string | null; limited: boolean };
+
+export type HangyumiGame = "hangyumi" | "wordvault";
+
 export type HangyumiRound = {
   id: string;
   status: HangyumiStatus;
@@ -98,6 +106,13 @@ export type HangyumiRound = {
   answer: string | null;
   /** Only once the round is over, and only for a word whose card is written. */
   card: HangyumiCard | null;
+  game: HangyumiGame;
+  /** Wordvault: the chest this word holds. */
+  chest: ChestTier | null;
+  /** Wordvault: words won in a row before this one finished (0–6). */
+  streak: number | null;
+  /** Wordvault, once the word is over: what its chest gave. */
+  chestReward: ChestReward | null;
 };
 
 export type HangyumiPaid = { letter: number; word: number; already: boolean; capped: boolean };
@@ -151,6 +166,20 @@ function readCard(value: unknown): HangyumiCard | null {
   return { reading: readReading(row), translations };
 }
 
+const isTier = (value: unknown): value is ChestTier => value === "normal" || value === "medium" || value === "premium";
+
+function readChestReward(value: unknown): ChestReward | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  if (!isTier(row.tier)) return null;
+  return {
+    tier: row.tier,
+    cookies: count(row.cookies),
+    item: typeof row.item === "string" && row.item ? row.item : null,
+    limited: row.limited === true,
+  };
+}
+
 export function readRound(value: unknown): HangyumiRound {
   const row = (value ?? {}) as Record<string, unknown>;
   if (typeof row.id !== "string" || !isLanguage(row.language) || !isLevel(row.level)) {
@@ -184,6 +213,10 @@ export function readRound(value: unknown): HangyumiRound {
     today: readToday(row.today),
     answer: status !== "playing" && typeof row.answer === "string" ? row.answer : null,
     card: status !== "playing" ? readCard(row.card) : null,
+    game: row.game === "wordvault" ? "wordvault" : "hangyumi",
+    chest: isTier(row.chest) ? row.chest : null,
+    streak: row.streak === null || row.streak === undefined ? null : Math.min(6, count(row.streak)),
+    chestReward: status !== "playing" ? readChestReward(row.chestReward) : null,
   };
 }
 

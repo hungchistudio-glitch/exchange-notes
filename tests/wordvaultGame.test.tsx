@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HangyumiGame from "@/components/hangyumi/HangyumiGame";
 import type { HangyumiRound } from "@/lib/hangyumi/rules";
 import { createPreviewHangyumi, type HangyumiService, type PracticeWord } from "@/lib/hangyumi/service";
+import { SHOP_ITEMS } from "@/lib/shop/catalog";
+import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
 
 /* =========================================================
    Yumi Wordvault, the screen: Hangyumi's own (components/hangyumi/
@@ -24,6 +26,7 @@ vi.mock("@/components/wordvault/WordvaultStage", () => ({
   ),
 }));
 vi.mock("@/components/shop/EnergyCookie", () => ({ default: () => <span aria-hidden="true" /> }));
+vi.mock("@/components/shop/ShopThumb", () => ({ default: ({ item }: { item: { id: string } }) => <span data-testid="thumb" data-item={item.id} /> }));
 
 const WORDS: PracticeWord[] = [
   { language: "fr", level: "C1", answer: "éphémère", partOfSpeech: "adj", clues: { en: "lasting a very short time" } },
@@ -118,5 +121,30 @@ describe("a guess answered after the reader moved on", () => {
     expect(screen.getByText("honest and direct")).toBeInTheDocument();
     expect(within(screen.getByRole("group", { name: "The word" })).getAllByText("a hidden letter")).toHaveLength(6);
     expect(screen.queryByRole("button", { name: "Guess é" })).toBeNull();
+  });
+});
+
+describe("Wordvault's chests on the screen", () => {
+  it("shows the streak and the chest this word holds, and what it gave once won", async () => {
+    play(createPreviewHangyumi({ words: WORDS, delayMs: 0, streak: 3, pick: ids => ids[0] }));
+    await screen.findByText("lasting a very short time");
+    expect(screen.getByRole("img", { name: /^3 words won in a row/ })).toBeInTheDocument();
+    expect(screen.getByText("Medium chest ×2")).toBeInTheDocument();
+    for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
+    expect(await screen.findByRole("heading", { name: "The vault opens!" })).toBeInTheDocument();
+    expect(screen.getByText("+90 cookies, beyond today's 333")).toBeInTheDocument();
+    expect(screen.getByText(SHOP_ITEMS[0].names.english)).toBeInTheDocument();
+    expect(screen.getByTestId("thumb")).toHaveAttribute("data-item", SHOP_ITEMS[0].id);
+    expect(screen.getByRole("img", { name: /^4 words won in a row/ })).toBeInTheDocument();
+  });
+
+  it("names a Mythic Vault piece as one", async () => {
+    play(createPreviewHangyumi({ words: WORDS, delayMs: 0, streak: 6, pick: ids => ids[0] }));
+    await screen.findByText("lasting a very short time");
+    expect(screen.getByText("Premium chest ×3")).toBeInTheDocument();
+    for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
+    expect(await screen.findByText("+180 cookies, beyond today's 333")).toBeInTheDocument();
+    expect(screen.getByText(MYTHIC_ITEMS[0].names.english)).toBeInTheDocument();
+    expect(screen.getByText(/From the Mythic Vault/)).toBeInTheDocument();
   });
 });

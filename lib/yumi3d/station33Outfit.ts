@@ -48,12 +48,12 @@ const gold = () => brass();
 const darkMetal = () => std(0x2b3036, 0.7, 0.35);
 
 /** A ring to hang from, its top at the origin, in the X-Y plane. */
-function jumpRing(radius: number, tube: number, material: THREE.Material, y = 0) {
+export function jumpRing(radius: number, tube: number, material: THREE.Material, y = 0) {
   return mesh(new THREE.TorusGeometry(radius, tube, 10, 32), material, 0, y - radius);
 }
 
 /** A rod along points, round in section, closed at both ends. */
-function rod(points: Array<[number, number, number]>, radius: number, material: THREE.Material, closed = false) {
+export function rod(points: Array<[number, number, number]>, radius: number, material: THREE.Material, closed = false) {
   const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)), closed);
   const g = group(mesh(new THREE.TubeGeometry(curve, Math.min(160, Math.max(16, points.length * 6)), radius, 8, closed), material));
   if (!closed) {
@@ -64,7 +64,7 @@ function rod(points: Array<[number, number, number]>, radius: number, material: 
 }
 
 /** Where the top of the tube is, in the head frame, at a depth z. */
-function tubeTopAt(z: number) {
+export function tubeTopAt(z: number) {
   const c = -TUBE_RADIUS * 0.82;
   const s = Math.max(0, 1 - (z / TUBE_FRONT) ** 2);
   return c + TUBE_RADIUS * Math.sqrt(s);
@@ -76,7 +76,7 @@ function tubeTopAt(z: number) {
  * makes it touch the tube's section and go no lower. Hats then rest on
  * her instead of hovering over or sinking into her.
  */
-function restingDrop(underside: (r: number) => number) {
+export function restingDrop(underside: (r: number) => number) {
   let gap = Infinity;
   for (let i = 0; i <= 120; i += 1) {
     const z = (i / 120) * TUBE_FRONT * 0.999;
@@ -195,7 +195,7 @@ function copperPatina(kind: "colour" | "surface") {
  * cannot do this: on an acute corner its offset outline crosses itself and
  * the face loses triangles (the arrow's wing tips came out as thin lines).
  */
-function roundedPolygon(points: Array<[number, number]>, radius: number) {
+export function roundedPolygon(points: Array<[number, number]>, radius: number) {
   const s = new THREE.Shape();
   const n = points.length;
   for (let i = 0; i < n; i += 1) {
@@ -222,7 +222,7 @@ function roundedPolygon(points: Array<[number, number]>, radius: number) {
  * Not bent to the eye's curve: an extruded face has vertices only round its
  * outline, so bending it sinks the middle of the face under the eyeball.
  */
-function onEye(shape: THREE.Shape, material: THREE.Material, depth = 0.06, bevel = 0.016) {
+export function onEye(shape: THREE.Shape, material: THREE.Material, depth = 0.06, bevel = 0.016) {
   return mesh(extrude(shape, depth, bevel, 40), material, 0, 0, EYE_RADIUS * 0.97);
 }
 
@@ -263,7 +263,7 @@ export const STATION33_PUPILS: Record<string, () => THREE.Object3D> = {
 
 // ------------------------------------------------------------------ irises
 
-function irisCanvas(seed: number, draw: (ctx: CanvasRenderingContext2D, rand: () => number, R: number) => void) {
+export function irisCanvas(seed: number, draw: (ctx: CanvasRenderingContext2D, rand: () => number, R: number) => void) {
   return paint(256, 256, seed, (ctx, rand, w) => {
     ctx.save();
     ctx.translate(w / 2, w / 2);
@@ -272,7 +272,7 @@ function irisCanvas(seed: number, draw: (ctx: CanvasRenderingContext2D, rand: ()
   });
 }
 
-function ring(ctx: CanvasRenderingContext2D, r: number, width: number, colour: string, alpha = 1) {
+export function ring(ctx: CanvasRenderingContext2D, r: number, width: number, colour: string, alpha = 1) {
   ctx.globalAlpha = alpha;
   ctx.strokeStyle = colour;
   ctx.lineWidth = width;
@@ -351,7 +351,7 @@ export const STATION33_IRISES: Record<string, () => THREE.Object3D> = {
 
 // ----------------------------------------------------------------- eyewear
 
-function ovalRing(rx: number, ry: number, ix: number, iy: number) {
+export function ovalRing(rx: number, ry: number, ix: number, iy: number) {
   const s = new THREE.Shape();
   s.absellipse(0, 0, rx, ry, 0, Math.PI * 2, false, 0);
   const hole = new THREE.Path();
@@ -377,7 +377,7 @@ function octagonRing(outer: number, inner: number) {
 }
 
 /** Where the bent frame of a piece of eyewear is, at x, for a hinge. */
-const frameZ = (z: number, k: number, x: number) => z - k * x * x;
+export const frameZ = (z: number, k: number, x: number) => z - k * x * x;
 
 function buildTitaniumVisor(): THREE.Object3D {
   const titanium = std(0x8ca2b1, 0.85, 0.3, { envMapIntensity: 1.15 });
@@ -449,7 +449,7 @@ export const STATION33_EYEWEAR: Record<string, () => THREE.Object3D> = {
 // -------------------------------------------------------------------- head
 
 /** The clamp under a hat: a band all the way round the tube. */
-function tubeClamp(material: THREE.Material = darkMetal(), tube = 0.028) {
+export function tubeClamp(material: THREE.Material = darkMetal(), tube = 0.028) {
   const band = ellipseRing(TUBE_FRONT + 0.028, TUBE_RADIUS + 0.028, tube, material);
   band.rotation.y = Math.PI / 2;
   band.position.y = -TUBE_RADIUS * 0.82;
@@ -674,7 +674,7 @@ export const STATION33_NECK: Record<string, () => NeckPiece> = {
 /* Pins are worn on the front of the tube: the plate stands just clear of
    it, and two short pins go back into the shell. */
 
-function backPins(y = 0) {
+export function backPins(y = 0) {
   const metal = gold();
   return group(...[-0.1, 0.1].map(x => {
     const p = mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.16, 8), metal, x, y, -0.07);
@@ -953,7 +953,7 @@ export const STATION33_CHARM: Record<string, () => THREE.Object3D> = {
 // ---------------------------------------------------------------- earrings
 
 /** A leaf, thick, with its rib along the back. */
-function leaf(length: number, width: number, material: THREE.Material) {
+export function leaf(length: number, width: number, material: THREE.Material) {
   const s = new THREE.Shape();
   s.moveTo(0, 0);
   s.bezierCurveTo(width * 0.6, -length * 0.2, width * 0.55, -length * 0.7, 0, -length);
@@ -1036,10 +1036,10 @@ export const STATION33_EARRINGS: Record<string, () => THREE.Object3D> = {
    the eye. */
 
 /** On the front of the tube, `lift` clear of it, at `z` along it. */
-const onBrow = (z: number, lift: number): [number, number, number] => [0, TUBE_FRONT + lift, z];
+export const onBrow = (z: number, lift: number): [number, number, number] => [0, TUBE_FRONT + lift, z];
 
 /** The post from the cuff up to the piece, so it is held, not resting. */
-function browPost(material: THREE.Material, top: number) {
+export function browPost(material: THREE.Material, top: number) {
   return rod([onBrow(0, 0.03), onBrow(0, top)], 0.014, material);
 }
 
@@ -1110,7 +1110,7 @@ export const STATION33_BROW: Record<string, () => THREE.Object3D> = {
    from the stud at (−0.65, 0.25) down and back up to (0.65, 0.25); the
    pendant hangs from its lowest point. */
 
-function necklaceChain(material: THREE.Material, low = -0.12) {
+export function necklaceChain(material: THREE.Material, low = -0.12) {
   return chain([
     new THREE.Vector3(-0.65, 0.25, -0.05),
     new THREE.Vector3(-0.45, 0.02, 0.02),

@@ -24,6 +24,7 @@ const sceneOf = (round: HangyumiRound): VaultScene => ({
   misses: round.misses,
   status: round.status,
   answer: round.answer ?? "",
+  chest: round.chest,
 });
 
 /**

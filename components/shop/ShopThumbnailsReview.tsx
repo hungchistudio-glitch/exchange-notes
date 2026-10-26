@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { CULTURAL_ITEMS } from "@/lib/shop/culturalCollection";
 import { SHOP_ITEMS } from "@/lib/shop/catalog";
+import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
 
 /**
  * Renders every piece's picture with the same code the shop falls back on,
@@ -26,7 +27,8 @@ export default function ShopThumbnailsReview() {
             : collection === "station33" ? SHOP_ITEMS.filter(item => item.id.startsWith("s33-"))
               : collection === "collection03" ? SHOP_ITEMS.filter(item => item.id.startsWith("s33v3-"))
                 : collection === "collection04" ? SHOP_ITEMS.filter(item => item.id.startsWith("s33v4-"))
-                : SHOP_ITEMS;
+                  : collection === "mythic" ? MYTHIC_ITEMS
+                    : [...SHOP_ITEMS, ...MYTHIC_ITEMS];
         return renderThumbnailSet(items.map(item => item.id), 256, "image/webp", .9, () => cancelled, (done, total) => { if (!cancelled) setProgress(`${done} / ${total}`); });
       })
       .then(rendered => {
