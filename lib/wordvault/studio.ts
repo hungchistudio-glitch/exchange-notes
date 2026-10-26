@@ -18,8 +18,14 @@ import type { VaultBeat } from "./presentation";
    a low plinth. The whole set is turned into the depth, so on a phone's
    near-square stage it fills the frame instead of lying in a thin band.
 
-   Yumi is herself, in what she wears from the shop, from the first frame
-   (in Hangyumi she dresses only once freed). Each place a right letter
+   Yumi is herself, in what she wears from the shop, from the moment she
+   arrives (in Hangyumi she dresses only once freed). The set fades in
+   empty; she is dressed out of sight, her pieces compiled where no one
+   sees the cost, and only then drops from above onto her place on the
+   path, squashes, bounces once and stands, with a ring of light where she
+   landed (Chi, 2026-10-26: Hangyumi's line lowering in was smooth, and
+   Wordvault flashed in with her late). That is the first deal only; the
+   words after it walk her back instead. Each place a right letter
    fills moves her one hop along the path. A wrong letter sends a copy of
    part of her, in warm gold light, at the chest: her U, then her I, then
    her O. It strikes, bounces and lies on the floor until the round ends,
@@ -45,6 +51,13 @@ export type VaultScene = {
 };
 
 export type WordvaultStudio = {
+  /** Compiles everything on the set and draws it once; the canvas stays
+      hidden until this resolves, so that cost is never a frozen frame. */
+  ready(): Promise<void>;
+  /** Dresses her out of sight and, once her pieces are compiled, drops her
+      in (at once with `instant`, or under reduced motion). `onArrived`
+      fires as she touches the stone. Only the first call does anything. */
+  arrive(outfit: YumiOutfit | null, options?: { instant?: boolean }): void;
   /** Where the round stands, with no show: dealt, picked up, or skipped to. */
   show(scene: VaultScene, options?: { reset?: boolean }): void;
   /** Plays a guess's beats, ending where `scene` says. */
@@ -66,6 +79,13 @@ const START_X = -3.9;
 const END_X = 0.55;
 const CHEST_X = 3.35;
 const INLAYS = 9;
+const FACING = -SET_TURN + 0.18;
+/** Her C's outer radius, scaled: what a squash keeps on the stone. */
+const BOTTOM = (SHELL_RADIUS + TUBE_RADIUS) * SCALE;
+/** The arrival: the set's fade-in first, then the fall, then the landing. */
+const ENTRY_WAIT_MS = 420;
+const FALL_S = 0.62;
+const LAND_S = 0.95;
 
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const easeOut = (t: number) => 1 - (1 - t) ** 3;
@@ -74,7 +94,7 @@ const pathX = (progress: number) => START_X + (END_X - START_X) * progress;
 
 export function createWordvaultStudio(
   canvas: HTMLCanvasElement,
-  options: { reducedMotion?: boolean; onBusy?: (busy: boolean) => void } = {},
+  options: { reducedMotion?: boolean; onBusy?: (busy: boolean) => void; onArrived?: () => void } = {},
 ): WordvaultStudio | null {
   let renderer: THREE.WebGLRenderer;
   try {
@@ -83,6 +103,24 @@ export function createWordvaultStudio(
     return null;
   }
   const reduced = options.reducedMotion ?? false;
+
+  /*
+   * Shaders compiled in the background, and what must wait for them.
+   * three.js polls every material of a compileAsync until it is ready, and
+   * one disposed under it throws from that poll (lib/yumi3d/AGENTS.md); so
+   * nothing is disposed while one is in flight: a new word's letters, her
+   * pieces taken off, or the whole studio on a quick way out.
+   */
+  const compiles = new Set<Promise<unknown>>();
+  const compiling = <T>(promise: Promise<T>) => {
+    compiles.add(promise);
+    void promise.finally(() => compiles.delete(promise));
+    return promise;
+  };
+  const afterCompiles = (release: () => void) => {
+    if (compiles.size) void Promise.allSettled([...compiles]).then(release);
+    else release();
+  };
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -343,7 +381,9 @@ export function createWordvaultStudio(
   model.scale.setScalar(SCALE);
   model.position.set(START_X, STAND_Y, 0);
   /* She faces us, a little toward the chest, however the set is turned. */
-  model.rotation.y = -SET_TURN + 0.18;
+  model.rotation.y = FACING;
+  /* Not here until she arrives. */
+  model.visible = false;
   set.add(model);
   /* Her arm from the C's spine to the eye, as she stands at rest. */
   const toEye = EYE_REST.clone().sub(ARM_ROOT);
@@ -355,7 +395,10 @@ export function createWordvaultStudio(
     const mesh = object as THREE.Mesh;
     if (mesh.isMesh && mesh.material && (mesh.material as THREE.Material).visible !== false) mesh.castShadow = true;
   });
-  const rig = createOutfitRig({ model, eyeGroup, lookGroup, pupil, shellMaterial });
+  const rig = createOutfitRig({
+    model, eyeGroup, lookGroup, pupil, shellMaterial,
+    settling: () => (compiles.size ? Promise.allSettled([...compiles]) : undefined),
+  });
 
   // -------------------------------------------------- the energy copies
   /* Her U, I and O, in light: the same shapes, never her own parts. */
@@ -412,12 +455,14 @@ export function createWordvaultStudio(
   const glyphs: { mesh: THREE.Mesh; texture: THREE.CanvasTexture; material: THREE.MeshBasicMaterial }[] = [];
   const glyphGeometry = new THREE.PlaneGeometry(0.5, 0.5);
   function setGlyphs(answer: string) {
-    for (const glyph of glyphs) {
-      scene.remove(glyph.mesh);
-      glyph.texture.dispose();
-      glyph.material.dispose();
-    }
-    glyphs.length = 0;
+    const old = glyphs.splice(0);
+    for (const glyph of old) scene.remove(glyph.mesh);
+    afterCompiles(() => {
+      for (const glyph of old) {
+        glyph.texture.dispose();
+        glyph.material.dispose();
+      }
+    });
     for (const char of Array.from(answer).filter(c => c.trim()).slice(0, 18)) {
       const paper = document.createElement("canvas");
       paper.width = paper.height = 128;
@@ -438,6 +483,16 @@ export function createWordvaultStudio(
     }
   }
 
+  // --------------------------------------------------- the landing ring
+  /* Where she lands on arrival: a ring of brass light that widens and goes. */
+  const ringMaterial = new THREE.MeshBasicMaterial({
+    color: 0xd9b468, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, fog: false,
+  });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.34, 0.42, 48), ringMaterial);
+  ring.rotation.x = -Math.PI / 2;
+  ring.visible = false;
+  set.add(ring);
+
   // ------------------------------------------------------------ state
   /* What the scene shows when nothing plays. */
   let rest: VaultScene = { progress: 0, misses: 0, status: "playing", answer: "" };
@@ -449,6 +504,11 @@ export function createWordvaultStudio(
   /* Between words: the lid closes and she walks back. */
   let reset: { from: number; lid: number; started: number } | null = null;
   let busy = false;
+  /* Her arrival: asked for, then here; and the fall while it plays. */
+  let arriving = false;
+  let arrived = false;
+  let entry: { started: number; landed: boolean } | null = null;
+  let readyAt = 0;
 
   function setBusy(next: boolean) {
     if (busy === next) return;
@@ -468,6 +528,44 @@ export function createWordvaultStudio(
     model.rotation.z = lean;
   }
 
+  /*
+   * The arrival, `s` seconds in. She falls as things fall, slowly first
+   * and then fast, turning the last of a half turn into place; touches the
+   * stone squashed, springs back through a damped wobble with one small
+   * bounce, and stands. Squashed, she is shifted down by what the squash
+   * took off her height, so the bottom of her C never leaves the stone.
+   */
+  function poseEntry(s: number) {
+    const x = pathX(at);
+    if (s < FALL_S) {
+      const q = Math.max(0, s) / FALL_S;
+      model.scale.setScalar(SCALE);
+      model.rotation.y = FACING + (1 - q) ** 2 * 1.6;
+      poseYumi(x, DROP * (1 - q * q));
+      return;
+    }
+    const u = s - FALL_S;
+    const squash = 0.24 * Math.exp(-7 * u) * Math.cos(17 * u);
+    const hop = u > 0.08 && u < 0.38 ? Math.sin(Math.PI * (u - 0.08) / 0.3) * 0.2 : 0;
+    model.scale.set(SCALE * (1 + squash * 0.5), SCALE * (1 - squash), SCALE * (1 + squash * 0.5));
+    model.rotation.y = FACING;
+    poseYumi(x, hop - BOTTOM * squash);
+    const r = clamp01(u / 0.6);
+    ring.visible = r < 1;
+    ring.position.set(x, PATH_TOP + 0.012, 0);
+    ring.scale.setScalar(1 + easeOut(r) * 2.6);
+    ringMaterial.opacity = 0.7 * (1 - r);
+  }
+
+  /* The arrival, over: she stands where the round says. */
+  function endEntry() {
+    if (!entry) return;
+    const landed = entry.landed;
+    entry = null;
+    ring.visible = false;
+    if (!landed) options.onArrived?.();
+  }
+
   function poseChest(open: number) {
     hinge.rotation.x = -1.95 * open;
     inside.emissiveIntensity = 1.2 * open;
@@ -481,6 +579,9 @@ export function createWordvaultStudio(
     dress(rest.chest ?? "normal");
     at = rest.progress;
     lidOpen = rest.status === "won" ? 1 : 0;
+    model.visible = arrived;
+    model.scale.setScalar(SCALE);
+    model.rotation.y = FACING;
     poseYumi(pathX(at));
     light(at);
     poseChest(lidOpen);
@@ -607,6 +708,7 @@ export function createWordvaultStudio(
   }
 
   function finish() {
+    endEntry();
     queue = [];
     live = null;
     reset = null;
@@ -653,11 +755,23 @@ export function createWordvaultStudio(
         startNext(now);
       }
     }
+    if (entry) {
+      const s = (now - entry.started) / 1000;
+      poseEntry(s);
+      if (s >= FALL_S && !entry.landed) {
+        entry.landed = true;
+        options.onArrived?.();
+      }
+      if (s >= FALL_S + LAND_S) {
+        endEntry();
+        settle();
+      }
+    }
     if (starRing.visible) starRing.rotation.y += dt * 0.6;
     rig.sync(dt, reduced);
     renderer.render(scene, camera);
     /* The premium chest's stars keep turning while it waits. */
-    if (live || reset || (starRing.visible && !reduced)) frame = requestAnimationFrame(tick);
+    if (live || reset || entry || (starRing.visible && !reduced)) frame = requestAnimationFrame(tick);
   }
 
   function wake() {
@@ -688,6 +802,27 @@ export function createWordvaultStudio(
   /* A little low, so the set sits under the notes laid over the top of the stage. */
   bounds.center.y -= 0.2;
   const VIEW = new THREE.Vector3(0.12, 0.42, 1).normalize();
+  /* Where she falls from: above the top of the frame, however it is fitted. */
+  const DROP = bounds.radius * 1.5;
+
+  /* Every object on the set, shown for a moment, so one hidden now (the
+     key, the coins, the premium stars, her pieces) is compiled and
+     uploaded with the rest instead of on its own first frame. */
+  function showingAll<T>(work: () => T): T {
+    const hidden: THREE.Object3D[] = [];
+    const culled: THREE.Object3D[] = [];
+    scene.traverse(object => {
+      if (!object.visible) { hidden.push(object); object.visible = true; }
+      if (object.frustumCulled) { culled.push(object); object.frustumCulled = false; }
+    });
+    try {
+      return work();
+    } finally {
+      for (const object of hidden) object.visible = false;
+      for (const object of culled) object.frustumCulled = true;
+    }
+  }
+  let readyPromise: Promise<void> | null = null;
 
   const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(fit);
   observer?.observe(canvas);
@@ -697,7 +832,49 @@ export function createWordvaultStudio(
   fit();
 
   return {
+    ready() {
+      readyPromise ??= compiling(showingAll(() => renderer.compileAsync(scene, camera)))
+        .catch(() => undefined)
+        .then(() => {
+          if (disposed) return;
+          /* The first draw is where buffers and textures go up and the
+             driver finishes linking: drawn once with everything, unseen. */
+          showingAll(() => renderer.render(scene, camera));
+          render();
+          readyAt = performance.now();
+        });
+      return readyPromise;
+    },
+    arrive(outfit, { instant = false } = {}) {
+      if (arriving || disposed) return;
+      arriving = true;
+      for (const piece of rig.apply(outfit ?? {})) {
+        piece.traverse(object => { if ((object as THREE.Mesh).isMesh) object.castShadow = true; });
+      }
+      /* Dressed above the frame, where compiling her costs nothing seen. */
+      model.visible = true;
+      poseYumi(pathX(at), DROP);
+      const compiled = compiling(renderer.compileAsync(model, camera, scene)).catch(() => undefined);
+      model.visible = false;
+      void compiled.then(() => {
+        if (disposed) return;
+        showingAll(() => renderer.render(scene, camera));
+        arrived = true;
+        if (reduced || instant || live || reset) {
+          settle();
+          render();
+          options.onArrived?.();
+          return;
+        }
+        model.visible = true;
+        poseEntry(0);
+        render();
+        entry = { started: Math.max(performance.now(), readyAt + ENTRY_WAIT_MS), landed: false };
+        wake();
+      });
+    },
     show(next, { reset: walkBack = false } = {}) {
+      endEntry();
       queue = [];
       live = null;
       const before = at;
@@ -721,6 +898,7 @@ export function createWordvaultStudio(
       wake();
     },
     play(beats, next) {
+      endEntry();
       rest = next;
       if (next.answer) setGlyphs(next.answer);
       if (reduced || beats.length === 0) {
@@ -734,7 +912,7 @@ export function createWordvaultStudio(
       wake();
     },
     skip() {
-      if (live || queue.length || reset) finish();
+      if (live || queue.length || reset || entry) finish();
     },
     wear(outfit) {
       for (const piece of rig.apply(outfit ?? {})) {
@@ -749,19 +927,21 @@ export function createWordvaultStudio(
       document.removeEventListener("visibilitychange", onVisibility);
       rig.dispose();
       setGlyphs("");
-      glyphGeometry.dispose();
-      const geometries = new Set<THREE.BufferGeometry>();
-      const materials = new Set<THREE.Material>();
-      scene.traverse(object => {
-        const mesh = object as THREE.Mesh;
-        if (!mesh.isMesh) return;
-        geometries.add(mesh.geometry);
-        for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+      afterCompiles(() => {
+        glyphGeometry.dispose();
+        const geometries = new Set<THREE.BufferGeometry>();
+        const materials = new Set<THREE.Material>();
+        scene.traverse(object => {
+          const mesh = object as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          geometries.add(mesh.geometry);
+          for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+        });
+        geometries.forEach(geometry => geometry.dispose());
+        materials.forEach(material => material.dispose());
+        environment.dispose();
+        renderer.dispose();
       });
-      geometries.forEach(geometry => geometry.dispose());
-      materials.forEach(material => material.dispose());
-      environment.dispose();
-      renderer.dispose();
     },
   };
 }

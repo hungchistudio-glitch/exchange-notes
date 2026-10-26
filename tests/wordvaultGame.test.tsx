@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HangyumiGame from "@/components/hangyumi/HangyumiGame";
@@ -20,11 +20,30 @@ vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => undefined }));
 vi.mock("@/components/hangyumi/HangyumiStage", () => ({
   default: () => <div data-testid="gallows" />,
 }));
-vi.mock("@/components/wordvault/WordvaultStage", () => ({
-  default: ({ round, outfit, label }: { round: HangyumiRound | null; outfit: unknown; label: string }) => (
-    <div data-testid="vault" data-round={round?.id ?? ""} data-guessed={round?.guessed.join("") ?? ""} data-outfit={JSON.stringify(outfit)} aria-label={label} />
-  ),
-}));
+/* The studio stands in: Yumi lands as soon as she can, unless a test holds her. */
+const stage = vi.hoisted(() => ({ hold: false, land: null as null | (() => void) }));
+vi.mock("@/components/wordvault/WordvaultStage", async () => {
+  const { useEffect } = await import("react");
+  type Props = { round: HangyumiRound | null; outfit: unknown; dressed: boolean; dealt: boolean; onArrived: () => void; label: string };
+  function Stage({ round, outfit, dressed, dealt, onArrived, label }: Props) {
+    useEffect(() => {
+      stage.land = onArrived;
+      if (dealt && dressed && !stage.hold) onArrived();
+    }, [dealt, dressed, onArrived]);
+    return (
+      <div
+        data-testid="vault"
+        data-round={round?.id ?? ""}
+        data-guessed={round?.guessed.join("") ?? ""}
+        data-outfit={JSON.stringify(outfit)}
+        data-dressed={String(dressed)}
+        data-dealt={String(dealt)}
+        aria-label={label}
+      />
+    );
+  }
+  return { default: Stage };
+});
 vi.mock("@/components/shop/EnergyCookie", () => ({ default: () => <span aria-hidden="true" /> }));
 vi.mock("@/components/shop/ShopThumb", () => ({ default: ({ item }: { item: { id: string } }) => <span data-testid="thumb" data-item={item.id} /> }));
 
@@ -52,7 +71,38 @@ beforeEach(() => {
   window.localStorage.clear();
   window.localStorage.setItem("hangyumi-level", "C1");
 });
-afterEach(() => { reader.language = "english"; });
+afterEach(() => {
+  reader.language = "english";
+  stage.hold = false;
+  stage.land = null;
+});
+
+describe("Wordvault's way in", () => {
+  it("lays out the clue and the keys only once Yumi has landed, and takes no guess before", async () => {
+    stage.hold = true;
+    play();
+    await screen.findByText("lasting a very short time");
+    const page = () => document.querySelector("[data-arrival]");
+    // She is sent for once the word is dealt and her wallet has answered.
+    await waitFor(() => expect(screen.getByTestId("vault")).toHaveAttribute("data-dressed", "true"));
+    expect(screen.getByTestId("vault")).toHaveAttribute("data-dealt", "true");
+    expect(page()).toHaveAttribute("data-arrival", "waiting");
+    fireEvent.click(screen.getByRole("button", { name: "Guess z" }));
+    expect(screen.queryByRole("button", { name: "z, already guessed" })).toBeNull();
+    act(() => stage.land?.());
+    expect(page()).toHaveAttribute("data-arrival", "landing");
+    await waitFor(() => expect(page()).toHaveAttribute("data-arrival", "done"), { timeout: 2000 });
+    await guess("z");
+    expect(screen.getByRole("button", { name: "z, already guessed" })).toBeInTheDocument();
+  });
+
+  it("does not hold Hangyumi's page for an arrival", async () => {
+    const loadWallet = vi.fn(async () => ({ outfit: {}, balance: 0 }));
+    render(<HangyumiGame service={createPreviewHangyumi({ words: WORDS, delayMs: 0 })} defaultLanguage="fr" loadWallet={loadWallet} />);
+    await screen.findByText("lasting a very short time");
+    expect(document.querySelector("[data-arrival]")).toHaveAttribute("data-arrival", "done");
+  });
+});
 
 describe("Yumi Wordvault", () => {
   it("is Hangyumi's screen with its own sign, stage and words", async () => {
