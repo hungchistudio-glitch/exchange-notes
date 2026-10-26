@@ -171,6 +171,11 @@
   line-height: 1.45;
 }
 
+.bar[data-prefs="pending"] .languageKey,
+.bar[data-prefs="pending"] .levels {
+  visibility: hidden;
+}
+
 .levels {
   display: inline-flex;
   padding: 3px;
@@ -235,6 +240,42 @@
 }
 
 
+/* --------------------------------------------------------- the way in */
+
+/* On arrival only (data-entering, for the page's first second): the bar
+   settles from above, the studio, the clue and the keys rise in one after
+   another. Transforms and opacity alone, so nothing is laid out again
+   and the studio keeps its size. */
+.page[data-entering="true"] > .bar {
+  animation: hy-enter-down 460ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.page[data-entering="true"] > .stageWrap {
+  animation: hy-enter 600ms cubic-bezier(.2, .8, .2, 1) 70ms both;
+}
+
+.page[data-entering="true"] > .below {
+  animation: hy-enter 600ms cubic-bezier(.2, .8, .2, 1) 150ms both;
+}
+
+@keyframes hy-enter {
+  from { opacity: 0; transform: translateY(18px); }
+}
+
+@keyframes hy-enter-down {
+  from { opacity: 0; transform: translateY(-10px); }
+}
+
+/* Everything under the studio. A frame that is never replaced, so the
+   placeholders turning into the word do not replay the way in; a column
+   that fills the page, so the keys can still sit at its foot. */
+.below {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* ---------------------------------------------------------- the studio */
 
 /* One height per screen, set by the screen alone: nothing below it, no
@@ -257,11 +298,21 @@
 }
 
 .canvas {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
+  opacity: 0;
+  transition: opacity 520ms ease;
 }
 
+.stage[data-live="true"] .canvas {
+  opacity: 1;
+}
+
+
+/* Only where WebGL cannot run. */
 .flat {
   position: absolute;
   inset: 12% 0 8%;
@@ -903,12 +954,14 @@
   .level,
   .key,
   .piece,
-  .live {
+  .live,
+  .canvas {
     transition: none;
   }
 
   .slot[data-filled="true"],
   .levels[data-open="true"] .level[data-chosen="false"],
+  .page[data-entering="true"] > *,
   .ghostPill,
   .ghostLine,
   .queued,

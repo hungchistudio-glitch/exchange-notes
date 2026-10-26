@@ -87,6 +87,9 @@ export default function HangyumiGame({
   const [chosenLanguage, setChosenLanguage] = useState<LanguageCode | null>(null);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [levelsOpen, setLevelsOpen] = useState(false);
+  /* The page's way in: its bands rise into place once, on arrival, and
+     never again for a new word (Chi: "進入遊戲頁…加一個簡單的動畫"). */
+  const [entering, setEntering] = useState(true);
   /* The save button's state, for the round it belongs to. */
   const [saving, setSaving] = useState<{ id: string; state: "saving" | "saved" | "duplicate" | "failed" } | null>(null);
   const levelsRef = useRef<HTMLDivElement>(null);
@@ -116,17 +119,24 @@ export default function HangyumiGame({
   const roundRef = useRef<HangyumiRound | null>(null);
   const pendingRef = useRef(false);
 
-  useEffect(() => {
-    roundRef.current = round;
-  }, [round]);
+  /* The ref moves with the state, not an effect later: a key pressed the
+     moment a word appears is read against that word, not dropped. */
+  const showRound = useCallback((next: HangyumiRound | null) => {
+    roundRef.current = next;
+    setRound(next);
+  }, []);
 
-  // The level last played, once the page is in the browser.
+  // The level and language last played, once the page is in the browser.
+  // Nothing is dealt before they are read: dealing B1 first and then the
+  // saved level flashed the wrong chip and started a round for nothing.
+  const [prefsRead, setPrefsRead] = useState(false);
   useEffect(() => {
     const saved = readStorage(LEVEL_KEY);
     const savedLanguage = readStorage(LANGUAGE_KEY);
     queueMicrotask(() => {
       if (isLevel(saved)) setLevel(saved);
       if (isLanguageCode(savedLanguage)) setChosenLanguage(savedLanguage);
+      setPrefsRead(true);
     });
   }, []);
 
@@ -143,6 +153,7 @@ export default function HangyumiGame({
 
   // Deal (or pick up) the round for this language and level.
   useEffect(() => {
+    if (!prefsRead) return;
     let cancelled = false;
     const key = roundKey(learningLanguage, level);
     const id = readStorage(key) ?? newRoundId();
@@ -151,11 +162,11 @@ export default function HangyumiGame({
     service.start({ roundId: id, language: learningLanguage, level, hintLanguage }).then(started => {
       if (cancelled) return;
       if (started.status === "missing") {
-        setRound(null);
+        showRound(null);
         setPhase("missing");
         return;
       }
-      setRound(started);
+      showRound(started);
       setTodayEarned(started.today.earned);
       setPhase("ready");
       spokenRef.current = started.status === "playing" ? null : started.id;
@@ -165,7 +176,7 @@ export default function HangyumiGame({
       setPhase("error");
     });
     return () => { cancelled = true; };
-  }, [service, learningLanguage, hintLanguage, level, deal]);
+  }, [service, learningLanguage, hintLanguage, level, deal, prefsRead, showRound]);
 
   const chooseLevel = useCallback((next: HangyumiLevel) => {
     writeStorage(LEVEL_KEY, next);
@@ -236,7 +247,7 @@ export default function HangyumiGame({
     setPending(true);
     try {
       const result = await service.guess(current.id, letter);
-      setRound(result);
+      showRound(result);
       const paid = result.paid.letter + result.paid.word;
       const messages: string[] = [];
       if (paid > 0) {
@@ -258,7 +269,7 @@ export default function HangyumiGame({
       pendingRef.current = false;
       setPending(false);
     }
-  }, [service, copy, flyCookies, reducedMotion]);
+  }, [service, copy, flyCookies, reducedMotion, showRound]);
 
   const keepWord = useCallback(async () => {
     const current = roundRef.current;
@@ -277,6 +288,11 @@ export default function HangyumiGame({
       setSaving({ id: current.id, state: "failed" });
     }
   }, [saveWord]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setEntering(false), 1000);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // The difficulty folds away again on a tap anywhere else, or Escape.
   useEffect(() => {
@@ -302,6 +318,8 @@ export default function HangyumiGame({
       if (event.metaKey || event.ctrlKey || event.altKey || event.isComposing) return;
       const target = event.target;
       if (target instanceof Element && target.closest("input, textarea, [contenteditable='true']")) return;
+      // A sheet over the game (the rules, the languages) has the keyboard.
+      if (document.querySelector("[aria-modal='true']")) return;
       const current = roundRef.current;
       if (!current) return;
       if (event.key === "Enter" && current.status !== "playing") {
@@ -348,8 +366,10 @@ export default function HangyumiGame({
   const earned = todayEarned ?? round?.today.earned ?? 0;
 
   return (
-    <div className={styles.page} data-status={status}>
-      <header className={styles.bar}>
+    <div className={styles.page} data-status={status} data-entering={entering ? "true" : "false"}>
+      {/* The language and level keys wait for what was saved, so they never
+          show B1 for a moment on the way to the level last played. */}
+      <header className={styles.bar} data-prefs={prefsRead ? "read" : "pending"}>
         <Link href={backHref} className={styles.back} aria-label={copy.back} title={copy.back}>
           <ArrowLeft size={22} strokeWidth={1.9} aria-hidden="true" />
         </Link>
@@ -455,175 +475,180 @@ export default function HangyumiGame({
         </div>
       </section>
 
-      {!online && phase !== "ready" && <p className={styles.panel}>{copy.offline}</p>}
+      {/* Everything under the studio, in one frame that never changes, so
+          the way in plays on it once: the clue and keys swapping from
+          their placeholders to the word never fade in a second time. */}
+      <div className={styles.below}>
+        {!online && phase !== "ready" && <p className={styles.panel}>{copy.offline}</p>}
 
-      {/* While a word is dealt, its card and keys hold their places, so
-          nothing on the page moves between one word and the next. */}
-      {phase === "loading" && (
-        <>
-          <section className={styles.clue} aria-busy="true" aria-label={copy.loading}>
-            <div className={styles.clueHead}><span className={styles.ghostPill} /></div>
-            <p className={styles.hint}>
-              <span className={styles.ghostLine} />
-              <span className={styles.srOnly}>{copy.loading}</span>
-            </p>
+        {/* While a word is dealt, its card and keys hold their places, so
+            nothing on the page moves between one word and the next. */}
+        {phase === "loading" && (
+          <>
+            <section className={styles.clue} aria-busy="true" aria-label={copy.loading}>
+              <div className={styles.clueHead}><span className={styles.ghostPill} /></div>
+              <p className={styles.hint}>
+                <span className={styles.ghostLine} />
+                <span className={styles.srOnly}>{copy.loading}</span>
+              </p>
+              <div
+                className={styles.word}
+                data-chinese={isChinese ? "true" : "false"}
+                style={{ "--letters": ghostLetters } as React.CSSProperties}
+                aria-hidden="true"
+              >
+                {Array.from({ length: ghostLetters }, (_, index) => <span key={index} className={styles.slot} data-ghost="true" />)}
+              </div>
+            </section>
+            <div className={styles.dock} aria-hidden="true">
+              <div className={styles.keyboard} data-chinese={isChinese ? "true" : "false"}>
+                {(isChinese ? [Array.from({ length: 16 }, (_, index) => String(index))] : rows).map((row, rowIndex) => (
+                  <div key={rowIndex} className={styles.keyRow} data-accents={!isChinese && rowIndex === 3 ? "true" : "false"}>
+                    {row.map(char => <span key={char} className={styles.key} data-ghost="true">{isChinese ? "" : char}</span>)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {phase === "error" && (
+          <div className={styles.panel}>
+            <p>{failure === "closed" ? copy.closed : copy.failed}</p>
+            {failure !== "closed" && <button type="button" className={styles.secondary} onClick={() => setDeal(n => n + 1)}>{copy.retry}</button>}
+          </div>
+        )}
+
+        {phase === "missing" && (
+          <div className={styles.panel}>
+            <p>{fill(copy.missing, { level, language: languageName })}</p>
+            <p className={styles.muted}>{copy.missingNote}</p>
+            {reviewer && <Link className={styles.secondary} href={reviewHref}>{copy.review}</Link>}
+          </div>
+        )}
+
+        {phase === "ready" && round && (
+          <>
+            <section className={styles.clue} aria-label={copy.clue}>
+              <div className={styles.clueHead}>
+                <span className={styles.pos}>{copy.partsOfSpeech[round.partOfSpeech]}</span>
+                <span className={styles.rewardNote}>{fill(copy.levelRewards, { letter: round.rewards.letter, word: round.rewards.word })}</span>
+              </div>
+              <p className={styles.hint} lang={getLanguage(round.hintLanguage).htmlLang}>{round.hint}</p>
             <div
               className={styles.word}
               data-chinese={isChinese ? "true" : "false"}
-              style={{ "--letters": ghostLetters } as React.CSSProperties}
-              aria-hidden="true"
-            >
-              {Array.from({ length: ghostLetters }, (_, index) => <span key={index} className={styles.slot} data-ghost="true" />)}
-            </div>
-          </section>
-          <div className={styles.dock} aria-hidden="true">
-            <div className={styles.keyboard} data-chinese={isChinese ? "true" : "false"}>
-              {(isChinese ? [Array.from({ length: 16 }, (_, index) => String(index))] : rows).map((row, rowIndex) => (
-                <div key={rowIndex} className={styles.keyRow} data-accents={!isChinese && rowIndex === 3 ? "true" : "false"}>
-                  {row.map(char => <span key={char} className={styles.key} data-ghost="true">{isChinese ? "" : char}</span>)}
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
-      {phase === "error" && (
-        <div className={styles.panel}>
-          <p>{failure === "closed" ? copy.closed : copy.failed}</p>
-          {failure !== "closed" && <button type="button" className={styles.secondary} onClick={() => setDeal(n => n + 1)}>{copy.retry}</button>}
-        </div>
-      )}
-
-      {phase === "missing" && (
-        <div className={styles.panel}>
-          <p>{fill(copy.missing, { level, language: languageName })}</p>
-          <p className={styles.muted}>{copy.missingNote}</p>
-          {reviewer && <Link className={styles.secondary} href={reviewHref}>{copy.review}</Link>}
-        </div>
-      )}
-
-      {phase === "ready" && round && (
-        <>
-          <section className={styles.clue} aria-label={copy.clue}>
-            <div className={styles.clueHead}>
-              <span className={styles.pos}>{copy.partsOfSpeech[round.partOfSpeech]}</span>
-              <span className={styles.rewardNote}>{fill(copy.levelRewards, { letter: round.rewards.letter, word: round.rewards.word })}</span>
-            </div>
-            <p className={styles.hint} lang={getLanguage(round.hintLanguage).htmlLang}>{round.hint}</p>
-          <div
-            className={styles.word}
-            data-chinese={isChinese ? "true" : "false"}
-            style={{ "--letters": round.slots.length } as React.CSSProperties}
-            lang={getLanguage(round.language).htmlLang}
-            aria-label={copy.word}
-            role="group"
-          >
-            {round.slots.map((slot, index) => slot.letter ? (
-              <span
-                key={index}
-                className={styles.slot}
-                data-filled={slot.char ? "true" : "false"}
-                data-missed={round.status === "lost" && slot.char && !round.guessed.includes(slot.char.toLocaleLowerCase()) ? "true" : "false"}
-              >
-                {slot.char ?? <span className={styles.srOnly}>{copy.hidden}</span>}
-              </span>
-            ) : (
-              <span key={index} className={styles.gap}>{slot.char === " " ? " " : slot.char}</span>
-            ))}
-          </div>
-
-          </section>
-
-          {/* The keyboard, or once the round is over its result, held to the
-              bottom of the screen where a thumb is. */}
-          <div className={styles.dock}>
-          {round.status === "playing" ? (
-            <div
-              className={styles.keyboard}
-              data-chinese={isChinese ? "true" : "false"}
+              style={{ "--letters": round.slots.length } as React.CSSProperties}
+              lang={getLanguage(round.language).htmlLang}
+              aria-label={copy.word}
               role="group"
-              aria-label={isChinese ? copy.charactersLabel : copy.lettersLabel}
             >
-              {rows.map((row, rowIndex) => (
-                <div key={rowIndex} className={styles.keyRow} data-accents={!isChinese && rowIndex === 3 ? "true" : "false"}>
-                  {row.map(char => {
-                    const used = hits.has(char) ? "hit" : wrong.has(char) ? "miss" : "no";
-                    return (
-                      <button
-                        key={char}
-                        type="button"
-                        className={styles.key}
-                        data-hangyumi-key={char}
-                        data-used={used}
-                        disabled={used !== "no" || pending}
-                        aria-label={used === "no" ? fill(copy.guessKey, { char }) : fill(copy.usedKey, { char })}
-                        onClick={event => void guess(char, event.currentTarget.getBoundingClientRect())}
-                      >
-                        {char}
-                      </button>
-                    );
-                  })}
-                </div>
+              {round.slots.map((slot, index) => slot.letter ? (
+                <span
+                  key={index}
+                  className={styles.slot}
+                  data-filled={slot.char ? "true" : "false"}
+                  data-missed={round.status === "lost" && slot.char && !round.guessed.includes(slot.char.toLocaleLowerCase()) ? "true" : "false"}
+                >
+                  {slot.char ?? <span className={styles.srOnly}>{copy.hidden}</span>}
+                </span>
+              ) : (
+                <span key={index} className={styles.gap}>{slot.char === " " ? " " : slot.char}</span>
               ))}
             </div>
-          ) : (
-            <section className={styles.result} data-status={round.status} aria-live="polite">
-              <h2>{round.status === "won" ? copy.won : copy.lost}</h2>
-              <p className={styles.muted}>
-                {round.status === "won"
-                  ? fill(copy.wonBody, { count: round.earned })
-                  : round.earned > 0
-                    ? plural(round.earned, locale, copy.lostBodyOne, copy.lostBodyOther, { count: round.earned })
-                    : copy.lostBodyNone}
-              </p>
-              <p className={styles.answerLabel}>{copy.answer}</p>
-              <div className={styles.answerRow}>
-                <span className={styles.answer} lang={getLanguage(round.language).htmlLang}>{round.answer}</span>
-                {speechSupported() && round.answer && (
-                  <button
-                    type="button"
-                    className={styles.listen}
-                    onClick={() => speak(round.answer!, getLanguage(round.language).speechTag)}
-                    aria-label={copy.listen}
-                    title={copy.listen}
-                  >
-                    <Volume2 size={20} strokeWidth={1.9} aria-hidden="true" />
-                  </button>
-                )}
+
+            </section>
+
+            {/* The keyboard, or once the round is over its result, held to the
+                bottom of the screen where a thumb is. */}
+            <div className={styles.dock}>
+            {round.status === "playing" ? (
+              <div
+                className={styles.keyboard}
+                data-chinese={isChinese ? "true" : "false"}
+                role="group"
+                aria-label={isChinese ? copy.charactersLabel : copy.lettersLabel}
+              >
+                {rows.map((row, rowIndex) => (
+                  <div key={rowIndex} className={styles.keyRow} data-accents={!isChinese && rowIndex === 3 ? "true" : "false"}>
+                    {row.map(char => {
+                      const used = hits.has(char) ? "hit" : wrong.has(char) ? "miss" : "no";
+                      return (
+                        <button
+                          key={char}
+                          type="button"
+                          className={styles.key}
+                          data-hangyumi-key={char}
+                          data-used={used}
+                          disabled={used !== "no" || pending}
+                          aria-label={used === "no" ? fill(copy.guessKey, { char }) : fill(copy.usedKey, { char })}
+                          onClick={event => void guess(char, event.currentTarget.getBoundingClientRect())}
+                        >
+                          {char}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
-              {saveWord && (() => {
-                const state = saving?.id === round.id ? saving.state : null;
-                const kept = state === "saved" || state === "duplicate";
-                return (
-                  <>
+            ) : (
+              <section className={styles.result} data-status={round.status} aria-live="polite">
+                <h2>{round.status === "won" ? copy.won : copy.lost}</h2>
+                <p className={styles.muted}>
+                  {round.status === "won"
+                    ? fill(copy.wonBody, { count: round.earned })
+                    : round.earned > 0
+                      ? plural(round.earned, locale, copy.lostBodyOne, copy.lostBodyOther, { count: round.earned })
+                      : copy.lostBodyNone}
+                </p>
+                <p className={styles.answerLabel}>{copy.answer}</p>
+                <div className={styles.answerRow}>
+                  <span className={styles.answer} lang={getLanguage(round.language).htmlLang}>{round.answer}</span>
+                  {speechSupported() && round.answer && (
                     <button
                       type="button"
-                      className={styles.saveWord}
-                      data-kept={kept ? "true" : "false"}
-                      disabled={kept || state === "saving"}
-                      onClick={() => void keepWord()}
+                      className={styles.listen}
+                      onClick={() => speak(round.answer!, getLanguage(round.language).speechTag)}
+                      aria-label={copy.listen}
+                      title={copy.listen}
                     >
-                      {kept
-                        ? <BookmarkCheck size={18} strokeWidth={2} aria-hidden="true" />
-                        : <BookmarkPlus size={18} strokeWidth={2} aria-hidden="true" />}
-                      <span>
-                        {state === "saving" ? copy.savingWord
-                          : state === "saved" ? copy.savedWord
-                            : state === "duplicate" ? copy.alreadySaved
-                              : copy.saveWord}
-                      </span>
+                      <Volume2 size={20} strokeWidth={1.9} aria-hidden="true" />
                     </button>
-                    {state === "failed" && <p className={styles.saveError} role="alert">{copy.saveFailed}</p>}
-                  </>
-                );
-              })()}
-              <button type="button" className={styles.primary} onClick={nextWord}>{copy.next}</button>
-            </section>
-          )}
-          </div>
-        </>
-      )}
+                  )}
+                </div>
+                {saveWord && (() => {
+                  const state = saving?.id === round.id ? saving.state : null;
+                  const kept = state === "saved" || state === "duplicate";
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        className={styles.saveWord}
+                        data-kept={kept ? "true" : "false"}
+                        disabled={kept || state === "saving"}
+                        onClick={() => void keepWord()}
+                      >
+                        {kept
+                          ? <BookmarkCheck size={18} strokeWidth={2} aria-hidden="true" />
+                          : <BookmarkPlus size={18} strokeWidth={2} aria-hidden="true" />}
+                        <span>
+                          {state === "saving" ? copy.savingWord
+                            : state === "saved" ? copy.savedWord
+                              : state === "duplicate" ? copy.alreadySaved
+                                : copy.saveWord}
+                        </span>
+                      </button>
+                      {state === "failed" && <p className={styles.saveError} role="alert">{copy.saveFailed}</p>}
+                    </>
+                  );
+                })()}
+                <button type="button" className={styles.primary} onClick={nextWord}>{copy.next}</button>
+              </section>
+            )}
+            </div>
+          </>
+        )}
+      </div>
 
       <div ref={flightRef} className={styles.flight} aria-hidden="true">
         <span data-cookie-template="" className={styles.cookieTemplate}><EnergyCookie /></span>

@@ -145,6 +145,14 @@ describe("a round of Hangyumi", () => {
     expect(screen.getByText("lasting a very short time")).toBeInTheDocument();
   });
 
+  it("deals only the saved level, never B1 on the way to it", async () => {
+    const service = createPreviewHangyumi({ words: WORDS, delayMs: 0 });
+    const start = vi.spyOn(service, "start");
+    render(<HangyumiGame service={service} defaultLanguage="fr" />);
+    await screen.findByText("lasting a very short time");
+    expect(start.mock.calls.map(([input]) => input.level)).toEqual(["C1"]);
+  });
+
   it("says when a level has no approved words, and never deals another level", async () => {
     window.localStorage.setItem("hangyumi-level", "C2");
     play();
@@ -205,6 +213,17 @@ describe("a round of Hangyumi", () => {
     for (const char of ["x", "y", "z"]) await guess(char);
     fireEvent.click(await screen.findByRole("button", { name: "Save to vocabulary" }));
     expect(await screen.findByRole("button", { name: "Already in your vocabulary" })).toBeDisabled();
+  });
+
+  it("leaves the keyboard to a sheet open over the game", async () => {
+    play();
+    await screen.findByText("lasting a very short time");
+    fireEvent.click(screen.getByRole("button", { name: "How Hangyumi works" }));
+    await screen.findByRole("dialog");
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "p" }));
+    });
+    expect(screen.queryByRole("button", { name: "p, already guessed", hidden: true })).toBeNull();
   });
 
   it("guesses Chinese from a set of characters that holds the answer's", async () => {

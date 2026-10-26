@@ -18,14 +18,17 @@ type Props = {
 
 /**
  * The studio, loaded only once the page is up (three.js and every outfit
- * builder are a large download), with a flat drawing of the same pieces in
- * its place until then, and for good where WebGL is not to be had.
+ * builder are a large download). Until then the studio is empty, in its
+ * own white, and the real gallows fades in: a drawing standing in for it
+ * could never be the same shape and size, and the swap showed (Chi,
+ * 2026-10-26). The flat drawing is only for where WebGL is not to be had.
  */
 export default function HangyumiStage({ misses, status, outfit, label }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const studioRef = useRef<HangyumiStudio | null>(null);
   const poseRef = useRef({ misses, status, outfit });
   const [live, setLive] = useState(false);
+  const [failed, setFailed] = useState(false);
   const reducedMotion = useReducedMotion();
 
   useEffect(() => {
@@ -40,11 +43,14 @@ export default function HangyumiStage({ misses, status, outfit, label }: Props) 
     void import("@/lib/hangyumi/studio").then(({ createHangyumiStudio }) => {
       if (cancelled) return;
       const studio = createHangyumiStudio(canvas, { reducedMotion });
-      if (!studio) return;
+      if (!studio) {
+        setFailed(true);
+        return;
+      }
       studioRef.current = studio;
       studio.set(poseRef.current);
       setLive(true);
-    }, () => {});
+    }, () => { if (!cancelled) setFailed(true); });
     return () => {
       cancelled = true;
       studioRef.current?.dispose();
@@ -57,7 +63,7 @@ export default function HangyumiStage({ misses, status, outfit, label }: Props) 
   return (
     <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"}>
       <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
-      {!live && (
+      {failed && (
         <svg className={styles.flat} viewBox="0 0 120 120" aria-hidden="true" focusable="false">
           <path className={styles.flatGallows} d="M18 108h46M30 108V14h52M30 34l20-20" />
           <path className={styles.flatLine} d={status === "won" ? "M82 14v4" : "M82 14v22"} />

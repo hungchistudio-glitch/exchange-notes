@@ -235,7 +235,9 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   const tug = spring(320, 15);
   /* The empty line lowering from the beam for a new word. */
   const lineIn = spring(70, 8.5);
-  lineIn.x = lineIn.to = 1;
+  /* On arrival the empty line lowers from the beam too. */
+  lineIn.x = reduced ? 1 : 0;
+  lineIn.to = 1;
   const springs = [eyeIn, neckIn, bodyIn, bob, tug, lineIn];
   const settled = (s: Spring) => Math.abs(s.x - s.to) < 0.0008 && Math.abs(s.v) < 0.0008;
   const snap = (s: Spring, to: number) => { s.x = s.to = to; s.v = 0; };
@@ -595,6 +597,8 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
       if (next === 1 && !instant) velocity += index === 2 ? 0.55 : 0.2;
     });
     if (instant) eyeLanded = neckLanded = true;
+    /* Something already hangs from it: the line is there, not lowering. */
+    if (hung > 0 && lineIn.to === 1 && lineIn.x < 1) snap(lineIn, 1);
     if (status === "lost" && lostAt === null) {
       if (instant) {
         lostAt = now - (STRUGGLE_DELAY + DEATH_SECONDS) * 1000;
