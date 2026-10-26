@@ -38,7 +38,8 @@ import { p2z } from "pinyin-to-zhuyin";
  * (@pinyin-pro/data/traditional, 24 KB of that package), plus the four it
  * leaves out because each is also a Simplified character with its own
  * reading — mapped to the form whose readings Traditional text means far
- * more often, with the exceptions corrected below.
+ * more often, with the exceptions corrected below — and 車, which it
+ * simply lacks.
  */
 const SIMPLIFIED: Record<string, string> = {
   ...(traditional as Record<string, string>),
@@ -46,6 +47,9 @@ const SIMPLIFIED: Record<string, string> = {
   著: "着",
   瞭: "了",
   藉: "借",
+  // Missing from the table, and read alone pinyin-pro gives 車 its chess
+  // reading: 汽車, 火車, 車站 all came out jū (found 2026-10-26).
+  車: "车",
 };
 
 /**
@@ -76,6 +80,16 @@ const TAIWAN_CHARACTERS: Record<string, string> = {
   液: "yi4",
   髮: "fa3",
   息: "xi2",
+  // 意識, 常識, 識別, 識字, 共識: shì, where the mainland says shí.
+  識: "shi4",
+};
+
+/**
+ * A character's other reading, which a word gives it and its Taiwan
+ * reading above must leave alone: 標識 is biāo zhì, not biāo shì.
+ */
+const OTHER_READINGS: Record<string, string[]> = {
+  識: ["zhi4"],
 };
 
 /**
@@ -120,6 +134,96 @@ const TAIWAN_WORDS: Record<string, string> = {
   值得: "zhí de",
   差別: "chā bié",
   差不多: "chā bù duō",
+  // Found writing Hangyumi's word cards (2026-10-26). Taiwan's standard
+  // for the word, or pinyin-pro's mistake.
+  知識: "zhī shì",
+  標識: "biāo zhì",
+  偏好: "piān hào",
+  朝三暮四: "zhāo sān mù sì",
+  朝露: "zhāo lù",
+  豁達: "huò dá",
+  豁然: "huò rán",
+  揣摩: "chuǎi mó",
+  揣測: "chuǎi cè",
+  揣度: "chuǎi duó",
+  閒差: "xián chāi",
+  重寫: "chóng xiě",
+  重做: "chóng zuò",
+  思量: "sī liáng",
+  行家: "háng jiā",
+  車馬炮: "jū mǎ pào",
+  // 子 after a noun is neutral, but pinyin-pro knows only some of the
+  // nouns and gives the rest a full zǐ. Listed rather than ruled: 孔子,
+  // 君子, 原子, 分子, 電子, 瓜子 and 石子 are zǐ, and so are many more.
+  鞋子: "xié zi",
+  靴子: "xuē zi",
+  襪子: "wà zi",
+  褲子: "kù zi",
+  裙子: "qún zi",
+  袖子: "xiù zi",
+  領子: "lǐng zi",
+  扣子: "kòu zi",
+  釦子: "kòu zi",
+  珠子: "zhū zi",
+  梳子: "shū zi",
+  毯子: "tǎn zi",
+  墊子: "diàn zi",
+  簾子: "lián zi",
+  窗子: "chuāng zi",
+  凳子: "dèng zi",
+  梯子: "tī zi",
+  箱子: "xiāng zi",
+  袋子: "dài zi",
+  罐子: "guàn zi",
+  輪子: "lún zi",
+  旗子: "qí zi",
+  哨子: "shào zi",
+  骰子: "tóu zi",
+  刀子: "dāo zi",
+  剪子: "jiǎn zi",
+  鋸子: "jù zi",
+  錘子: "chuí zi",
+  鑷子: "niè zi",
+  耙子: "pá zi",
+  鏟子: "chǎn zi",
+  鍊子: "liàn zi",
+  起子: "qǐ zi",
+  爐子: "lú zi",
+  鍋子: "guō zi",
+  勺子: "sháo zi",
+  包子: "bāo zi",
+  餃子: "jiǎo zi",
+  粽子: "zòng zi",
+  豆子: "dòu zi",
+  桃子: "táo zi",
+  梨子: "lí zi",
+  李子: "lǐ zi",
+  橘子: "jú zi",
+  栗子: "lì zi",
+  椰子: "yē zi",
+  蝦子: "xiā zi",
+  蚊子: "wén zi",
+  蟲子: "chóng zi",
+  蠍子: "xiē zi",
+  驢子: "lǘ zi",
+  肚子: "dù zi",
+  疹子: "zhěn zi",
+  瘦子: "shòu zi",
+  傻子: "shǎ zi",
+  妻子: "qī zi",
+  村子: "cūn zi",
+  池子: "chí zi",
+  位子: "wèi zi",
+  例子: "lì zi",
+  冊子: "cè zi",
+  票子: "piào zi",
+  法子: "fǎ zi",
+  班子: "bān zi",
+  館子: "guǎn zi",
+  廚子: "chú zi",
+  戲子: "xì zi",
+  主子: "zhǔ zi",
+  陣子: "zhèn zi",
 };
 
 /** Verbs and adjectives after which 得 is the particle ˙ㄉㄜ, not ㄉㄜˊ. */
@@ -184,7 +288,7 @@ export function chineseReadings(text: string): ChineseReadings {
       const char = characters[index];
       const own = TAIWAN_CHARACTERS[char];
       /* A neutral tone stays neutral: 休息 is xiū xi, not xiū xí. */
-      if (own && !/[05]$/.test(syllable)) return own;
+      if (own && !/[05]$/.test(syllable) && !OTHER_READINGS[char]?.includes(syllable)) return own;
       /* 慢慢地, 好好地: after a doubled adjective 地 makes an adverb. */
       if (char === "地" && index >= 2 && characters[index - 1] === characters[index - 2]) {
         return "de5";

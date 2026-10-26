@@ -73,6 +73,45 @@ describe("Chinese readings, as Taiwan reads them", () => {
     }
   });
 
+  it("reads 車 as chē, and jū only on the chessboard", () => {
+    // pinyin-pro's Traditional table has no 車, and read alone it was jū.
+    for (const [word, reading] of Object.entries({
+      汽車: "qì chē", 火車: "huǒ chē", 車站: "chē zhàn", 塞車: "sāi chē", 車馬炮: "jū mǎ pào",
+    })) {
+      expect(chineseReadings(word).pinyin, word).toBe(reading);
+    }
+  });
+
+  it("reads 識 shì as Taiwan does, and keeps its zhì and its neutral tone", () => {
+    for (const [word, reading] of Object.entries({
+      意識: "yì shì", 常識: "cháng shì", 識別: "shì bié", 識字: "shì zì", 知識: "zhī shì",
+      認識: "rèn shi", 標識: "biāo zhì",
+    })) {
+      expect(chineseReadings(word).pinyin, word).toBe(reading);
+    }
+  });
+
+  it("leaves 子 neutral after the nouns pinyin-pro does not know, and zǐ where it is zǐ", () => {
+    for (const [word, reading] of Object.entries({
+      鞋子: "xié zi", 刀子: "dāo zi", 褲子: "kù zi", 包子: "bāo zi", 拉肚子: "lā dù zi", 一陣子: "yí zhèn zi",
+      孔子: "kǒng zǐ", 君子: "jūn zǐ", 電子: "diàn zǐ", 瓜子: "guā zǐ", 石子: "shí zǐ",
+    })) {
+      expect(chineseReadings(word).pinyin, word).toBe(reading);
+    }
+    expect(chineseReadings("我買了一條褲子").pinyin).toBe("wǒ mǎi le yì tiáo kù zi");
+  });
+
+  it("reads the words Hangyumi's cards found wrong", () => {
+    for (const [word, reading] of Object.entries({
+      偏好: "piān hào", 朝三暮四: "zhāo sān mù sì", 豁達: "huò dá", 揣摩: "chuǎi mó", 閒差: "xián chāi",
+      重寫: "chóng xiě", 思量: "sī liáng", 行家: "háng jiā",
+      // Their neighbours, unchanged.
+      朝代: "cháo dài", 重要: "zhòng yào", 銀行: "yín háng", 豁出去: "huō chū qù",
+    })) {
+      expect(chineseReadings(word).pinyin, word).toBe(reading);
+    }
+  });
+
   it("leaves a neutral tone neutral, and what is not Chinese alone", () => {
     expect(chineseReadings("休息").pinyin).toBe("xiū xi");
     expect(chineseReadings("T恤").zhuyin).toBe("T ㄒㄩˋ");
