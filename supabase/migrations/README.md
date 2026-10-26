@@ -156,6 +156,8 @@ let one more kind in). Tested first inside a transaction that rolled back:
 
 `20261025202916_hangyumi_canonical_by_trigger`, a few minutes later, was named
 from the version read back.
+So was `20261025222501_hangyumi_hint_follows_display_language`, the next day's
+change to the clue's language.
 
 **Seventeen renames across ten occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the

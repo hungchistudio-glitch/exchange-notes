@@ -2821,6 +2821,12 @@ export type TranslationDictionary = {
     lostBodyNone: string;
     answer: string;
     listen: string;
+    /** Saving the round's word into the reader's vocabulary. */
+    saveWord: string;
+    savingWord: string;
+    savedWord: string;
+    alreadySaved: string;
+    saveFailed: string;
     next: string;
     loading: string;
     missing: string;

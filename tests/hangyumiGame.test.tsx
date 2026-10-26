@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HangyumiGame from "@/components/hangyumi/HangyumiGame";
-import { createPreviewHangyumi, type PracticeWord } from "@/lib/hangyumi/service";
+import { createPreviewHangyumi, type PracticeWord, type SaveWord } from "@/lib/hangyumi/service";
 
 /* =========================================================
    Hangyumi, the screen
@@ -13,6 +13,8 @@ import { createPreviewHangyumi, type PracticeWord } from "@/lib/hangyumi/service
    ========================================================= */
 
 const speech = vi.hoisted(() => ({ speak: vi.fn() }));
+const reader = vi.hoisted(() => ({ language: "english" as "english" | "traditional-chinese" }));
+vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => reader.language }));
 vi.mock("@/lib/speech", () => ({ speak: speech.speak, speechSupported: () => true }));
 vi.mock("@/components/hangyumi/HangyumiStage", () => ({
   default: ({ misses, status, outfit, label }: { misses: number; status: string; outfit: unknown; label: string }) => (
@@ -27,15 +29,15 @@ const WORDS: PracticeWord[] = [
   { language: "zh-TW", level: "B1", answer: "旅行", partOfSpeech: "noun", clues: { en: "a trip for pleasure" } },
 ];
 
-function play(options: { language?: "fr" | "zh-TW"; earnedToday?: number } = {}) {
+function play(options: { language?: "fr" | "zh-TW"; earnedToday?: number; saveWord?: SaveWord } = {}) {
   const service = createPreviewHangyumi({ words: WORDS, delayMs: 0, earnedToday: options.earnedToday });
   const loadOutfit = vi.fn(async () => ({ head: "beret" }));
   render(
     <HangyumiGame
       service={service}
       defaultLanguage={options.language ?? "fr"}
-      nativeLanguage={options.language === "zh-TW" ? "en" : "zh-TW"}
       loadOutfit={loadOutfit}
+      saveWord={options.saveWord}
     />,
   );
   return { service, loadOutfit };
@@ -56,13 +58,24 @@ beforeEach(() => {
   window.localStorage.clear();
   window.localStorage.setItem("hangyumi-level", "C1");
 });
-afterEach(() => speech.speak.mockReset());
+afterEach(() => {
+  speech.speak.mockReset();
+  reader.language = "english";
+});
 
 describe("a round of Hangyumi", () => {
   it("deals a word in the level chosen, with its clue in the reader's language and no answer", async () => {
     play();
-    expect(await screen.findByText("只存在很短的時間")).toBeInTheDocument();
+    expect(await screen.findByText("lasting a very short time")).toBeInTheDocument();
+    // The difficulty is one chip until it is tapped.
+    const chip = screen.getByRole("button", { name: "Difficulty C1" });
+    expect(chip).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "Difficulty B1" })).toBeNull();
+    fireEvent.click(chip);
+    expect(screen.getAllByRole("radio")).toHaveLength(4);
     expect(screen.getByRole("radio", { name: "Difficulty C1" })).toHaveAttribute("aria-checked", "true");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("radiogroup", { name: "Difficulty" })).toBeNull();
     expect(screen.getByText("adjective")).toBeInTheDocument();
     expect(within(screen.getByRole("group", { name: "The word" })).getAllByText("a hidden letter")).toHaveLength(8);
     expect(screen.queryByText("éphémère")).toBeNull();
@@ -74,7 +87,7 @@ describe("a round of Hangyumi", () => {
 
   it("hangs a piece for each wrong guess and reveals every place a right one goes", async () => {
     play();
-    await screen.findByText("只存在很短的時間");
+    await screen.findByText("lasting a very short time");
     await guess("z");
     expect(screen.getByTestId("stage")).toHaveAttribute("data-misses", "1");
     expect(screen.getByText("2 wrong guesses left")).toBeInTheDocument();
@@ -87,7 +100,7 @@ describe("a round of Hangyumi", () => {
 
   it("frees Yumi on the last letter, dresses her, pays the bonus and says the word", async () => {
     const { loadOutfit } = play();
-    await screen.findByText("只存在很短的時間");
+    await screen.findByText("lasting a very short time");
     for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
     expect(await screen.findByRole("heading", { name: "You freed Yumi!" })).toBeInTheDocument();
     expect(screen.getByText("90 cookies this round.")).toBeInTheDocument();
@@ -103,7 +116,7 @@ describe("a round of Hangyumi", () => {
 
   it("ends on the third miss and keeps what was won", async () => {
     play();
-    await screen.findByText("只存在很短的時間");
+    await screen.findByText("lasting a very short time");
     await guess("p");
     for (const char of ["x", "y", "z"]) await guess(char);
     expect(await screen.findByRole("heading", { name: "Yumi is hung" })).toBeInTheDocument();
@@ -114,18 +127,21 @@ describe("a round of Hangyumi", () => {
 
   it("pays only what is left of today's 333", async () => {
     play({ earnedToday: 331 });
-    await screen.findByText("只存在很短的時間");
+    await screen.findByText("lasting a very short time");
     await guess("é");
     expect(await screen.findByText("Only 2 left today, so that is what it paid.")).toBeInTheDocument();
   });
 
   it("finishes the word in hand before changing level, and says so", async () => {
     play();
-    await screen.findByText("只存在很短的時間");
+    await screen.findByText("lasting a very short time");
     await guess("z");
+    fireEvent.click(screen.getByRole("button", { name: "Difficulty C1" }));
     fireEvent.click(screen.getByRole("radio", { name: "Difficulty B1" }));
     expect(screen.getByText("The next word will be B1.")).toBeInTheDocument();
-    expect(screen.getByText("只存在很短的時間")).toBeInTheDocument();
+    // Folded again, the chip shows what comes next.
+    expect(screen.getByRole("button", { name: "Difficulty B1" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("lasting a very short time")).toBeInTheDocument();
   });
 
   it("says when a level has no approved words, and never deals another level", async () => {
@@ -137,7 +153,7 @@ describe("a round of Hangyumi", () => {
 
   it("takes letters from a real keyboard too", async () => {
     play();
-    await screen.findByText("只存在很短的時間");
+    await screen.findByText("lasting a very short time");
     await act(async () => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "P" }));
     });
@@ -146,15 +162,48 @@ describe("a round of Hangyumi", () => {
 
   it("switches the language it deals in, and only that", async () => {
     play();
-    await screen.findByText("只存在很短的時間");
+    await screen.findByText("lasting a very short time");
     fireEvent.click(screen.getByRole("button", { name: "Learning language: French" }));
     fireEvent.click(await screen.findByRole("radio", { name: /中文/ }));
     expect(window.localStorage.getItem("hangyumi-language")).toBe("zh-TW");
     // Chinese at C1 has no practice word: it says so rather than falling back.
     expect(await screen.findByText(/No C1 words in .* have been approved yet\./)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Difficulty C1" }));
     fireEvent.click(screen.getByRole("radio", { name: "Difficulty B1" }));
-    // Played in the reader's own language, the clue moves to another one.
+    // The clue stays in the interface language, whatever is played.
     expect(await screen.findByText("a trip for pleasure")).toBeInTheDocument();
+  });
+
+  it("gives the clue in the app's display language", async () => {
+    reader.language = "traditional-chinese";
+    play();
+    expect(await screen.findByText("只存在很短的時間")).toBeInTheDocument();
+  });
+
+  it("keeps the finished word in the vocabulary, once", async () => {
+    const saveWord = vi.fn<SaveWord>()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce("saved");
+    play({ saveWord });
+    await screen.findByText("lasting a very short time");
+    await guess("p");
+    for (const char of ["x", "y", "z"]) await guess(char);
+    const keep = await screen.findByRole("button", { name: "Save to vocabulary" });
+    fireEvent.click(keep);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't save. Try again.");
+    fireEvent.click(screen.getByRole("button", { name: "Save to vocabulary" }));
+    expect(await screen.findByRole("button", { name: "Saved" })).toBeDisabled();
+    expect(saveWord).toHaveBeenLastCalledWith({
+      answer: "éphémère", language: "fr", partOfSpeech: "adj", hint: "lasting a very short time", hintLanguage: "en",
+    });
+  });
+
+  it("says when the word was already in the vocabulary", async () => {
+    play({ saveWord: vi.fn<SaveWord>(async () => "duplicate") });
+    await screen.findByText("lasting a very short time");
+    for (const char of ["x", "y", "z"]) await guess(char);
+    fireEvent.click(await screen.findByRole("button", { name: "Save to vocabulary" }));
+    expect(await screen.findByRole("button", { name: "Already in your vocabulary" })).toBeDisabled();
   });
 
   it("guesses Chinese from a set of characters that holds the answer's", async () => {
