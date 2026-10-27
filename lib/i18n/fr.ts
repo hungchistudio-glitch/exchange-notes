@@ -2759,6 +2759,7 @@ const french: TranslationDictionary = {
     stop: "Arrêter",
     soundFailed: "Le son n'a pas été joué. Réessayez.",
     nextLevel: "Le prochain mot sera {level}.",
+    nextLanguage: "Le prochain mot sera en {language}.",
     clue: "Indice",
     partsOfSpeech: { noun: "nom", verb: "verbe", adj: "adjectif", adv: "adverbe", idiom: "expression" },
     word: "Le mot",

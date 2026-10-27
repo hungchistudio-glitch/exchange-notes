@@ -210,6 +210,14 @@ export function createPreviewHangyumi(options: {
       await settle();
       const existing = rounds.get(roundId);
       if (existing) return state(existing);
+      /* The server's rules: a word of this game, language and level still
+         in play (dealt on another device) goes on, rather than a new one. */
+      const inPlay = [...rounds.values()].reverse().find(r =>
+        r.game === game && r.status === "playing" && r.word.language === language && r.word.level === level);
+      if (inPlay) {
+        inPlay.hintLanguage = hintLanguage;
+        return state(inPlay);
+      }
       const choices = words.filter(word => word.language === language && word.level === level);
       if (!choices.length) return { status: "missing", language, level };
       const word = choices[turn++ % choices.length];

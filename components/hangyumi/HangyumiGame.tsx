@@ -154,6 +154,11 @@ export default function HangyumiGame({
 
   const [level, setLevel] = useState<HangyumiLevel>("B1");
   const [queuedLevel, setQueuedLevel] = useState<HangyumiLevel | null>(null);
+  /* A language picked while a word is being guessed waits for it, as a
+     level does: switching at once left the word half-guessed, and in
+     Wordvault that ended the streak without a word of warning (Chi,
+     2026-10-26: "跟換難度一樣等答完"). */
+  const [queuedLanguage, setQueuedLanguage] = useState<LanguageCode | null>(null);
   const [phase, setPhase] = useState<Phase>("loading");
   const [failure, setFailure] = useState<"failed" | "closed">("failed");
   const [round, setRound] = useState<HangyumiRound | null>(null);
@@ -251,6 +256,9 @@ export default function HangyumiGame({
         setPhase("missing");
         return;
       }
+      /* The server went on with a word already in play here (dealt on
+         another device): this device follows that round from now on. */
+      if (started.id !== id) writeStorage(key, started.id);
       showRound(started);
       setTodayEarned(started.today.earned);
       setPhase("ready");
@@ -274,7 +282,7 @@ export default function HangyumiGame({
     setLevel(next);
   }, [level]);
 
-  const chooseLanguage = useCallback((next: LanguageCode) => {
+  const applyLanguage = useCallback((next: LanguageCode) => {
     if (next === appLanguageRef.current) {
       removeStorage(LANGUAGE_KEY);
       removeStorage(LANGUAGE_BASE_KEY);
@@ -284,17 +292,32 @@ export default function HangyumiGame({
       writeStorage(LANGUAGE_BASE_KEY, appLanguageRef.current);
       setChosenLanguage(next);
     }
-    setQueuedLevel(null);
-    setLanguageOpen(false);
   }, []);
+
+  const chooseLanguage = useCallback((next: LanguageCode) => {
+    setLanguageOpen(false);
+    const current = roundRef.current;
+    // A word already being guessed is finished first; the bar says what comes next.
+    if (current && current.status === "playing" && current.guessed.length > 0) {
+      setQueuedLanguage(next === current.language ? null : next);
+      return;
+    }
+    setQueuedLanguage(null);
+    setQueuedLevel(null);
+    applyLanguage(next);
+  }, [applyLanguage]);
 
   const nextWord = useCallback(() => {
     const nextLevel = queuedLevel ?? level;
     writeStorage(roundKey(game, learningLanguage, nextLevel), newRoundId());
     setQueuedLevel(null);
     setLevel(nextLevel);
+    if (queuedLanguage) {
+      setQueuedLanguage(null);
+      applyLanguage(queuedLanguage);
+    }
     setDeal(n => n + 1);
-  }, [queuedLevel, level, learningLanguage, game]);
+  }, [queuedLevel, queuedLanguage, level, learningLanguage, game, applyLanguage]);
 
   const flyCookies = useCallback((from: DOMRect | null, amount: number) => {
     const layer = flightRef.current;
@@ -531,6 +554,8 @@ export default function HangyumiGame({
   }, [round, gloss?.id, glossLanguage, translate]);
 
   const languageName = getLanguageName(learningLanguage, interfaceLanguage);
+  /* What the language key shows: the next word's, as the level key does. */
+  const shownLanguage = queuedLanguage ?? learningLanguage;
   const shownLevel = queuedLevel ?? level;
   const isChinese = learningLanguage === "zh-TW";
   const hits = useMemo(() => new Set(round?.guessed.filter(g => !round.wrong.includes(g)) ?? []), [round]);
@@ -592,7 +617,7 @@ export default function HangyumiGame({
           title={fill(copy.language, { language: languageName })}
         >
           <Globe size={16} strokeWidth={1.8} aria-hidden="true" />
-          <span>{getLanguage(learningLanguage).badge}</span>
+          <span>{getLanguage(shownLanguage).badge}</span>
         </button>
         {/* The difficulty, as one chip; a tap opens the others out to its
             left (Chi), a choice or a tap elsewhere folds them away. */}
@@ -713,6 +738,7 @@ export default function HangyumiGame({
         {/* Notices over the studio, never rows of their own: what comes next,
             and what was just paid. */}
         <div className={styles.notices}>
+          {queuedLanguage && <p className={styles.queued}>{fill(copy.nextLanguage, { language: getLanguageName(queuedLanguage, interfaceLanguage) })}</p>}
           {queuedLevel && <p className={styles.queued}>{fill(copy.nextLevel, { level: queuedLevel })}</p>}
           <p className={styles.live} aria-live="polite" data-shown={notice.text ? "true" : "false"} data-run={notice.run % 2 ? "a" : "b"}>{notice.text}</p>
         </div>
@@ -950,7 +976,7 @@ export default function HangyumiGame({
               key={code}
               type="button"
               role="radio"
-              aria-checked={code === learningLanguage}
+              aria-checked={code === shownLanguage}
               className={styles.languageChoice}
               onClick={() => chooseLanguage(code)}
             >
@@ -959,7 +985,7 @@ export default function HangyumiGame({
                 <strong lang={getLanguage(code).htmlLang}>{getLanguage(code).endonym}</strong>
                 <small>{getLanguageName(code, interfaceLanguage)}</small>
               </span>
-              {code === learningLanguage && <Check size={18} strokeWidth={2.2} aria-hidden="true" />}
+              {code === shownLanguage && <Check size={18} strokeWidth={2.2} aria-hidden="true" />}
             </button>
           ))}
         </div>

@@ -2759,6 +2759,7 @@ const italian: TranslationDictionary = {
     stop: "Ferma",
     soundFailed: "Il suono non è partito. Riprova.",
     nextLevel: "La prossima parola sarà {level}.",
+    nextLanguage: "La prossima parola sarà in {language}.",
     clue: "Indizio",
     partsOfSpeech: { noun: "sostantivo", verb: "verbo", adj: "aggettivo", adv: "avverbio", idiom: "modo di dire" },
     word: "La parola",

@@ -797,6 +797,12 @@
   pointer-events: none;
 }
 
+/* Wordvault's corner holds two rows, the streak and then what the round
+   has paid, and a notice at Hangyumi's height sat over the second. */
+.stageWrap:has(.stage[data-game="wordvault"]) .notices {
+  top: 5rem;
+}
+
 .queued {
   margin: 0;
   padding: 5px 12px;

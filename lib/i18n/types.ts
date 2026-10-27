@@ -2810,6 +2810,7 @@ export type TranslationDictionary = {
     stop: string;
     soundFailed: string;
     nextLevel: string;
+    nextLanguage: string;
     clue: string;
     partsOfSpeech: { noun: string; verb: string; adj: string; adv: string; idiom: string };
     word: string;

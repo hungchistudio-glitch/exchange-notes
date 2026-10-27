@@ -2913,6 +2913,7 @@ const traditionalChinese: TranslationDictionary = {
     stop: "停止",
     soundFailed: "沒有播放出聲音，請再試一次。",
     nextLevel: "下一個單字會是 {level}。",
+    nextLanguage: "下一個單字會換成{language}。",
     clue: "提示",
     partsOfSpeech: { noun: "名詞", verb: "動詞", adj: "形容詞", adv: "副詞", idiom: "成語" },
     word: "單字",

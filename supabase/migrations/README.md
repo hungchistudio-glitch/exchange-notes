@@ -176,7 +176,15 @@ before the merge (Chi: "我授權你用 Supabase 套用"). It replaces
 | --- | --- |
 | `20261027000000_wordvault_chest_full_worth` | `20261026232328` |
 
-**Nineteen renames across twelve occasions now. `apply_migration` always stamps its
+On 2026-10-27 a word in play going on on any device, applied before the
+merge (Chi: "我授權你用 Supabase 套用"). It replaces the five-argument
+`private.hangyumi_start` with the same arguments and the same answer:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261027010000_hangyumi_resume_word_in_play` | `20261027000724` |
+
+**Twenty renames across thirteen occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 
