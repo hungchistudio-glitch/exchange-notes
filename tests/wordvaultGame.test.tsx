@@ -150,6 +150,45 @@ describe("Yumi Wordvault", () => {
   });
 });
 
+describe("a language picked in the middle of a word", () => {
+  it("waits for the word, as a level does, so the streak is never lost by switching", async () => {
+    play();
+    await screen.findByText("lasting a very short time");
+    await guess("é");
+    fireEvent.click(screen.getByRole("button", { name: "Learning language: French" }));
+    fireEvent.click(await screen.findByRole("radio", { name: /English/ }));
+    // Still the French word, with what comes next said over the studio.
+    expect(screen.getByText("lasting a very short time")).toBeInTheDocument();
+    expect(screen.getByText("The next word will be in English.")).toBeInTheDocument();
+    for (const char of ["p", "h", "m", "è", "r", "e"]) await guess(char);
+    fireEvent.click(await screen.findByRole("button", { name: /Next word/ }));
+    expect(await screen.findByText("honest and direct")).toBeInTheDocument();
+    expect(screen.queryByText("The next word will be in English.")).toBeNull();
+  });
+
+  it("switches at once when no letter has been guessed yet", async () => {
+    play();
+    await screen.findByText("lasting a very short time");
+    fireEvent.click(screen.getByRole("button", { name: "Learning language: French" }));
+    fireEvent.click(await screen.findByRole("radio", { name: /English/ }));
+    expect(await screen.findByText("honest and direct")).toBeInTheDocument();
+  });
+});
+
+describe("a word in play on another device", () => {
+  it("is picked up here, and this device keeps its round from then on", async () => {
+    const service = createPreviewHangyumi({ words: WORDS, delayMs: 0 });
+    // Dealt and half-guessed on the phone; this device has never seen it.
+    await service.start({ roundId: "the-phone-round", language: "fr", level: "C1", hintLanguage: "en", game: "wordvault" });
+    await service.guess("the-phone-round", "é");
+    play(service);
+    await screen.findByText("lasting a very short time");
+    await waitFor(() => expect(screen.getByTestId("vault")).toHaveAttribute("data-round", "the-phone-round"));
+    expect(screen.getByTestId("vault")).toHaveAttribute("data-guessed", "é");
+    expect(window.localStorage.getItem("wordvault-round:fr:C1")).toBe("the-phone-round");
+  });
+});
+
 describe("a guess answered after the reader moved on", () => {
   it("never replaces the new language's word with the old one's", async () => {
     const base = createPreviewHangyumi({ words: WORDS, delayMs: 0 });

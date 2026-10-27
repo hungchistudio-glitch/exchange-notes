@@ -15,8 +15,8 @@ import { VAULT_PIECES, plan, progress } from "@/lib/wordvault/presentation";
    ========================================================= */
 
 const word: PracticeWord = { language: "en", level: "B1", answer: "apple", partOfSpeech: "noun", clues: { en: "a fruit" } };
-const start = async (service: ReturnType<typeof createPreviewHangyumi>, id: string) =>
-  (await service.start({ roundId: id, language: "en", level: "B1", hintLanguage: "en" })) as HangyumiRound;
+const start = async (service: ReturnType<typeof createPreviewHangyumi>, id: string, game: "hangyumi" | "wordvault" = "hangyumi") =>
+  (await service.start({ roundId: id, language: "en", level: "B1", hintLanguage: "en", game })) as HangyumiRound;
 
 describe("Wordvault's rounds", () => {
   it("sends the copies out U, I, O, where Hangyumi hangs O, I, U", () => {
@@ -37,7 +37,7 @@ describe("Wordvault's rounds", () => {
   it("shares today's 333 with Hangyumi, and a word pays once in either game", async () => {
     const service = createPreviewHangyumi({ words: [word], delayMs: 0, earnedToday: 330 });
     await start(service, "hangyumi");
-    await start(service, "wordvault");
+    await start(service, "wordvault", "wordvault");
     expect((await service.guess("hangyumi", "p")).paid.letter).toBe(3);
     expect((await service.guess("wordvault", "p")).paid.letter).toBe(0);
     expect((await service.guess("wordvault", "a")).paid.letter).toBe(0);
@@ -47,7 +47,7 @@ describe("Wordvault's rounds", () => {
   it("pays a word's letter once between the games, under the cap too", async () => {
     const service = createPreviewHangyumi({ words: [word], delayMs: 0 });
     await start(service, "hang");
-    await start(service, "vault");
+    await start(service, "vault", "wordvault");
     await service.guess("hang", "p");
     expect((await service.guess("vault", "p")).paid.already).toBe(true);
   });
@@ -89,8 +89,8 @@ describe("Wordvault's rounds", () => {
 describe("Wordvault's chests (the server's rules, as the preview plays them)", () => {
   const vault = (options: Parameters<typeof createPreviewHangyumi>[0] = {}) =>
     createPreviewHangyumi({ words: [word], delayMs: 0, pick: ids => ids[0], ...options });
-  const deal = async (service: ReturnType<typeof createPreviewHangyumi>, id: string) =>
-    (await service.start({ roundId: id, language: "en", level: "B1", hintLanguage: "en", game: "wordvault" })) as HangyumiRound;
+  const deal = async (service: ReturnType<typeof createPreviewHangyumi>, id: string, level: "B1" | "B2" = "B1") =>
+    (await service.start({ roundId: id, language: "en", level, hintLanguage: "en", game: "wordvault" })) as HangyumiRound;
   const win = async (service: ReturnType<typeof createPreviewHangyumi>, id: string) => {
     let result;
     for (const char of ["a", "p", "l", "e"]) result = await service.guess(id, char);
@@ -149,15 +149,25 @@ describe("Wordvault's chests (the server's rules, as the preview plays them)", (
   });
 
   it("ends the streak once for a word left half-guessed, and not again", async () => {
-    const service = vault({ streak: 3 });
+    const pale: PracticeWord = { ...word, level: "B2", answer: "pale" };
+    const service = vault({ streak: 3, words: [word, pale] });
     expect((await deal(service, "first")).chest).toBe("medium");
     await service.guess("first", "p");
-    // Off to another word with that one half-guessed: the streak is gone.
-    const second = await deal(service, "second");
+    // Off to a word at another level with that one half-guessed: the streak is gone.
+    const second = await deal(service, "second", "B2");
     expect([second.streak, second.chest]).toEqual([0, "normal"]);
     // A third word is not punished for the same abandoned one.
     await win(service, "second");
-    expect((await deal(service, "third")).streak).toBe(1);
+    expect((await deal(service, "third", "B2")).streak).toBe(1);
+  });
+
+  it("goes on with a word already in play, dealt on another device, and keeps the streak", async () => {
+    // Chi, 2026-10-26: "接續同一個字". Each device keeps its own round id.
+    const service = vault({ streak: 3 });
+    expect((await deal(service, "phone")).chest).toBe("medium");
+    await service.guess("phone", "p");
+    const tablet = await deal(service, "tablet");
+    expect([tablet.id, tablet.guessed, tablet.streak, tablet.chest]).toEqual(["phone", ["p"], 3, "medium"]);
   });
 
   it("keeps Hangyumi out of it: no chest, no streak", async () => {

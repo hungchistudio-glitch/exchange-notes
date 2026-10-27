@@ -2957,6 +2957,7 @@ const english: TranslationDictionary = {
     stop: "Stop",
     soundFailed: "The sound didn't play. Try again.",
     nextLevel: "The next word will be {level}.",
+    nextLanguage: "The next word will be in {language}.",
     clue: "Clue",
     partsOfSpeech: { noun: "noun", verb: "verb", adj: "adjective", adv: "adverb", idiom: "idiom" },
     word: "The word",

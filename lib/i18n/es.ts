@@ -2953,6 +2953,7 @@ const spanish: TranslationDictionary = {
     stop: "Detener",
     soundFailed: "No se ha oído el sonido. Inténtalo de nuevo.",
     nextLevel: "La próxima palabra será {level}.",
+    nextLanguage: "La próxima palabra será en {language}.",
     clue: "Pista",
     partsOfSpeech: { noun: "sustantivo", verb: "verbo", adj: "adjetivo", adv: "adverbio", idiom: "modismo" },
     word: "La palabra",
