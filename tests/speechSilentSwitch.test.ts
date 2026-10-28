@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { speakText } from "@/lib/pronunciation/playback";
+import { unlockSounds } from "@/lib/hangyumi/sounds";
 import { isAppleTouchDevice, speak } from "@/lib/speech";
 
 /* =========================================================
@@ -69,6 +70,19 @@ describe("on an iPhone or iPad", () => {
   it("counts an iPad that reports itself as a Mac", () => {
     asDevice(MAC, 5);
     expect(isAppleTouchDevice()).toBe(true);
+  });
+});
+
+describe("the games' sound effects", () => {
+  it("keep to the silent switch after a word is spoken: the next tap is ambient again", () => {
+    // Chi, 2026-10-28: words are heard on silent, the games' effects are not.
+    asDevice(IPHONE, 5);
+    window.localStorage.removeItem("hangyumi-sound");
+    vi.stubGlobal("AudioContext", class { state = "running"; resume() { return Promise.resolve(); } });
+    speak("library", "en-US");
+    expect((navigator as AudioSessionNavigator).audioSession.type).toBe("playback");
+    unlockSounds();
+    expect((navigator as AudioSessionNavigator).audioSession.type).toBe("ambient");
   });
 });
 
