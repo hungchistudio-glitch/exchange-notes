@@ -1,14 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { cleanOutfit, shopItem, type YumiOutfit } from "./catalog";
+import { isMythic } from "./mythicCollection";
 
 /* =========================================================
    Energy cookies, and what they have bought
 
    Cookies come from one ledger on the server (lib/shop/energy.ts for the
    rules, supabase/migrations/*_yumi_energy_ledger.sql for the ledger): the
-   first save of a word, a review round passed in full, and one day paid
-   supply. Nothing in the browser can write to it, so a balance cannot be
+   first save of a word, a review round passed in full, Hangyumi's letters
+   (lib/hangyumi), and one day paid supply. Nothing in the browser can write to it, so a balance cannot be
    raised by writing a number, and nothing earned is taken back when a word
    is deleted. A purchase never touches a word, a review or Yumi's feeding.
 
@@ -23,6 +24,8 @@ export type WardrobeState = {
   earned: number;
   /** From paid energy supply; kept apart so it can never pass for learning. */
   paid: number;
+  /** From Hangyumi; a game, so it is not learning either. */
+  game: number;
   spent: number;
   balance: number;
   owned: string[];
@@ -59,6 +62,7 @@ function readState(value: unknown): WardrobeState {
   return {
     earned: number("earned"),
     paid: number("paid"),
+    game: number("game"),
     spent: number("spent"),
     balance: number("balance"),
     owned,
@@ -104,9 +108,9 @@ export function createSupabaseWallet(supabase: SupabaseClient): ShopWallet {
  * The review screen's wallet: the same rules, in memory, so the whole flow
  * can be tried without an account and without touching anyone's cookies.
  */
-export function createPreviewWallet(startingBalance = 240): ShopWallet {
+export function createPreviewWallet(startingBalance = 240, startOwned: readonly string[] = []): ShopWallet {
   let state: WardrobeState = {
-    earned: startingBalance, paid: 0, spent: 0, balance: startingBalance, owned: [], outfit: {},
+    earned: startingBalance, paid: 0, game: 0, spent: 0, balance: startingBalance, owned: [...startOwned], outfit: {},
   };
   const settle = () => new Promise(resolve => setTimeout(resolve, 260));
 
@@ -118,7 +122,8 @@ export function createPreviewWallet(startingBalance = 240): ShopWallet {
     async buy(itemId) {
       await settle();
       const item = shopItem(itemId);
-      if (!item) throw new Error("Unknown item.");
+      /* The vault's pieces are won, never sold: the database refuses them too. */
+      if (!item || isMythic(itemId)) throw new Error("Unknown item.");
       if (state.owned.includes(itemId)) return { status: "owned", state };
       if (state.balance < item.price) return { status: "insufficient", state };
       state = {

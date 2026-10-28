@@ -115,7 +115,7 @@ export default function YumiDecodeCard({
           type="button"
           onClick={onClose}
           aria-label={copy.close}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+          className="hit-44 relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
           style={{ color: "var(--msg-ink-faint)" }}
         >
           <X size={16} strokeWidth={2} />
@@ -148,7 +148,7 @@ export default function YumiDecodeCard({
                   {phrase.phrase}
                 </span>
                 <span
-                  className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
+                  className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
                   style={{ color: "var(--msg-ink-faint)" }}
                 >
                   {typeLabel[phrase.phraseType]}
@@ -229,7 +229,7 @@ export default function YumiDecodeCard({
           style={{ borderColor: "var(--msg-line)" }}
         >
           <span
-            className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
+            className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
             style={{ color: "var(--msg-ink-faint)" }}
           >
             {copy.tone}

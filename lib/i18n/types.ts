@@ -416,6 +416,9 @@ export type TranslationDictionary = {
     loading: string;
     error: string;
     clearField: string;
+    /** A long text cut to a few lines, and the key that shows all of it. */
+    showFullText: string;
+    showLess: string;
   };
 
   /** The sheet every "send to a partner" flow opens to pick a friend. */
@@ -1287,6 +1290,12 @@ export type TranslationDictionary = {
     };
 
     /**
+     * The other readings of a headword (components/pronunciation/OtherReadings).
+     * summary: {count}; summaryCharacter: {character}, {count}; play: {example}.
+     */
+    heteronyms: { summary: string; summaryCharacter: string; show: string; hide: string; usedHere: string; play: string; suggested: string };
+
+    /**
      * The Pronunciation Lab.
      *
      * Chrome only — every string here names a control, a state or a heading.
@@ -1337,6 +1346,11 @@ export type TranslationDictionary = {
         vowel: { close: string; mid: string; open: string; front: string; central: string; back: string };
         notes: { unaspirated: string; aspirated: string; voicedClosure: string; voiced: string; voiceless: string; geminate: string; longVowel: string; shortVowel: string; reduced: string; rounded: string; spread: string; nasalVowel: string; nasalAir: string; lateral: string; noTouch: string; retroflexTip: string; apical: string; dentalTip: string; uvular: string; glide: string; tapOnce: string; trillRelax: string; glottalStop: string; linked: string; finalStop: string; stressed: string; tone1: string; tone2: string; tone3: string; tone4: string; tone5: string; halfThird: string; sandhi: string };
       };
+      /**
+       * The Lab's one-spelling-several-readings module (ReadingsModule).
+       * correct, incorrect: {example}; result: {correct}, {total}; count: {count}.
+       */
+      readings: { title: string; subtitle: string; compare: string; quiz: string; playAll: string; question: string; listenAgain: string; correct: string; incorrect: string; next: string; result: string; again: string; empty: string; count: string };
 
       modules: {
         sounds: { title: string; description: string };
@@ -1345,6 +1359,7 @@ export type TranslationDictionary = {
         words: { title: string; description: string };
         rhythm: { title: string; description: string };
         review: { title: string; description: string };
+        readings: { title: string; description: string };
       };
 
       today: {
@@ -1584,6 +1599,8 @@ export type TranslationDictionary = {
     muted: string;
     muteConversation: string;
     unmuteConversation: string;
+    /** On a conversation row whose other person is no longer a friend. */
+    historyOnlyTag: string;
     noConversationsFound: string;
     typingIndicator: string;
     statusSent: string;
@@ -2653,6 +2670,17 @@ export type TranslationDictionary = {
     cookiesOne: string;
     cookiesOther: string;
     howEarned: string;
+    /** The Mythic Vault: 33 limited pieces, only from Wordvault's premium chest. */
+    vault: {
+      title: string;
+      note: string;
+      /** {count} owned of {total}. */
+      collected: string;
+      locked: string;
+      /** Said when a locked piece is tapped: where it is found. */
+      hint: string;
+      limited: string;
+    };
     stage: string;
     hint: string;
     views: string;
@@ -2706,6 +2734,9 @@ export type TranslationDictionary = {
       howTitle: string;
       ruleSave: string;
       ruleReview: string;
+      /** Hangyumi's own line: what it has paid, and how (+3 to +12 a letter, at most 333 a day). */
+      fromGame: string;
+      ruleGame: string;
       packsTitle: string;
       rate: string;
       story: string;
@@ -2734,10 +2765,173 @@ export type TranslationDictionary = {
     browse: {
       all: string; shopView: string; wardrobe: string; filters: string; country: string; collection: string; ownedOnly: string;
       clear: string; saving: string; autoSave: string; notWorn: string;
+      /** Collection 04's shelf; {count} in seeAll is a number of pieces. clearNew leaves the new arrivals. */
+      newArrivals: string; newArrivalsNote: string; seeAll: string; clearNew: string;
+      /** The filter sheet. {count} is a number of pieces; {filter} a choice's label. */
+      refine: {
+        sort: string; sorts: { recommended: string; priceLow: string; priceHigh: string; newest: string };
+        price: string;
+        ownership: string; ownerships: { unowned: string; owned: string; affordable: string };
+        colour: string; colourNote: string;
+        colours: { gold: string; red: string; violet: string; green: string; blue: string; neutral: string };
+        origin: string;
+        showOne: string; showOther: string; none: string; reset: string; remove: string;
+      };
       departments: { eyes: string; eyewear: string; earrings: string; brow: string; necklace: string; head: string; neck: string; pin: string; mouth: string; charm: string; material: string };
     };
     categories: { featured: string; jewelry: string; eyes: string; materials: string; wear: string; small: string; owned: string };
     countries: { all: string; basic: string; tw: string; us: string; fr: string; it: string; es: string };
+  };
+
+  /**
+   * Hangyumi, Hangman with Yumi (lib/hangyumi). {level}: B1–C2. {count}: a
+   * number. {letter} and {word}: cookies a letter and for the word.
+   * {earned} and {cap}: today's cookies and the daily 333. {language}: a
+   * learning language's name in the interface language. {char}: one letter.
+   */
+  hangyumi: {
+    title: string;
+    open: string;
+    back: string;
+    /** The rules sheet's switch for the game's sound effects. */
+    sound: string;
+    /** The game's own learning-language key: {language} is the language's name. */
+    language: string;
+    languageTitle: string;
+    languageNote: string;
+    level: string;
+    levelChoice: string;
+    /** The cookies there are to spend, and today's share of the 333. */
+    balance: string;
+    /** The level's rewards, beside a cookie: a letter (a character in Chinese), the word. */
+    rewardLetter: string;
+    rewardChar: string;
+    rewardWord: string;
+    stop: string;
+    soundFailed: string;
+    nextLevel: string;
+    nextLanguage: string;
+    clue: string;
+    partsOfSpeech: { noun: string; verb: string; adj: string; adv: string; idiom: string };
+    word: string;
+    hidden: string;
+    lettersLabel: string;
+    charactersLabel: string;
+    guessKey: string;
+    usedKey: string;
+    missesLeftOne: string;
+    missesLeftOther: string;
+    pieces: { eye: string; arm: string; body: string };
+    nextPiece: string;
+    studio: string;
+    studioWon: string;
+    studioLost: string;
+    today: string;
+    todayLabel: string;
+    roundEarned: string;
+    letterPaid: string;
+    wordPaid: string;
+    alreadyPaid: string;
+    capped: string;
+    capReached: string;
+    won: string;
+    wonBody: string;
+    lost: string;
+    lostBodyOne: string;
+    lostBodyOther: string;
+    lostBodyNone: string;
+    answer: string;
+    listen: string;
+    /** Saving the round's word into the reader's vocabulary. */
+    saveWord: string;
+    savingWord: string;
+    savedWord: string;
+    alreadySaved: string;
+    saveFailed: string;
+    next: string;
+    loading: string;
+    missing: string;
+    missingNote: string;
+    review: string;
+    failed: string;
+    retry: string;
+    offline: string;
+    closed: string;
+    rulesTitle: string;
+    rules: { letters: string; misses: string; cap: string; learning: string; accents: string };
+    close: string;
+    reviewPage: {
+      title: string;
+      intro: string;
+      onlyReviewers: string;
+      counts: string;
+      missingCell: string;
+      complete: string;
+      approve: string;
+      reject: string;
+      undo: string;
+      approveAll: string;
+      statuses: { draft: string; approved: string; rejected: string };
+      source: string;
+      clues: string;
+      saving: string;
+      failed: string;
+      play: string;
+    };
+  };
+  /** Yumi Wordvault｜詞語秘藏: Hangyumi's sister game (Chi, 2026-10-26). Only
+      what it says differently; the rest of its screen reads `hangyumi`. */
+  wordvault: {
+    title: string;
+    /** The name on the game's signboard, where "Yumi Wordvault" would not fit. */
+    short: string;
+    /** Its name in the reader's language, under the title on the games hub. */
+    subtitle: string;
+    open: string;
+    /** Skips the animation that is playing. */
+    skip: string;
+    languageNote: string;
+    /** The energy copies a wrong guess sends out: U, then I, then O. */
+    pieces: { eye: string; arm: string; body: string };
+    nextPiece: string;
+    studio: string;
+    studioWon: string;
+    studioLost: string;
+    won: string;
+    lost: string;
+    missingNote: string;
+    failed: string;
+    offline: string;
+    closed: string;
+    rulesTitle: string;
+    rules: { letters: string; misses: string; cap: string; learning: string; chests: string };
+    /** The streak over the stage: {count} words won in a row. */
+    streak: string;
+    /** What the streak track says to a screen reader. */
+    streakLabel: string;
+    chestMedium: string;
+    chestPremium: string;
+    /** The result card: what this word's chest gave. */
+    rewardTitle: string;
+    /** {count} extra cookies, outside today's 333. */
+    rewardCookies: string;
+    rewardItem: string;
+    rewardLimited: string;
+    rewardAllOwned: string;
+    /** The note over the stage when a chest pays: {count} cookies. */
+    chestPaid: string;
+  };
+  /** The games hub: one key on Home, then Hangyumi or Wordvault. */
+  games: {
+    title: string;
+    open: string;
+    back: string;
+    choose: string;
+    /** Today's cookies from either game: {earned} of {cap}. */
+    today: string;
+    shared: string;
+    hangyumi: { tagline: string; detail: string };
+    wordvault: { tagline: string; detail: string };
   };
 
   /**

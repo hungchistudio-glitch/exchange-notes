@@ -248,7 +248,7 @@ describe("chapter two: around the app", () => {
     }
 
     // Then the shop, on Home, before the other look.
-    expect(screen.getByText(/Saving a word for the first time earns an energy cookie/)).toBeInTheDocument();
+    expect(screen.getByText(/Saving a word for the first time earns 3 energy cookies/)).toBeInTheDocument();
   });
 
   it("steps aside on screens that are not one of the six", () => {
@@ -440,7 +440,7 @@ describe("one word, two cookies (2026-10-18)", () => {
 
     coach();
 
-    expect(screen.getByText(/a cookie on Home to feed me, and \+1 energy cookie for the shop/)).toBeInTheDocument();
+    expect(screen.getByText(/a cookie on Home to feed me, and \+3 energy cookies for the shop/)).toBeInTheDocument();
 
     vi.useFakeTimers();
     await act(async () => {

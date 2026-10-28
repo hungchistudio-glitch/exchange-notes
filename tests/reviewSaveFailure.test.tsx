@@ -66,6 +66,17 @@ vi.mock("@/lib/review/saveReviewResult", () => ({
 
 import ReviewPage from "@/app/(protected)/review/page";
 
+/**
+ * Starts the round once the words are in. The key is on screen, disabled,
+ * from the first render; a click before the words load does nothing, and on
+ * a busy machine findByRole can return that early.
+ */
+async function startReview() {
+  const start = await screen.findByRole("button", { name: /Start review/i });
+  await waitFor(() => expect(start).toBeEnabled());
+  fireEvent.click(start);
+}
+
 describe("review persistence failures", () => {
   beforeEach(() => {
     mocks.saveReviewResult.mockReset();
@@ -79,7 +90,7 @@ describe("review persistence failures", () => {
 
     render(<ReviewPage />);
 
-    fireEvent.click(await screen.findByRole("button", { name: /Start review/i }));
+    await startReview();
     fireEvent.click(await screen.findByRole("button", { name: /Reveal answer/i }));
     fireEvent.click(screen.getByRole("button", { name: /Good Remembered/i }));
 
@@ -99,7 +110,7 @@ describe("review persistence failures", () => {
 
     render(<ReviewPage />);
 
-    fireEvent.click(await screen.findByRole("button", { name: /Start review/i }));
+    await startReview();
     fireEvent.click(await screen.findByRole("button", { name: /Reveal answer/i }));
 
     expect(mocks.beginReviewRound).toHaveBeenCalledTimes(1);
@@ -118,7 +129,7 @@ describe("review persistence failures", () => {
 
     render(<ReviewPage />);
 
-    fireEvent.click(await screen.findByRole("button", { name: /Start review/i }));
+    await startReview();
     fireEvent.click(await screen.findByRole("button", { name: /Reveal answer/i }));
     fireEvent.click(screen.getByRole("button", { name: /Good Remembered/i }));
 

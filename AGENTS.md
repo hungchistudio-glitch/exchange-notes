@@ -30,6 +30,8 @@ searching further.
 | Translations, language table | `lib/i18n/`, `lib/languages.ts` (see `lib/i18n/AGENTS.md`) |
 | Device preferences (language, mode, font size) | Cookies read on the server: `lib/appPreferences.ts`, `lib/preferences/` |
 | Yumi in 3D, the shop | `lib/yumi3d/`, `lib/shop/` (each has an `AGENTS.md`) |
+| Hangyumi (Hangman with Yumi) | `lib/hangyumi/` (rules, server calls, studio), `supabase/hangyumi/` (the drafted word bank, which no page may import), `scripts/hangyumi-seed.mjs` |
+| Yumi Wordvault (Hangyumi's twin), the games hub | `components/hangyumi/HangyumiGame.tsx` plays both (`game="wordvault"`); `lib/wordvault/` (the walk-to-the-chest timeline, its studio), `components/wordvault/`, `components/games/` (`/games`, the one way in from Home). Same server functions, so the 333 a day is shared. Its streak chests (4th word medium, 7th premium) are decided in `private.hangyumi_guess` (`*_wordvault_chests_and_mythic_pieces.sql`; since `*_wordvault_chest_full_worth.sql` a chest pays the word's whole worth, paid today or not), never in the page. |
 | Database | `supabase/migrations/`. Read its `README.md` before writing a migration. |
 | Service worker | `public/sw.js`. It never caches pages or `/api`. |
 | iOS wrapper and widget | `native/apple/` (see below) |

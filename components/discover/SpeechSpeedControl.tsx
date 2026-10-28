@@ -80,7 +80,7 @@ export default function SpeechSpeedControl({
               aria-label={label}
               aria-pressed={active}
               title={label}
-              className="flex h-8 w-8 items-center justify-center rounded-full transition-all"
+              className="hit-44 relative flex h-8 w-8 items-center justify-center rounded-full transition-all"
               style={{
                 backgroundColor: active
                   ? DISCOVER_COLORS.selected

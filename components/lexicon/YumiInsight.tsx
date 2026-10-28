@@ -54,7 +54,7 @@ export default function YumiInsight({
   const cosmic = tone === "cosmic";
   const label = cosmic
     ? "hud-label"
-    : "text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-ink-faint";
+    : "text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-ink-faint";
 
   return (
     <section

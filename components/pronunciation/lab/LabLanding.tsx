@@ -9,6 +9,7 @@ import {
   Ear,
   Mic,
   RotateCcw,
+  Split,
   Type,
   Waves,
 } from "lucide-react";
@@ -39,6 +40,7 @@ const MODULE_ICON: Record<PronunciationModuleId, LucideIcon> = {
   speak: Mic,
   words: Type,
   rhythm: Waves,
+  readings: Split,
   review: RotateCcw,
 };
 
@@ -48,6 +50,7 @@ const MODULE_ORDER: PronunciationModuleId[] = [
   "speak",
   "words",
   "rhythm",
+  "readings",
   "review",
 ];
 
@@ -55,8 +58,8 @@ const MODULE_ORDER: PronunciationModuleId[] = [
  * The Lab's front door.
  *
  * Reads top to bottom the way a session actually goes: who is coaching you,
- * what you are learning, what to do today, where you stand, the six rooms,
- * and what needs work. Six tiles rather than a wall of entry points —
+ * what you are learning, what to do today, where you stand, the seven rooms,
+ * and what needs work. Seven tiles rather than a wall of entry points —
  * everything else in the Lab is reachable from inside one of them.
  */
 export default function LabLanding() {
@@ -141,7 +144,7 @@ export default function LabLanding() {
         {/* ── Today's training ──────────────────────────────────── */}
         <section className="overflow-hidden rounded-[26px] border border-black/[0.06] bg-black text-white">
           <div className="p-5">
-            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
               {copy.today.eyebrow}
             </p>
 
@@ -165,19 +168,27 @@ export default function LabLanding() {
             ) : (
               <>
                 <ul className="mt-3 space-y-1.5">
-                  {plan.items.map((item) => (
+                  {plan.items.map((item, index) => {
+                    /* A module that comes twice is numbered, so two rows are
+                       never both just "Sounds" (2026-10-24). */
+                    const sameModule = plan.items.filter((other) => other.module === item.module);
+                    const ordinal = sameModule.length > 1
+                      ? ` ${plan.items.slice(0, index + 1).filter((other) => other.module === item.module).length}`
+                      : "";
+                    return (
                     <li
                       key={item.id}
                       className="flex items-center justify-between gap-3 text-sm"
                     >
                       <span className="font-cjk truncate text-ink-invert-soft">
-                        {copy.modules[item.module].title}
+                        {copy.modules[item.module].title}{ordinal}
                       </span>
                       <span className="font-cjk shrink-0 truncate text-right font-medium">
                         {item.label}
                       </span>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
 
                 <Link
@@ -196,7 +207,7 @@ export default function LabLanding() {
           aria-label={copy.progress.title}
           className="rounded-[26px] border border-black/[0.06] bg-white p-5"
         >
-          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
             {copy.progress.eyebrow}
           </p>
           <h2 className="mt-1 text-lg font-bold tracking-[-0.02em]">
@@ -245,9 +256,9 @@ export default function LabLanding() {
           )}
         </section>
 
-        {/* ── The six modules ───────────────────────────────────── */}
+        {/* ── The seven modules ─────────────────────────────────── */}
         {/*
-          A nav rather than a section: these six are the Lab's primary
+          A nav rather than a section: these seven are the Lab's primary
           navigation, and naming the landmark is what lets a screen-reader
           user jump to them instead of walking the whole page.
         */}

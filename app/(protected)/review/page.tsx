@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import MissionCompleteStage from "@/components/cosmic/MissionCompleteStage";
 import MissionLaunchStage from "@/components/cosmic/MissionLaunchStage";
 import Screen from "@/components/foundation/layout/Screen";
+import ReviewCelebration, { riseClassName } from "@/components/review/ReviewCelebration";
+import useCardMotion, { NEXT_CARD, TURN_OVER } from "@/components/review/useCardMotion";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import {
   getReviewWords,
@@ -167,6 +169,10 @@ export default function ReviewPage() {
   const [revealed, setRevealed] = useState(false);
   const roundRef = useRef<string | undefined>(undefined);
   const startingRef = useRef(false);
+  /* The card on screen, which turns over to show its answer and slides
+     away once graded (Chi, 2026-10-24). One movement at a time. */
+  const cardRef = useRef<HTMLDivElement>(null);
+  const moveCard = useCardMotion(cardRef);
   const [starting, setStarting] = useState(false);
   const [grading, setGrading] = useState(false);
 
@@ -277,20 +283,29 @@ export default function ReviewPage() {
     } catch (error) {
       console.error(error);
       setErrorMessage(copy.saveError);
+      setGrading(false);
       // Do not tell the reader a grade was recorded by moving on when it was
       // not. The same card remains available for an explicit retry.
       return;
-    } finally {
-      setGrading(false);
     }
 
     if (index + 1 >= queue.length) {
+      setGrading(false);
       setPhase("complete");
       return;
     }
 
-    setIndex((current) => current + 1);
-    setRevealed(false);
+    // Still "grading" while the card slides, so it cannot be graded twice.
+    await moveCard(NEXT_CARD, () => {
+      setIndex((current) => current + 1);
+      setRevealed(false);
+    });
+    setGrading(false);
+  }
+
+  /** Turns the card over to its answer. */
+  function reveal() {
+    if (!revealed) void moveCard(TURN_OVER, () => setRevealed(true));
   }
 
   if (phase === "session" && queue.length > 0) {
@@ -342,7 +357,7 @@ export default function ReviewPage() {
             />
           </div>
 
-          <div className="mt-6 rounded-[28px] border border-line bg-white p-6">
+          <div ref={cardRef} className="mt-6 rounded-[28px] border border-line bg-white p-6 will-change-transform">
             <div className="flex items-center justify-between">
               <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                 {copy.vocabulary}
@@ -489,7 +504,7 @@ export default function ReviewPage() {
             {!revealed ? (
               <button
                 type="button"
-                onClick={() => setRevealed(true)}
+                onClick={reveal}
                 className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-black text-base font-semibold text-white transition active:scale-[0.99]"
               >
                 {copy.revealAnswer}
@@ -533,20 +548,29 @@ export default function ReviewPage() {
      * count — no score, no bonus, nothing added that the session did not
      * actually do.
      */
+    /* In Standard, the lines rise in one after another under Yumi. */
+    const rise = (order: number, className: string) => ({
+      className: isCosmic ? className : `${className} ${riseClassName}`,
+      style: { "--rise-index": order } as CSSProperties,
+    });
     const summary = (
       <>
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-2xl text-white">
-          ✓
-        </div>
-        <p className="mt-5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        {isCosmic ? (
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-2xl text-white">
+            ✓
+          </div>
+        ) : (
+          <ReviewCelebration />
+        )}
+        <p {...rise(0, "mt-5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint")}>
           {isCosmic
             ? t.cosmic.mission.completeEyebrow
             : mode === "due"
               ? copy.today
               : copy.freePractice}
         </p>
-        <h1 className="mt-1 text-2xl font-bold">{copy.completeTitle}</h1>
-        <p className="mt-2 max-w-xs text-ink-soft">
+        <h1 {...rise(1, "mt-1 text-2xl font-bold")}>{copy.completeTitle}</h1>
+        <p {...rise(2, "mt-2 max-w-xs text-ink-soft")}>
           {plural(
             queue.length,
             locale,
@@ -559,7 +583,7 @@ export default function ReviewPage() {
 
         <Link
           href={exitHref}
-          className="mt-6 flex h-12 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-semibold text-white"
+          {...rise(3, "mt-6 flex h-12 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-semibold text-white")}
         >
           {cameFromVocabulary ? copy.backToVocabulary : copy.backToHome}
         </Link>

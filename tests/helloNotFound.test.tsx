@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /* =========================================================
@@ -36,7 +36,11 @@ describe("a hello's 404", () => {
     expect(screen.getByRole("heading").textContent).toBe("Loading the invitation…");
     expect(await screen.findByText("This invitation has been turned off")).toBeTruthy();
     expect(lookup.rpc).toHaveBeenCalledWith("get_yumi_hello", { p_id: "AbCdEfGhIjKl" });
-    expect(document.title).toBe("This invitation has been turned off");
+    /* The title is set by an effect that runs after the text is on screen,
+       and on a busy machine after findByText has already returned: waited
+       for, not read at once (it failed that way about one full run in
+       three, reproduced by making React's scheduler late). */
+    await waitFor(() => expect(document.title).toBe("This invitation has been turned off"));
   });
 
   it("says it could not be found when there is nothing", async () => {

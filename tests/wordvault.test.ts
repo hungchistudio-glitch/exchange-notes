@@ -1,0 +1,178 @@
+import { describe, expect, it } from "vitest";
+
+import type { HangyumiRound } from "@/lib/hangyumi/rules";
+import { createPreviewHangyumi, type PracticeWord } from "@/lib/hangyumi/service";
+import { VAULT_PIECES, plan, progress } from "@/lib/wordvault/presentation";
+
+/* =========================================================
+   Yumi Wordvault's rounds (lib/wordvault/presentation.ts)
+
+   The same server rounds as Hangyumi, read as a walk to a chest: a step
+   for each place a letter fills, a copy of her U, I or O for each miss.
+   These pin the show, and that the show never pays: the cookies are what
+   the server said, shared with Hangyumi (Codex wrote the first of these
+   for its preview; kept, and run against the shared service).
+   ========================================================= */
+
+const word: PracticeWord = { language: "en", level: "B1", answer: "apple", partOfSpeech: "noun", clues: { en: "a fruit" } };
+const start = async (service: ReturnType<typeof createPreviewHangyumi>, id: string, game: "hangyumi" | "wordvault" = "hangyumi") =>
+  (await service.start({ roundId: id, language: "en", level: "B1", hintLanguage: "en", game })) as HangyumiRound;
+
+describe("Wordvault's rounds", () => {
+  it("sends the copies out U, I, O, where Hangyumi hangs O, I, U", () => {
+    expect(VAULT_PIECES).toEqual(["body", "arm", "eye"]);
+  });
+
+  it("walks two steps for the P of APPLE, and pays it once", async () => {
+    const service = createPreviewHangyumi({ words: [word], delayMs: 0 });
+    const before = await start(service, "a");
+    const after = await service.guess("a", "p");
+    expect(plan(before, after).map(beat => beat.phase)).toEqual(["step", "step"]);
+    expect(progress(after)).toEqual({ total: 5, revealed: 2, fraction: 0.4 });
+    expect(after.paid.letter).toBe(3);
+    // The same letter again: no show, no pay.
+    expect(plan(after, await service.guess("a", "p"))).toEqual([]);
+  });
+
+  it("shares today's 333 with Hangyumi, and a word pays once in either game", async () => {
+    const service = createPreviewHangyumi({ words: [word], delayMs: 0, earnedToday: 330 });
+    await start(service, "hangyumi");
+    await start(service, "wordvault", "wordvault");
+    expect((await service.guess("hangyumi", "p")).paid.letter).toBe(3);
+    expect((await service.guess("wordvault", "p")).paid.letter).toBe(0);
+    expect((await service.guess("wordvault", "a")).paid.letter).toBe(0);
+    expect((await service.today()).earned).toBe(333);
+  });
+
+  it("pays a word's letter once between the games, under the cap too", async () => {
+    const service = createPreviewHangyumi({ words: [word], delayMs: 0 });
+    await start(service, "hang");
+    await start(service, "vault", "wordvault");
+    await service.guess("hang", "p");
+    expect((await service.guess("vault", "p")).paid.already).toBe(true);
+  });
+
+  it("brings every copy home after a loss, without the shown answer carrying her to the chest", async () => {
+    const service = createPreviewHangyumi({ words: [word], delayMs: 0 });
+    let before = await start(service, "a");
+    for (const char of ["p", "x", "y"]) before = await service.guess("a", char);
+    const after = await service.guess("a", "z");
+    const beats = plan(before, after);
+    expect(beats.map(beat => beat.phase)).toEqual(["projectile", "restore", "recover"]);
+    expect(beats[0].piece).toBe(2);
+    expect(progress(after).fraction).toBe(0.4);
+    expect(after.earned).toBe(3);
+  });
+
+  it("brings the copies home before the key and the lock, and the show mints nothing", async () => {
+    const service = createPreviewHangyumi({ words: [word], delayMs: 0 });
+    let before = await start(service, "a");
+    for (const char of ["x", "a", "p", "l"]) before = await service.guess("a", char);
+    const after = await service.guess("a", "e");
+    expect(after.paid.word).toBe(9);
+    expect(plan(before, after).map(beat => beat.phase)).toEqual(["step", "restore", "key", "unlock", "celebrate"]);
+    for (let i = 0; i < 5; i++) plan(before, after);
+    expect((await service.today()).earned).toBe(21);
+  });
+
+  it("counts places, not keys: a Chinese character twice, an accented letter as itself", async () => {
+    for (const [language, answer, guess] of [["zh-TW", "山山", "山"], ["fr", "été", "é"]] as const) {
+      const service = createPreviewHangyumi({ words: [{ ...word, language, answer }], delayMs: 0 });
+      const before = (await service.start({ roundId: "r", language, level: "B1", hintLanguage: "en" })) as HangyumiRound;
+      const after = await service.guess("r", guess);
+      expect(plan(before, after).filter(beat => beat.phase === "step")).toHaveLength(2);
+      expect(after.paid.letter).toBe(3);
+    }
+  });
+});
+
+describe("Wordvault's chests (the server's rules, as the preview plays them)", () => {
+  const vault = (options: Parameters<typeof createPreviewHangyumi>[0] = {}) =>
+    createPreviewHangyumi({ words: [word], delayMs: 0, pick: ids => ids[0], ...options });
+  const deal = async (service: ReturnType<typeof createPreviewHangyumi>, id: string, level: "B1" | "B2" = "B1") =>
+    (await service.start({ roundId: id, language: "en", level, hintLanguage: "en", game: "wordvault" })) as HangyumiRound;
+  const win = async (service: ReturnType<typeof createPreviewHangyumi>, id: string) => {
+    let result;
+    for (const char of ["a", "p", "l", "e"]) result = await service.guess(id, char);
+    return result!;
+  };
+
+  it("holds a medium chest on the fourth word in a row: twice the cookies, outside the 333, and a shop piece", async () => {
+    const service = vault({ streak: 3 });
+    expect((await deal(service, "w4")).chest).toBe("medium");
+    const result = await win(service, "w4");
+    expect(result.earned).toBe(21);
+    expect(result.chestReward).toEqual({ tier: "medium", cookies: 21, item: expect.any(String), limited: false });
+    expect(result.chestReward!.item!.startsWith("myth-")).toBe(false);
+    expect(result.streak).toBe(4);
+    // The extra cookies are not today's: the 333 counts only the round.
+    expect((await service.today()).earned).toBe(21);
+  });
+
+  it("pays the word's whole worth even when the round paid nothing: past the 333, or a word already paid", async () => {
+    // Chi, 2026-10-26: a chest always holds cookies ("照這個字的完整價值算").
+    const capped = vault({ streak: 3, earnedToday: 333 });
+    await deal(capped, "c4");
+    const result = await win(capped, "c4");
+    expect(result.earned).toBe(0);
+    expect(result.chestReward).toMatchObject({ tier: "medium", cookies: 21 });
+
+    const again = vault({ streak: 2 });
+    await deal(again, "first");
+    await win(again, "first");
+    expect((await deal(again, "same-word")).chest).toBe("medium");
+    const repeat = await win(again, "same-word");
+    expect(repeat.earned).toBe(0);
+    expect(repeat.chestReward).toMatchObject({ tier: "medium", cookies: 21 });
+  });
+
+  it("holds a premium chest on the seventh: three times, a Mythic Vault piece, and the streak starts again", async () => {
+    const service = vault({ streak: 6 });
+    expect((await deal(service, "w7")).chest).toBe("premium");
+    const result = await win(service, "w7");
+    expect(result.chestReward).toEqual({ tier: "premium", cookies: 42, item: "myth-olympus-marble", limited: true });
+    expect(result.streak).toBe(0);
+  });
+
+  it("gives cookies alone once every piece it could hold is owned", async () => {
+    const all = (await import("@/lib/shop/mythicCollection")).MYTHIC_ITEMS.map(item => item.id);
+    const service = vault({ streak: 6, owned: all });
+    await deal(service, "w7");
+    expect((await win(service, "w7")).chestReward).toEqual({ tier: "premium", cookies: 42, item: null, limited: false });
+  });
+
+  it("ends the streak on a loss", async () => {
+    const service = vault({ streak: 5 });
+    await deal(service, "r");
+    for (const char of ["x", "y", "z"]) await service.guess("r", char);
+    expect((await deal(service, "next")).streak).toBe(0);
+  });
+
+  it("ends the streak once for a word left half-guessed, and not again", async () => {
+    const pale: PracticeWord = { ...word, level: "B2", answer: "pale" };
+    const service = vault({ streak: 3, words: [word, pale] });
+    expect((await deal(service, "first")).chest).toBe("medium");
+    await service.guess("first", "p");
+    // Off to a word at another level with that one half-guessed: the streak is gone.
+    const second = await deal(service, "second", "B2");
+    expect([second.streak, second.chest]).toEqual([0, "normal"]);
+    // A third word is not punished for the same abandoned one.
+    await win(service, "second");
+    expect((await deal(service, "third", "B2")).streak).toBe(1);
+  });
+
+  it("goes on with a word already in play, dealt on another device, and keeps the streak", async () => {
+    // Chi, 2026-10-26: "接續同一個字". Each device keeps its own round id.
+    const service = vault({ streak: 3 });
+    expect((await deal(service, "phone")).chest).toBe("medium");
+    await service.guess("phone", "p");
+    const tablet = await deal(service, "tablet");
+    expect([tablet.id, tablet.guessed, tablet.streak, tablet.chest]).toEqual(["phone", ["p"], 3, "medium"]);
+  });
+
+  it("keeps Hangyumi out of it: no chest, no streak", async () => {
+    const service = vault({ streak: 3 });
+    const round = (await service.start({ roundId: "h", language: "en", level: "B1", hintLanguage: "en" })) as HangyumiRound;
+    expect([round.game, round.chest, round.streak]).toEqual(["hangyumi", null, null]);
+  });
+});

@@ -274,7 +274,7 @@ export default function StoryDetailSheet({
                 onSpeak(summaryEnKey, (card.summaries[primaryLanguage] ?? ""), getLanguage(primaryLanguage).speechTag)
               }
               aria-label={copy.readEnglishAriaLabel}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
+              className="hit-44 relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
             >
               <Volume2
                 size={14}
@@ -297,7 +297,7 @@ export default function StoryDetailSheet({
                 onSpeak(summaryZhKey, (card.summaries[secondaryLanguage] ?? ""), getLanguage(secondaryLanguage).speechTag)
               }
               aria-label={copy.readChineseAriaLabel}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
+              className="hit-44 relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
             >
               <Volume2
                 size={14}

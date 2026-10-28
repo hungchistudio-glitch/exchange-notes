@@ -94,7 +94,7 @@ export default function SortBottomSheet({
             type="button"
             onClick={motion.requestClose}
             aria-label={search.closeSortMenu}
-            className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-black/5"
+            className="hit-44 relative flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-black/5"
           >
             <X size={16} />
           </button>

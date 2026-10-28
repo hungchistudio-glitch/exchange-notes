@@ -264,7 +264,7 @@
 }
 
 .eyebrow {
-  font-size: 0.5625rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   line-height: 1.4;
   letter-spacing: 0.18em;
@@ -426,7 +426,7 @@
 
 .soundLabel {
   display: block;
-  font-size: 0.5rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: 0.08em;
@@ -496,7 +496,7 @@
 
 .swipeMicrocopy {
   overflow: hidden;
-  font-size: 0.5625rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.04em;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -573,7 +573,7 @@
 .counter {
   min-width: 72px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.18em;
   text-align: center;
   /* 0.48 was 3.32:1 on the deck gradient behind it; 0.60 is 4.90:1. */
@@ -634,7 +634,7 @@
 }
 
 .emptyEyebrow {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;

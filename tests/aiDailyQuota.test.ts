@@ -57,7 +57,7 @@ beforeEach(() => {
 
 describe("spending a request", () => {
   it("asks the database, naming the operation and the limit", async () => {
-    const { client, calls } = supabaseWith({ consume_ai_daily_quota: allowed });
+    const { calls } = supabaseWith({ consume_ai_daily_quota: allowed });
 
     await expect(
       consumeDailyQuota("user-1", "vision_identification", 60),
@@ -83,7 +83,7 @@ describe("spending a request", () => {
   });
 
   it("refuses once the allowance is gone", async () => {
-    const { client } = supabaseWith({ consume_ai_daily_quota: refused });
+    supabaseWith({ consume_ai_daily_quota: refused });
 
     await expect(
       consumeDailyQuota("user-1", "vision_identification", 60),
@@ -93,7 +93,7 @@ describe("spending a request", () => {
 
 describe("handing a request back", () => {
   it("calls the refund function for that operation", async () => {
-    const { client, calls } = supabaseWith({});
+    const { calls } = supabaseWith({});
 
     await refundDailyQuota("user-1", "menu_scan");
 
@@ -111,7 +111,7 @@ describe("handing a request back", () => {
      * failed courtesy into a second failure would replace "that photo did not
      * work" with a five hundred.
      */
-    const { client } = supabaseWith({ refund_ai_daily_quota: broken });
+    supabaseWith({ refund_ai_daily_quota: broken });
 
     await expect(
       refundDailyQuota("user-1", "menu_scan"),
@@ -136,7 +136,7 @@ describe("handing a request back", () => {
 describe("when the counter cannot be reached", () => {
   it("still enforces a limit rather than waving everything through", async () => {
     // The case four routes used to answer `true` to.
-    const { client } = supabaseWith({ consume_ai_daily_quota: broken });
+    supabaseWith({ consume_ai_daily_quota: broken });
 
     const outcomes: boolean[] = [];
     for (let attempt = 0; attempt < 4; attempt += 1) {
@@ -149,7 +149,7 @@ describe("when the counter cannot be reached", () => {
   });
 
   it("stops calling a function it has just found to be missing", async () => {
-    const { client, calls } = supabaseWith({ consume_ai_daily_quota: broken });
+    const { calls } = supabaseWith({ consume_ai_daily_quota: broken });
 
     await consumeDailyQuota("user-1", "vision_identification", 3);
     await consumeDailyQuota("user-1", "vision_identification", 3);
@@ -159,7 +159,7 @@ describe("when the counter cannot be reached", () => {
 
   it("counts each operation separately", async () => {
     // One user's menu scans must not eat their object lookups.
-    const { client } = supabaseWith({ consume_ai_daily_quota: broken });
+    supabaseWith({ consume_ai_daily_quota: broken });
 
     await consumeDailyQuota("user-1", "vision_identification", 1);
 
@@ -172,7 +172,7 @@ describe("when the counter cannot be reached", () => {
   });
 
   it("counts each reader separately", async () => {
-    const { client } = supabaseWith({ consume_ai_daily_quota: broken });
+    supabaseWith({ consume_ai_daily_quota: broken });
 
     await consumeDailyQuota("user-1", "vision_identification", 1);
 
@@ -182,7 +182,7 @@ describe("when the counter cannot be reached", () => {
   });
 
   it("refunds in memory too, so a failure is not charged there either", async () => {
-    const { client } = supabaseWith({ consume_ai_daily_quota: broken });
+    supabaseWith({ consume_ai_daily_quota: broken });
 
     await consumeDailyQuota("user-1", "vision_identification", 1);
     await refundDailyQuota("user-1", "vision_identification");
@@ -199,7 +199,7 @@ describe("when the counter cannot be reached", () => {
      * A refund with no matching charge — which the database also treats as a
      * no-op — must not hand out a free request on top of the allowance.
      */
-    const { client } = supabaseWith({ consume_ai_daily_quota: broken });
+    supabaseWith({ consume_ai_daily_quota: broken });
 
     await consumeDailyQuota("user-1", "vision_identification", 1);
     await refundDailyQuota("user-1", "vision_identification");
@@ -240,7 +240,7 @@ describe("recovering from a counter that was unreachable", () => {
   });
 
   it("tries the database again once the hold has passed", async () => {
-    const { client, calls } = supabaseWith({ consume_ai_daily_quota: broken });
+    const { calls } = supabaseWith({ consume_ai_daily_quota: broken });
 
     await consumeDailyQuota("user-1", "vision_identification", 3);
     await consumeDailyQuota("user-1", "vision_identification", 3);
@@ -287,7 +287,7 @@ describe("recovering from a counter that was unreachable", () => {
      * moment later while it still is. The refund must not be sent to the
      * database and lost — the charge is not there.
      */
-    const { client, calls } = supabaseWith({ consume_ai_daily_quota: broken });
+    const { calls } = supabaseWith({ consume_ai_daily_quota: broken });
 
     expect(await consumeDailyQuota("user-2", "reply_coach", 1)).toBe(true);
     await refundDailyQuota("user-2", "reply_coach");

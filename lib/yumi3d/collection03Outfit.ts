@@ -2,67 +2,69 @@ import * as THREE from "three";
 import { EYE_RADIUS, TUBE_FRONT, TUBE_RADIUS } from "./anatomy";
 import { brass, chrome, ellipseRing, extrude, glaze, group, irisCap, irisTexture, lathe, mesh, phys, roundedRect, std, type NeckPiece } from "./outfitKit";
 
-/** Collection 03. All pieces are closed solids, in the shared wardrobe's
+/** Collection 03. Its small parts and attachment frames (block … collar)
+ * are exported for Collection 04, which hangs from the same places.
+ * All pieces are closed solids, in the shared wardrobe's
  * attachment frames. Motion is metadata consumed by the existing scene loop;
  * a builder never owns a timer, a renderer, or a canvas. */
 type Builder = () => THREE.Object3D;
 type Point = [number, number, number];
 const metal = () => std(0x252c35, .78, .29);
 const ivory = () => glaze(0xf1e9d8, .37);
-function block(w: number, h: number, d: number, mat: THREE.Material, x = 0, y = 0, z = 0) {
+export function block(w: number, h: number, d: number, mat: THREE.Material, x = 0, y = 0, z = 0) {
   return mesh(extrude(roundedRect(w, h, Math.min(w, h) * .16), d, .006, 8), mat, x, y, z);
 }
-function ball(r: number, mat: THREE.Material, x = 0, y = 0, z = 0) {
+export function ball(r: number, mat: THREE.Material, x = 0, y = 0, z = 0) {
   return mesh(new THREE.SphereGeometry(r, 20, 12), mat, x, y, z);
 }
-function ring(r: number, t: number, mat: THREE.Material, x = 0, y = 0, z = 0) {
+export function ring(r: number, t: number, mat: THREE.Material, x = 0, y = 0, z = 0) {
   return mesh(new THREE.TorusGeometry(r, t, 8, 32), mat, x, y, z);
 }
-function disc(r: number, depth: number, mat: THREE.Material, x = 0, y = 0, z = 0) {
+export function disc(r: number, depth: number, mat: THREE.Material, x = 0, y = 0, z = 0) {
   const o = mesh(new THREE.CylinderGeometry(r, r, depth, 40), mat, x, y, z);
   o.rotation.x = Math.PI / 2;
   return o;
 }
-function wire(points: Point[], radius: number, mat: THREE.Material) {
+export function wire(points: Point[], radius: number, mat: THREE.Material) {
   const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)));
   return group(mesh(new THREE.TubeGeometry(curve, Math.max(12, points.length * 6), radius, 6, false), mat),
     ball(radius, mat, ...points[0]), ball(radius, mat, ...points[points.length - 1]));
 }
-function polygon(points: [number, number][], depth: number, mat: THREE.Material) {
+export function polygon(points: [number, number][], depth: number, mat: THREE.Material) {
   const s = new THREE.Shape();
   points.forEach(([x, y], i) => { if (i) s.lineTo(x, y); else s.moveTo(x, y); });
   s.closePath();
   return mesh(extrude(s, depth, .008, 8), mat);
 }
 /** The top of the bail, including its wire, is exactly y=0. */
-function hanging(body: THREE.Object3D, offset: number, mat: THREE.Material = brass()) {
+export function hanging(body: THREE.Object3D, offset: number, mat: THREE.Material = brass()) {
   body.position.y -= offset;
   return group(ring(.035, .009, mat, 0, -.044), body);
 }
-function pin(body: THREE.Object3D) {
+export function pin(body: THREE.Object3D) {
   // A backing plate plus a recessed stem, visible when the stand is turned.
   return group(body, block(.15, .09, .035, brass(), 0, 0, -.04), wire([[0, -.045, -.04], [0, .045, -.09]], .015, brass()));
 }
-function brow(body: THREE.Object3D) {
+export function brow(body: THREE.Object3D) {
   // Authored front-on XY -> ring frame (X outward, Y forward, Z tangent).
   const root = group(body);
   root.quaternion.setFromRotationMatrix(new THREE.Matrix4().set(0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1));
   root.position.y = TUBE_FRONT + .045;
   return root;
 }
-function necklace(pendant: THREE.Object3D, y = -.30) {
+export function necklace(pendant: THREE.Object3D, y = -.30) {
   const gold = brass();
   pendant.position.set(0, y, .07);
   return group(wire([[-.65, .25, -.05], [-.38, -.01, .035], [0, -.13, .07], [.38, -.01, .035], [.65, .25, -.05]], .018, gold),
     ring(.038, .012, gold, 0, -.14, .075), pendant);
 }
-function hat(body: THREE.Object3D) {
+export function hat(body: THREE.Object3D) {
   const clamp = ellipseRing(TUBE_FRONT + .025, TUBE_RADIUS + .015, .025, metal());
   clamp.rotation.y = Math.PI / 2;
   clamp.position.y = -TUBE_RADIUS * .82;
   return group(clamp, body);
 }
-function collar(front: THREE.Object3D, mat: THREE.Material): NeckPiece {
+export function collar(front: THREE.Object3D, mat: THREE.Material): NeckPiece {
   const band = ellipseRing(TUBE_RADIUS + .025, TUBE_FRONT + .025, .045, mat);
   return { band, front };
 }

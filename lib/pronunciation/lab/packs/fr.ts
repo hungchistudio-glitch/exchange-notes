@@ -642,10 +642,14 @@ export const frenchPronunciationPack: PronunciationLanguagePack = {
   scoreDimensions: ["vowel", "nasal", "liaison", "rhythm"],
   yumiCalibration: {
     instrument: "nasal-resonance",
+    // What Yumi listens for, said plainly (2026-10-24: the names were
+    // instrument jargon, and French and Italian fell back to English).
     label: {
-      english: "Nasal resonance",
-      "traditional-chinese": "鼻腔共鳴",
-      spanish: "Resonancia nasal",
+      english: "nasal vowels",
+      "traditional-chinese": "鼻化母音",
+      spanish: "las vocales nasales",
+      french: "les voyelles nasales",
+      italian: "le vocali nasali",
     },
   },
   defaultDialect: "fr-FR",

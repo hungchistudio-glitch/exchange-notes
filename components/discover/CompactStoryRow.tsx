@@ -68,7 +68,7 @@ export default function CompactStoryRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span
-              className="rounded-full px-2 py-[3px] text-[0.625rem] font-semibold"
+              className="rounded-full px-2 py-[3px] text-[0.6875rem] font-semibold"
               style={{ color: accent, backgroundColor: `${accent}17` }}
             >
               {categoryText}

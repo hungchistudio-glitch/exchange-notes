@@ -63,6 +63,15 @@ function isInShop(pathname: string) {
   return pathname === "/shop";
 }
 
+/*
+ * Hangyumi too: its keyboard is the bottom of the screen, and the game has
+ * its own back arrow (Chi: only a back arrow at the top left). So do Yumi
+ * Wordvault, its twin, and the games hub both are entered from.
+ */
+function isInHangyumi(pathname: string) {
+  return pathname === "/hangyumi" || pathname === "/wordvault" || pathname === "/games";
+}
+
 function isInsideConversation(pathname: string) {
   if (!pathname.startsWith("/messages/")) return false;
 
@@ -273,7 +282,7 @@ export default function ProtectedNav() {
    * focusing it brings it back to full strength, so "quieter" never means
    * "harder to use".
    */
-  if (isInsideConversation(pathname) || isInShop(pathname)) {
+  if (isInsideConversation(pathname) || isInShop(pathname) || isInHangyumi(pathname)) {
     return (
       <>
         <div className="hidden opacity-40 transition-opacity duration-200 hover:opacity-100 focus-within:opacity-100 sm:block">

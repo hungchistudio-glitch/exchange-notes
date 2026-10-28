@@ -33,14 +33,25 @@ export type PronunciationCategory =
   | "connected-speech"
   | "minimal-pair";
 
-/** The six first-level modules. Universal; what they contain is not. */
+/** The first-level modules. Universal; what they contain is not. */
 export type PronunciationModuleId =
   | "sounds"
   | "listen"
   | "speak"
   | "words"
   | "rhythm"
-  | "review";
+  | "review"
+  /** One spelling, several readings (破音字, "record" and "record"). */
+  | "readings";
+
+/**
+ * The modules an attempt can be filed under — what the database accepts
+ * (pronunciation_attempts.module, supabase/migrations/20260823001230). The
+ * readings module's quiz is a listening drill and files its attempts as
+ * "listen", so the column needed no migration; the type keeps "readings"
+ * from ever being written there.
+ */
+export type AttemptModule = Exclude<PronunciationModuleId, "readings">;
 /**
  * How well a unit is known.
  *

@@ -308,3 +308,40 @@ export function resetDailyQuotaStateForTests() {
   persistentQuotaUnavailableUntil.clear();
   quotaClient = null;
 }
+
+/**
+ * When the reader's own allowance comes back: the next midnight in their
+ * zone, the one consume_ai_daily_quota keys its day on
+ * (ai_quota_local_day). UTC when there is no zone, or one Intl does not
+ * know, as the database does.
+ *
+ * A route that tells the client to pause until the allowance renews has to
+ * name this instant, not UTC's midnight: for a reader in Taipei that was
+ * eight hours after their allowance was already back, and for one in New
+ * York four hours before it was, spent on refused requests.
+ */
+export function nextQuotaDayStart(timeZone: string | null | undefined, now = Date.now()) {
+  const zone = timeZone?.trim() || "UTC";
+  let wall: Intl.DateTimeFormat;
+  try {
+    wall = new Intl.DateTimeFormat("en-US", {
+      timeZone: zone,
+      hourCycle: "h23",
+      year: "numeric", month: "numeric", day: "numeric",
+      hour: "numeric", minute: "numeric", second: "numeric",
+    });
+  } catch {
+    return nextQuotaDayStart("UTC", now);
+  }
+  /** The zone's wall clock at `instant`, read as if it were UTC. */
+  const wallAsUtc = (instant: number) => {
+    const part = Object.fromEntries(wall.formatToParts(new Date(instant)).map(({ type, value }) => [type, Number(value)]));
+    return Date.UTC(part.year, part.month - 1, part.day, part.hour, part.minute, part.second);
+  };
+  const today = new Date(wallAsUtc(now));
+  const midnight = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 1);
+  // The offset at midnight itself, which a DST change that night can move.
+  let instant = midnight - (wallAsUtc(now) - now);
+  instant = midnight - (wallAsUtc(instant) - instant);
+  return instant;
+}

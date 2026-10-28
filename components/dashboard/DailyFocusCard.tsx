@@ -9,6 +9,8 @@ type DailyFocusCardProps = {
   due: number;
   retention: number;
   accuracy: number;
+  /** Reviews ever answered. With none, the two rates are not 100% and 0%: there is no reading yet. */
+  reviewed: number;
   loading?: boolean;
 };
 
@@ -23,7 +25,7 @@ function Metric({
 }: MetricProps) {
   return (
     <div className="border-t border-white/10 py-4">
-      <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
         {label}
       </p>
 
@@ -45,8 +47,11 @@ export default function DailyFocusCard({
   due,
   retention,
   accuracy,
+  reviewed,
   loading = false,
 }: DailyFocusCardProps) {
+  // The same rule as Settings' Learning overview (LearningProgressPanel).
+  const noRates = loading || reviewed === 0;
   const { t } = useTranslation();
   const copy = t.home.dailyFocus;
   const hasReviews = due > 0;
@@ -67,7 +72,7 @@ export default function DailyFocusCard({
     <article className="overflow-hidden rounded-[26px] bg-black p-5 text-white sm:p-6">
       <div className="flex items-start justify-between gap-6">
         <div className="min-w-0 flex-1">
-          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-ink-invert-faint">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.24em] text-ink-invert-faint">
             {copy.cardEyebrow}
           </p>
 
@@ -88,12 +93,12 @@ export default function DailyFocusCard({
       <div className="mt-7 grid grid-cols-2 gap-x-5">
         <Metric
           label={copy.retention}
-          value={loading ? "—" : `${retention}%`}
+          value={noRates ? "—" : `${retention}%`}
         />
 
         <Metric
           label={copy.accuracy}
-          value={loading ? "—" : `${accuracy}%`}
+          value={noRates ? "—" : `${accuracy}%`}
         />
       </div>
 

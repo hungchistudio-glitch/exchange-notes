@@ -1,0 +1,384 @@
+/*
+  The shop's filter sheet. It reads the shop's --shop-* and --c-* tokens
+  (YumiShop.module.css, .tokens), so it follows Standard and Cosmic.
+
+  Motion, all of it skipped under reduced motion:
+    - a fold opens by its row growing from 0fr to 1fr, its content easing
+      down into place a beat after, and its chevron turning;
+    - a chosen chip's check springs in (a slight overshoot), and the chip
+      fills;
+    - the count on the key at the foot rolls up when it changes.
+*/
+
+.sheet {
+  display: grid;
+  margin: -8px 0;
+  color: var(--shop-ink);
+}
+
+/* ------------------------------------------------------------- a fold */
+
+.group {
+  border-bottom: 1px solid var(--shop-line);
+}
+
+.group:last-child {
+  border-bottom: 0;
+}
+
+.groupHeading {
+  margin: 0;
+  font: inherit;
+}
+
+.groupKey {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.groupKey:focus-visible {
+  outline: 3px solid var(--shop-accent);
+  outline-offset: -3px;
+  border-radius: 12px;
+}
+
+.groupTitle {
+  flex-shrink: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+/* What is chosen, said quietly at the row's end; it steps back while the
+   fold is open, where the chips say it themselves. */
+.groupSummary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--shop-muted);
+  font-size: 0.8125rem;
+  text-align: end;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: opacity 180ms ease;
+}
+
+.group[data-open="true"] .groupSummary {
+  opacity: 0;
+}
+
+.summaryDots {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.summaryDots i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--shop-ground);
+}
+
+.summaryDots i + i {
+  margin-inline-start: -4px;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--shop-muted);
+  transition: transform 260ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.group[data-open="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+.groupBody {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 280ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.group[data-open="true"] .groupBody {
+  grid-template-rows: 1fr;
+}
+
+.groupInner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 160ms ease, transform 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.group[data-open="true"] .groupInner {
+  padding-bottom: 16px;
+  opacity: 1;
+  transform: none;
+  transition-delay: 70ms;
+}
+
+/* ------------------------------------------------------------ choices */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--shop-line);
+  border-radius: 999px;
+  background: var(--shop-card);
+  box-shadow: var(--shop-card-shadow);
+  color: var(--shop-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 120ms ease;
+}
+
+.chip:active:not(:disabled),
+.swatch:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.chip:disabled,
+.swatch:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.chip[aria-pressed="true"],
+.chip[aria-checked="true"] {
+  border-color: transparent;
+  background: var(--shop-ink);
+  color: var(--shop-ground);
+  box-shadow: none;
+}
+
+.chip:focus-visible,
+.swatch:focus-visible,
+.reset:focus-visible,
+.apply:focus-visible {
+  outline: 3px solid var(--shop-accent);
+  outline-offset: 2px;
+}
+
+/* The check takes no room until the chip is on, then springs in. */
+.check {
+  display: inline-grid;
+  place-items: center;
+  width: 0;
+  margin-inline-end: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: width 200ms cubic-bezier(.2, .8, .2, 1), margin 200ms cubic-bezier(.2, .8, .2, 1), opacity 140ms ease,
+    transform 320ms cubic-bezier(.34, 1.56, .64, 1);
+}
+
+.chip[aria-pressed="true"] .check,
+.chip[aria-checked="true"] .check {
+  width: 14px;
+  margin-inline-end: 6px;
+  opacity: 1;
+  transform: none;
+}
+
+.chipLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.count {
+  margin-inline-start: 8px;
+  color: var(--shop-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip[aria-pressed="true"] .count {
+  color: inherit;
+  opacity: 0.7;
+}
+
+.cookie {
+  width: 15px;
+  height: 15px;
+}
+
+.emblem {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ------------------------------------------------------------- colours */
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.swatch {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px 6px 10px;
+  border: 1px solid var(--shop-line);
+  border-radius: 16px;
+  background: var(--shop-card);
+  color: var(--shop-ink);
+  cursor: pointer;
+  transition: border-color 180ms ease, transform 120ms ease;
+}
+
+.swatch[aria-pressed="true"] {
+  border-color: var(--shop-ink);
+  box-shadow: inset 0 0 0 1px var(--shop-ink);
+}
+
+.swatchDisc {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  box-shadow: inset 0 -5px 10px #0000002e, inset 0 4px 8px #ffffff59, 0 0 0 3px var(--shop-card), 0 0 0 4px var(--shop-line);
+  color: #fff;
+  position: relative;
+  transition: box-shadow 200ms ease;
+}
+
+.swatchDisc::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 32% 26%, #ffffffa6 0, #fff0 40%);
+  pointer-events: none;
+}
+
+.swatch[aria-pressed="true"] .swatchDisc {
+  box-shadow: inset 0 -5px 10px #0000002e, inset 0 4px 8px #ffffff59, 0 0 0 3px var(--shop-card), 0 0 0 5px var(--shop-ink);
+}
+
+.swatchDisc svg {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 1px 1px #0008);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 140ms ease, transform 320ms cubic-bezier(.34, 1.56, .64, 1);
+}
+
+.swatch[aria-pressed="true"] .swatchDisc svg {
+  opacity: 1;
+  transform: none;
+}
+
+.swatchName {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.swatch .count {
+  margin: 0;
+}
+
+.note {
+  margin: 10px 2px 0;
+  color: var(--shop-muted);
+  font-size: 0.75rem;
+}
+
+/* ------------------------------------------------- the sheet's keys */
+
+.reset {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--shop-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.reset:disabled {
+  opacity: 0.35;
+  text-decoration: none;
+}
+
+.footer {
+  display: grid;
+}
+
+.apply {
+  min-height: 52px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: var(--shop-accent);
+  color: var(--shop-on-accent);
+  font-size: 1rem;
+  font-weight: 700;
+  transition: opacity 180ms ease, transform 120ms ease;
+}
+
+.apply:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.apply:disabled {
+  opacity: 0.5;
+}
+
+.applyLabel {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  animation: count-roll 240ms cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes count-roll {
+  from { opacity: 0; transform: translateY(40%); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .groupBody,
+  .groupInner,
+  .groupSummary,
+  .chevron,
+  .chip,
+  .check,
+  .swatch,
+  .swatchDisc,
+  .swatchDisc svg,
+  .apply {
+    transition: none;
+  }
+
+  .applyLabel {
+    animation: none;
+  }
+}

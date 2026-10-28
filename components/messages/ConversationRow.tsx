@@ -158,6 +158,14 @@ export default function ConversationRow({
           style={{ color: "var(--msg-ink-faint)" }}
         >
           @{summary.friend.exchangeId}
+          {!summary.isFriend && (
+            <span
+              className="ml-2 rounded-full px-1.5 py-px text-[0.6875rem] font-semibold"
+              style={{ background: "var(--msg-surface-soft)", color: "var(--msg-ink-soft)" }}
+            >
+              {copy.historyOnlyTag}
+            </span>
+          )}
         </span>
 
         <span className="mt-1 flex items-center justify-between gap-2">
@@ -179,7 +187,7 @@ export default function ConversationRow({
           <span className="flex shrink-0 items-center gap-1.5">
             {phraseCount > 0 && !hasUnread && (
               <span
-                className="rounded-full px-2 py-0.5 text-[0.625rem] font-semibold"
+                className="rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold"
                 style={{
                   background: "var(--msg-accent-soft)",
                   color: "var(--msg-accent)",

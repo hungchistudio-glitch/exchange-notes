@@ -10,6 +10,7 @@ import { DETECTION_CONFIDENCE_FLOOR, detectLanguage } from "@/lib/languageDetect
 import { classifyQueryKind } from "@/lib/lexicon/queryKind";
 import { normalizeQuery } from "@/lib/lexicon/normalize";
 import { tidyChineseDeep } from "@/lib/chinese/tidyChinese";
+import { readTermReadings } from "@/lib/lexicon/termReadings";
 import { readLanguageRoles } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
 import { after, NextResponse } from "next/server";
@@ -188,6 +189,21 @@ const HEDGE_AFTER_MS = readBoundedInteger(
  */
 const LANGUAGE_ENUM = [...LANGUAGE_CODES];
 
+const TERM_READINGS_PROPERTY = {
+  type: "array",
+  maxItems: 4,
+  items: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      pronunciation: { type: "string", maxLength: 60 },
+      meaning: { type: "string", maxLength: 80 },
+      example: { type: "string", maxLength: 80 },
+    },
+    required: ["pronunciation", "meaning", "example"],
+  },
+} as const;
+
 /*
  * Yumi's reading of a sentence, asked for only when there is a sentence.
  * Six more fields on every word lookup would be output tokens and seconds
@@ -262,6 +278,12 @@ function buildTextResultSchema(kind: LexiconQueryKind) {
        * output tokens. Empty for Chinese, whose readings come from pinyin.
        */
       termIpa: { type: "string", maxLength: 120 },
+      /*
+       * Every way the headword is said, when there is more than one (破音字,
+       * "record" the noun and the verb). In the same call for the same
+       * reason as termIpa; usually an empty array. Not asked of a sentence.
+       */
+      ...(sentence ? {} : { termReadings: TERM_READINGS_PROPERTY }),
       confidence: { type: "string", enum: ["high", "medium", "low"] },
       category: {
         type: "string",
@@ -283,6 +305,7 @@ function buildTextResultSchema(kind: LexiconQueryKind) {
       "highlightTranslation",
       "highlightPartOfSpeech",
       "termIpa",
+      ...(sentence ? [] : ["termReadings"]),
       "confidence",
       "category",
       ...(sentence ? Object.keys(INSIGHT_PROPERTIES) : []),
@@ -446,6 +469,9 @@ function toLexiconEntry(
   delete entry.insightImplied;
   delete entry.insightContext;
   delete entry.insightPhrases;
+  delete entry.termReadings;
+
+  const termReadings = readTermReadings(raw.termReadings, raw.termLanguage);
 
   /* Folded the same way: flat model fields in, one object or nothing out. */
   const insight = explainLanguage
@@ -462,6 +488,7 @@ function toLexiconEntry(
 
   return {
     ...entry,
+    ...(termReadings.length ? { termReadings } : {}),
     ...(explainLanguage ? { insight } : {}),
     highlight:
       highlightTerm && highlightTranslation

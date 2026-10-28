@@ -310,7 +310,7 @@ export default function UniversalSearchField({
           <button
             type="button"
             onClick={onboarding.dismiss}
-            className="shrink-0 text-[0.75rem] font-semibold text-ink-soft underline underline-offset-2"
+            className="hit-44 relative shrink-0 text-[0.75rem] font-semibold text-ink-soft underline underline-offset-2"
           >
             {copy.onboardingDismiss}
           </button>

@@ -22,6 +22,11 @@
   translate: 0 calc(var(--tuck, 0) * -6px);
 }
 
+/* Hangyumi's key, one target further along (HomeHangyumiKey). */
+.key[data-slot="hangyumi"] {
+  right: 176px;
+}
+
 .key[data-cosmic="true"] {
   color: rgb(245 242 240 / 0.78);
 }

@@ -16,7 +16,8 @@
  *   node scripts/render-shop-thumbnails.mjs
  *
  * Options: --base http://localhost:3000 --port 9222 --out public/shop-thumbs
- *          --collection station33   (or cultural, earrings: only those pieces,
+ *          --collection station33   (or cultural, earrings, collection03,
+ *                                   collection04, mythic: only those pieces,
  *                                   so the other pictures are not rewritten)
  *
  * No dependencies: Node's global WebSocket speaks the DevTools protocol

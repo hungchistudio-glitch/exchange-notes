@@ -5,7 +5,7 @@ import { Fragment, useEffect } from "react";
 
 import GoogleIdentityButton from "@/components/auth/GoogleIdentityButton";
 import styles from "@/components/auth/LoginScreen.module.css";
-import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
+import LoginYumi from "@/components/auth/LoginYumi";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { learningLanguageList } from "@/lib/languages";
 
@@ -34,13 +34,14 @@ export default function LoginScreen({ initialError = false }: LoginScreenProps) 
         className={`${styles.card} w-full max-w-md rounded-3xl bg-white p-7 shadow-sm sm:p-8`}
       >
         {/*
-          The one screen in the app that carries the identity rather than the
-          character: there is no Yumi here yet to introduce herself, so the
-          mark does it. It takes --yumi-mark rather than the page's text
-          colour, which is what carries it across into Cosmic Mode — the card
-          turns deep navy there and the mark turns white with it.
+          Yumi herself, where the flat mark was (2026-10-24): she is who the
+          landing page introduces, and the sign-in card was the one place a
+          new reader met the logo instead. The orbit takes --yumi-mark, as the
+          logo did, so it turns light with the card in Cosmic Mode.
         */}
-        <ExchangeNotesLogo className="mb-6 h-11 w-11 text-[color:var(--yumi-mark)]" />
+        <div className="text-[color:var(--yumi-mark)]">
+          <LoginYumi />
+        </div>
 
         {/*
           The languages themselves, each in its own name, and deliberately

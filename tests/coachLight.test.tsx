@@ -251,7 +251,7 @@ describe("over the search sheet (Chi, 2026-10-18)", () => {
 
     await waitFor(() => expect(light()).toHaveAttribute("data-shown", "true"));
     expect(light()?.style.transform).toBe("translate3d(21px, 557px, 0)");
-    expect(light()).toHaveTextContent("Save it · +1 energy cookie");
+    expect(light()).toHaveTextContent("Save it · +3 energy cookies");
 
     await act(async () => {
       announceWordSaved({ term: "lujo", duplicate: false });
@@ -344,7 +344,8 @@ describe("over a cookie's card (Chi, 2026-10-18)", () => {
     placed("button", { "data-coach-target": "feed-yumi" }, rect(220, 700, 120, 44), card);
 
     await waitFor(() => expect(light()?.style.transform).toBe("translate3d(217px, 697px, 0)"));
-    expect(light()).toHaveAttribute("data-raised", "true");
+    // Raised by the render after the move: waited for, not read at once.
+    await waitFor(() => expect(light()).toHaveAttribute("data-raised", "true"));
     expect(light()).toHaveTextContent("Feed me · no energy cookies spent");
   });
 

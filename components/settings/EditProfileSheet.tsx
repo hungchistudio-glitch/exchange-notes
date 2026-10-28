@@ -408,7 +408,7 @@ export default function EditProfileSheet({
               disabled={uploadingPhoto}
               aria-label={avatarUrl ? copy.changePhoto : copy.addPhoto}
               title={avatarUrl ? copy.changePhoto : copy.addPhoto}
-              className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white ring-[3px] ring-white transition-transform active:scale-90 disabled:opacity-50"
+              className="hit-44 absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white ring-[3px] ring-white transition-transform active:scale-90 disabled:opacity-50"
             >
               <Camera size={14} strokeWidth={2} />
             </button>
@@ -420,7 +420,7 @@ export default function EditProfileSheet({
                 disabled={uploadingPhoto}
                 aria-label={copy.removePhoto}
                 title={copy.removePhoto}
-                className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white ring-[3px] ring-white transition-transform active:scale-90 disabled:opacity-50"
+                className="hit-44 absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white ring-[3px] ring-white transition-transform active:scale-90 disabled:opacity-50"
               >
                 <X size={12} strokeWidth={2.5} />
               </button>
@@ -468,7 +468,7 @@ export default function EditProfileSheet({
                 onClick={() => setQrOpen((current) => !current)}
                 aria-expanded={qrOpen}
                 aria-label={qrCopy.title}
-                className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                className={`hit-44 relative flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
                   qrOpen
                     ? "bg-black text-white"
                     : "bg-black/[0.045] text-ink-soft hover:bg-black/[0.08]"

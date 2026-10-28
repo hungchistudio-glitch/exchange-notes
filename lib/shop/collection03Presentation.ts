@@ -1,15 +1,27 @@
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 import type { ShopItem } from "./catalog";
 import { isCollection03 } from "./collection03";
+import { isCollection04Orbital, isCollection04Space } from "./collection04";
 
 export type ShopCollection = "all" | "original" | "station33" | "collection03" | "earth03" | "dark03" | "finish03";
 export const SHOP_COLLECTIONS: ShopCollection[] = ["all", "original", "station33", "collection03"];
+/*
+ * The three collections: Earth Keepsakes ("original"), Orbital Atelier
+ * ("station33": the s33- pieces and Collection 04's orbital ones) and Deep
+ * Space Treasures ("collection03": Collection 03 and Collection 04's space
+ * ones). The finer filters below are Collection 03's own.
+ */
 export function inShopCollection(item: ShopItem, collection: ShopCollection) {
   if (collection === "all") return true;
-  if (collection === "original") return !item.id.startsWith("s33-") && !isCollection03(item.id);
-  if (collection === "station33") return item.id.startsWith("s33-");
+  const orbital = item.id.startsWith("s33-") || isCollection04Orbital(item.id);
+  const deepSpace = isCollection03(item.id) || isCollection04Space(item.id);
+  if (collection === "original") return !orbital && !deepSpace;
+  if (collection === "station33") return orbital;
+  if (collection === "collection03") return deepSpace;
   if (!isCollection03(item.id)) return false;
-  return collection === "collection03" || (collection === "earth03" ? item.country !== "basic" : collection === "finish03" ? item.slot === "material" : item.country === "basic" && item.slot !== "material");
+  if (collection === "earth03") return item.country !== "basic";
+  if (collection === "finish03") return item.slot === "material";
+  return item.country === "basic" && item.slot !== "material";
 }
 type Copy = { labels: Record<ShopCollection,string>; preview: string; newItem: string };
 export const COLLECTION03_COPY: Record<InterfaceLanguage, Copy> = {

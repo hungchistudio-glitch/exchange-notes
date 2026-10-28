@@ -28,7 +28,7 @@ import { buildableIds } from "@/lib/yumi3d/outfit";
 
 describe("the catalogue", () => {
   it("has 23 pieces per country, including 10 new cultural pieces, and 12 basics", () => {
-    const first = SHOP_ITEMS.filter(item => !item.id.startsWith("s33-") && !item.id.startsWith("s33v3-"));
+    const first = SHOP_ITEMS.filter(item => !item.id.startsWith("s33-") && !item.id.startsWith("s33v3-") && !item.id.startsWith("s33v4-"));
     expect(first).toHaveLength(127);
     for (const country of SHOP_COUNTRIES.filter(c => c !== "basic")) {
       const pieces = first.filter(item => item.country === country);
@@ -45,7 +45,8 @@ describe("the catalogue", () => {
   it("adds Station 33: three new pieces for every slot, from the five countries", () => {
     const station = SHOP_ITEMS.filter(item => item.id.startsWith("s33-"));
     expect(station).toHaveLength(36);
-    expect(SHOP_ITEMS).toHaveLength(220);
+    /* 220 until Collection 04's 113 (tests/yumiCollection04.test.ts). */
+    expect(SHOP_ITEMS).toHaveLength(333);
     for (const slot of SHOP_SLOTS) expect(station.filter(item => item.slot === slot), slot).toHaveLength(3);
     expect(station.every(item => item.country !== "basic")).toBe(true);
   });

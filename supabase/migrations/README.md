@@ -128,7 +128,63 @@ changes shape:
 | --- | --- |
 | `20261019120000_yumi_hello` | `20261019192626` |
 
-**Fifteen renames across eight occasions now. `apply_migration` always stamps its
+On 2026-10-23 Station 33 Collection 04, the 333 expansion's 113 pieces,
+applied before the merge (Chi: "那把它做完並上架"). It only inserts price rows
+for ids the live code does not sell yet:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261023200000_yumi_shop_collection04` | `20261023220624` |
+
+On 2026-10-24 two were applied from the database advisor's list — the
+missing foreign-key indexes, then the 2026-08-31 backup table dropped on its
+own — and written to files only after the versions were read back, so
+nothing needed renaming: `20261024205753_index_unindexed_foreign_keys` and
+`20261024205803_drop_vocabulary_examples_backup_20260831`. Applying first and
+naming the file second is the order that cannot drift.
+
+`20261024215615_yumi_save_word_three_cookies` (2026-10-24, three cookies a
+saved word) was named the same way, from the version read back.
+
+On 2026-10-25 Hangyumi's bank, rounds, awards and the ledger's `game` kind,
+applied before the merge (everything is new; the widened ledger checks only
+let one more kind in). Tested first inside a transaction that rolled back:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261025120000_hangyumi` | `20261025201516` |
+
+`20261025202916_hangyumi_canonical_by_trigger`, a few minutes later, was named
+from the version read back.
+So was `20261025222501_hangyumi_hint_follows_display_language`, the next day's
+change to the clue's language.
+
+On 2026-10-26 Yumi Wordvault's streak chests and the 33 Mythic Vault
+pieces, applied before the merge (Chi: "我授權你用 Supabase 套用"). Every
+column and table is new, the 33 rows are unbuyable, and the four-argument
+start the live pages call still plays Hangyumi:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261026200000_wordvault_chests_and_mythic_pieces` | `20261026184719` |
+
+On 2026-10-26 a Wordvault chest paying the word's whole worth, applied
+before the merge (Chi: "我授權你用 Supabase 套用"). It replaces
+`private.hangyumi_guess` with the same arguments and the same answer:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261027000000_wordvault_chest_full_worth` | `20261026232328` |
+
+On 2026-10-27 a word in play going on on any device, applied before the
+merge (Chi: "我授權你用 Supabase 套用"). It replaces the five-argument
+`private.hangyumi_start` with the same arguments and the same answer:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261027010000_hangyumi_resume_word_in_play` | `20261027000724` |
+
+**Twenty renames across thirteen occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 

@@ -243,7 +243,7 @@ export default function YumiCoach({
 
   const words = (
     <div className="min-w-0 flex-1 text-center sm:text-left">
-      <p className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
         {copy.eyebrow}
       </p>
 
@@ -280,7 +280,7 @@ export default function YumiCoach({
    */
   const trace = (
     <section aria-label={timelineCopy.title} className="w-full border-t border-black/[0.06] pt-3">
-      <p className="text-center text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-ink-faint sm:text-left">
+      <p className="text-center text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-ink-faint sm:text-left">
         {timelineCopy.title}
       </p>
 

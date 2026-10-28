@@ -1,0 +1,145 @@
+/*
+  Yumi at the end of a review round (ReviewCelebration.tsx). The hop, the
+  orbits, the sparks and the check each run once; the idle afterwards is the
+  app's shared one. Transform and opacity only.
+*/
+
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 9rem;
+  height: 9rem;
+}
+
+.hop {
+  width: 6.5rem;
+  animation: hop 760ms cubic-bezier(.3, 1.35, .5, 1) both;
+  transform-origin: 50% 100%;
+}
+
+.yumi {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Up from below, a stretch on the way, a squash on landing. */
+@keyframes hop {
+  0% { opacity: 0; transform: translateY(26px) scale(.82, .78); }
+  40% { opacity: 1; transform: translateY(-14px) scale(.94, 1.08); }
+  62% { transform: translateY(2px) scale(1.06, .93); }
+  80% { transform: translateY(-3px) scale(.99, 1.01); }
+  100% { transform: none; }
+}
+
+/* Two rings out from her, the second a beat later. */
+.orbit {
+  position: absolute;
+  inset: 18%;
+  border: 1.5px solid var(--color-black, #111);
+  border-radius: 50%;
+  opacity: 0;
+  animation: orbit-out 1100ms 260ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.orbitLate {
+  border-style: dashed;
+  animation-delay: 420ms;
+}
+
+@keyframes orbit-out {
+  0% { opacity: .5; transform: scale(.55); }
+  100% { opacity: 0; transform: scale(1.45); }
+}
+
+.spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px;
+  border-radius: 50%;
+  background: #e8b04a;
+  box-shadow: 0 0 6px #e8b04acc;
+  opacity: 0;
+  animation: spark 820ms var(--delay) cubic-bezier(.15, .8, .3, 1) both;
+}
+
+.spark:nth-child(even) {
+  background: var(--color-black, #111);
+  box-shadow: none;
+  width: 4px;
+  height: 4px;
+  margin: -2px;
+}
+
+@keyframes spark {
+  0% { opacity: 0; transform: translate(0, 0) scale(.4); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--x), var(--y)) scale(1); }
+}
+
+/* A check drawn at her side, once she has landed. */
+.check {
+  position: absolute;
+  right: 10%;
+  bottom: 10%;
+  width: 2.25rem;
+  height: 2.25rem;
+  animation: check-pop 360ms 620ms cubic-bezier(.3, 1.6, .5, 1) both;
+}
+
+.check circle {
+  fill: var(--color-black, #111);
+}
+
+.check path {
+  fill: none;
+  stroke: var(--color-white, #fff);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: check-draw 320ms 820ms ease-out forwards;
+}
+
+@keyframes check-pop {
+  from { opacity: 0; transform: scale(.4); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes check-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* The lines under her, in order; --rise-index says which. */
+.rise {
+  animation: rise 420ms calc(560ms + var(--rise-index, 0) * 90ms) cubic-bezier(.2, .8, .2, 1) both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .hop,
+  .check {
+    animation: none;
+  }
+
+  .orbit,
+  .spark {
+    display: none;
+  }
+
+  .check path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
