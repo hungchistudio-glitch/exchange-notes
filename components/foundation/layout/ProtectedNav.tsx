@@ -10,6 +10,7 @@ import NavMessagesIcon from "@/components/foundation/icons/NavMessagesIcon";
 import NavSearchIcon from "@/components/foundation/icons/NavSearchIcon";
 import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
 import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
+import CosmicCoreNavigation from "@/components/foundation/layout/CosmicCoreNavigation";
 import BottomNavigation from "@/components/foundation/layout/BottomNavigation";
 import AllFeaturesSheet from "@/components/foundation/navigation/AllFeaturesSheet";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
@@ -217,6 +218,7 @@ export default function ProtectedNav() {
     },
   ];
 
+  const Navigation = isCosmic ? CosmicCoreNavigation : BottomNavigation;
   const navRoutes = isCosmic ? cosmicRoutes : standardRoutes;
   const iconClassName = isCosmic ? COSMIC_ICON_CLASS_NAME : ICON_CLASS_NAME;
 
@@ -286,7 +288,8 @@ export default function ProtectedNav() {
     return (
       <>
         <div className="hidden opacity-40 transition-opacity duration-200 hover:opacity-100 focus-within:opacity-100 sm:block">
-          <BottomNavigation
+          <Navigation
+        routeKey={isCosmic ? pathname : undefined}
             label={isCosmic ? t.cosmic.deck.dockLabel : t.navigation.primaryLabel}
             items={toItems()}
           />
@@ -298,7 +301,8 @@ export default function ProtectedNav() {
 
   return (
     <>
-      <BottomNavigation
+      <Navigation
+        routeKey={isCosmic ? pathname : undefined}
         label={isCosmic ? t.cosmic.deck.dockLabel : t.navigation.primaryLabel}
         items={toItems()}
       />
