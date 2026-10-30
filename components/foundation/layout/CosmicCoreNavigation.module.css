@@ -1,5 +1,414 @@
-.dock{position:fixed;z-index:40;bottom:calc(env(safe-area-inset-bottom) + 22px);left:50%;transform:translateX(-50%);width:min(440px,calc(100vw - 24px));height:100px;pointer-events:none}.core{pointer-events:auto;position:absolute;bottom:0;left:calc(50% - 27px);width:54px;height:54px;padding:5px;border:1px solid #628789;border-radius:50%;background:linear-gradient(140deg,#405258,#111a20 40%,#090d11 70%,#344247);box-shadow:0 8px 24px #000a,0 0 18px #7fd6c71a,inset 0 1px 1px #c1e4dc66;cursor:pointer;transition:transform .3s}.gear{position:absolute;inset:3px;border-radius:50%;background:repeating-conic-gradient(#a5c2bc66 0deg 1deg,transparent 1deg 15deg);mask:radial-gradient(transparent 64%,#000 65%);transition:transform .35s}.lens{position:relative;display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 45% 28%,#233c42,#0a1218 70%);box-shadow:inset 0 2px 6px #000,0 0 0 1px #5e83854d;color:#b7dfd3}.lens svg{width:28px;height:28px}.core:active{transform:scale(.94)}.dock[data-open=true] .gear{transform:rotate(15deg)}.rail{position:absolute;bottom:64px;inset-inline:0;height:58px;padding:5px 8px;display:grid;grid-template-columns:repeat(6,1fr);border-radius:24px;border:1px solid #394c52;background:linear-gradient(175deg,#28363c 0,#141e25 8%,#0c141a 55%,#17232a);box-shadow:0 16px 40px #0009,inset 0 1px 0 #b3d4d41c,inset 0 -1px 0 #000;transform:translateY(8px) scale(.985);opacity:0;transform-origin:50% 100%;transition:transform 280ms cubic-bezier(.22,1,.36,1),opacity 280ms;pointer-events:none}.dock[data-open=true] .rail{transform:none;opacity:1;pointer-events:auto}.rail :is(button,a){background:none;border:0;position:relative;display:grid;place-items:center;color:#9bb0b6;cursor:pointer;border-radius:16px;transition:color .2s,transform .15s;min-width:44px}.rail :is(button,a)[data-selected=true]{color:#d0f7ed}.rail :is(button,a):active{transform:scale(.9)}.rail :is(button,a):focus-visible,.core:focus-visible{outline:2px solid #bcf4e6;outline-offset:3px}.track{position:absolute;bottom:5px;left:32px;right:32px;height:1px;background:#5b807336}.energy{position:absolute;left:8px;top:7px;width:calc((100% - 16px)/6);height:42px;transform:translateX(calc(var(--slot)*100%));transition:transform 280ms cubic-bezier(.22,1,.36,1);border-radius:18px;background:radial-gradient(ellipse at center,#85d9c518,transparent 75%);box-shadow:inset 0 -1px #a6ebd8,inset 0 1px #a6ebd82b}.dot{position:absolute;bottom:1px;width:3px;height:3px;border-radius:50%;background:#90bfba;opacity:0}.rail :is(button,a)[data-selected=true] .dot{opacity:1}.label{position:absolute;bottom:137px;left:50%;transform:translate(-50%,4px);padding:8px 14px;background:#16262d;border:1px solid #426361;border-radius:20px;color:#c8eee4;font-size:0.75rem;white-space:nowrap;opacity:0;transition:opacity .18s,transform .18s}.label[data-visible=true]{opacity:1;transform:translate(-50%,0)}
-.rail a{text-decoration:none}.badge{position:absolute;top:0;right:4px;min-width:15px;height:15px;border-radius:8px;background:#b9e6da;color:#10221e;font:0.625rem/0.9375rem Arial;text-align:center}.coreUnread{position:absolute;right:3px;top:3px;width:6px;height:6px;border-radius:50%;background:#b9e6da;box-shadow:0 0 6px #b9e6da}
+/* =========================================================
+   Cosmic mode's control core (Chi, 2026-10-30)
 
-@media(max-width:500px){.dock{bottom:calc(env(safe-area-inset-bottom) + 16px)}}
-@media(prefers-reduced-motion:reduce){.dock *{transition:none!important;animation:none!important}}
+   One obsidian core at the foot of the screen, and above it a slim rail of
+   six keys that opens from it. The precision design is the one Chi chose:
+   a thin metal rim, a recessed lens, and one ice-cyan arc of light. The arc
+   sleeps at the bottom of the rim; when the rail opens it turns to point
+   at the key under the finger, and when the rail closes it turns back.
+
+   The core keeps one size and one hit target in every state (Chi: "尺寸與
+   點擊範圍固定"), so its geometry is in px. Text is in rem and grows with
+   the app's font-size preference; everything sits on the core's bottom
+   edge, so a larger label grows upward, never into the rail.
+
+   The original design (PR #221) stays only for the review page's
+   comparison, as overrides at the end of this file.
+   ========================================================= */
+
+.dock {
+  --core-size: 54px;
+  --rail-height: 58px;
+  --rail-gap: 10px;
+  --label-gap: 11px;
+  --rail-bottom: calc(var(--core-size) + var(--rail-gap));
+  --label-bottom: calc(var(--rail-bottom) + var(--rail-height) + var(--label-gap));
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --open-duration: 280ms;
+
+  --ice: #b9ecec;
+  --ice-glow: #93eeee;
+  --ink-bright: #d2f4f5;
+  --ink-quiet: #8da2ae;
+
+  position: fixed;
+  z-index: 40;
+  bottom: calc(env(safe-area-inset-bottom) + 22px);
+  left: 50%;
+  width: min(440px, calc(100vw - 24px));
+  height: calc(var(--label-bottom) + 2rem);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+@media (max-width: 500px) {
+  .dock {
+    bottom: calc(env(safe-area-inset-bottom) + 16px);
+  }
+}
+
+/* ------------------------------------------------------------ the core */
+
+.core {
+  position: absolute;
+  bottom: 0;
+  left: calc(50% - var(--core-size) / 2);
+  width: var(--core-size);
+  height: var(--core-size);
+  padding: 6px;
+  border: 1px solid #677d85;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #9ba7ab 0%, #47565e 7%, #18232c 22%, #080e15 64%, #4a5c63 92%, #73858a);
+  box-shadow: 0 8px 20px #0009, inset 0 1px 1px #e8ffff55, inset 0 -1px 2px #000;
+  cursor: pointer;
+  pointer-events: auto;
+  /* Hold and slide is the core's own gesture: no scrolling, selecting or
+     callout menu may start from it. */
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  /* Reading rests the closed core (useCosmicCoreScrollFade). */
+  opacity: var(--core-opacity, 1);
+  transition: transform 300ms, opacity 240ms ease-out;
+}
+
+.core:active {
+  transform: scale(0.94);
+}
+
+.dock[data-open="true"] .core,
+.dock[data-dragging="true"] .core,
+.dock[data-loading="true"] .core,
+.core:focus-visible {
+  opacity: 1;
+}
+
+.core:focus-visible {
+  outline: 2px solid #bcf4e6;
+  outline-offset: 3px;
+}
+
+/* The rim's inner bevel. */
+.rim {
+  position: absolute;
+  inset: 2px;
+  border: 1px solid #d2edf01a;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.lens {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+  color: #b7dedf;
+  background: radial-gradient(ellipse at 45% 14%, #33434d 0%, #14212c 35%, #070f17 80%);
+  box-shadow: inset 0 3px 5px #000d, inset 0 -1px 1px #bedee82b, 0 0 0 1px #03080b;
+  transition: transform 180ms var(--ease-out), box-shadow 180ms;
+}
+
+/* The lens's upper reflection. */
+.lens::before {
+  content: "";
+  position: absolute;
+  inset: 2px 5px 55%;
+  border-radius: 50%;
+  background: linear-gradient(#d9f5ff12, transparent);
+  pointer-events: none;
+}
+
+.lens svg {
+  width: 28px;
+  height: 28px;
+}
+
+.core:active .lens,
+.dock[data-dragging="true"] .lens {
+  transform: scale(0.95);
+  box-shadow: inset 0 4px 8px #000, 0 0 0 1px #8cb8c333;
+}
+
+/*
+ * The arc: a ring whose only coloured edge is its top, turned by
+ * --arc-turn. At rest that is 180deg, the bottom of the rim; open, it is
+ * the bearing of the key in reach, measured by the component. Its
+ * strength follows the reading rest, so a resting core's light is low
+ * (35% opacity maps to none at all) and a woken one's is full.
+ */
+.arc {
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  border-top-color: var(--ice);
+  border-radius: 50%;
+  box-shadow: 0 -5px 9px -5px var(--ice-glow);
+  opacity: calc((var(--core-opacity, 1) - 0.35) / 0.65 * 0.55);
+  transform: rotate(var(--arc-turn, 180deg));
+  transition: transform var(--open-duration) var(--ease-out), opacity 240ms ease-out;
+  pointer-events: none;
+}
+
+.dock[data-open="true"] .arc,
+.dock[data-dragging="true"] .arc,
+.core:is(:hover, :focus-visible) .arc {
+  opacity: 1;
+}
+
+/* Only a real pending navigation turns this; the gesture never does. */
+.loadingArc {
+  position: absolute;
+  inset: -5px;
+  border: 1px solid transparent;
+  border-top-color: #b7efdf;
+  border-right-color: #b7efdf55;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dock[data-loading="true"] .loadingArc {
+  opacity: 1;
+  animation: core-loading 1.5s linear infinite;
+}
+
+@keyframes core-loading {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Unread somewhere behind a closed core. */
+.coreUnread {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b9e6da;
+  box-shadow: 0 0 6px #b9e6da;
+}
+
+/* ------------------------------------------------------------ the rail */
+
+.rail {
+  position: absolute;
+  bottom: var(--rail-bottom);
+  inset-inline: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  height: var(--rail-height);
+  padding: 5px 8px;
+  border: 1px solid #53656f66;
+  border-radius: 19px;
+  background: linear-gradient(180deg, #25323c, #101a24 12%, #0b131d 80%, #16232e);
+  box-shadow: 0 12px 30px #0008, inset 0 1px #d0efff18, inset 0 -1px #000;
+  opacity: 0;
+  transform: translateY(8px) scale(0.985);
+  transform-origin: 50% 100%;
+  transition: transform var(--open-duration) var(--ease-out), opacity var(--open-duration);
+  pointer-events: none;
+}
+
+.dock[data-open="true"] .rail {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* The hairline the selection light runs along. */
+.track {
+  position: absolute;
+  right: 32px;
+  bottom: 5px;
+  left: 32px;
+  height: 1px;
+  background: #7798a21f;
+}
+
+/* The selection light: one key wide, moved by --slot. */
+.energy {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  width: calc((100% - 16px) / 6);
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #b6f0ef06, #b6f0ef0b);
+  box-shadow: inset 0 -1px #a6e8e8, inset 0 1px #a6e8e812;
+  transform: translateX(calc(var(--slot) * 100%));
+  transition: transform var(--open-duration) var(--ease-out);
+}
+
+.key {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--ink-quiet);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 200ms, transform 150ms;
+}
+
+.key[data-selected="true"] {
+  color: var(--ink-bright);
+}
+
+.key:active {
+  transform: scale(0.9);
+}
+
+.key:focus-visible {
+  outline: 2px solid #bcf4e6;
+  outline-offset: 3px;
+}
+
+.dock[data-dragging="true"] .key[data-selected="true"] {
+  background: #b7dfd30c;
+  transform: translateY(1px) scale(0.94);
+}
+
+.dot {
+  position: absolute;
+  bottom: 1px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #90bfba;
+  opacity: 0;
+}
+
+.key[data-selected="true"] .dot {
+  opacity: 1;
+}
+
+.badge {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  min-width: 15px;
+  height: 15px;
+  border-radius: 8px;
+  background: #b9e6da;
+  color: #10221e;
+  font: 0.625rem/0.9375rem Arial, sans-serif;
+  text-align: center;
+}
+
+/* ----------------------------------------------------------- the label */
+
+/* Over the key in reach, held inside the dock's edges. Decorative: every
+   key carries its own accessible name. */
+.label {
+  position: absolute;
+  bottom: var(--label-bottom);
+  left: clamp(72px, calc(8px + (100% - 16px) / 6 * (var(--slot) + 0.5)), calc(100% - 72px));
+  padding: 6px 11px;
+  border: 1px solid #61798455;
+  border-radius: 8px;
+  background: #14212bf5;
+  color: #d1e6e8;
+  font-size: 0.6875rem;
+  letter-spacing: 0.035em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition: opacity 160ms, transform 160ms, left 240ms var(--ease-out);
+  pointer-events: none;
+}
+
+.label[data-visible="true"] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ------------------------------------------- the original, for comparison */
+
+.dock[data-design="original"] .core {
+  padding: 5px;
+  border-color: #628789;
+  background: linear-gradient(140deg, #405258, #111a20 40%, #090d11 70%, #344247);
+  box-shadow: 0 8px 24px #000a, 0 0 18px #7fd6c71a, inset 0 1px 1px #c1e4dc66;
+}
+
+.dock[data-design="original"] .rim {
+  inset: 3px;
+  border: 0;
+  background: repeating-conic-gradient(#a5c2bc66 0deg 1deg, transparent 1deg 15deg);
+  mask: radial-gradient(transparent 64%, #000 65%);
+  transition: transform 350ms;
+}
+
+.dock[data-design="original"][data-open="true"] .rim {
+  transform: rotate(15deg);
+}
+
+.dock[data-design="original"][data-dragging="true"] .rim {
+  transform: rotate(24deg);
+}
+
+.dock[data-design="original"] .lens {
+  overflow: visible;
+  color: #b7dfd3;
+  background: radial-gradient(circle at 45% 28%, #233c42, #0a1218 70%);
+  box-shadow: inset 0 2px 6px #000, 0 0 0 1px #5e83854d;
+}
+
+.dock[data-design="original"] .lens::before,
+.dock[data-design="original"] .arc {
+  display: none;
+}
+
+.dock[data-design="original"] .rail {
+  border-color: #394c52;
+  border-radius: 24px;
+  background: linear-gradient(175deg, #28363c 0, #141e25 8%, #0c141a 55%, #17232a);
+  box-shadow: 0 16px 40px #0009, inset 0 1px 0 #b3d4d41c, inset 0 -1px 0 #000;
+}
+
+.dock[data-design="original"] .key {
+  border-radius: 16px;
+  color: #9bb0b6;
+}
+
+.dock[data-design="original"] .key[data-selected="true"] {
+  color: #d0f7ed;
+}
+
+.dock[data-design="original"] .energy {
+  border-radius: 18px;
+  background: radial-gradient(ellipse at center, #85d9c518, transparent 75%);
+  box-shadow: inset 0 -1px #a6ebd8, inset 0 1px #a6ebd82b;
+}
+
+.dock[data-design="original"] .track {
+  background: #5b807336;
+}
+
+.dock[data-design="original"] .label {
+  left: 50%;
+  padding: 8px 14px;
+  border-color: #426361;
+  border-radius: 20px;
+  background: #16262d;
+  color: #c8eee4;
+  font-size: 0.75rem;
+  letter-spacing: normal;
+}
+
+/* -------------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .dock * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
