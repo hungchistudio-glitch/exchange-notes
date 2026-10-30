@@ -127,7 +127,11 @@ export function createWordvaultStudio(
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.02;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  /* three 0.186 has no PCFSoftShadowMap (it falls back with a warning). Its
+     PCF filter now samples a Vogel disk scaled by the light's
+     shadow.radius, which the soft map used to ignore: the softness is set
+     there, below. */
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
 
   const scene = new THREE.Scene();
