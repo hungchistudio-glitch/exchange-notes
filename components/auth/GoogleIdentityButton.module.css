@@ -26,8 +26,14 @@
   pointer-events: none;
 }
 
+/* A fixed height, not the content's: Google draws its button as plain
+   markup first, then adds the iframe one beneath it and only then removes
+   the first, so for a moment the slot held two buttons, 80px, and the whole
+   card jumped down and back (measured on /login, 2026-10-28: CLS 0.048 of
+   the page's 0.064). Still transparent then, the overflow is never seen. */
 .button {
   position: relative;
+  height: 40px;
   opacity: 0;
   transition: opacity 280ms cubic-bezier(0.2, 0, 0, 1);
 }

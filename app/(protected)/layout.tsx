@@ -24,27 +24,12 @@ import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
 import { VocabularyProvider } from "@/contexts/VocabularyContext";
 import { isInterfaceMode } from "@/lib/appPreferences";
 import { getServerInterfaceMode } from "@/lib/preferences/serverPreferences";
+import { askTwice, withSignal } from "@/lib/supabase/retry";
 import { createClient } from "@/lib/supabase/server";
 
 type ProtectedLayoutProps = {
   children: ReactNode;
 };
-
-/*
- * A read that failed is asked once more, a moment later. PostgREST now and
- * then refuses a token the proxy minted a moment before (PGRST303, seen five
- * times in a day on 2026-10-26, always one of the two reads below and never
- * both): its clock a little behind the auth server's, the new token is not
- * valid yet. A quarter of a second later it is.
- */
-async function askTwice<T extends { error: unknown }>(
-  read: () => PromiseLike<T>,
-): Promise<T> {
-  const first = await read();
-  if (!first.error) return first;
-  await new Promise((resolve) => setTimeout(resolve, 250));
-  return read();
-}
 
 export default async function ProtectedLayout({
   children,
@@ -85,21 +70,25 @@ export default async function ProtectedLayout({
    */
   const [profileResult, preferencesResult, cookieInterfaceMode] =
     await Promise.all([
-      askTwice(() =>
-        supabase
-          .from("profiles")
-          .select(
-            "onboarding_completed, learning_language, native_language, interface_mode",
-          )
-          .eq("id", user.id)
-          .maybeSingle(),
+      askTwice((signal) =>
+        withSignal(
+          supabase
+            .from("profiles")
+            .select(
+              "onboarding_completed, learning_language, native_language, interface_mode",
+            )
+            .eq("id", user.id),
+          signal,
+        ).maybeSingle(),
       ),
-      askTwice(() =>
-        supabase
-          .from("profiles")
-          .select("app_preferences")
-          .eq("id", user.id)
-          .maybeSingle(),
+      askTwice((signal) =>
+        withSignal(
+          supabase
+            .from("profiles")
+            .select("app_preferences")
+            .eq("id", user.id),
+          signal,
+        ).maybeSingle(),
       ),
       getServerInterfaceMode(),
     ]);
