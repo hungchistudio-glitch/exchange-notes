@@ -79,7 +79,11 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.02;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  /* three 0.186 has no PCFSoftShadowMap (it falls back with a warning). Its
+     PCF filter now samples a Vogel disk scaled by the light's
+     shadow.radius, which the soft map used to ignore: the softness is set
+     there, below. */
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   /* The wind's front: clips her away from the left as she turns to sand. */
   renderer.localClippingEnabled = true;
   renderer.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
