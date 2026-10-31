@@ -58,6 +58,8 @@ export function RouteSkeleton({ children }: { children: React.ReactNode }) {
       className="min-h-[100dvh] bg-surface px-4 pt-[max(1rem,env(safe-area-inset-top))] motion-safe:animate-pulse"
       role="status"
       aria-busy="true"
+      /* RouteStage waits for this to leave before the page arrives. */
+      data-route-skeleton=""
     >
       <LoadingLabel />
       {/*

@@ -16,6 +16,7 @@ import NavPendingHint from "./NavPendingHint";
 import s from "./CosmicCoreNavigation.module.css";
 import useCosmicCoreGesture from "./useCosmicCoreGesture";
 import useCosmicCoreScrollFade from "./useCosmicCoreScrollFade";
+import useRailScrub from "./useRailScrub";
 
 /* =========================================================
    Cosmic mode's navigation: one core, six keys
@@ -35,6 +36,10 @@ import useCosmicCoreScrollFade from "./useCosmicCoreScrollFade";
    - **Navigation starts in the click.** A destination is a real <Link>,
      and search runs its action in the same event: nothing waits for an
      animation, so a cached route is not made to look slow.
+   - **A finger can slide along the open rail.** The selection light and
+     the name follow it, and lifting enters the key nearest it; lifting off
+     the rail enters nothing (useRailScrub, Chi, 2026-10-30: "幫我升級為
+     高級可滑式"). A tap on a key is unchanged.
    - **One arc of light that knows where it points.** When the rail opens,
      the arc on the core's rim turns to the key in reach (measured, so it
      points true at any width), and turns back to rest when it closes
@@ -74,6 +79,8 @@ export default function CosmicCoreNavigation({ items, label, routeKey, design = 
   const [hovered, setHovered] = useState<number | null>(null);
   const [showLabel, setShowLabel] = useState(false);
   const [pendingRoutes, setPendingRoutes] = useState<readonly string[]>([]);
+  /** A finger sliding along the open rail. */
+  const [scrubbing, setScrubbing] = useState(false);
 
   /* A new route closes everything, in render, so the first frame of the
      new page already has the rail on its way down. */
@@ -85,10 +92,16 @@ export default function CosmicCoreNavigation({ items, label, routeKey, design = 
     setSelected(null);
     setHovered(null);
     setShowLabel(false);
+    setScrubbing(false);
   }
 
   const root = useRef<HTMLDivElement>(null);
   const core = useRef<HTMLButtonElement>(null);
+  const rail = useRef<HTMLElement>(null);
+  const energy = useRef<HTMLDivElement>(null);
+  const nameLabel = useRef<HTMLDivElement>(null);
+  /** The dock's width when a slide starts: the label is placed against it. */
+  const slideWidth = useRef(0);
   const labelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const railId = useId();
 
@@ -97,7 +110,7 @@ export default function CosmicCoreNavigation({ items, label, routeKey, design = 
   const current = hovered ?? selected ?? activeIndex;
   const unread = items.some(item => (item.badgeCount ?? 0) > 0);
 
-  useCosmicCoreScrollFade(root, open || dragging || loading, routeKey);
+  useCosmicCoreScrollFade(root, open || dragging || loading, routeKey, core);
 
   useEffect(() => () => {
     if (labelTimer.current) clearTimeout(labelTimer.current);
@@ -197,12 +210,51 @@ export default function CosmicCoreNavigation({ items, label, routeKey, design = 
     },
   });
 
+  /*
+   * A finger sliding along the open rail. Its position (a fractional key
+   * index) moves the light and the label directly, their transform and
+   * translate written frame by frame on those two layers alone: a variable
+   * on the dock restyled all of it on every move. The key in reach is
+   * state, for its name and the arc. Let go, the inline values are removed
+   * and --slot takes the light and the label back, with their easing.
+   */
+  const scrub = useRailScrub({
+    rail,
+    keys: () => Array.from(root.current?.querySelectorAll<HTMLElement>("[data-core-item]") ?? []),
+    enabled: open,
+    onStart: () => {
+      if (labelTimer.current) clearTimeout(labelTimer.current);
+      slideWidth.current = root.current?.clientWidth ?? 0;
+      setScrubbing(true);
+      setShowLabel(true);
+    },
+    onMove: ({ position, index }) => {
+      if (energy.current) energy.current.style.transform = `translateX(${position * 100}%)`;
+      const width = slideWidth.current;
+      if (nameLabel.current && width && design === "precision") {
+        const x = Math.min(width - 72, Math.max(72, 8 + ((width - 16) / 6) * (position + 0.5)));
+        nameLabel.current.style.translate = `calc(${x}px - 50%) 0`;
+      }
+      setHovered(current => (current === index ? current : index));
+    },
+    onEnd: index => {
+      setScrubbing(false);
+      energy.current?.style.removeProperty("transform");
+      nameLabel.current?.style.removeProperty("translate");
+      // Lifted on a key: its click (sent by the hook) chooses it. Off the rail: back to where we are.
+      if (index === null) {
+        setHovered(null);
+        setShowLabel(false);
+      }
+    },
+  });
+
   /* Pointer and focus show a key's name; the precision design only. */
   const reach = (index: number) =>
     design === "precision"
       ? {
-          onPointerEnter: () => { if (!dragging) setHovered(index); },
-          onPointerLeave: () => { if (!dragging) setHovered(null); },
+          onPointerEnter: () => { if (!dragging && !scrubbing) setHovered(index); },
+          onPointerLeave: () => { if (!dragging && !scrubbing) setHovered(null); },
           onFocus: () => setHovered(index),
           onBlur: () => { if (!dragging) setHovered(null); },
         }
@@ -216,18 +268,31 @@ export default function CosmicCoreNavigation({ items, label, routeKey, design = 
       data-open={open}
       data-dragging={dragging}
       data-loading={loading}
+      data-scrubbing={scrubbing}
       className={s.dock}
       style={{ "--slot": current } as CSSProperties}
     >
       {/* Decorative: every key carries its own name, and naming each key the
           finger crosses aloud would be noise. */}
-      <div className={s.label} aria-hidden="true" data-visible={showLabel || (design === "precision" && open)}>
+      <div ref={nameLabel} className={s.label} aria-hidden="true" data-visible={showLabel || (design === "precision" && open)}>
         {items[current]?.label}
       </div>
 
-      <nav id={railId} className={s.rail} aria-label={label} inert={!open} aria-hidden={!open}>
+      <nav
+        ref={rail}
+        id={railId}
+        className={s.rail}
+        aria-label={label}
+        inert={!open}
+        aria-hidden={!open}
+        onPointerDown={scrub.onPointerDown}
+        onPointerMove={scrub.onPointerMove}
+        onPointerUp={scrub.onPointerUp}
+        onPointerCancel={scrub.onPointerCancel}
+        onLostPointerCapture={scrub.onLostPointerCapture}
+        onClickCapture={scrub.onClickCapture}
+      >
         <div className={s.track} />
-        <div className={s.energy} />
         {items.map((item, index) => (
           <CoreKey
             key={item.href ?? item.label}
@@ -243,6 +308,11 @@ export default function CosmicCoreNavigation({ items, label, routeKey, design = 
             {...reach(index)}
           />
         ))}
+        {/* Over the keys, not under: a moving layer under them made the
+            browser lift the keys into a layer of their own, re-rastered as
+            the light passed (every key repainted ~50 times in a slide). The
+            light is all but transparent and takes no pointer. */}
+        <div ref={energy} className={s.energy} aria-hidden="true" />
       </nav>
 
       <button

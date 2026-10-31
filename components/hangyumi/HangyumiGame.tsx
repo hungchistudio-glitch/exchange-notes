@@ -581,7 +581,7 @@ export default function HangyumiGame({
   const earned = todayEarned ?? round?.today.earned ?? 0;
 
   return (
-    <div className={styles.page} data-status={status} data-entering={entering ? "true" : "false"} data-arrival={arrival}>
+    <div className={styles.page} data-status={status} data-entering={entering ? "true" : "false"} data-arrival={arrival} data-own-arrival="">
       {/* The language and level keys wait for what was saved, so they never
           show B1 for a moment on the way to the level last played. */}
       <header className={styles.bar} data-prefs={prefsRead ? "read" : "pending"}>

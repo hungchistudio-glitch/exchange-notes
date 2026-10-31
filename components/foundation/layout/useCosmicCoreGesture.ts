@@ -26,6 +26,8 @@ export const HOLD_MS = 180;
 const SLOP_PX = 12;
 /** One short tick as the finger reaches a new key, where it is supported. */
 const HAPTIC_MS = 8;
+/** The keys' boxes are measured again no more often than this. */
+const MEASURE_EVERY_MS = 150;
 
 type Session = {
   pointerId: number;
@@ -53,6 +55,8 @@ export default function useCosmicCoreGesture({ root, core, routeKey, onOpen, onH
   /** The click that follows a completed gesture is not a tap. */
   const swallowClick = useRef(false);
   const callbacks = useRef({ onOpen, onHover, onCancel, onCommit });
+  /** The keys' boxes, as last measured, and when. */
+  const boxes = useRef<{ at: number; keys: { index: number; box: DOMRect }[] } | null>(null);
   useEffect(() => {
     callbacks.current = { onOpen, onHover, onCancel, onCommit };
   });
@@ -63,6 +67,7 @@ export default function useCosmicCoreGesture({ root, core, routeKey, onOpen, onH
     if (holdTimer.current) clearTimeout(holdTimer.current);
     holdTimer.current = null;
     session.current = null;
+    boxes.current = null;
     const pointer = ending?.pointerId;
     if (pointer !== undefined && core.current?.hasPointerCapture?.(pointer)) {
       core.current.releasePointerCapture(pointer);
@@ -85,10 +90,22 @@ export default function useCosmicCoreGesture({ root, core, routeKey, onOpen, onH
     };
   }, [stop, routeKey]);
 
-  /** The key under a point, if it is one of this rail's. */
+  /*
+   * The key under a point, if it is one of this rail's. From the keys'
+   * boxes rather than elementFromPoint: a hit test after every change of
+   * state laid the page out again on each move (105 layouts in three
+   * seconds under a phone's CPU). The boxes are measured afresh every
+   * MEASURE_EVERY_MS, because the rail is still rising into place for the
+   * first 280ms of a hold.
+   */
   function keyAt(x: number, y: number): number | null {
-    const key = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-core-item]");
-    return key && root.current?.contains(key) ? Number(key.dataset.coreItem) : null;
+    const now = performance.now();
+    if (!boxes.current || now - boxes.current.at > MEASURE_EVERY_MS) {
+      const keys = Array.from(root.current?.querySelectorAll<HTMLElement>("[data-core-item]") ?? []);
+      boxes.current = { at: now, keys: keys.map(key => ({ index: Number(key.dataset.coreItem), box: key.getBoundingClientRect() })) };
+    }
+    const hit = boxes.current.keys.find(({ box }) => x >= box.left && x <= box.right && y >= box.top && y <= box.bottom);
+    return hit ? hit.index : null;
   }
 
   function reach(gesture: Session, index: number | null) {
