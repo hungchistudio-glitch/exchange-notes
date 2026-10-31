@@ -278,7 +278,9 @@ export default function BottomNavigation({
                 : `translate(${offset?.x ?? 0}px, ${offset?.y ?? 0}px)`,
               boxShadow: "0 0 0 6px var(--dock-indicator-halo)",
             }}
-          />
+          >
+            <span aria-hidden="true" className={styles.indicatorOrbit} />
+          </div>
         )}
 
         <div
