@@ -545,7 +545,7 @@ export default function YumiShop({
   }
 
   return (
-    <div ref={pageRef} className={styles.page}>
+    <div ref={pageRef} className={styles.page} data-own-arrival="">
       <div ref={topRef} className={styles.top} data-shrunk="false">
         <header className={styles.header}>
           <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={() => void goBack()}>

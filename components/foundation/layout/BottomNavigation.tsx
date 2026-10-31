@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import NavPendingHint from "@/components/foundation/layout/NavPendingHint";
+import useRailScrub from "@/components/foundation/layout/useRailScrub";
 import {
   useEffect,
   useLayoutEffect,
@@ -70,6 +71,12 @@ export default function BottomNavigation({
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLElement | null>>([]);
   const [offset, setOffset] = useState<{ x: number; y: number } | null>(null);
+  /* A finger sliding along the dock (useRailScrub): the key in reach. */
+  const [scrubbing, setScrubbing] = useState(false);
+  const [reach, setReach] = useState<number | null>(null);
+  /** --scrub-x is in charge of the light: from a slide's start until it is let go. */
+  const [held, setHeld] = useState(false);
+  const releaseTimer = useRef(0);
 
   const activeIndex = items.findIndex((item) => item.active);
   /*
@@ -134,6 +141,70 @@ export default function BottomNavigation({
     return () => observer.disconnect();
   }, [activeIndex, activeLabel, items.length]);
 
+  /*
+   * The indicator under a sliding finger. Its position while sliding is a
+   * CSS variable on the dock, --scrub-x, which the indicator's transform
+   * reads before its measured offset; so the finger never fights React for
+   * the transform. After a lift onto a key the light rests there until that
+   * key becomes the active one (or, for an action key, a moment later).
+   */
+  const keyOffset = (position: number) => {
+    const container = containerRef.current;
+    const keys = itemRefs.current.filter((key): key is HTMLElement => key !== null);
+    if (!container || keys.length === 0) return 0;
+    const lower = Math.floor(position);
+    const upper = Math.min(keys.length - 1, lower + 1);
+    const centre = (key: HTMLElement) => {
+      const box = key.getBoundingClientRect();
+      return box.left + box.width / 2;
+    };
+    const x = centre(keys[lower]) + (centre(keys[upper]) - centre(keys[lower])) * (position - lower);
+    const box = container.getBoundingClientRect();
+    return x - (box.left + box.width / 2);
+  };
+
+  const releaseScrub = () => {
+    window.clearTimeout(releaseTimer.current);
+    containerRef.current?.style.removeProperty("--scrub-x");
+    setHeld(false);
+  };
+
+  /* The key it rested on became the page: React's offset takes over again. */
+  const [heldFor, setHeldFor] = useState(activeIndex);
+  if (heldFor !== activeIndex) {
+    setHeldFor(activeIndex);
+    setHeld(false);
+  }
+  useEffect(() => {
+    window.clearTimeout(releaseTimer.current);
+    containerRef.current?.style.removeProperty("--scrub-x");
+  }, [activeIndex]);
+  useEffect(() => () => window.clearTimeout(releaseTimer.current), []);
+
+  const scrub = useRailScrub({
+    rail: containerRef,
+    keys: () => itemRefs.current.filter((key): key is HTMLElement => key !== null),
+    onStart: () => {
+      setScrubbing(true);
+      setHeld(true);
+    },
+    onMove: ({ position, index }) => {
+      containerRef.current?.style.setProperty("--scrub-x", `${keyOffset(position)}px`);
+      setReach(current => (current === index ? current : index));
+    },
+    onEnd: index => {
+      setScrubbing(false);
+      setReach(null);
+      if (index === null) {
+        releaseScrub();
+        return;
+      }
+      containerRef.current?.style.setProperty("--scrub-x", `${keyOffset(index)}px`);
+      window.clearTimeout(releaseTimer.current);
+      releaseTimer.current = window.setTimeout(releaseScrub, 1200);
+    },
+  });
+
   return (
     /*
      * The dock's own padding is hardware, not text.
@@ -169,18 +240,42 @@ export default function BottomNavigation({
         /* Opaque, and no backdrop-filter — see the note in AppHeader. This
            one is fixed rather than sticky, so it re-blurs on every scroll
            frame of every screen in the app. */
-        className="relative w-full max-w-xl rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-[var(--dock-padding)] shadow-[var(--dock-shadow)]"
+        className="relative w-full max-w-xl touch-none select-none rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-[var(--dock-padding)] shadow-[var(--dock-shadow)]"
+        onPointerDown={scrub.onPointerDown}
+        onPointerMove={scrub.onPointerMove}
+        onPointerUp={scrub.onPointerUp}
+        onPointerCancel={scrub.onPointerCancel}
+        onLostPointerCapture={scrub.onLostPointerCapture}
+        onClickCapture={scrub.onClickCapture}
       >
-        {offset && (
+        {/* The key in reach, named over the finger while it slides. */}
+        {scrubbing && reach !== null && items[reach] && (
           <div
             aria-hidden="true"
-            className="absolute left-1/2 top-1/2 rounded-full border border-[var(--dock-indicator-border)] bg-[var(--dock-indicator)] transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="pointer-events-none absolute bottom-full left-1/2 mb-3 whitespace-nowrap rounded-full will-change-transform border border-[var(--dock-indicator-border)] bg-[var(--dock-indicator)] px-3 py-1.5 text-[0.75rem] font-medium text-[var(--dock-active-ink)] shadow-[var(--dock-shadow)]"
+            style={{ transform: "translateX(calc(-50% + var(--scrub-x, 0px)))" }}
+          >
+            {items[reach].label}
+          </div>
+        )}
+        {/* On a page the dock has no key for, the light appears only under a
+            sliding finger. */}
+        {(offset || scrubbing) && (
+          <div
+            aria-hidden="true"
+            /* Its own layer, so a sliding finger moves it without
+               repainting the dock under it. */
+            className={`absolute left-1/2 top-1/2 rounded-full border border-[var(--dock-indicator-border)] bg-[var(--dock-indicator)] will-change-transform ${
+              scrubbing ? "" : "transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            }`}
             style={{
               width: INDICATOR_SIZE,
               height: INDICATOR_SIZE,
               marginLeft: -INDICATOR_SIZE / 2,
               marginTop: -INDICATOR_SIZE / 2,
-              transform: `translate(${offset.x}px, ${offset.y}px)`,
+              transform: held
+                ? `translate(var(--scrub-x, ${offset?.x ?? 0}px), ${offset?.y ?? 0}px)`
+                : `translate(${offset?.x ?? 0}px, ${offset?.y ?? 0}px)`,
               boxShadow: "0 0 0 6px var(--dock-indicator-halo)",
             }}
           />
@@ -193,8 +288,11 @@ export default function BottomNavigation({
           }}
         >
           {items.map((item, index) => {
+            // Under a sliding finger the key in reach is the one lit, as the
+            // light sits under it; otherwise the page's own key.
+            const lit = scrubbing ? index === reach : item.active;
             const className = `relative z-10 flex h-[var(--dock-key-size)] items-center justify-center rounded-full transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-              item.active
+              lit
                 ? "scale-[1.05] text-[var(--dock-active-ink)]"
                 : "text-ink-faint hover:text-ink-strong"
             }`;

@@ -32,6 +32,12 @@ export default function useCosmicCoreScrollFade(
   /** Open, mid-gesture or navigating: the core stays at full strength. */
   suspended: boolean,
   routeKey?: string,
+  /**
+   * Where --core-opacity is written: the core itself, so a scroll restyles
+   * the core and not the whole dock (its rail, keys and label). The dock
+   * when none is given.
+   */
+  paintTarget?: RefObject<HTMLElement | null>,
 ) {
   useEffect(() => {
     const dock = root.current;
@@ -45,7 +51,8 @@ export default function useCosmicCoreScrollFade(
     let frame = 0;
     let wake: ReturnType<typeof setTimeout> | undefined;
 
-    const paint = (opacity: number) => dock.style.setProperty("--core-opacity", String(opacity));
+    const target = paintTarget?.current ?? dock;
+    const paint = (opacity: number) => target.style.setProperty("--core-opacity", String(opacity));
     const restore = () => {
       clearTimeout(wake);
       if (frame) cancelAnimationFrame(frame);
@@ -87,5 +94,5 @@ export default function useCosmicCoreScrollFade(
       dock.removeEventListener("focusin", restore);
       restore();
     };
-  }, [root, suspended, routeKey]);
+  }, [root, suspended, routeKey, paintTarget]);
 }

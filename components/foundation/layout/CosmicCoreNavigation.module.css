@@ -14,6 +14,14 @@
 
    The original design (PR #221) stays only for the review page's
    comparison, as overrides at the end of this file.
+
+   Everything that moves is its own compositor layer (will-change) and
+   moves by transform, translate or opacity alone (Chi, 2026-10-30: "手機版
+   的cosmic mode bar還是很卡"). Measured under a phone's CPU at 3x pixels, a
+   finger sliding along the rail made the browser repaint 900 times in
+   three seconds: the light, the label and the arc were painted into the
+   rail's own layer, so every move repainted the rail's gradient and wide
+   shadow, and the label moved by `left`, laying the dock out again.
    ========================================================= */
 
 .dock {
@@ -31,6 +39,8 @@
   --ink-bright: #d2f4f5;
   --ink-quiet: #8da2ae;
 
+  /* The label's position is a share of the dock's width: 100cqi. */
+  container-type: inline-size;
   position: fixed;
   z-index: 40;
   bottom: calc(env(safe-area-inset-bottom) + 22px);
@@ -67,9 +77,11 @@
   touch-action: none;
   user-select: none;
   -webkit-touch-callout: none;
-  /* Reading rests the closed core (useCosmicCoreScrollFade). */
+  /* Reading rests the closed core (useCosmicCoreScrollFade writes the
+     variable on the core itself, so only the core is restyled). */
   opacity: var(--core-opacity, 1);
   transition: transform 300ms, opacity 240ms ease-out;
+  will-change: transform, opacity;
 }
 
 .core:active {
@@ -149,6 +161,7 @@
   opacity: calc((var(--core-opacity, 1) - 0.35) / 0.65 * 0.55);
   transform: rotate(var(--arc-turn, 180deg));
   transition: transform var(--open-duration) var(--ease-out), opacity 240ms ease-out;
+  will-change: transform, opacity;
   pointer-events: none;
 }
 
@@ -211,6 +224,7 @@
   transform: translateY(8px) scale(0.985);
   transform-origin: 50% 100%;
   transition: transform var(--open-duration) var(--ease-out), opacity var(--open-duration);
+  will-change: transform, opacity;
   pointer-events: none;
 }
 
@@ -218,6 +232,14 @@
   opacity: 1;
   transform: none;
   pointer-events: auto;
+}
+
+/* A finger slides along the open rail (useRailScrub): nothing scrolls,
+   selects or calls out from under it. */
+.rail {
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* The hairline the selection light runs along. */
@@ -242,6 +264,19 @@
   box-shadow: inset 0 -1px #a6e8e8, inset 0 1px #a6e8e812;
   transform: translateX(calc(var(--slot) * 100%));
   transition: transform var(--open-duration) var(--ease-out);
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* Under a sliding finger the light and the name follow it exactly, between
+   keys too: the component sets their transform and translate directly,
+   frame by frame, with no easing to lag behind. */
+.dock[data-scrubbing="true"] .energy {
+  transition: none;
+}
+
+.dock[data-scrubbing="true"] .label {
+  transition: opacity 160ms;
 }
 
 .key {
@@ -255,7 +290,11 @@
   color: var(--ink-quiet);
   text-decoration: none;
   cursor: pointer;
-  transition: color 200ms, transform 150ms;
+  /* No colour transition: a colour cannot be composited, so easing it
+     repainted the key, its icon and its dot for 200ms each time the key
+     in reach changed, two keys at a time, hundreds of paints in a slide.
+     The gliding light carries the movement; the key lights at once. */
+  transition: transform 150ms;
 }
 
 .key[data-selected="true"] {
@@ -308,9 +347,11 @@
 /* Over the key in reach, held inside the dock's edges. Decorative: every
    key carries its own accessible name. */
 .label {
+  /* Over the key's centre, held 72px inside the dock's edges. */
+  --label-x: clamp(72px, 8px + (100cqi - 16px) / 6 * (var(--slot) + 0.5), 100cqi - 72px);
   position: absolute;
   bottom: var(--label-bottom);
-  left: clamp(72px, calc(8px + (100% - 16px) / 6 * (var(--slot) + 0.5)), calc(100% - 72px));
+  left: 0;
   padding: 6px 11px;
   border: 1px solid #61798455;
   border-radius: 8px;
@@ -320,14 +361,15 @@
   letter-spacing: 0.035em;
   white-space: nowrap;
   opacity: 0;
-  transform: translate(-50%, 4px);
-  transition: opacity 160ms, transform 160ms, left 240ms var(--ease-out);
+  translate: calc(var(--label-x) - 50%) 4px;
+  transition: opacity 160ms, translate 240ms var(--ease-out);
+  will-change: translate, opacity;
   pointer-events: none;
 }
 
 .label[data-visible="true"] {
   opacity: 1;
-  transform: translate(-50%, 0);
+  translate: calc(var(--label-x) - 50%) 0;
 }
 
 /* ------------------------------------------- the original, for comparison */
@@ -394,7 +436,7 @@
 }
 
 .dock[data-design="original"] .label {
-  left: 50%;
+  --label-x: 50cqi;
   padding: 8px 14px;
   border-color: #426361;
   border-radius: 20px;

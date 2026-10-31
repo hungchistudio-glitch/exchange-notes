@@ -26,7 +26,6 @@ const items = [
 ];
 
 const core = () => screen.getByRole("button", { name: "Controls" });
-const searchKey = () => screen.getByRole("button", { name: "Search" });
 const hold = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
 
 function pointer(target: HTMLElement, type: string, x = 50, y = 100) {
@@ -35,15 +34,19 @@ function pointer(target: HTMLElement, type: string, x = 50, y = 100) {
   fireEvent(target, event);
 }
 
-/** What is under the finger: the test says, as layout would. */
-let under: ReturnType<typeof vi.fn>;
+/** Where the keys are: the test says, as layout would. Search sits around (80, 20). */
+let searchHere = false;
 
 beforeEach(() => {
   vi.useFakeTimers();
   search.mockClear();
   navigation.pending = false;
-  under = vi.fn(() => null);
-  Object.defineProperty(document, "elementFromPoint", { configurable: true, value: under });
+  searchHere = false;
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+    const isSearch = searchHere && this.getAttribute("aria-label") === "Search";
+    const box = isSearch ? { left: 60, top: 0, width: 40, height: 40 } : { left: -100, top: -100, width: 0, height: 0 };
+    return { ...box, right: box.left + box.width, bottom: box.top + box.height, x: box.left, y: box.top, toJSON() {} } as DOMRect;
+  });
 });
 
 afterEach(() => {
@@ -81,7 +84,7 @@ describe("a hold", () => {
     expect(core()).toHaveAttribute("aria-expanded", "false");
     hold(1);
     expect(core()).toHaveAttribute("aria-expanded", "true");
-    under.mockReturnValue(searchKey());
+    searchHere = true;
     pointer(core(), "pointermove", 80, 20);
     pointer(core(), "pointerup", 80, 20);
     expect(search).toHaveBeenCalledTimes(1);
@@ -94,7 +97,7 @@ describe("a hold", () => {
     render(<CosmicCoreNavigation items={items} label="Controls" />);
     pointer(core(), "pointerdown");
     hold(180);
-    under.mockReturnValue(core());
+    // Lifted where no key is (over the core).
     pointer(core(), "pointerup");
     expect(search).not.toHaveBeenCalled();
     expect(core()).toHaveAttribute("aria-expanded", "false");
@@ -113,7 +116,7 @@ describe("a hold", () => {
     render(<CosmicCoreNavigation items={items} label="Controls" />);
     pointer(core(), "pointerdown");
     hold(180);
-    under.mockReturnValue(searchKey());
+    searchHere = true;
     fireEvent.keyDown(document, { key: "Escape" });
     pointer(core(), "pointerup", 80, 20);
     expect(search).not.toHaveBeenCalled();

@@ -116,6 +116,27 @@ describe("when it does not rest", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it("writes its light on the core alone when told to, so the rest of the dock is not restyled", () => {
+    function OnCore() {
+      const root = useRef<HTMLDivElement>(null);
+      const core = useRef<HTMLButtonElement>(null);
+      useCosmicCoreScrollFade(root, false, "home", core);
+      return (
+        <>
+          <div data-app-scroll-viewport data-testid="viewport" />
+          <div ref={root} data-testid="dock">
+            <button ref={core} type="button">Core</button>
+          </div>
+        </>
+      );
+    }
+    render(<OnCore />);
+    scroll(120);
+    nextFrame();
+    expect(Number(screen.getByRole("button").style.getPropertyValue("--core-opacity"))).toBeCloseTo(0.35);
+    expect(dock().style.getPropertyValue("--core-opacity")).toBe("");
+  });
+
   it("follows the window where there is no scroll layer, as on the review page", () => {
     vi.spyOn(window, "scrollY", "get").mockReturnValue(0);
     render(<Harness nested={false} />);
