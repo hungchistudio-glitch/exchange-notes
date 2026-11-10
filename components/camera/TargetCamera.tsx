@@ -63,6 +63,7 @@ import {
 import { detectRegions } from "@/lib/media/regionDetection";
 import { rasterFromVideo, type Raster } from "@/lib/media/raster";
 import type { CaptureOutcome } from "@/hooks/lexicon/useLexiconImageLookup";
+import { preloadObjectClassifier } from "@/lib/vision/onDeviceClassifier";
 
 /** Five times a second, the rate the menu detector settled on. */
 const DETECTION_INTERVAL_MS = 200;
@@ -187,6 +188,16 @@ export default function TargetCamera({
       mountedRef.current = false;
       if (answerTimer.current) window.clearTimeout(answerTimer.current);
     };
+  }, []);
+
+  /*
+   * The phone's recogniser is built here, as the camera opens, while the
+   * reader is still framing the shot — not on every visit to the app
+   * (Chi, 2026-11-10). Its files are already on the device; see
+   * components/foundation/OnDeviceVisionWarmup.tsx.
+   */
+  useEffect(() => {
+    void preloadObjectClassifier();
   }, []);
 
   /*

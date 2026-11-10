@@ -163,6 +163,8 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<VocabularyError>("");
   const requestEpoch = useRef(0);
   const account = useRef<string | null>(null);
+  /* True while the first load is in flight; see the SIGNED_IN branch below. */
+  const mountLoading = useRef(false);
 
   // Background refresh keeps the current library visible while fetching.
   const refresh = useCallback(async () => {
@@ -208,6 +210,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
     const supabase = createClient();
 
     async function loadOnMount() {
+      mountLoading.current = true;
       const epoch = ++requestEpoch.current;
       /*
        * The device's own copy first, always.
@@ -242,6 +245,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
         if (local.length === 0) setError("load-failed");
       } finally {
         if (active && epoch === requestEpoch.current) setLoading(false);
+        mountLoading.current = false;
       }
     }
 
@@ -261,6 +265,22 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       if (!active) return;
 
       if (event === "SIGNED_IN" && session?.user.id !== account.current) {
+        /*
+         * Not a new account: the one this provider is already loading.
+         *
+         * supabase-js announces the session it found on disk as SIGNED_IN
+         * as the app starts, before the first load has learned whose words
+         * these are. Taken for a switch, it emptied the list the device's
+         * copy had just painted and set it loading again, behind a second
+         * fetch of the whole library: two reads on every cold start, and on
+         * a weak signal the words gone until the network answered
+         * (2026-11-10). The first load is already asking for this session.
+         */
+        if (mountLoading.current && account.current === null) {
+          account.current = session?.user.id ?? null;
+          return;
+        }
+
         account.current = session?.user.id ?? null;
         ++requestEpoch.current;
         setItems([]);

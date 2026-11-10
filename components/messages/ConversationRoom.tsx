@@ -73,6 +73,8 @@ import {
 import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
+import { useNetworkQuality } from "@/hooks/useOnline";
+import { KEPT_MESSAGES, keepConversation, readConversation } from "@/lib/offline/messages";
 import {
   clearPendingSharedVocabulary,
   getPendingSharedVocabulary,
@@ -200,6 +202,14 @@ function shouldShowDateDivider(messages: Message[], index: number) {
 
 type ConversationRoomProps = {
   conversationId: string;
+};
+
+/* What a conversation keeps on the device to open without a network. */
+type KeptConversation = {
+  friend: FriendProfile | null;
+  canContact: boolean;
+  mutedAt: string | null;
+  messages: Message[];
 };
 
 export default function ConversationRoom({
@@ -502,6 +512,26 @@ export default function ConversationRoom({
 
       setCurrentUserId(user.id);
 
+      /*
+       * The conversation as it was last seen, while the server is asked:
+       * with no signal it is what there is to read (Chi, 2026-11-10: "只看
+       * 不傳"), and the server's answer replaces it when it comes.
+       */
+      let answered = false;
+      let showingCopy = false;
+      void readConversation<KeptConversation>(user.id, conversationId).then((kept) => {
+        if (cancelled || answered || !kept) return;
+        showingCopy = true;
+        setFriend(kept.friend);
+        setCanContact(kept.canContact);
+        setMutedAt(kept.mutedAt);
+        setMessages(kept.messages);
+        setLoading(false);
+        window.requestAnimationFrame(() => {
+          scrollToBottom("auto");
+        });
+      });
+
       try {
         const context = await getConversationContext(
           supabase,
@@ -544,7 +574,8 @@ export default function ConversationRoom({
 
         if (messagesError) {
           console.error(messagesError);
-          setErrorMessage(copy.errors.openConversation);
+          // The kept copy stays on screen; the offline notice says why.
+          if (!showingCopy) setErrorMessage(copy.errors.openConversation);
           setLoading(false);
           return;
         }
@@ -554,7 +585,14 @@ export default function ConversationRoom({
         );
         olderCursor.current = existingMessages?.at(-1) ?? null;
         setHasOlder(existingMessages?.length === MESSAGE_PAGE_SIZE);
+        answered = true;
         setMessages(visibleMessages);
+        void keepConversation<KeptConversation>(user.id, conversationId, {
+          friend: context.friend,
+          canContact: context.canContact,
+          mutedAt: context.mutedAt,
+          messages: visibleMessages.slice(-KEPT_MESSAGES),
+        });
         setLoading(false);
         setConversationReady(true);
 
@@ -590,7 +628,7 @@ export default function ConversationRoom({
         // Never show the raw error (DB/network details) to the user — log it
         // for debugging and show friendly, translated copy instead.
         console.error(error);
-        setErrorMessage(copy.errors.openConversation);
+        if (!showingCopy) setErrorMessage(copy.errors.openConversation);
         setLoading(false);
       }
     }
@@ -1310,7 +1348,12 @@ export default function ConversationRoom({
     }
   }
 
-  const canSend = canContact && Boolean(newMessage.trim()) && Boolean(currentUserId) && !sending;
+  /*
+   * Nothing is sent without a network (Chi, 2026-11-10: "只看不傳"). What
+   * has been typed stays in the box, and the line above it says why.
+   */
+  const offline = useNetworkQuality() === "offline";
+  const canSend = canContact && Boolean(newMessage.trim()) && Boolean(currentUserId) && !sending && !offline;
   const showCharacterCount = newMessage.length > MAX_MESSAGE_LENGTH * 0.8;
 
   const friendName =
@@ -1888,6 +1931,11 @@ export default function ConversationRoom({
             <p className="py-4 text-center text-sm text-ink-soft">{copy.room.historyOnly}</p>
           ) : (
             <form onSubmit={sendMessage} className="pb-3">
+              {offline ? (
+                <p role="status" className="px-3 pb-2 text-center text-[0.75rem] text-ink-soft">
+                  {t.offline.needsConnection}
+                </p>
+              ) : null}
               <div
                 className="flex items-end gap-2 rounded-[26px] border p-1.5"
                 style={{

@@ -341,6 +341,14 @@ export default function BottomNavigation({
               <Link
                 key={`${item.href}-${item.label}`}
                 href={item.href}
+                /*
+                 * The whole page, not just its skeleton: every tab is a client
+                 * page whose data the phone fetches itself, so what the server
+                 * sends is small, and having it already means a tap lands at
+                 * once instead of waiting on the signal (2026-11-10). See
+                 * staleTimes in next.config.ts.
+                 */
+                prefetch
                 title={item.label}
                 ref={(element) => {
                   itemRefs.current[index] = element;

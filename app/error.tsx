@@ -83,7 +83,8 @@ export default function AppError({
   }, [error]);
 
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center bg-surface px-5 py-8 text-black">
+    // data-route-error: public/sw.js never keeps a page showing this screen.
+    <main data-route-error="" className="flex min-h-[100dvh] items-center justify-center bg-surface px-5 py-8 text-black">
       <section className="w-full max-w-md rounded-3xl bg-white p-7 shadow-sm sm:p-8">
         {/* The same brand mark as the sign-in card, from the same table. */}
         <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] leading-5 text-black">

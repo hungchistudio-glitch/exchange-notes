@@ -10,6 +10,8 @@ const spanish: TranslationDictionary = {
     pendingOne: "1 cambio pendiente de sincronizar",
     pendingMany: "{count} cambios pendientes de sincronizar",
     savedLocally: "Guardado en este dispositivo",
+    weakTitle: "Señal débil",
+    weakBody: "Por ahora se muestra lo que hay en este dispositivo. Se actualiza solo cuando mejore la señal.",
   },
   meta: {
     landingTitle: "Exchange Notes: guarda las palabras que vale la pena recordar",

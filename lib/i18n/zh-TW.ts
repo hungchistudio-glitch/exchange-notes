@@ -10,6 +10,8 @@ const traditionalChinese: TranslationDictionary = {
     pendingOne: "1 筆更動等待同步",
     pendingMany: "{count} 筆更動等待同步",
     savedLocally: "已存在這台裝置",
+    weakTitle: "訊號弱",
+    weakBody: "先顯示這台裝置上的資料，訊號變好時會自動更新。",
   },
   meta: {
     landingTitle: "Exchange Notes：留住值得記住的字詞",

@@ -54,19 +54,40 @@ beforeEach(() => {
 });
 
 describe("live badges across home, navigation and app resume", () => {
-  it("keeps simultaneous friend badges on independent channels and cleans up only its own", async () => {
+  it("shares one channel and one count between every screen showing the badge", async () => {
     const first = renderHook(useIncomingFriendRequestCount);
     const second = renderHook(useIncomingFriendRequestCount);
     await waitFor(() => expect(second.result.current.count).toBe(2));
     expect(first.result.current.count).toBe(2);
-    expect(new Set(state.channels.map(c => c.topic)).size).toBe(2);
-    expect(state.channels.every(c => c.handlers[0].filter.filter === "receiver_id=eq.reader")).toBe(true);
+    // Home and the navigation used to ask for this five times between them.
+    expect(state.channels).toHaveLength(1);
+    expect(state.friends).toHaveBeenCalledTimes(1);
+    expect(state.channels[0].handlers[0].filter.filter).toBe("receiver_id=eq.reader");
     first.unmount();
-    expect(state.remove).toHaveBeenCalledWith(state.channels[0]);
-    expect(state.remove).not.toHaveBeenCalledWith(state.channels[1]);
+    expect(state.remove).not.toHaveBeenCalled();
     state.friends.mockResolvedValue(3);
-    act(() => state.channels[1].handlers[0].callback());
+    act(() => state.channels[0].handlers[0].callback());
     await waitFor(() => expect(second.result.current).toEqual({ count: 3, pulseToken: 1 }));
+    second.unmount();
+    expect(state.remove).toHaveBeenCalledWith(state.channels[0]);
+  });
+
+  it("hands a screen that arrives later the count already read", async () => {
+    const dock = renderHook(useIncomingFriendRequestCount);
+    await waitFor(() => expect(dock.result.current.count).toBe(2));
+    const home = renderHook(useIncomingFriendRequestCount);
+    expect(home.result.current.count).toBe(2);
+    await settled();
+    expect(state.friends).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not recount on an ordinary page load's pageshow", async () => {
+    renderHook(useIncomingFriendRequestCount);
+    await settled();
+    state.friends.mockClear();
+    act(() => { window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: false })); });
+    await settled();
+    expect(state.friends).not.toHaveBeenCalled();
   });
 
   it("recounts duplicate inserts and accept/decline changes without drifting or repeated pulses", async () => {
@@ -104,7 +125,7 @@ describe("live badges across home, navigation and app resume", () => {
       () => state.channels[0].status?.("SUBSCRIBED"),
       () => document.dispatchEvent(new Event("visibilitychange")),
       () => window.dispatchEvent(new Event("online")),
-      () => window.dispatchEvent(new Event("pageshow")),
+      () => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })),
     ]) {
       const count = view.result.current.count + 1;
       state.friends.mockResolvedValue(count);

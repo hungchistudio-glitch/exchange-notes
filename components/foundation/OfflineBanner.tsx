@@ -1,9 +1,9 @@
 "use client";
 
-import { CloudOff } from "lucide-react";
+import { CloudOff, SignalLow } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import useOnline from "@/hooks/useOnline";
+import { useNetworkQuality } from "@/hooks/useOnline";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { readOutbox, subscribeToOutbox } from "@/lib/offline/vocabulary";
 import { insertValues } from "@/lib/utils";
@@ -22,7 +22,13 @@ import { insertValues } from "@/lib/utils";
  * promises and only one of them has been kept yet.
  */
 export default function OfflineBanner() {
-  const online = useOnline();
+  /*
+   * Weak is its own notice (2026-11-10). The network is there but too slow
+   * to wait for, so the screen is showing the device's copy: worth one line,
+   * and not the same line as having no network at all.
+   */
+  const quality = useNetworkQuality();
+  const online = quality !== "offline";
   const { t } = useTranslation();
   const copy = t.offline;
 
@@ -67,7 +73,10 @@ export default function OfflineBanner() {
     };
   }, [online]);
 
-  if (online) return null;
+  if (quality === "good") return null;
+
+  const weak = quality === "weak";
+  const Icon = weak ? SignalLow : CloudOff;
 
   const waiting =
     pending === 0
@@ -82,7 +91,7 @@ export default function OfflineBanner() {
       aria-live="polite"
       className="mx-auto mb-3 flex max-w-2xl items-start gap-3 rounded-2xl border border-[var(--accent-amber)]/25 bg-[var(--accent-amber)]/[0.08] px-4 py-3"
     >
-      <CloudOff
+      <Icon
         size={16}
         strokeWidth={1.8}
         className="mt-0.5 shrink-0 text-[var(--accent-amber-deep)]"
@@ -90,11 +99,11 @@ export default function OfflineBanner() {
 
       <div className="min-w-0">
         <p className="text-[0.8125rem] font-semibold text-[var(--accent-amber-deep)]">
-          {copy.title}
+          {weak ? copy.weakTitle : copy.title}
         </p>
 
         <p className="mt-0.5 text-[0.75rem] leading-5 text-ink-soft">
-          {copy.body}
+          {weak ? copy.weakBody : copy.body}
         </p>
 
         {waiting ? (

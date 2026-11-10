@@ -21,6 +21,21 @@ import { useSyncExternalStore } from "react";
 let assumedOffline = false;
 const listeners = new Set<() => void>();
 
+/*
+ * A third answer between "online" and "offline": the network is there but
+ * too slow to wait for (Chi, 2026-11-10: "收訊不好時").
+ *
+ * The browser's Supabase client gives a read five seconds to start answering
+ * (withFirstByteTimeout in lib/supabase/client.ts) and then reports it here, so the screen
+ * falls back to the device's copy instead of spinning. It holds for a while
+ * rather than clearing on the next quick answer: on a weak signal fast and
+ * slow answers alternate, and a notice that blinks on and off with them
+ * would be worse than none.
+ */
+export const WEAK_SIGNAL_HOLD_MS = 20_000;
+let weakUntil = 0;
+let weakTimer: ReturnType<typeof setTimeout> | null = null;
+
 function notify() {
   for (const listener of listeners) listener();
 }
@@ -34,9 +49,32 @@ function notify() {
  * nothing out there.
  */
 export function reportNetworkFailure() {
+  /*
+   * A read that gave up for being slow fails as a network error too, so the
+   * screens that fall back to the device's copy on one do so on the other.
+   * Its caller then lands here; it was already counted as weak, and a weak
+   * signal is not no signal.
+   */
+  if (weakSignal()) return;
   if (assumedOffline) return;
   assumedOffline = true;
   notify();
+}
+
+/** Called when a request was given up on for being too slow. */
+export function reportSlowNetwork(now = Date.now()) {
+  const wasWeak = weakSignal(now);
+  weakUntil = now + WEAK_SIGNAL_HOLD_MS;
+  if (weakTimer) clearTimeout(weakTimer);
+  weakTimer = setTimeout(() => {
+    weakTimer = null;
+    notify();
+  }, WEAK_SIGNAL_HOLD_MS);
+  if (!wasWeak) notify();
+}
+
+function weakSignal(now = Date.now()): boolean {
+  return now < weakUntil;
 }
 
 /** Called by anything that reached the network successfully. */
@@ -87,7 +125,24 @@ export default function useOnline(): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
+export type NetworkQuality = "good" | "weak" | "offline";
+
+function getQuality(): NetworkQuality {
+  if (!getSnapshot()) return "offline";
+  return weakSignal() ? "weak" : "good";
+}
+
+/** Online, offline, or online but too slow to wait for. */
+export function useNetworkQuality(): NetworkQuality {
+  return useSyncExternalStore(subscribe, getQuality, () => "good");
+}
+
 /** The same answer outside React, for code that is not a component. */
 export function isOnline(): boolean {
   return getSnapshot();
+}
+
+/** Whether a request was given up on for being slow, a moment ago. */
+export function isWeakSignal(): boolean {
+  return weakSignal();
 }

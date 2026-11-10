@@ -51,6 +51,7 @@ import {
   type MessagesHubTab,
 } from "@/lib/messages/hubState";
 import { subscribeToConversationRead } from "@/lib/messages/unreadSignal";
+import { keepConversationList, readConversationList } from "@/lib/offline/messages";
 import { createClient } from "@/lib/supabase/client";
 
 /*
@@ -158,6 +159,8 @@ export default function MessagesHub() {
     let running = false;
     let dirty = false;
     let loaded = false;
+    /* The device's copy is on screen: a failed read is then not an error. */
+    let showingCopy = false;
     let channel: RealtimeChannel | null = null;
     const supabase = createClient();
     const topic = `conversation-list:${instanceId}:${++subscriptionGeneration.current}`;
@@ -187,8 +190,9 @@ export default function MessagesHub() {
               setArchivedCount(archived);
               setErrorMessage("");
               loaded = true;
+              void keepConversationList(readerId, { rows, incoming, archived });
             } catch (error) {
-              if (isMounted && !dirty && !loaded) {
+              if (isMounted && !dirty && !loaded && !showingCopy) {
                 console.error(error);
                 setErrorMessage(copy.errors.loadConversations);
               }
@@ -217,6 +221,26 @@ export default function MessagesHub() {
         }
         userId = session.user.id;
         setCurrentUserId(userId);
+        /*
+         * The list as it last was, first: with no signal or a weak one it is
+         * what there is to read (Chi, 2026-11-10: "只看不傳"), and with a good
+         * one the server's answer replaces it a moment later.
+         */
+        const readerId = userId;
+        void readConversationList<{
+          rows: ConversationSummary[];
+          incoming: IncomingRequest[];
+          archived: number;
+        }>(readerId).then((kept) => {
+          if (!isMounted || loaded || !kept) return;
+          showingCopy = true;
+          setSummaries(kept.rows);
+          setRequests(kept.incoming);
+          setArchivedCount(kept.archived);
+          setErrorMessage("");
+          setLoading(false);
+          setHasLoadedOnce(true);
+        });
         channel = supabase.channel(topic)
           .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, refresh)
           .on("postgres_changes", {

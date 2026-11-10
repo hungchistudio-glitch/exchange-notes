@@ -57,6 +57,31 @@ describe("library refresh safety", () => {
     expect(state.fetch).toHaveBeenCalledOnce();
     expect(library.loading).toBe(false);
   });
+  it("keeps the device's words on screen when the session found at start-up is announced", async () => {
+    // A weak signal: the server has not answered yet.
+    let finish!: (rows: VocabularyItem[]) => void;
+    state.fetch.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    state.local = [word("kept")];
+    render(<VocabularyProvider><View /></VocabularyProvider>);
+    await screen.findByText("kept");
+
+    // supabase-js announces the stored session as SIGNED_IN while the first
+    // load is still asking. It used to empty the list and fetch it all again.
+    act(() => { state.auth!("SIGNED_IN", { user: { id: "reader" } }); });
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+
+    expect(screen.getByText("kept")).toBeTruthy();
+    expect(state.fetch).toHaveBeenCalledOnce();
+    await act(async () => { finish([word("apple")]); });
+    expect(library.items.map(item => item.word)).toEqual(["apple"]);
+  });
+  it("still reloads for a different account signing in", async () => {
+    render(<VocabularyProvider><View /></VocabularyProvider>);
+    await screen.findByText("apple");
+    state.fetch.mockResolvedValue([word("other")]);
+    act(() => { state.auth!("SIGNED_IN", { user: { id: "someone-else" } }); });
+    await waitFor(() => expect(state.fetch).toHaveBeenCalledTimes(2));
+  });
   it("keeps a delete made while a background refresh is in flight", async () => {
     render(<VocabularyProvider><View /></VocabularyProvider>);
     await screen.findByText("apple");

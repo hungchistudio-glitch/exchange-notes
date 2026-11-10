@@ -18,6 +18,7 @@ import SplashGate from "@/components/ui/SplashGate";
 import EnergyRewardObserver from "@/components/shop/EnergyRewardObserver";
 import { AppTutorialCoach } from "@/components/tutorial/TutorialCoach";
 import OnDeviceVisionWarmup from "@/components/foundation/OnDeviceVisionWarmup";
+import OfflinePageKeeper from "@/components/foundation/OfflinePageKeeper";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
@@ -164,6 +165,8 @@ export default async function ProtectedLayout({
           client, register a worker, or subscribe to native bridge events.
         */}
         <ServiceWorkerRegister />
+        {/* Pages kept on the phone, so the app opens with no signal. */}
+        <OfflinePageKeeper />
         <NativePushRegister />
         {/*
           Reloads onto a newer build when the app comes back from the

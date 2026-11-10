@@ -381,7 +381,8 @@ function CoreKey({ item, index, selected, onChoose, onPending, ...reach }: KeyPr
 
   if (item.href && !item.onSelect) {
     return (
-      <Link href={item.href} aria-current={item.active ? "page" : undefined} {...shared}>
+      // The whole page ahead of the tap, as BottomNavigation explains.
+      <Link href={item.href} prefetch aria-current={item.active ? "page" : undefined} {...shared}>
         {face}
         <NavPendingHint />
         <PendingSignal href={item.href} onChange={onPending} />

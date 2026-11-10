@@ -30,6 +30,9 @@ export type TranslationDictionary = {
     pendingOne: string;
     pendingMany: string;
     savedLocally: string;
+    /** The network is there but too slow to wait for; the screen is showing the device's copy. */
+    weakTitle: string;
+    weakBody: string;
   };
   /** What a link to the app or its introduction says when it leaves the app: page titles, link previews and the install description. */
   meta: {
