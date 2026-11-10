@@ -19,6 +19,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
+import { SLOW_NETWORK_MS, reportSlowNetwork } from "@/hooks/useOnline";
 import { createNote } from "@/lib/notes/clientRepository";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { getVoiceForLanguage, preferPlaybackAudio, type SpeechLanguage } from "@/lib/speech";
@@ -435,9 +436,26 @@ export default function DailyNews() {
     loadedLanguageRef.current = learningLanguage;
 
     async function loadOnMount() {
+      /*
+       * On a weak signal, the last batch while today's is on its way
+       * (2026-11-10). A new day has no batch on the device yet, and the
+       * request for it had no time limit: on a train the section spun for
+       * as long as the signal took, with yesterday's stories right here.
+       * After the same five seconds as every other read, they are shown,
+       * and today's replace them if and when they come.
+       */
+      let showingCopy = false;
+      let slowTimer: number | undefined;
       try {
         if (await loadFromDevice(learningLanguage, controller.signal, true)) return;
         if (controller.signal.aborted) return;
+        slowTimer = window.setTimeout(() => {
+          if (controller.signal.aborted) return;
+          reportSlowNetwork();
+          void loadFromDevice(learningLanguage, controller.signal).then((shown) => {
+            if (shown) showingCopy = true;
+          });
+        }, SLOW_NETWORK_MS);
         const payload = await fetchDailyNews(controller.signal);
 
         if (controller.signal.aborted) return;
@@ -461,7 +479,7 @@ export default function DailyNews() {
 
         // The device's own copy first: an error belongs on screen only
         // when there is genuinely nothing to read.
-        if (await loadFromDevice(learningLanguage, controller.signal)) return;
+        if (showingCopy || (await loadFromDevice(learningLanguage, controller.signal))) return;
 
         setError(
           requestError instanceof DailyNewsLoadFailure
@@ -469,6 +487,7 @@ export default function DailyNews() {
             : "load-failed"
         );
       } finally {
+        window.clearTimeout(slowTimer);
         if (!controller.signal.aborted) setLoading(false);
       }
     }

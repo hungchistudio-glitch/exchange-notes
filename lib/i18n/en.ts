@@ -10,8 +10,10 @@ const english: TranslationDictionary = {
     pendingOne: "1 change waiting to sync",
     pendingMany: "{count} changes waiting to sync",
     savedLocally: "Saved on this device",
-    weakTitle: "Weak signal",
-    weakBody: "Showing what is on this device for now. It updates by itself when the signal is better.",
+    weakLabel: "Weak signal · showing what is on this device",
+    keptOffline: "Offline · showing the copy saved {when}",
+    keptWeak: "Weak signal · showing the copy saved {when}",
+    keptToday: "today, {time}",
   },
   meta: {
     landingTitle: "Exchange Notes — Keep the words worth remembering",

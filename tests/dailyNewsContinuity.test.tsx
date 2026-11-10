@@ -1,7 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import english from "@/lib/i18n/en";
-const m = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn(), user: "reader" }));
+const m = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn(), user: "reader", slow: vi.fn() }));
+/* The five seconds a read gets, shortened; the weak-signal notice, observed. */
+vi.mock("@/hooks/useOnline", () => ({ SLOW_NETWORK_MS: 50, reportSlowNetwork: m.slow }));
 vi.mock("@/lib/offline/db", () => ({ STORES: { kv: "kv" }, readRecord: m.read, writeRecord: m.write }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ auth: { getSession: async () => ({ data: { session: { user: { id: m.user } } } }) } }) }));
 vi.mock("@/hooks/useDisplayLanguages", () => ({ default: () => ({ learningLanguage: "en", pair: ["en", "zh-TW"] }) }));
@@ -61,4 +63,25 @@ it("never shows a database or network message when the feed cannot load", async 
   render(<DailyNews />);
   expect(await screen.findByText(english.discover.loadFallbackError)).toBeTruthy();
   expect(screen.queryByText("Failed to fetch")).toBeNull();
+});
+it("on a weak signal shows the last batch after five seconds, then today's when it comes", async () => {
+  m.read.mockResolvedValue({ cards: [card("old")], language: "en", day: "2000-01-01" });
+  let answer!: (value: unknown) => void;
+  vi.stubGlobal("fetch", vi.fn(() => new Promise((resolve) => { answer = resolve; })));
+  render(<DailyNews />);
+  await screen.findByText("story old");
+  expect(m.slow).toHaveBeenCalled();
+  answer({ ok: true, json: async () => ({ cards: [card("fresh")], generatedAt: "now" }) });
+  await screen.findByText("story fresh");
+});
+it("keeps the last batch on screen, and says nothing is wrong, when today's never comes", async () => {
+  m.read.mockResolvedValue({ cards: [card("old")], language: "en", day: "2000-01-01" });
+  let fail!: (error: unknown) => void;
+  vi.stubGlobal("fetch", vi.fn(() => new Promise((_resolve, reject) => { fail = reject; })));
+  render(<DailyNews />);
+  await screen.findByText("story old");
+  fail(new TypeError("Failed to fetch"));
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(screen.getByText("story old")).toBeTruthy();
+  expect(screen.queryByText(english.discover.loadFallbackError)).toBeNull();
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { fill } from "@/lib/i18n/format";
 import { STORES, readRecord, writeRecord } from "@/lib/offline/db";
 
 /* =========================================================
@@ -25,10 +26,13 @@ export const KEPT_MESSAGES = 100;
 
 type Kept<T> = { key: string; userId: string; savedAt: string; value: T };
 
-async function read<T>(key: string, userId: string): Promise<T | null> {
+/* A kept copy, and when it was saved: the screen says so (Chi, 2026-11-10). */
+export type KeptCopy<T> = { value: T; savedAt: string };
+
+async function read<T>(key: string, userId: string): Promise<KeptCopy<T> | null> {
   try {
     const record = await readRecord<Kept<T>>(STORES.kv, key);
-    return record && record.userId === userId ? record.value : null;
+    return record && record.userId === userId ? { value: record.value, savedAt: record.savedAt } : null;
   } catch {
     return null;
   }
@@ -42,7 +46,7 @@ async function write<T>(key: string, userId: string, value: T): Promise<void> {
   }
 }
 
-export function readConversationList<T>(userId: string): Promise<T | null> {
+export function readConversationList<T>(userId: string): Promise<KeptCopy<T> | null> {
   return read<T>(`${LIST_KEY}:${userId}`, userId);
 }
 
@@ -50,10 +54,23 @@ export function keepConversationList<T>(userId: string, list: T): Promise<void> 
   return write(`${LIST_KEY}:${userId}`, userId, list);
 }
 
-export function readConversation<T>(userId: string, conversationId: string): Promise<T | null> {
+export function readConversation<T>(userId: string, conversationId: string): Promise<KeptCopy<T> | null> {
   return read<T>(`${ROOM_KEY}:${userId}:${conversationId}`, userId);
 }
 
 export function keepConversation<T>(userId: string, conversationId: string, room: T): Promise<void> {
   return write(`${ROOM_KEY}:${userId}:${conversationId}`, userId, room);
+}
+
+/**
+ * When a copy was saved, as the line above it says it: "today, 15:12", or
+ * the date as well for an older one. `today` is the dictionary's
+ * offline.keptToday, with {time} in it.
+ */
+export function keptWhen(savedAt: string, locale: string, today: string, now: Date = new Date()): string {
+  const saved = new Date(savedAt);
+  if (Number.isNaN(saved.getTime())) return "";
+  const time = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(saved);
+  if (saved.toDateString() === now.toDateString()) return fill(today, { time });
+  return new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).format(saved);
 }

@@ -124,7 +124,8 @@ export async function fetchServedVersion(
     const response = await fetcher("/api/version", {
       cache: "no-store",
       credentials: "same-origin",
-      signal: AbortSignal.timeout(VERSION_TIMEOUT_MS),
+      // Not in Safari before iOS 16, where the check then simply waits.
+      signal: typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(VERSION_TIMEOUT_MS) : undefined,
     });
     if (!response.ok) return null;
     const body = (await response.json()) as { version?: unknown };

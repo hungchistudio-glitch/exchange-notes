@@ -279,14 +279,32 @@ describe("service worker cache boundaries", () => {
 });
 
 describe("opening without a network", () => {
-  it("keeps a signed-in page under its path, without its query", async () => {
+  it("keeps a signed-in page under its path", async () => {
     networkResponse = () => page("<html>home</html>");
 
-    const result = await handle(navigationRequest("https://app.test/home?from=widget"));
+    const result = await handle(navigationRequest("https://app.test/home"));
     await settle();
 
     expect(await result.response?.text()).toBe("<html>home</html>");
     expect(putCalls).toEqual([{ cache: PAGE_CACHE, url: "https://app.test/home", status: 200 }]);
+  });
+
+  it("does not keep a page opened with a query, whose render may carry it", async () => {
+    networkResponse = () => page("<html>a widget's action</html>");
+
+    await handle(navigationRequest("https://app.test/vocabulary?widgetAction=open&widgetNonce=1"));
+    await settle();
+
+    expect(putCalls).toEqual([]);
+  });
+
+  it("still opens the path's copy for a query, when there is no network", async () => {
+    seed(PAGE_CACHE, "/vocabulary", page("<html>kept words</html>"));
+    networkError = new TypeError("Failed to fetch");
+
+    const result = await handle(navigationRequest("https://app.test/vocabulary?from=widget"));
+
+    expect(await result.response?.text()).toBe("<html>kept words</html>");
   });
 
   it("opens the kept page when the network fails", async () => {
@@ -434,10 +452,10 @@ describe("opening without a network", () => {
 });
 
 describe("keeping pages ahead of time", () => {
-  async function keep(pages: string[], build: string) {
+  async function post(data: Record<string, unknown>) {
     let work: Promise<unknown> = Promise.resolve();
     (listeners.get("message") as unknown as (event: unknown) => void)({
-      data: { type: "keep-pages", build, pages },
+      data,
       waitUntil: (promise: Promise<unknown>) => {
         work = promise;
       },
@@ -445,11 +463,16 @@ describe("keeping pages ahead of time", () => {
     await work;
   }
 
+  const keep = (pages: string[], keptFor = "settings-1", used: string[] = []) =>
+    post({ type: "keep-pages", keptFor, pages, used });
+
+  const pageFetchCount = () => fetchCalls.filter((call) => !call.url.includes("/_next/")).length;
+
   it("fetches each page without following a redirect, and the files it starts from", async () => {
     networkResponse = () =>
       page('<html><script src="/_next/static/chunks/a.js"></script>"\\/_next/static/chunks/b.js"</html>');
 
-    await keep(["/vocabulary", "/login", "https://elsewhere.test/home"], "build-1");
+    await keep(["/vocabulary", "/login", "https://elsewhere.test/home"]);
 
     const pageFetches = fetchCalls.filter((call) => !call.url.includes("/_next/"));
     expect(pageFetches).toEqual([
@@ -459,31 +482,124 @@ describe("keeping pages ahead of time", () => {
     expect(stores.get(STATIC_CACHE)?.has("https://app.test/_next/static/chunks/a.js")).toBe(true);
   });
 
-  it("does not fetch a page again for the same build", async () => {
-    networkResponse = () => page();
-    await keep(["/home"], "build-1");
-    const first = fetchCalls.length;
+  it("marks the copy as one, at the top of its head", async () => {
+    networkResponse = () => page('<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/></head><body>words</body></html>');
 
-    await keep(["/home"], "build-1");
-    expect(fetchCalls.length).toBe(first);
+    await keep(["/vocabulary"]);
 
-    await keep(["/home"], "build-2");
-    expect(fetchCalls.length).toBeGreaterThan(first);
+    const kept = await stores.get(PAGE_CACHE)!.get("https://app.test/vocabulary")!.clone().text();
+    expect(kept).toMatch(/^<!DOCTYPE html><html lang="en"><head><meta name="exchange-notes-kept-page" content="[^"]+"><meta charSet="utf-8"\/>/);
   });
 
-  it("drops old build files no kept page needs once pages move to a new build", async () => {
-    const old = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toUTCString();
+  it("keeps a page again at most once a day, or at once when the settings change", async () => {
+    vi.useFakeTimers({ now: new Date("2026-11-10T09:00:00Z"), toFake: ["Date"] });
+    networkResponse = () => page();
+    await keep(["/home"]);
+    expect(pageFetchCount()).toBe(1);
+
+    vi.setSystemTime(new Date("2026-11-10T20:00:00Z"));
+    await keep(["/home"]);
+    expect(pageFetchCount()).toBe(1);
+
+    await keep(["/home"], "settings-2");
+    expect(pageFetchCount()).toBe(2);
+
+    vi.setSystemTime(new Date("2026-11-11T21:00:00Z"));
+    await keep(["/home"], "settings-2");
+    expect(pageFetchCount()).toBe(3);
+  });
+
+  it("stores nothing that was on its way when the reader signed out, and forgets what was kept", async () => {
+    seed(PAGE_CACHE, "/home", page("<html>kept</html>"));
+    let answer!: (response: Response) => void;
+    loadServiceWorkerWithFetch(
+      () => new Promise<Response>((resolve) => {
+        answer = resolve;
+      }),
+    );
+
+    const keeping = keep(["/vocabulary"]);
+    await vi.waitFor(() => expect(answer).toBeTypeOf("function"));
+    const forgetting = post({ type: "forget-pages" });
+    answer(page("<html>the account that signed out</html>"));
+    await Promise.all([keeping, forgetting]);
+
+    expect(stores.has(PAGE_CACHE)).toBe(false);
+    expect(putCalls.filter((call) => call.url === "https://app.test/vocabulary")).toEqual([]);
+  });
+
+  it("drops build files no kept page refers to and no page has used for a month", async () => {
+    const old = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toUTCString();
     seed(STATIC_CACHE, "/_next/static/chunks/old.js", new Response("old", { status: 200, headers: { date: old } }));
     seed(STATIC_CACHE, "/_next/static/chunks/recent.js", new Response("recent", { status: 200, headers: { date: new Date().toUTCString() } }));
-    seed(STATIC_CACHE, "/_next/static/chunks/used.js", new Response("used", { status: 200, headers: { date: old } }));
-    networkResponse = () => page('<script src="/_next/static/chunks/used.js"></script>');
+    seed(STATIC_CACHE, "/_next/static/chunks/onpage.js", new Response("on a page", { status: 200, headers: { date: old } }));
+    seed(STATIC_CACHE, "/_next/static/chunks/lazy.js", new Response("Yumi's scene", { status: 200, headers: { date: old } }));
+    networkResponse = () => page('<script src="/_next/static/chunks/onpage.js"></script>');
 
-    await keep(["/home"], "build-2");
+    await keep(["/home"], "settings-1", ["/_next/static/chunks/lazy.js"]);
 
     const kept = stores.get(STATIC_CACHE)!;
     expect(kept.has("https://app.test/_next/static/chunks/old.js")).toBe(false);
     expect(kept.has("https://app.test/_next/static/chunks/recent.js")).toBe(true);
-    expect(kept.has("https://app.test/_next/static/chunks/used.js")).toBe(true);
+    expect(kept.has("https://app.test/_next/static/chunks/onpage.js")).toBe(true);
+    expect(kept.has("https://app.test/_next/static/chunks/lazy.js")).toBe(true);
+  });
+
+  it("drops a page not opened or refreshed for a week", async () => {
+    const weekAgo = String(Date.now() - 8 * 24 * 60 * 60 * 1000);
+    seed(PAGE_CACHE, "/messages/old-room", page("<html>old room</html>", { headers: { "x-exchange-notes-kept-at": weekAgo } }));
+    seed(PAGE_CACHE, "/notes", page("<html>notes</html>", { headers: { "x-exchange-notes-kept-at": String(Date.now()) } }));
+    networkResponse = () => page();
+
+    await keep(["/home"]);
+
+    const pages = stores.get(PAGE_CACHE)!;
+    expect(pages.has("https://app.test/messages/old-room")).toBe(false);
+    expect(pages.has("https://app.test/notes")).toBe(true);
+    expect(pages.has("https://app.test/home")).toBe(true);
+  });
+});
+
+describe("pages that read their query on the server", () => {
+  it("open only on the copy kept for the same query", async () => {
+    networkResponse = () => page("<html>hello for word a</html>");
+    await handle(navigationRequest("https://app.test/invitations/new?word=a"));
+    await settle();
+
+    networkError = new TypeError("Failed to fetch");
+    seed(STATIC_CACHE, "/offline.html", new Response("offline shell", { status: 200 }));
+    const other = await handle(navigationRequest("https://app.test/invitations/new?word=b"));
+    const same = await handle(navigationRequest("https://app.test/invitations/new?word=a"));
+
+    expect(await other.response?.text()).toBe("offline shell");
+    expect(await same.response?.text()).toContain("hello for word a");
+  });
+
+  it("are every page whose server render reads searchParams", () => {
+    const protectedRoot = join(process.cwd(), "app/(protected)");
+    const found: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) walk(path);
+        else if (name === "page.tsx") {
+          const source = readFileSync(path, "utf8");
+          if (!source.includes('"use client"') && source.includes("searchParams")) {
+            found.push(
+              path
+                .slice(protectedRoot.length, -"/page.tsx".length)
+                .replace(/\/\([^)]+\)/g, ""),
+            );
+          }
+        }
+      }
+    };
+    walk(protectedRoot);
+    const listed = JSON.parse(
+      SOURCE.match(/const QUERY_PAGES = (\[[\s\S]*?\]);/)![1].replace(/,\s*\]/, "]"),
+    );
+
+    expect(listed.sort()).toEqual(found.sort());
   });
 });
 

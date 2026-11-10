@@ -30,6 +30,7 @@ import {
 import YumiCommsMark from "@/components/messages/YumiCommsMark";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { fill } from "@/lib/i18n/format";
 import {
   getArchivedConversationCount,
   hideConversationForUser,
@@ -51,7 +52,8 @@ import {
   type MessagesHubTab,
 } from "@/lib/messages/hubState";
 import { subscribeToConversationRead } from "@/lib/messages/unreadSignal";
-import { keepConversationList, readConversationList } from "@/lib/offline/messages";
+import { keepConversationList, keptWhen, readConversationList } from "@/lib/offline/messages";
+import { useNetworkQuality } from "@/hooks/useOnline";
 import { createClient } from "@/lib/supabase/client";
 
 /*
@@ -77,7 +79,15 @@ function conversationHref(summary: ConversationSummary): string {
 }
 
 export default function MessagesHub() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  /*
+   * When the list on screen is the device's copy, and the server has not
+   * replaced it: said above the list (Chi, 2026-11-10: "要標示"), so a
+   * quiet list is not taken for one with nothing new in it.
+   */
+  const [keptAt, setKeptAt] = useState<string | null>(null);
+  const [copyUnanswered, setCopyUnanswered] = useState(false);
+  const quality = useNetworkQuality();
   const { isCosmic } = useInterfaceMode();
   const copy = t.messages;
   const instanceId = useId();
@@ -161,6 +171,7 @@ export default function MessagesHub() {
     let loaded = false;
     /* The device's copy is on screen: a failed read is then not an error. */
     let showingCopy = false;
+    let failedOnce = false;
     let channel: RealtimeChannel | null = null;
     const supabase = createClient();
     const topic = `conversation-list:${instanceId}:${++subscriptionGeneration.current}`;
@@ -189,9 +200,13 @@ export default function MessagesHub() {
               setRequests(incoming);
               setArchivedCount(archived);
               setErrorMessage("");
+              setKeptAt(null);
+              setCopyUnanswered(false);
               loaded = true;
               void keepConversationList(readerId, { rows, incoming, archived });
             } catch (error) {
+              failedOnce = true;
+              if (isMounted && showingCopy && !loaded) setCopyUnanswered(true);
               if (isMounted && !dirty && !loaded && !showingCopy) {
                 console.error(error);
                 setErrorMessage(copy.errors.loadConversations);
@@ -234,9 +249,12 @@ export default function MessagesHub() {
         }>(readerId).then((kept) => {
           if (!isMounted || loaded || !kept) return;
           showingCopy = true;
-          setSummaries(kept.rows);
-          setRequests(kept.incoming);
-          setArchivedCount(kept.archived);
+          setSummaries(kept.value.rows);
+          setRequests(kept.value.incoming);
+          setArchivedCount(kept.value.archived);
+          setKeptAt(kept.savedAt);
+          setCopyUnanswered(failedOnce);
+          // A read that failed before the copy arrived said so; the copy is the answer.
           setErrorMessage("");
           setLoading(false);
           setHasLoadedOnce(true);
@@ -802,6 +820,18 @@ export default function MessagesHub() {
             style={{ color: "var(--msg-ink-soft)" }}
           >
             {copy.loadingConversations}
+          </p>
+        )}
+
+        {hasLoadedOnce && keptAt && (quality !== "good" || copyUnanswered) && (
+          <p
+            role="status"
+            className="mt-4 text-center text-[0.75rem]"
+            style={{ color: "var(--msg-ink-soft)" }}
+          >
+            {fill(quality === "offline" ? t.offline.keptOffline : t.offline.keptWeak, {
+              when: keptWhen(keptAt, locale, t.offline.keptToday),
+            })}
           </p>
         )}
 

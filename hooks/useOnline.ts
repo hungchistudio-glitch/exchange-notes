@@ -33,6 +33,9 @@ const listeners = new Set<() => void>();
  * would be worse than none.
  */
 export const WEAK_SIGNAL_HOLD_MS = 20_000;
+
+/* How long a read may take to start answering (Chi chose five seconds). */
+export const SLOW_NETWORK_MS = 5_000;
 let weakUntil = 0;
 let weakTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -145,4 +148,19 @@ export function isOnline(): boolean {
 /** Whether a request was given up on for being slow, a moment ago. */
 export function isWeakSignal(): boolean {
   return weakSignal();
+}
+
+/*
+ * Whether this document is a copy the service worker kept, opened because
+ * the network did not answer (public/sw.js marks every kept copy). What the
+ * server rendered into it — the account's settings and learning language —
+ * is then as old as the copy, and is asked for again rather than applied
+ * over what the device has now.
+ */
+let keptPage: boolean | null = null;
+
+export function isKeptPage(): boolean {
+  if (typeof document === "undefined") return false;
+  keptPage ??= document.querySelector('meta[name="exchange-notes-kept-page"]') !== null;
+  return keptPage;
 }

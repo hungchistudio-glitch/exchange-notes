@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import MessagesHub from "@/components/messages/MessagesHub";
 import { STORES, clearStore } from "@/lib/offline/db";
-import { keepConversation, readConversation, readConversationList } from "@/lib/offline/messages";
+import { keepConversation, keptWhen, readConversation, readConversationList } from "@/lib/offline/messages";
 
 /*
  * With no signal, Messages shows the conversations already seen and sends
@@ -62,7 +62,7 @@ describe("Messages without a network", () => {
     await settle();
 
     const kept = await readConversationList<{ incoming: unknown[] }>("reader");
-    expect(kept?.incoming).toHaveLength(1);
+    expect(kept?.value.incoming).toHaveLength(1);
   });
 
   it("opens on the kept list, and says nothing is wrong, when the server cannot be reached", async () => {
@@ -83,6 +83,36 @@ describe("Messages without a network", () => {
     log.mockRestore();
   });
 
+  it("says when the list on screen was saved, while the server has not answered", async () => {
+    state.requests.mockResolvedValue([request("Kept Friend")]);
+    const first = render(<MessagesHub />);
+    await screen.findByText("Kept Friend");
+    await settle();
+    first.unmount();
+
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    state.requests.mockRejectedValue(new TypeError("Failed to fetch"));
+    state.rows.mockRejectedValue(new TypeError("Failed to fetch"));
+    render(<MessagesHub />);
+    await settle();
+
+    expect(screen.getByText(/showing the copy saved today,/)).toBeInTheDocument();
+    log.mockRestore();
+  });
+
+  it("says nothing about a copy once the server has answered", async () => {
+    state.requests.mockResolvedValue([request("Kept Friend")]);
+    const first = render(<MessagesHub />);
+    await screen.findByText("Kept Friend");
+    await settle();
+    first.unmount();
+
+    render(<MessagesHub />);
+    await settle();
+
+    expect(screen.queryByText(/showing the copy saved/)).toBeNull();
+  });
+
   it("still says so when there is nothing kept either", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     state.requests.mockRejectedValue(new TypeError("Failed to fetch"));
@@ -97,7 +127,13 @@ describe("Messages without a network", () => {
   it("hands a kept conversation back only to the reader it was kept for", async () => {
     await keepConversation("reader", "c1", { messages: ["hi"] });
 
-    expect(await readConversation("reader", "c1")).toEqual({ messages: ["hi"] });
+    expect((await readConversation("reader", "c1"))?.value).toEqual({ messages: ["hi"] });
     expect(await readConversation("someone-else", "c1")).toBeNull();
+  });
+
+  it("names a copy from today by its time, and an older one by its date as well", () => {
+    const now = new Date(2026, 10, 10, 18, 0);
+    expect(keptWhen(new Date(2026, 10, 10, 15, 12).toISOString(), "zh-TW", "今天 {time}", now)).toMatch(/^今天 .*3:12|^今天 15:12/);
+    expect(keptWhen(new Date(2026, 10, 8, 15, 12).toISOString(), "en", "today, {time}", now)).toMatch(/11\/8/);
   });
 });

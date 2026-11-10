@@ -1,6 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-import { reportSlowNetwork } from "@/hooks/useOnline";
+import { SLOW_NETWORK_MS, reportSlowNetwork } from "@/hooks/useOnline";
 
 /* =========================================================
    Five seconds to start answering
@@ -25,7 +25,7 @@ import { reportSlowNetwork } from "@/hooks/useOnline";
      aborts here too.
    ========================================================= */
 
-export const SLOW_NETWORK_MS = 5_000;
+export { SLOW_NETWORK_MS };
 
 /** A read given up on for being slow. A TypeError, as a lost connection is. */
 export class SlowNetworkError extends TypeError {

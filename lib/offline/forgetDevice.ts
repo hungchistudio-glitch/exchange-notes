@@ -79,6 +79,19 @@ function forgetAccountStorage(): void {
  * worker version that must not be kept.
  */
 async function forgetCachedPages(): Promise<void> {
+  /*
+   * The worker first: it may be keeping a page this very moment, fetched
+   * with the account that is signing out, and would store it after the
+   * caches below are gone. Told, it stores nothing already on its way and
+   * empties its kept pages itself once that has settled (public/sw.js,
+   * forgetPages).
+   */
+  try {
+    navigator.serviceWorker?.controller?.postMessage({ type: "forget-pages" });
+  } catch {
+    // No worker, or none in control: nothing of its is on its way.
+  }
+
   if (typeof caches === "undefined") return;
 
   try {

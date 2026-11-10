@@ -74,7 +74,8 @@ import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { useNetworkQuality } from "@/hooks/useOnline";
-import { KEPT_MESSAGES, keepConversation, readConversation } from "@/lib/offline/messages";
+import { fill } from "@/lib/i18n/format";
+import { KEPT_MESSAGES, keepConversation, keptWhen, readConversation } from "@/lib/offline/messages";
 import {
   clearPendingSharedVocabulary,
   getPendingSharedVocabulary,
@@ -235,6 +236,13 @@ export default function ConversationRoom({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  /*
+   * When the conversation on screen is the device's copy and the server has
+   * not replaced it: said above it (Chi, 2026-11-10: "要標示"), so a quiet
+   * conversation is not taken for one with nothing new in it.
+   */
+  const [keptAt, setKeptAt] = useState<string | null>(null);
+  const [copyUnanswered, setCopyUnanswered] = useState(false);
 
   /*
    * True only once this conversation has actually opened.
@@ -519,13 +527,22 @@ export default function ConversationRoom({
        */
       let answered = false;
       let showingCopy = false;
+      let failed = false;
+      const unanswered = () => {
+        failed = true;
+        if (showingCopy) setCopyUnanswered(true);
+      };
       void readConversation<KeptConversation>(user.id, conversationId).then((kept) => {
         if (cancelled || answered || !kept) return;
         showingCopy = true;
-        setFriend(kept.friend);
-        setCanContact(kept.canContact);
-        setMutedAt(kept.mutedAt);
-        setMessages(kept.messages);
+        setFriend(kept.value.friend);
+        setCanContact(kept.value.canContact);
+        setMutedAt(kept.value.mutedAt);
+        setMessages(kept.value.messages);
+        setKeptAt(kept.savedAt);
+        setCopyUnanswered(failed);
+        // A read that failed before the copy arrived said so; the copy is the answer.
+        setErrorMessage("");
         setLoading(false);
         window.requestAnimationFrame(() => {
           scrollToBottom("auto");
@@ -547,6 +564,10 @@ export default function ConversationRoom({
          * person reading the screen.
          */
         if (!context) {
+          // The server's answer, so any copy on screen goes.
+          answered = true;
+          setKeptAt(null);
+          if (showingCopy) setMessages([]);
           setErrorMessage(copy.errors.conversationNotFound);
           setLoading(false);
           return;
@@ -574,7 +595,8 @@ export default function ConversationRoom({
 
         if (messagesError) {
           console.error(messagesError);
-          // The kept copy stays on screen; the offline notice says why.
+          // The kept copy stays on screen, with the line saying when it is from.
+          unanswered();
           if (!showingCopy) setErrorMessage(copy.errors.openConversation);
           setLoading(false);
           return;
@@ -586,6 +608,8 @@ export default function ConversationRoom({
         olderCursor.current = existingMessages?.at(-1) ?? null;
         setHasOlder(existingMessages?.length === MESSAGE_PAGE_SIZE);
         answered = true;
+        setKeptAt(null);
+        setCopyUnanswered(false);
         setMessages(visibleMessages);
         void keepConversation<KeptConversation>(user.id, conversationId, {
           friend: context.friend,
@@ -628,6 +652,7 @@ export default function ConversationRoom({
         // Never show the raw error (DB/network details) to the user — log it
         // for debugging and show friendly, translated copy instead.
         console.error(error);
+        unanswered();
         if (!showingCopy) setErrorMessage(copy.errors.openConversation);
         setLoading(false);
       }
@@ -1352,7 +1377,8 @@ export default function ConversationRoom({
    * Nothing is sent without a network (Chi, 2026-11-10: "只看不傳"). What
    * has been typed stays in the box, and the line above it says why.
    */
-  const offline = useNetworkQuality() === "offline";
+  const networkQuality = useNetworkQuality();
+  const offline = networkQuality === "offline";
   const canSend = canContact && Boolean(newMessage.trim()) && Boolean(currentUserId) && !sending && !offline;
   const showCharacterCount = newMessage.length > MAX_MESSAGE_LENGTH * 0.8;
 
@@ -1595,6 +1621,18 @@ export default function ConversationRoom({
                 <span>{copy.loadingMessages}</span>
               </div>
             </div>
+          )}
+
+          {!loading && keptAt && (offline || networkQuality === "weak" || copyUnanswered) && (
+            <p
+              role="status"
+              className="mb-4 text-center text-[0.75rem]"
+              style={{ color: "var(--msg-ink-soft)" }}
+            >
+              {fill(offline ? t.offline.keptOffline : t.offline.keptWeak, {
+                when: keptWhen(keptAt, locale, t.offline.keptToday),
+              })}
+            </p>
           )}
 
           {!loading && errorMessage && (

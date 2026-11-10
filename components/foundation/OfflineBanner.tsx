@@ -2,11 +2,57 @@
 
 import { CloudOff, SignalLow } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { useNetworkQuality } from "@/hooks/useOnline";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { readOutbox, subscribeToOutbox } from "@/lib/offline/vocabulary";
 import { insertValues } from "@/lib/utils";
+
+/* How long the weak-signal label stays before it fades, and the fade. */
+const PILL_SHOWN_MS = 4_000;
+const PILL_FADE_MS = 300;
+
+/*
+ * A weak signal says so with a small label floating over the top of the
+ * screen, which fades after a few seconds (Chi, 2026-11-10: "浮動小標籤，不
+ * 推畫面"). Not the card below: a weak signal comes and goes, and a card
+ * appearing and leaving pushed the whole page down and back each time.
+ * Portalled to the body so nothing on the page moves, and nothing it
+ * floats over loses a tap.
+ */
+function WeakSignalLabel({ text }: { text: string }) {
+  const [phase, setPhase] = useState<"entering" | "shown" | "leaving" | "gone">("entering");
+
+  useEffect(() => {
+    const timers = [
+      window.setTimeout(() => setPhase("shown"), 0),
+      window.setTimeout(() => setPhase("leaving"), PILL_SHOWN_MS),
+      window.setTimeout(() => setPhase("gone"), PILL_SHOWN_MS + PILL_FADE_MS),
+    ];
+    return () => {
+      for (const timer of timers) window.clearTimeout(timer);
+    };
+  }, []);
+
+  if (phase === "gone") return null;
+
+  return createPortal(
+    <div
+      role="status"
+      aria-live="polite"
+      className="pointer-events-none fixed left-1/2 z-[90] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-2 rounded-full border border-[var(--accent-amber)]/30 bg-[var(--surface)] px-3.5 py-1.5 shadow-sm transition-opacity duration-300 motion-reduce:transition-none"
+      style={{
+        top: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
+        opacity: phase === "shown" ? 1 : 0,
+      }}
+    >
+      <SignalLow size={14} strokeWidth={1.8} className="shrink-0 text-[var(--accent-amber-deep)]" />
+      <span className="text-[0.75rem] font-medium text-[var(--accent-amber-deep)]">{text}</span>
+    </div>,
+    document.body,
+  );
+}
 
 /**
  * Says so, once, when there is no network.
@@ -24,8 +70,8 @@ import { insertValues } from "@/lib/utils";
 export default function OfflineBanner() {
   /*
    * Weak is its own notice (2026-11-10). The network is there but too slow
-   * to wait for, so the screen is showing the device's copy: worth one line,
-   * and not the same line as having no network at all.
+   * to wait for, so the screen is showing the device's copy: worth saying,
+   * and not the same way as having no network at all.
    */
   const quality = useNetworkQuality();
   const online = quality !== "offline";
@@ -74,9 +120,7 @@ export default function OfflineBanner() {
   }, [online]);
 
   if (quality === "good") return null;
-
-  const weak = quality === "weak";
-  const Icon = weak ? SignalLow : CloudOff;
+  if (quality === "weak") return <WeakSignalLabel text={copy.weakLabel} />;
 
   const waiting =
     pending === 0
@@ -91,7 +135,7 @@ export default function OfflineBanner() {
       aria-live="polite"
       className="mx-auto mb-3 flex max-w-2xl items-start gap-3 rounded-2xl border border-[var(--accent-amber)]/25 bg-[var(--accent-amber)]/[0.08] px-4 py-3"
     >
-      <Icon
+      <CloudOff
         size={16}
         strokeWidth={1.8}
         className="mt-0.5 shrink-0 text-[var(--accent-amber-deep)]"
@@ -99,11 +143,11 @@ export default function OfflineBanner() {
 
       <div className="min-w-0">
         <p className="text-[0.8125rem] font-semibold text-[var(--accent-amber-deep)]">
-          {weak ? copy.weakTitle : copy.title}
+          {copy.title}
         </p>
 
         <p className="mt-0.5 text-[0.75rem] leading-5 text-ink-soft">
-          {weak ? copy.weakBody : copy.body}
+          {copy.body}
         </p>
 
         {waiting ? (

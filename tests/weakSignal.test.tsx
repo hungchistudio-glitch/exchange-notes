@@ -140,4 +140,23 @@ describe("what the app says about it", () => {
 
     expect(screen.getByRole("status").textContent).toContain("Weak signal");
   });
+
+  it("floats over the page instead of pushing it down, and fades after a few seconds", async () => {
+    const { container } = render(<OfflineBanner />);
+
+    withFirstByteTimeout(hanging())("https://db.test/x").catch(() => {});
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SLOW_NETWORK_MS);
+    });
+
+    const label = screen.getByRole("status");
+    // Portalled out of the page, so nothing on it moves.
+    expect(container.contains(label)).toBe(false);
+    expect(label.className).toContain("fixed");
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_400);
+    });
+    expect(screen.queryByRole("status")).toBeNull();
+  });
 });
