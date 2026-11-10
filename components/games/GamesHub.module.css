@@ -71,6 +71,29 @@
   box-shadow: 0 14px 28px -18px #141d2ccc, inset 0 0 0 1.5px #c9a55a59, inset 0 1px 0 #ffffff1f;
 }
 
+/* Starweaver: pale titanium and ice by day, obsidian with an ice seam in Cosmic. */
+.card[data-game="starweaver"] {
+  --card-art: #e9eef0;
+  --card-accent: #5fb3c2;
+
+  border-color: #7cc4d14d;
+  background:
+    radial-gradient(120% 90% at 85% 0%, #9fdbe633, #0000 60%),
+    linear-gradient(180deg, #fbfbfa, #eef1f2);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .card[data-game="starweaver"] {
+  --card-ink: #e7e9ee;
+  --card-muted: #a9b0b8;
+  --card-art: #1a1e23;
+  --card-accent: #7cc4d1;
+
+  background:
+    radial-gradient(120% 90% at 85% 0%, #2f6f7b40, #0000 60%),
+    linear-gradient(180deg, #15181c, #0d0f12);
+  box-shadow: 0 14px 28px -18px #000c, inset 0 0 0 1.5px #7cc4d133, inset 0 1px 0 #ffffff14;
+}
+
 .card:active {
   transform: scale(0.985);
 }

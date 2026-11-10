@@ -1,4 +1,4 @@
-import type { HangyumiGuessResult, HangyumiPiece, HangyumiRound } from "@/lib/hangyumi/rules";
+import { revealProgress, type HangyumiGuessResult, type HangyumiPiece, type HangyumiRound } from "@/lib/hangyumi/rules";
 
 /* =========================================================
    Yumi Wordvault｜詞語秘藏: what each guess looks like
@@ -35,14 +35,10 @@ export type VaultBeat = {
 /**
  * How far along the path the round has taken her: the places filled by a
  * guess. A lost round shows the whole answer, which must not carry her to
- * the chest.
+ * the chest. The rule is shared with Starweaver (lib/hangyumi/rules.ts).
  */
 export function progress(round: HangyumiRound) {
-  const places = round.slots.filter(slot => slot.letter);
-  const revealed = places.filter(slot =>
-    slot.char !== null && round.guessed.includes(slot.char.normalize("NFC").toLocaleLowerCase()),
-  ).length;
-  return { total: places.length, revealed, fraction: places.length ? revealed / places.length : 0 };
+  return revealProgress(round);
 }
 
 /** The beats one guess plays, from the round before it to the one after. */

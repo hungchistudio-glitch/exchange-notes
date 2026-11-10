@@ -11,7 +11,7 @@ export default function GamesHubReview() {
     <GamesHub
       loadToday={loadToday}
       loadBalance={loadBalance}
-      hrefs={{ hangyumi: "/hangyumi-review", wordvault: "/hangyumi-review?game=wordvault" }}
+      hrefs={{ hangyumi: "/hangyumi-review", wordvault: "/hangyumi-review?game=wordvault", starweaver: "/hangyumi-review?game=starweaver" }}
       backHref="/games-review"
     />
   );

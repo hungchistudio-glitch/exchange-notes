@@ -2928,7 +2928,48 @@ export type TranslationDictionary = {
     /** The note over the stage when a chest pays: {count} cookies. */
     chestPaid: string;
   };
-  /** The games hub: one key on Home, then Hangyumi or Wordvault. */
+  /** Yumi Starweaver｜織星者: the third word game (Chi, 2026-11-10). Only
+      what it says differently; the rest of its screen reads `hangyumi`. */
+  starweaver: {
+    title: string;
+    short: string;
+    subtitle: string;
+    open: string;
+    skip: string;
+    languageNote: string;
+    /** The energy copies a wrong guess sends out: U, then I, then O. */
+    pieces: { eye: string; arm: string; body: string };
+    nextPiece: string;
+    studio: string;
+    studioWon: string;
+    studioLost: string;
+    won: string;
+    lost: string;
+    missingNote: string;
+    failed: string;
+    offline: string;
+    closed: string;
+    rulesTitle: string;
+    rules: { letters: string; misses: string; cap: string; learning: string; relics: string };
+    /** Over the stage: this voyage's place in its seven, {count} of {total}. */
+    voyage: string;
+    /** Over the stage: relics held, {count} of {total}. */
+    collection: string;
+    /** What the progress says to a screen reader: {count} of {total}, {held} of {size}. */
+    progressLabel: string;
+    collectionComplete: string;
+    /** The result card of a seventh voyage that brought a relic back. */
+    relicTitle: string;
+    relicNew: string;
+    wear: string;
+    wearing: string;
+    worn: string;
+    wearFailed: string;
+    carryOn: string;
+    /** A seventh voyage with every relic already held. */
+    relicsAllHeld: string;
+  };
+  /** The games hub: one key on Home, then Hangyumi, Wordvault or Starweaver. */
   games: {
     title: string;
     open: string;
@@ -2939,6 +2980,7 @@ export type TranslationDictionary = {
     shared: string;
     hangyumi: { tagline: string; detail: string };
     wordvault: { tagline: string; detail: string };
+    starweaver: { tagline: string; detail: string };
   };
 
   /**

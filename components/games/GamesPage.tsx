@@ -17,7 +17,7 @@ export default function GamesPage() {
     <GamesHub
       loadToday={loadToday}
       loadBalance={loadBalance}
-      hrefs={{ hangyumi: "/hangyumi", wordvault: "/wordvault" }}
+      hrefs={{ hangyumi: "/hangyumi", wordvault: "/wordvault", starweaver: "/starweaver" }}
       backHref="/home"
     />
   );

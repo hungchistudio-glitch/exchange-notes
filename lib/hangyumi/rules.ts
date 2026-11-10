@@ -83,7 +83,32 @@ export type ChestTier = "normal" | "medium" | "premium";
 /** What a finished Wordvault word's chest gave: cookies outside the 333, and a piece. */
 export type ChestReward = { tier: ChestTier; cookies: number; item: string | null; limited: boolean };
 
-export type HangyumiGame = "hangyumi" | "wordvault";
+export type HangyumiGame = "hangyumi" | "wordvault" | "starweaver";
+
+export const GAMES: readonly HangyumiGame[] = ["hangyumi", "wordvault", "starweaver"];
+
+export const isGame = (value: unknown): value is HangyumiGame => (GAMES as readonly unknown[]).includes(value);
+
+/** A relic a seventh voyage brought back: the cycle it ended, and the piece. */
+export type StarweaverAward = { id: number; itemId: string };
+
+/**
+ * Yumi Starweaver｜織星者 (Chi, 2026-11-10): the reader's voyages, counted by
+ * the server. Every seventh word won brings back one of the 17 Starwoven
+ * Relics not owned yet; a loss takes nothing away. Live on every round of the
+ * game, and once the word is over, what it brought back.
+ */
+export type StarweaverState = {
+  completedTotal: number;
+  /** Where this voyage stands in its seven: 0 right after a relic. */
+  cycleProgress: number;
+  cycleLength: number;
+  collectedCount: number;
+  collectionSize: number;
+  collectionComplete: boolean;
+  /** Only once the word is over, and only for a seventh that found a relic. */
+  award: StarweaverAward | null;
+};
 
 export type HangyumiRound = {
   id: string;
@@ -113,6 +138,8 @@ export type HangyumiRound = {
   streak: number | null;
   /** Wordvault, once the word is over: what its chest gave. */
   chestReward: ChestReward | null;
+  /** Starweaver: voyages and relics. Never a chest. */
+  starweaver: StarweaverState | null;
 };
 
 export type HangyumiPaid = { letter: number; word: number; already: boolean; capped: boolean };
@@ -180,6 +207,24 @@ function readChestReward(value: unknown): ChestReward | null {
   };
 }
 
+function readStarweaver(value: unknown, status: HangyumiStatus): StarweaverState | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const award = (row.award ?? null) as Record<string, unknown> | null;
+  const cycleLength = count(row.cycleLength) || 7;
+  return {
+    completedTotal: count(row.completedTotal),
+    cycleProgress: Math.min(cycleLength - 1, count(row.cycleProgress)),
+    cycleLength,
+    collectedCount: count(row.collectedCount),
+    collectionSize: count(row.collectionSize),
+    collectionComplete: row.collectionComplete === true,
+    award: status !== "playing" && award && typeof award.itemId === "string" && award.itemId
+      ? { id: count(award.id), itemId: award.itemId }
+      : null,
+  };
+}
+
 export function readRound(value: unknown): HangyumiRound {
   const row = (value ?? {}) as Record<string, unknown>;
   if (typeof row.id !== "string" || !isLanguage(row.language) || !isLevel(row.level)) {
@@ -213,11 +258,27 @@ export function readRound(value: unknown): HangyumiRound {
     today: readToday(row.today),
     answer: status !== "playing" && typeof row.answer === "string" ? row.answer : null,
     card: status !== "playing" ? readCard(row.card) : null,
-    game: row.game === "wordvault" ? "wordvault" : "hangyumi",
+    game: isGame(row.game) ? row.game : "hangyumi",
     chest: isTier(row.chest) ? row.chest : null,
     streak: row.streak === null || row.streak === undefined ? null : Math.min(6, count(row.streak)),
     chestReward: status !== "playing" ? readChestReward(row.chestReward) : null,
+    starweaver: row.game === "starweaver" ? readStarweaver(row.starweaver, status) : null,
   };
+}
+
+/**
+ * How far a round's guesses have built the word: the places a guess filled,
+ * out of every place there is to guess (spaces, hyphens and punctuation are
+ * not places). Shared by every stage, so Wordvault's path and Starweaver's
+ * star chart can never count differently. A lost round shows the whole
+ * answer, which must not count as built.
+ */
+export function revealProgress(round: Pick<HangyumiRound, "slots" | "guessed">) {
+  const places = round.slots.filter(slot => slot.letter);
+  const revealed = places.filter(slot =>
+    slot.char !== null && round.guessed.includes(slot.char.normalize("NFC").toLocaleLowerCase()),
+  ).length;
+  return { total: places.length, revealed, fraction: places.length ? revealed / places.length : 0 };
 }
 
 export function readStart(value: unknown): HangyumiStart {
