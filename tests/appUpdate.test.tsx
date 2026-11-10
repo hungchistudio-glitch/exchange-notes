@@ -48,6 +48,8 @@ describe("deciding", () => {
 
   it("waits while the reader is busy", () => {
     expect(decideUpdate({ ...base, busy: true })).toBe("wait");
+    expect(decideUpdate({ ...base, slow: true })).toBe("weak");
+    expect(decideUpdate({ ...base, busy: true, slow: true })).toBe("wait");
   });
 
   it("reloads once per build, never in a loop", () => {
@@ -137,6 +139,36 @@ describe("checking", () => {
       checkForUpdate({ running: "aaa", fetcher: serving("bbb"), reload }),
     ).resolves.toBe("reload");
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the build on screen when the signal is too weak to download a new one", async () => {
+    const reload = vi.fn();
+    // The answer took two seconds: a whole new build would take far longer.
+    let clock = 0;
+    const slowClock = () => (clock += 2_000);
+
+    await expect(
+      checkForUpdate({ running: "aaa", fetcher: serving("bbb"), reload, now: slowClock }),
+    ).resolves.toBe("weak");
+    expect(reload).not.toHaveBeenCalled();
+
+    // The next return on a good signal brings it.
+    await expect(
+      checkForUpdate({ running: "aaa", fetcher: serving("bbb"), reload, now: () => 0 }),
+    ).resolves.toBe("reload");
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not ask at all while the phone has no network", async () => {
+    const reload = vi.fn();
+    const fetcher = vi.fn() as unknown as typeof fetch;
+    const onLine = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    try {
+      await expect(checkForUpdate({ running: "aaa", fetcher, reload })).resolves.toBe("current");
+      expect(fetcher).not.toHaveBeenCalled();
+    } finally {
+      onLine.mockRestore();
+    }
   });
 
   it("does nothing when the server cannot be reached", async () => {

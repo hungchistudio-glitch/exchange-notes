@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { isKeptPage } from "@/hooks/useOnline";
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
 import type { LanguageCode } from "@/lib/languages";
@@ -124,7 +125,8 @@ export function LearningLanguageProvider({
   }, []);
 
   useEffect(() => {
-    if (!refreshOnMount) return;
+    // A kept page's pair is as old as the page (hooks/useOnline, isKeptPage).
+    if (!refreshOnMount && !isKeptPage()) return;
     let cancelled = false;
     queueMicrotask(() => { if (!cancelled) void refresh(); });
     return () => { cancelled = true; };

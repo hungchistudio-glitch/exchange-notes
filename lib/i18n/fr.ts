@@ -15,6 +15,10 @@ const french: TranslationDictionary = {
     pendingOne: "1 modification en attente de synchronisation",
     pendingMany: "{count} modifications en attente de synchronisation",
     savedLocally: "Enregistré sur cet appareil",
+    weakLabel: "Signal faible · affichage de ce qui est sur cet appareil",
+    keptOffline: "Hors ligne · copie enregistrée {when}",
+    keptWeak: "Signal faible · copie enregistrée {when}",
+    keptToday: "aujourd’hui, {time}",
   },
   meta: {
     landingTitle: "Exchange Notes : gardez les mots qui méritent d'être retenus",

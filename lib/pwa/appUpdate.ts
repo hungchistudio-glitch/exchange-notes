@@ -1,3 +1,4 @@
+import { isOnline, isWeakSignal } from "@/hooks/useOnline";
 import { reloadHeld } from "@/lib/pwa/reloadHolds";
 
 /* =========================================================
@@ -19,6 +20,21 @@ import { reloadHeld } from "@/lib/pwa/reloadHolds";
 
 /** How long the app must have been away before coming back checks. */
 export const MIN_AWAY_MS = 30_000;
+
+/*
+ * Only on a good signal (Chi, 2026-11-10: "訊號好才更新").
+ *
+ * A reload onto a new build downloads the whole app again — every chunk of a
+ * new build has a new name, so none of it is in the worker's cache — and
+ * there were 77 builds in the month before. On a weak signal that turned
+ * coming back to the app into a long blank screen. So the update goes ahead
+ * only when the server's answer to "which build?", a few dozen bytes, came
+ * back within a second; otherwise the reader keeps the build they have, and
+ * the next return on a better signal brings the new one.
+ */
+export const GOOD_SIGNAL_MS = 1_000;
+/* Past this the answer is not waited for at all. */
+const VERSION_TIMEOUT_MS = 3_000;
 
 const RELOADED_FOR_KEY = "exchange-notes:reloaded-for";
 
@@ -72,6 +88,8 @@ export type UpdateDecision =
   | "current"
   /** Newer build, but the reader is busy; try again next time. */
   | "wait"
+  /** Newer build, but the signal is too weak to download it; next time. */
+  | "weak"
   /** Already reloaded for this build once and it is still not here. */
   | "gave_up";
 
@@ -80,17 +98,21 @@ export function decideUpdate({
   served,
   reloadedFor,
   busy,
+  slow = false,
 }: {
   running: string;
   served: string | null;
   reloadedFor: string | null;
   busy: boolean;
+  /** The signal is weak: the answer was slow, or the app already knows. */
+  slow?: boolean;
 }): UpdateDecision {
   if (!running || !served || served === running) return "current";
   // A reload that did not bring the new build would bring the same answer
   // every time the app came back: reload once per build, never in a loop.
   if (reloadedFor === served) return "gave_up";
-  return busy ? "wait" : "reload";
+  if (busy) return "wait";
+  return slow ? "weak" : "reload";
 }
 
 /* ---------- asking ---------- */
@@ -102,6 +124,8 @@ export async function fetchServedVersion(
     const response = await fetcher("/api/version", {
       cache: "no-store",
       credentials: "same-origin",
+      // Not in Safari before iOS 16, where the check then simply waits.
+      signal: typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(VERSION_TIMEOUT_MS) : undefined,
     });
     if (!response.ok) return null;
     const body = (await response.json()) as { version?: unknown };
@@ -136,12 +160,19 @@ export async function checkForUpdate({
   running,
   fetcher,
   reload = () => window.location.reload(),
+  now = () => performance.now(),
 }: {
   running: string;
   fetcher?: typeof fetch;
   reload?: () => void;
+  now?: () => number;
 }): Promise<UpdateDecision> {
+  // No network, or one already known to be too slow: nothing to ask.
+  if (!isOnline()) return "current";
+
+  const askedAt = now();
   const served = await fetchServedVersion(fetcher);
+  const slow = isWeakSignal() || now() - askedAt > GOOD_SIGNAL_MS;
 
   const decision = decideUpdate({
     running,
@@ -150,6 +181,7 @@ export async function checkForUpdate({
     // Read after the request, not before: the reader may have started
     // typing while it was on its way.
     busy: reloadHeld() || hasUnsentText(),
+    slow,
   });
 
   if (decision === "reload" && served) {

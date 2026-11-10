@@ -23,9 +23,11 @@ import { objectWordForClass, type ObjectWord } from "@/lib/vision/objectLexicon"
    The WebAssembly runtime (about 3MB compressed) from this site, copied out
    of node_modules at build time; and EfficientNet-Lite0, int8 (about 4.5MB),
    from Google's model bucket, kept in Cache Storage so it is fetched once
-   per device rather than once per visit. Chi chose to fetch both in the
-   background after sign-in, so the first photograph is already fast — see
-   components/foundation/OnDeviceVisionWarmup.tsx.
+   per device rather than once per visit. Both are downloaded in the
+   background after sign-in and kept (components/foundation/
+   OnDeviceVisionWarmup.tsx); since 2026-11-10 the classifier is built only
+   when the camera opens (components/camera/TargetCamera.tsx), not on every
+   visit.
    ========================================================= */
 
 const WASM_BASE = "/mediapipe/wasm";
@@ -41,6 +43,20 @@ const MODEL_URL =
  */
 export const VISION_CACHE_PREFIX = "exchange-notes-vision";
 const VISION_CACHE = `${VISION_CACHE_PREFIX}-efficientnet-lite0-int8-v1`;
+
+/*
+ * The runtime's cache, which public/sw.js answers /mediapipe/ from first.
+ *
+ * The runtime used to come from the network on every visit: /mediapipe is
+ * served `max-age=0, must-revalidate` and the worker left it alone, so each
+ * open asked again for an 11.7MB file (3.3MB compressed) and downloaded it
+ * whole whenever Safari had dropped it. It is named for the package version,
+ * because the file names are not: a new @mediapipe/tasks-vision needs a new
+ * cache. tests/onDeviceVisionCache.test.ts keeps this, the worker and
+ * package.json in step.
+ */
+export const MEDIAPIPE_VERSION = "1.0.1";
+export const VISION_RUNTIME_CACHE = `${VISION_CACHE_PREFIX}-runtime-${MEDIAPIPE_VERSION}`;
 
 /*
  * How sure the classifier must be before a word is shown.
@@ -163,6 +179,47 @@ async function createClassifier(): Promise<ImageClassifier | null> {
     lastLoadError = describe(error);
     report({ outcome: "unavailable", ms: 0, error: lastLoadError });
     return null;
+  }
+}
+
+/* Puts one file into a cache unless it is already there. */
+async function keep(cacheName: string, url: string): Promise<void> {
+  const cache = await caches.open(cacheName);
+  if (await cache.match(url)) return;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+  await cache.put(url, response);
+}
+
+/**
+ * Downloads the runtime and the model onto the device, once, without
+ * building anything (Chi, 2026-11-10: "存手機，開相機才啟動").
+ *
+ * The warm-up used to build the classifier after every sign-in: compiling
+ * 11.7MB of WebAssembly and loading the model on the phone, six seconds into
+ * every visit, whether or not the camera was going to be opened. That is
+ * where the app went stiff a few seconds after opening. Now the files wait
+ * on the device and TargetCamera builds the classifier when it opens.
+ *
+ * Resolves true when both are on the device. Never throws.
+ */
+export async function downloadObjectClassifier(): Promise<boolean> {
+  if (!supported() || !("caches" in window)) return false;
+
+  try {
+    const { FilesetResolver } = await import("@mediapipe/tasks-vision");
+    // The variant this device will run (SIMD or not), without downloading it.
+    const fileset = await FilesetResolver.forVisionTasks(WASM_BASE);
+
+    await Promise.all([
+      keep(VISION_RUNTIME_CACHE, fileset.wasmLoaderPath),
+      keep(VISION_RUNTIME_CACHE, fileset.wasmBinaryPath),
+      keep(VISION_CACHE, MODEL_URL),
+    ]);
+    return true;
+  } catch {
+    // Storage refused or the network went: the camera downloads on first use.
+    return false;
   }
 }
 

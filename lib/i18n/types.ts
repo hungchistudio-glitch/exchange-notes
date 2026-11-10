@@ -30,6 +30,13 @@ export type TranslationDictionary = {
     pendingOne: string;
     pendingMany: string;
     savedLocally: string;
+    /** The network is there but too slow to wait for; the screen is showing the device's copy. A short floating label. */
+    weakLabel: string;
+    /** Above a kept copy of a list or conversation: when it was saved. {when} is keptToday or a date and time. */
+    keptOffline: string;
+    keptWeak: string;
+    /** {time} is the hour and minute, for a copy saved today. */
+    keptToday: string;
   };
   /** What a link to the app or its introduction says when it leaves the app: page titles, link previews and the install description. */
   meta: {

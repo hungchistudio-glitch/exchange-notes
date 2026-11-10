@@ -20,7 +20,7 @@ const FONT_SIZE_EVENT = "exchange-notes-font-size-change";
 // A year, matching every other preference the server reads.
 const PREFERENCE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
-function readPreferenceCookie(name: string): string | null {
+export function readPreferenceCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
 
   const match = document.cookie.match(
@@ -562,7 +562,7 @@ export type InterfaceMode = "standard" | "yumi-cosmic";
  */
 export const INTERFACE_MODE_COOKIE = "exchange-notes-interface-mode";
 
-const INTERFACE_MODE_EVENT = "exchange-notes-interface-mode-change";
+export const INTERFACE_MODE_EVENT = "exchange-notes-interface-mode-change";
 
 export const DEFAULT_INTERFACE_MODE: InterfaceMode = "standard";
 

@@ -10,6 +10,10 @@ const traditionalChinese: TranslationDictionary = {
     pendingOne: "1 筆更動等待同步",
     pendingMany: "{count} 筆更動等待同步",
     savedLocally: "已存在這台裝置",
+    weakLabel: "訊號弱・先顯示手機上的資料",
+    keptOffline: "離線中・顯示 {when} 的內容",
+    keptWeak: "訊號弱・顯示 {when} 的內容",
+    keptToday: "今天 {time}",
   },
   meta: {
     landingTitle: "Exchange Notes：留住值得記住的字詞",

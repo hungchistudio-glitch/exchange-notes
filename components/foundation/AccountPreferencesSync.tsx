@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { isKeptPage } from "@/hooks/useOnline";
 import {
   subscribeToAppFontSize,
   subscribeToDailyGoalWords,
@@ -161,7 +162,15 @@ export default function AccountPreferencesSync({ userId, stored }: Props) {
      * from here. If this fails too, the first run is skipped rather than
      * guessed: nothing is written until the reader changes something.
      */
-    if (stored === undefined) {
+    /*
+     * A page the device kept carries the account's settings as they were
+     * when it was kept, possibly before the reader changed one here. Applied
+     * as "the account wins", they would put the old ones back (2026-11-10).
+     * So they count as unread, and are asked for again.
+     */
+    const known = isKeptPage() ? undefined : stored;
+
+    if (known === undefined) {
       void supabase
         .from("profiles")
         .select("app_preferences")
@@ -176,7 +185,7 @@ export default function AccountPreferencesSync({ userId, stored }: Props) {
           firstRun((data as { app_preferences?: unknown } | null)?.app_preferences ?? null);
         });
     } else {
-      firstRun(stored);
+      firstRun(known);
     }
 
     const unsubscribes = [

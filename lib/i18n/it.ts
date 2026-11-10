@@ -15,6 +15,10 @@ const italian: TranslationDictionary = {
     pendingOne: "1 modifica in attesa di sincronizzazione",
     pendingMany: "{count} modifiche in attesa di sincronizzazione",
     savedLocally: "Salvato su questo dispositivo",
+    weakLabel: "Segnale debole · vedi ciò che è su questo dispositivo",
+    keptOffline: "Offline · copia salvata {when}",
+    keptWeak: "Segnale debole · copia salvata {when}",
+    keptToday: "oggi, {time}",
   },
   meta: {
     landingTitle: "Exchange Notes: conserva le parole che vale la pena ricordare",
