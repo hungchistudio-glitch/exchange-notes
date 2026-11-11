@@ -268,6 +268,17 @@
 
 /* ---------------------------------------------------------- the way in */
 
+/* Hidden while the page settles (GamesHub.tsx), then each card's own way
+   in starts from its first frame. Should the page never come alive, they
+   fade in after a few seconds anyway. */
+.cards[data-entrance="wait"] {
+  animation: cards-wait 300ms ease 4s both;
+}
+
+@keyframes cards-wait {
+  from { opacity: 0; }
+}
+
 /* Hangyumi's card is let down on two ropes from the sign, and sways to rest. */
 .cards[data-entrance="play"] > li[data-game="hangyumi"] {
   transform-origin: 50% -48px;
@@ -433,6 +444,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .cards[data-entrance],
   .cards[data-entrance] > li,
   .cards[data-entrance] > li > .card {
     animation: none;

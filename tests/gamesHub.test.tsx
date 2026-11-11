@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import GamesHub, { ENTRANCE_MS } from "@/components/games/GamesHub";
+import GamesHub, { ENTRANCE_MS, MOST_WAIT_MS } from "@/components/games/GamesHub";
 import { readGamesProgress, WORDVAULT_CHEST_AT } from "@/lib/games/progress";
 import { NIGHTSCALE_ITEMS, WINS_PER_PIECE } from "@/lib/shop/nightscaleCollection";
 import { STARWEAVER_ITEMS, VOYAGES_PER_RELIC } from "@/lib/shop/starweaverCollection";
@@ -87,19 +87,25 @@ describe("the games hub", () => {
     expect(screen.queryByText(/Nightscale \d/)).not.toBeInTheDocument();
   });
 
-  it("comes in once, and a touch settles it", () => {
+  it("waits for the page to settle, comes in once, and a touch settles it", () => {
     vi.useFakeTimers();
     const { container, unmount } = render(<GamesHub loadToday={async () => 0} hrefs={hrefs} backHref="/home" />);
     const cards = () => container.querySelector("[data-entrance]")?.getAttribute("data-entrance");
+    expect(cards()).toBe("wait");
+    act(() => { vi.advanceTimersByTime(MOST_WAIT_MS); });
     expect(cards()).toBe("play");
     act(() => { vi.advanceTimersByTime(ENTRANCE_MS); });
     expect(cards()).toBe("done");
     unmount();
 
-    const again = render(<GamesHub loadToday={async () => 0} hrefs={hrefs} backHref="/home" />);
-    expect(again.container.querySelector("[data-entrance]")).toHaveAttribute("data-entrance", "play");
-    act(() => { fireEvent.pointerDown(window); });
-    expect(again.container.querySelector("[data-entrance]")).toHaveAttribute("data-entrance", "done");
+    /* A touch while it waits, or while it plays, ends it. */
+    for (const after of [0, MOST_WAIT_MS]) {
+      const again = render(<GamesHub loadToday={async () => 0} hrefs={hrefs} backHref="/home" />);
+      act(() => { vi.advanceTimersByTime(after); });
+      act(() => { fireEvent.pointerDown(window); });
+      expect(again.container.querySelector("[data-entrance]")).toHaveAttribute("data-entrance", "done");
+      again.unmount();
+    }
   });
 });
 

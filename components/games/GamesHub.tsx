@@ -38,10 +38,23 @@ import styles from "./GamesHub.module.css";
    Transforms and opacity only, so the compositor runs them alone. A tap,
    a scroll or a key settles them at once; under reduced motion they are
    simply there.
+
+   They wait for the page to settle first. Arriving from another screen,
+   the frames just after the change are the slow ones (the screen left
+   behind takes its 3D scene down, this one paints for the first time):
+   filmed from Hangyumi's screen, they stalled by 80-160ms even unslowed,
+   and a card dropping through them stuttered. So the cards stay hidden
+   until three frames in a row come on time, or MOST_WAIT_MS at most
+   (about 50ms on a quick phone). Should the page never come alive,
+   the stylesheet shows them anyway after a few seconds.
    ========================================================= */
 
 /** From the first frame to the last card at rest (Starweaver's, 300ms late). */
 export const ENTRANCE_MS = 1100;
+/** The longest the cards wait for the page to settle before coming in. */
+export const MOST_WAIT_MS = 220;
+/* A frame on time: at 60 frames a second, with a little to spare. */
+const ON_TIME_MS = 30;
 
 type Props = {
   /** Today's cookies from either game. */
@@ -61,7 +74,7 @@ export default function GamesHub({ loadToday, loadBalance, loadProgress, hrefs, 
   const [balance, setBalance] = useState<number | null>(null);
   /* undefined while it loads (the row keeps its place), null for none. */
   const [progress, setProgress] = useState<GamesProgress | null | undefined>(loadProgress ? undefined : null);
-  const [entering, setEntering] = useState(true);
+  const [entrance, setEntrance] = useState<"wait" | "play" | "done">("wait");
 
   useEffect(() => {
     let cancelled = false;
@@ -74,18 +87,39 @@ export default function GamesHub({ loadToday, loadBalance, loadProgress, hrefs, 
     return () => { cancelled = true; };
   }, [loadToday, loadBalance, loadProgress]);
 
+  /* In once three frames in a row come on time, or at MOST_WAIT_MS. */
+  useEffect(() => {
+    if (entrance !== "wait") return;
+    const go = () => setEntrance(now => (now === "wait" ? "play" : now));
+    const latest = window.setTimeout(go, MOST_WAIT_MS);
+    let frame = 0;
+    let last = 0;
+    let onTime = 0;
+    const tick = (now: number) => {
+      onTime = last && now - last <= ON_TIME_MS ? onTime + 1 : 0;
+      last = now;
+      if (onTime >= 2) go();
+      else frame = window.requestAnimationFrame(tick);
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(latest);
+    };
+  }, [entrance]);
+
   /* Over at the last card's rest, or at the first touch, scroll or key. */
   useEffect(() => {
-    if (!entering) return;
-    const settle = () => setEntering(false);
-    const timer = window.setTimeout(settle, ENTRANCE_MS);
+    if (entrance === "done") return;
+    const settle = () => setEntrance("done");
+    const timer = entrance === "play" ? window.setTimeout(settle, ENTRANCE_MS) : 0;
     const events = ["pointerdown", "keydown", "wheel", "touchmove"] as const;
     events.forEach(name => window.addEventListener(name, settle, { once: true, capture: true, passive: true }));
     return () => {
       window.clearTimeout(timer);
       events.forEach(name => window.removeEventListener(name, settle, { capture: true }));
     };
-  }, [entering]);
+  }, [entrance]);
 
   const games = [
     {
@@ -159,7 +193,7 @@ export default function GamesHub({ loadToday, loadBalance, loadProgress, hrefs, 
       </header>
 
       <p className={styles.choose}>{copy.choose}</p>
-      <ul className={styles.cards} data-entrance={entering ? "play" : "done"}>
+      <ul className={styles.cards} data-entrance={entrance}>
         {games.map(({ id, href, name, subtitle, glyph: Glyph, howTo, reward }) => (
           <li key={id} data-game={id}>
             {id === "hangyumi" && (
