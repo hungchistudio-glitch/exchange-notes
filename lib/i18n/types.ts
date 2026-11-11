@@ -2688,6 +2688,21 @@ export type TranslationDictionary = {
       hint: string;
       limited: string;
     };
+    /** Starwoven Relics (Yumi Starweaver, 2026-11-10): the third shelf of
+        limited pieces, apart from the 333 and the vault. */
+    relics: {
+      title: string;
+      note: string;
+      /** {count} owned of {total}. */
+      collected: string;
+      /** A relic not yet found: its seal number, {seal}, never its name. */
+      seal: string;
+      /** Said when a sealed relic is tapped: how one is found. */
+      hint: string;
+      limited: string;
+      /** The shelf's way to the game. */
+      play: string;
+    };
     stage: string;
     hint: string;
     views: string;

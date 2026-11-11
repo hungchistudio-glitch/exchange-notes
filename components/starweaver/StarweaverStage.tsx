@@ -115,7 +115,7 @@ const sceneOf = (round: HangyumiRound): WeaveScene => ({
   lit: litPlaces(round),
   misses: round.misses,
   status: round.status,
-  relic: Boolean(round.starweaver?.award),
+  relic: round.status === "won" ? round.starweaver?.award?.itemId ?? null : null,
 });
 
 /** How long a wallet that has not answered may hold her up. */

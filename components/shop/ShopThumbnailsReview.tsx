@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CULTURAL_ITEMS } from "@/lib/shop/culturalCollection";
 import { SHOP_ITEMS } from "@/lib/shop/catalog";
 import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
+import { STARWEAVER_ITEMS } from "@/lib/shop/starweaverCollection";
 
 /**
  * Renders every piece's picture with the same code the shop falls back on,
@@ -28,7 +29,8 @@ export default function ShopThumbnailsReview() {
               : collection === "collection03" ? SHOP_ITEMS.filter(item => item.id.startsWith("s33v3-"))
                 : collection === "collection04" ? SHOP_ITEMS.filter(item => item.id.startsWith("s33v4-"))
                   : collection === "mythic" ? MYTHIC_ITEMS
-                    : [...SHOP_ITEMS, ...MYTHIC_ITEMS];
+                    : collection === "starweaver" ? STARWEAVER_ITEMS
+                      : [...SHOP_ITEMS, ...MYTHIC_ITEMS, ...STARWEAVER_ITEMS];
         return renderThumbnailSet(items.map(item => item.id), 256, "image/webp", .9, () => cancelled, (done, total) => { if (!cancelled) setProgress(`${done} / ${total}`); });
       })
       .then(rendered => {

@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { buildYumiActor, ARM_ROOT, EYE_REST } from "@/lib/yumi3d/actor";
 import { SHELL_RADIUS, TUBE_RADIUS } from "@/lib/yumi3d/anatomy";
-import { createOutfitRig } from "@/lib/yumi3d/outfit";
+import { buildThumbnailObject, createOutfitRig, disposeObject } from "@/lib/yumi3d/outfit";
 import { makeStudioEnvironment } from "@/lib/yumi3d/scene";
 
 import type { WeaveBeat } from "./presentation";
@@ -45,8 +45,8 @@ export type WeaveScene = {
   /** Copies out at the gate: the wrong guesses so far, while playing. */
   misses: number;
   status: "playing" | "won" | "lost";
-  /** A seventh voyage that brought a relic back. */
-  relic: boolean;
+  /** The relic a seventh voyage brought back, by id. */
+  relic: string | null;
 };
 
 export type StarweaverStudio = {
@@ -450,7 +450,8 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   const relic = new THREE.Group();
   relic.visible = false;
   scene.add(relic);
-  solid(new THREE.Mesh(
+  /* A glowing body stands in until the relic's own model is built. */
+  const placeholder = solid(new THREE.Mesh(
     new THREE.IcosahedronGeometry(0.22, 2),
     new THREE.MeshPhysicalMaterial({
       color: 0xeef6f7, metalness: 0.2, roughness: 0.12, clearcoat: 1, iridescence: 0.6, iridescenceIOR: 1.4,
@@ -471,11 +472,53 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   cone.rotation.x = -Math.PI / 2;
   cone.visible = false;
   scene.add(cone);
-  const RELIC_AT = new THREE.Vector3(0.2, 0.75, 0.35);
+  const RELIC_AT = new THREE.Vector3(0.2, 0.85, 0.35);
   cone.position.set(RELIC_AT.x, 0.012, RELIC_AT.z);
 
+  /*
+   * The relic itself, built from the same code as the shop's pictures
+   * (buildThumbnailObject) as soon as the round says which one it is: the
+   * guess's answer comes a couple of seconds before the reveal, and its
+   * shaders compile in that time rather than on the frame it appears.
+   */
+  let relicId: string | null = null;
+  let relicPiece: THREE.Object3D | null = null;
+  function setRelic(id: string | null) {
+    if (id === relicId) return;
+    relicId = id;
+    const old = relicPiece;
+    relicPiece = null;
+    if (old) {
+      relic.remove(old);
+      afterCompiles(() => disposeObject(old));
+    }
+    placeholder.visible = true;
+    if (!id) return;
+    let piece: THREE.Object3D | null = null;
+    try {
+      piece = buildThumbnailObject(id);
+    } catch {
+      piece = null;
+    }
+    if (!piece) return;
+    /* About the size of the glowing body it replaces, centred on it. */
+    const sphere = new THREE.Box3().setFromObject(piece).getBoundingSphere(new THREE.Sphere());
+    const holder = new THREE.Group();
+    piece.position.sub(sphere.center);
+    holder.add(piece);
+    holder.scale.setScalar(0.5 / Math.max(0.05, sphere.radius));
+    holder.traverse(object => { if ((object as THREE.Mesh).isMesh) object.castShadow = true; });
+    relic.add(holder);
+    relicPiece = holder;
+    placeholder.visible = false;
+    const shown = relic.visible;
+    relic.visible = true;
+    void compiling(renderer.compileAsync(relic, camera, scene)).catch(() => undefined);
+    relic.visible = shown;
+  }
+
   // ------------------------------------------------------------ state
-  let rest: WeaveScene = { places: 1, lit: [], misses: 0, status: "playing", relic: false };
+  let rest: WeaveScene = { places: 1, lit: [], misses: 0, status: "playing", relic: null };
   let gateOpen = 0;
   type Live = { beat: WeaveBeat; started: number };
   let queue: WeaveBeat[] = [];
@@ -528,7 +571,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     model.position.copy(YUMI_AT);
     model.scale.setScalar(SCALE);
     model.rotation.set(0, FACING, 0);
-    relic.visible = won && rest.relic;
+    relic.visible = won && Boolean(rest.relic);
     relic.position.copy(RELIC_AT);
     relic.scale.setScalar(1);
     cone.visible = relic.visible;
@@ -813,6 +856,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       const wasOpen = gateOpen;
       if (next.places !== trackFor) setTrack(next.places);
       rest = next;
+      setRelic(next.relic);
       if (fresh && !reduced && wasOpen > 0.01) {
         /* The last word's gate closes as the empty track appears. */
         settle();
@@ -838,6 +882,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       }
       if (next.places !== trackFor) setTrack(next.places);
       rest = next;
+      setRelic(next.relic);
       if (reduced || beats.length === 0) {
         finish();
         return;
@@ -865,6 +910,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       document.removeEventListener("visibilitychange", onVisibility);
       rig.dispose();
       setTrack(0);
+      setRelic(null);
       afterCompiles(() => {
         const geometries = new Set<THREE.BufferGeometry>();
         const materials = new Set<THREE.Material>();
