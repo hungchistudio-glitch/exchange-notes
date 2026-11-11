@@ -9,7 +9,7 @@ import { shopItem, type YumiOutfit } from "@/lib/shop/catalog";
 import HangyumiGame, { type GameKind } from "./HangyumiGame";
 
 /** The game against the in-memory service and its practice words. */
-export default function HangyumiGameReview({ learningLanguage, earnedToday, game = "hangyumi", streak = 0, voyages = 0, walletDelayMs = 0 }: {
+export default function HangyumiGameReview({ learningLanguage, earnedToday, game = "hangyumi", streak = 0, voyages = 0, wins = 0, walletDelayMs = 0 }: {
   learningLanguage: LanguageCode;
   earnedToday: number;
   game?: GameKind;
@@ -17,10 +17,12 @@ export default function HangyumiGameReview({ learningLanguage, earnedToday, game
   streak?: number;
   /** Starweaver: voyages already made, so ?voyages=6 plays the seventh. */
   voyages?: number;
+  /** Hangyumi: words already won, so ?wins=2 plays the third (Nightscale). */
+  wins?: number;
   /** How late the wallet answers, as a slow network would. */
   walletDelayMs?: number;
 }) {
-  const service = useMemo(() => createPreviewHangyumi({ earnedToday, streak, voyages }), [earnedToday, streak, voyages]);
+  const service = useMemo(() => createPreviewHangyumi({ earnedToday, streak, voyages, wins }), [earnedToday, streak, voyages, wins]);
   /* The preview's wardrobe, in memory: what she wears, and what a relic changes. */
   const worn = useRef<YumiOutfit>({ head: "beret" });
   const loadWallet = useMemo(() => async () => {

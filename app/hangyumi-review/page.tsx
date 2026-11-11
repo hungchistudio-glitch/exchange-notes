@@ -13,7 +13,9 @@ import { reviewRouteOnly } from "@/lib/reviewRoutes";
  * Yumi Wordvault on the same screen, and ?streak=3 (or 6) starts its streak
  * there, so the next word holds the medium (or premium) chest. ?wallet=1200
  * makes the wallet answer that many milliseconds late, as a slow network
- * would, to watch Wordvault's way in wait for her outfit.
+ * would, to watch Wordvault's way in wait for her outfit. ?wins=2 starts
+ * Hangyumi two words won, so the next one unlocks a Nightscale piece, and
+ * ?voyages=6 does the same for Starweaver's seventh.
  */
 export const metadata = {
   title: "Hangyumi review",
@@ -24,11 +26,21 @@ const asLanguage = (value: string | undefined, fallback: LanguageCode): Language
   (LANGUAGE_CODES as readonly string[]).includes(value ?? "") ? (value as LanguageCode) : fallback;
 
 export default async function HangyumiReviewPage({ searchParams }: {
-  searchParams: Promise<{ lang?: string; today?: string; game?: string; streak?: string; voyages?: string; wallet?: string }>;
+  searchParams: Promise<{ lang?: string; today?: string; game?: string; streak?: string; voyages?: string; wins?: string; wallet?: string }>;
 }) {
   reviewRouteOnly();
   const params = await searchParams;
   const learning = asLanguage(params.lang, "en");
   const today = Math.max(0, Math.min(333, Number(params.today) || 0));
-  return <HangyumiGameReview learningLanguage={learning} earnedToday={today} game={params.game === "wordvault" || params.game === "starweaver" ? params.game : "hangyumi"} streak={Math.max(0, Math.min(6, Number(params.streak) || 0))} voyages={Math.max(0, Math.min(126, Number(params.voyages) || 0))} walletDelayMs={Math.max(0, Math.min(10000, Number(params.wallet) || 0))} />;
+  return (
+    <HangyumiGameReview
+      learningLanguage={learning}
+      earnedToday={today}
+      game={params.game === "wordvault" || params.game === "starweaver" ? params.game : "hangyumi"}
+      streak={Math.max(0, Math.min(6, Number(params.streak) || 0))}
+      voyages={Math.max(0, Math.min(126, Number(params.voyages) || 0))}
+      wins={Math.max(0, Math.min(75, Number(params.wins) || 0))}
+      walletDelayMs={Math.max(0, Math.min(10000, Number(params.wallet) || 0))}
+    />
+  );
 }

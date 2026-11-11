@@ -2898,7 +2898,31 @@ export type TranslationDictionary = {
     offline: string;
     closed: string;
     rulesTitle: string;
-    rules: { letters: string; misses: string; cap: string; learning: string; accents: string };
+    rules: {
+      letters: string; misses: string; cap: string; learning: string; accents: string;
+      /** How Nightscale pieces are unlocked (2026-11-11). */
+      nightscale: string;
+    };
+    /** Nightscale (2026-11-11): every third word won unlocks one of 24
+        pieces. A tribute in symbols only: no line here may name a person,
+        a team or a brand. */
+    nightscale: {
+      /** Over the stage: pieces held, {count} of {total}. */
+      collection: string;
+      /** The progress read aloud: {count} of {total} towards the next, {held} of {size} held. */
+      progressLabel: string;
+      collectionComplete: string;
+      /** Over the piece a third win unlocked. */
+      title: string;
+      isNew: string;
+      /** A third win with every piece already held. */
+      allHeld: string;
+      wear: string;
+      wearing: string;
+      worn: string;
+      wearFailed: string;
+      carryOn: string;
+    };
     close: string;
     reviewPage: {
       title: string;

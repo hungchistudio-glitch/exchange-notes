@@ -21,6 +21,7 @@ import {
   INTERFACE_LANGUAGE_CODE, LANGUAGE_CODES, getLanguage, getLanguageName, resolveSupportLanguage, type LanguageCode,
 } from "@/lib/languages";
 import { shopItem, type YumiOutfit } from "@/lib/shop/catalog";
+import { nightscaleItem } from "@/lib/shop/nightscaleCollection";
 import { STARWEAVER_ITEMS, starweaverItem } from "@/lib/shop/starweaverCollection";
 import { flowLiquid } from "@/lib/starweaver/liquid";
 import { announceEnergyLanded } from "@/lib/shop/energy";
@@ -808,6 +809,36 @@ export default function HangyumiGame({
                 </span>
               );
             })()}
+            {/* Hangyumi's Nightscale: this win's place in its three, and the
+                pieces held. A loss takes nothing away (Chi, 2026-11-11). */}
+            {game === "hangyumi" && round?.nightscale && (() => {
+              const ns = round.nightscale;
+              return (
+                <span
+                  className={styles.nightscale}
+                  role="img"
+                  aria-label={fill(t.hangyumi.nightscale.progressLabel, {
+                    count: ns.cycleProgress, total: ns.cycleLength, held: ns.collectedCount, size: ns.collectionSize,
+                  })}
+                >
+                  <span className={styles.streakPips} aria-hidden="true">
+                    {Array.from({ length: ns.cycleLength }, (_, i) => (
+                      <i
+                        key={i}
+                        data-done={i < ns.cycleProgress ? "true" : "false"}
+                        data-now={round.status === "playing" && i === ns.cycleProgress ? "true" : "false"}
+                        data-scale={i === ns.cycleLength - 1 ? "true" : undefined}
+                      />
+                    ))}
+                  </span>
+                  <b aria-hidden="true">
+                    {ns.collectionComplete
+                      ? t.hangyumi.nightscale.collectionComplete
+                      : fill(t.hangyumi.nightscale.collection, { count: ns.collectedCount, total: ns.collectionSize })}
+                  </b>
+                </span>
+              );
+            })()}
             {/* Replayed for each new total, then gone after six seconds. */}
             {round && round.earned > 0
               ? <span key={`${round.id}:${round.earned}`} className={styles.roundEarned}>{fill(copy.roundEarned, { count: round.earned })}</span>
@@ -1052,6 +1083,45 @@ export default function HangyumiGame({
                     </div>
                   );
                 })()}
+                {game === "hangyumi" && round.status === "won" && round.nightscale && (() => {
+                  const ns = round.nightscale;
+                  const piece = nightscaleItem(ns.award?.itemId);
+                  /* A third win with every piece already held says so; any
+                     other word says nothing here. */
+                  if (!piece) {
+                    return ns.cycleProgress === 0 && ns.completedTotal > 0 && ns.collectionComplete
+                      ? <p className={styles.muted}>{t.hangyumi.nightscale.allHeld}</p>
+                      : null;
+                  }
+                  const wear = wearing?.id === round.id ? wearing.state : null;
+                  const isWorn = wear === "worn" || outfit?.[piece.slot] === piece.id;
+                  return (
+                    <div className={styles.nightscaleReward}>
+                      <p className={styles.answerLabel}>{t.hangyumi.nightscale.title}</p>
+                      <div className={styles.rewardPiece}>
+                        <ShopThumb item={piece} className={styles.rewardThumb} />
+                        <span>
+                          <b>{piece.names[interfaceLanguage]}</b>
+                          <small>{t.hangyumi.nightscale.isNew}</small>
+                        </span>
+                      </div>
+                      <div className={styles.relicActions}>
+                        {wearPiece && (
+                          <button
+                            type="button"
+                            className={styles.secondary}
+                            disabled={isWorn || wear === "wearing"}
+                            onClick={() => wearRelic(round.id, piece.id)}
+                          >
+                            {isWorn ? t.hangyumi.nightscale.worn : wear === "wearing" ? t.hangyumi.nightscale.wearing : t.hangyumi.nightscale.wear}
+                          </button>
+                        )}
+                        <button type="button" className={styles.secondary} onClick={nextWord}>{t.hangyumi.nightscale.carryOn}</button>
+                      </div>
+                      {wear === "failed" && <p className={styles.saveError} role="alert">{t.hangyumi.nightscale.wearFailed}</p>}
+                    </div>
+                  );
+                })()}
                 <p className={styles.answerLabel}>{copy.answer}</p>
                 {round.answer && (() => {
                   const mine = gloss?.id === round.id ? gloss : null;
@@ -1165,6 +1235,7 @@ export default function HangyumiGame({
           <li>{copy.rules.learning}</li>
           {game === "wordvault" && <li>{t.wordvault.rules.chests}</li>}
           {game === "starweaver" && <li>{t.starweaver.rules.relics}</li>}
+          {game === "hangyumi" && <li>{t.hangyumi.rules.nightscale}</li>}
         </ul>
         <button
           type="button"

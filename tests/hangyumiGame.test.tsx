@@ -378,3 +378,52 @@ describe("the game's finish", () => {
     expect(window.localStorage.getItem("hangyumi-sound")).toBe("off");
   });
 });
+
+/* Nightscale (Chi, 2026-11-11): every third word won in Hangyumi unlocks
+   one of 24 pieces, counted by the server; a loss takes nothing away. */
+describe("Nightscale in Hangyumi", () => {
+  function playToward(wins: number) {
+    const service = createPreviewHangyumi({ words: WORDS, delayMs: 0, wins, pick: () => "ns-fang-drop" });
+    const loadWallet = vi.fn(async () => ({ outfit: { head: "beret" }, balance: 240 }));
+    const wearPiece = vi.fn(async (id: string) => ({ head: "beret", earrings: id }));
+    render(<HangyumiGame service={service} defaultLanguage="fr" loadWallet={loadWallet} wearPiece={wearPiece} />);
+    return { wearPiece };
+  }
+  const progress = () => screen.getByRole("img", { name: /towards the next Nightscale piece/ });
+
+  it("shows this word's place in its three and the pieces held, from the first", async () => {
+    playToward(1);
+    await screen.findByText("lasting a very short time");
+    expect(progress()).toHaveAccessibleName("1 of 3 words won towards the next Nightscale piece; 0 of 24 unlocked.");
+    expect(within(progress()).getByText("Nightscale 0 / 24")).toBeInTheDocument();
+  });
+
+  it("unlocks a piece on the third word won, says what it is, and puts it on when asked", async () => {
+    const { wearPiece } = playToward(2);
+    await screen.findByText("lasting a very short time");
+    for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
+    expect(await screen.findByText("Unlocked by your third word")).toBeInTheDocument();
+    expect(screen.getByText("Fang Drop")).toBeInTheDocument();
+    expect(screen.getByText("Nightscale · New in your wardrobe")).toBeInTheDocument();
+    expect(within(progress()).getByText("Nightscale 1 / 24")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Wear it" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Wearing it" })).toBeDisabled());
+    expect(wearPiece).toHaveBeenCalledWith("ns-fang-drop");
+  });
+
+  it("counts nothing for a word lost, and unlocks nothing before the third", async () => {
+    playToward(2);
+    await screen.findByText("lasting a very short time");
+    for (const char of ["z", "x", "w"]) await guess(char);
+    expect(screen.queryByText("Unlocked by your third word")).toBeNull();
+    expect(progress()).toHaveAccessibleName("2 of 3 words won towards the next Nightscale piece; 0 of 24 unlocked.");
+  });
+
+  it("says how pieces are unlocked in the rules", async () => {
+    playToward(0);
+    await screen.findByText("lasting a very short time");
+    fireEvent.click(screen.getByRole("button", { name: "How Hangyumi works" }));
+    expect(await screen.findByText(/Every third word you win unlocks one of 24 Nightscale pieces/)).toBeInTheDocument();
+  });
+});
+

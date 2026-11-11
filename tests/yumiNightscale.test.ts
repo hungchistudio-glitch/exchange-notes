@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import * as THREE from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -112,6 +112,21 @@ describe("Nightscale's catalogue", () => {
     expect(cleanOutfit({ head: "ns-five-ring-circlet", earrings: "ns-fang-drop" })).toEqual({ head: "ns-five-ring-circlet", earrings: "ns-fang-drop" });
     expect(itemsFor("owned", "all", new Set(["ns-fang-drop"])).map(item => item.id)).toContain("ns-fang-drop");
     await expect(createPreviewWallet(9999).buy("ns-fang-drop")).rejects.toThrow("Unknown item.");
+  });
+
+  it("matches the database: limited, never for sale, from the nightscale pool, in its slot", () => {
+    const dir = join(process.cwd(), "supabase", "migrations");
+    const file = readdirSync(dir).find(name => name.endsWith("_hangyumi_nightscale.sql"))!;
+    const sql = readFileSync(join(dir, file), "utf8");
+    const rows = [...sql.matchAll(/\('(ns-[a-z-]+)', '([a-z]+)', (\d+), (true|false), (true|false), '([a-z_]+)'\)/g)];
+    expect(new Map(rows.map(([, id, slot]) => [id, slot]))).toEqual(new Map(NIGHTSCALE_ITEMS.map(item => [item.id, item.slot])));
+    for (const [, id, , price, available, limited, pool] of rows) {
+      expect([available, limited, pool], id).toEqual(["false", "true", "nightscale"]);
+      expect(Number(price) % 3, id).toBe(0);
+    }
+    /* Every third win, as the page says. */
+    expect(sql).toContain("'cycleLength', 3");
+    expect(sql).toContain("v_won % 3 = 0");
   });
 
   it("ships a picture for every piece", () => {
