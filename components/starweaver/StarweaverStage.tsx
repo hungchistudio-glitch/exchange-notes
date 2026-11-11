@@ -94,7 +94,7 @@ function FlatChart({ round }: { round: HangyumiRound | null }) {
       <path className={styles.flatBody} d="M16 70a10 10 0 0 0 20 0" />
       {/* The copies a wrong guess sent out, waiting by the gate. */}
       {CLONE_SPOTS.map(([x, y], i) => (
-        <text key={CLONE_NAMES[i]} className={styles.swClone} x={x} y={y} data-out={i < out ? "true" : "false"}>
+        <text key={CLONE_NAMES[i]} className={styles.swClone} x={x} y={y} fontSize={9} data-out={i < out ? "true" : "false"}>
           {CLONE_NAMES[i]}
         </text>
       ))}

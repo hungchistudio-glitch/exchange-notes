@@ -625,7 +625,8 @@
 .swClone {
   fill: #7cc4d1;
   stroke: none;
-  font: 800 9px/1 system-ui, sans-serif;
+  font-family: system-ui, sans-serif;
+  font-weight: 800;
   text-anchor: middle;
   opacity: 0;
   transition: opacity 300ms ease;
