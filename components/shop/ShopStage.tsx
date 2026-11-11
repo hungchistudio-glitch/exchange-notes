@@ -69,6 +69,7 @@ export default function ShopStage({
   corner,
   scene,
   celebrateKey,
+  holdScene = false,
 }: {
   outfit: YumiOutfit;
   isCosmic: boolean;
@@ -77,6 +78,9 @@ export default function ShopStage({
   scene: Scene;
   /** Changes once per purchase, for the sky's celebration. */
   celebrateKey: number;
+  /** The shop's way in is playing: her scene is not built until it is
+      over, so its compile never lands on a frame of the scan. */
+  holdScene?: boolean;
   /** A control for the stand's top right: the mode switch, which is its lighting. */
   corner?: ReactNode;
 }) {
@@ -96,6 +100,9 @@ export default function ShopStage({
   const [view, setView] = useState<YumiView | null>("three-quarter");
   const [beam, setBeam] = useState<"off" | "wait" | "in">("off");
   const mountedAt = useRef(0);
+  /* Her scene's construction, waiting while the way in plays. */
+  const holdRef = useRef(holdScene);
+  const startRef = useRef<(() => void) | null>(null);
 
   const outfitRef = useRef(outfit);
   const cosmicRef = useRef(isCosmic);
@@ -154,9 +161,22 @@ export default function ShopStage({
     void import("@/lib/yumi3d/scene")
       .then(({ createYumiScene }) => {
         if (cancelled) return;
+        /* Downloaded during the way in; built once it is over. */
+        if (holdRef.current) {
+          startRef.current = () => { startRef.current = null; start(createYumiScene); };
+          return;
+        }
+        start(createYumiScene);
+      })
+      .catch(() => setFailed(true));
+
+    const surface = canvas;
+    const start = (createYumiScene: typeof import("@/lib/yumi3d/scene").createYumiScene) => {
+      {
+        if (cancelled) return;
         /* Full sharpness again (Chi, 2026-10-13): the half-rate idle frames
            are what keep the stand smooth, not a softer image. */
-        handle = createYumiScene(canvas, { inspect: true, reducedMotion: reduced });
+        handle = createYumiScene(surface, { inspect: true, reducedMotion: reduced });
         if (!handle) {
           setFailed(true);
           return;
@@ -179,8 +199,8 @@ export default function ShopStage({
           };
         }
         raf = requestAnimationFrame(loop);
-      })
-      .catch(() => setFailed(true));
+      }
+    };
 
     const onResize = () => {
       size = { width: canvas.clientWidth, height: canvas.clientHeight };
@@ -201,6 +221,12 @@ export default function ShopStage({
       pauseThumbnails(false);
     };
   }, []);
+
+  /* The way in is over: build her now if she was waiting for it. */
+  useEffect(() => {
+    holdRef.current = holdScene;
+    if (!holdScene) startRef.current?.();
+  }, [holdScene]);
 
   /* The beam comes once she is drawn, a beat after the page opened. */
   useEffect(() => {

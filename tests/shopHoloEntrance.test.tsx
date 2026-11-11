@@ -1,7 +1,6 @@
-import { act, fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { holoDelayAt } from "@/components/shop/HoloEntrance";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { createPreviewWallet } from "@/lib/shop/wallet";
 
@@ -9,7 +8,8 @@ import { createPreviewWallet } from "@/lib/shop/wallet";
    The shop's holographic way in (Chi, 2026-11-12)
 
    Chi chose a scan that materialises the page, about a second and a half
-   on every visit, a tap to end it, and nothing under reduced motion. jsdom
+   on every visit, a tap to end it, and nothing under reduced motion; then
+   the soft-light version, about 1.2 seconds, drawn with the page. jsdom
    lays nothing out, so where the parts are is given here; the look of it
    is checked by eye in a browser.
    ========================================================= */
@@ -45,7 +45,7 @@ describe("the shop's way in", () => {
     render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
     expect(page()).toHaveAttribute("data-holo", "scan");
     expect(overlay()).not.toBeNull();
-    act(() => { vi.advanceTimersByTime(1400); });
+    act(() => { vi.advanceTimersByTime(1300); });
     expect(page()).toHaveAttribute("data-holo", "done");
     expect(overlay()).toBeNull();
   });
@@ -58,17 +58,17 @@ describe("the shop's way in", () => {
     expect(overlay()).toBeNull();
   });
 
-  it("never runs under reduced motion", () => {
+  it("never runs under reduced motion", async () => {
     vi.spyOn(window, "matchMedia").mockImplementation(query => ({
       matches: query.includes("reduce"), media: query, onchange: null,
       addListener: () => {}, removeListener: () => {}, addEventListener: () => {}, removeEventListener: () => {}, dispatchEvent: () => false,
     }) as MediaQueryList);
     render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
-    expect(page()).toHaveAttribute("data-holo", "done");
+    await waitFor(() => expect(page()).toHaveAttribute("data-holo", "done"));
     expect(overlay()).toBeNull();
   });
 
-  it("outlines what is on the first screen and holds each piece until the line reaches it", async () => {
+  it("outlines what is on the first screen, all in one drawing", () => {
     let next = 0;
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
       if (!this.hasAttribute("data-holo-frame")) return new DOMRect(0, 0, 0, 0);
@@ -76,18 +76,16 @@ describe("the shop's way in", () => {
       return new DOMRect(16, top, 160, 80);
     });
     render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
-    await act(async () => { await new Promise(resolve => requestAnimationFrame(() => resolve(null))); });
-    const frames = overlay()!.querySelectorAll("i");
-    expect(frames.length).toBeGreaterThan(4);
-    expect(frames.length).toBeLessThanOrEqual(18);
-    const held = [...document.querySelectorAll<HTMLElement>("li")].filter(li => li.style.getPropertyValue("--holo-delay"));
-    expect(held.length).toBeGreaterThan(0);
-    for (const li of held) expect(parseInt(li.style.getPropertyValue("--holo-delay"), 10)).toBeGreaterThanOrEqual(60);
+    const drawings = overlay()!.querySelectorAll("svg");
+    expect(drawings).toHaveLength(1);
+    const outlines = drawings[0].querySelectorAll("g");
+    expect(outlines.length).toBeGreaterThan(4);
+    expect(outlines.length).toBeLessThanOrEqual(18);
   });
 
-  it("times the line from the top of the screen to the bottom in a second", () => {
-    expect(holoDelayAt(0, 800)).toBe(60);
-    expect(holoDelayAt(400, 800)).toBe(560);
-    expect(holoDelayAt(1200, 800)).toBe(1060);
+  it("leaves the way in out when asked (the review screen's ?entrance=0)", () => {
+    render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview entrance={false} />);
+    expect(page()).toHaveAttribute("data-holo", "done");
+    expect(overlay()).toBeNull();
   });
 });

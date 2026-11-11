@@ -3,8 +3,9 @@
 import { ArrowLeft, BookmarkPlus, Check, ChevronRight, Globe, Layers, Lock, Moon, SlidersHorizontal, Sun, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
+import useReducedMotion from "@/hooks/useReducedMotion";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import HangyumiGlyph from "@/components/hangyumi/HangyumiGlyph";
 import AppLanguageSheet, { prefetchAppLanguages } from "@/components/settings/AppLanguageSheet";
@@ -114,24 +115,21 @@ const without = (group: FilterGroup, option: string) => (current: ShopFilters) =
 
 type Availability = "loading" | "open" | "closed" | "failed";
 
-const subscribeNothing = () => () => {};
-
 export default function YumiShop({
   wallet,
   isCosmic,
   onToggleMode,
   preview = false,
   startCollection = "all",
-  replayEntrance = false,
+  entrance = true,
 }: {
   wallet: ShopWallet;
   isCosmic: boolean;
   onToggleMode: () => void;
   preview?: boolean;
   startCollection?: ShopCollection;
-  /** The review screen: the scan even on a page the server drew, which is
-      held out of sight until it starts. */
-  replayEntrance?: boolean;
+  /** The holographic way in; the review screen can leave it out. */
+  entrance?: boolean;
 }) {
   const { t, language, locale } = useTranslation();
   const copy = t.shop;
@@ -179,16 +177,13 @@ export default function YumiShop({
     [sceneChoice, weather, quarter],
   );
   const pageRef = useRef<HTMLDivElement>(null);
-  /* The way in (Chi, 2026-11-12): a holographic scan, every visit, about a
-     second and a half (HoloEntrance). "idle" is the server's page and the
-     old gentle rise; a visit the server already drew (a reload) keeps that,
-     since the page is on screen before the scan could start. */
-  const [holo, setHolo] = useState<"idle" | "pending" | "scan" | "done">(replayEntrance ? "pending" : "idle");
-  const drawnByServer = useRef(useSyncExternalStore(subscribeNothing, () => false, () => true));
-  useLayoutEffect(() => {
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    setHolo(reduced || (drawnByServer.current && !replayEntrance) ? "done" : "scan");
-  }, [replayEntrance]);
+  /* The way in (Chi, 2026-11-12): a soft-light holographic scan, every
+     visit, about 1.2 seconds (HoloEntrance). Drawn with the page from the
+     first paint, the server's too, so it never starts late; reduced motion
+     hides it by CSS before this takes it away. */
+  const [holo, setHolo] = useState<"scan" | "done">(entrance ? "scan" : "done");
+  const reducedMotion = useReducedMotion();
+  const scanning = holo === "scan" && !reducedMotion;
   const endHolo = useCallback(() => setHolo("done"), []);
   const topRef = useRef<HTMLDivElement>(null);
   const catalogRef = useRef<HTMLElement>(null);
@@ -681,8 +676,8 @@ export default function YumiShop({
   }
 
   return (
-    <div ref={pageRef} className={styles.page} data-own-arrival="" data-holo={holo}>
-      {holo === "scan" && <HoloEntrance rootRef={pageRef} onDone={endHolo} />}
+    <div ref={pageRef} className={styles.page} data-own-arrival="" data-holo={scanning ? "scan" : "done"}>
+      {scanning && <HoloEntrance onDone={endHolo} />}
       <div ref={topRef} className={styles.top} data-shrunk="false">
         <header className={styles.header}>
           <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={() => void goBack()}>
@@ -732,6 +727,7 @@ export default function YumiShop({
           isCosmic={isCosmic}
           scene={scene}
           celebrateKey={celebrateKey}
+          holdScene={scanning}
           corner={
             <>
               <button

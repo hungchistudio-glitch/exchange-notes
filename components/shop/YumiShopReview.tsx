@@ -63,7 +63,7 @@ export default function YumiShopReview({ startCosmic, sky = null, collection03 =
       onToggleMode={() => setCosmic(value => !value)}
       preview
       startCollection={collection03 ? "collection03" : "all"}
-      replayEntrance={entrance}
+      entrance={entrance}
     />
   );
 }
