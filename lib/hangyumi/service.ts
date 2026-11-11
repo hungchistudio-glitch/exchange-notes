@@ -3,10 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LanguageCode } from "@/lib/languages";
 import { SHOP_ITEMS } from "@/lib/shop/catalog";
 import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
+import { STARWEAVER_ITEMS, VOYAGES_PER_RELIC } from "@/lib/shop/starweaverCollection";
 
 import {
   DAILY_CAP, MAX_MISSES, REWARDS, readGuess, readStart, readTodayState,
   type ChestReward, type ChestTier, type HangyumiCard, type HangyumiGame, type HangyumiGuessResult, type HangyumiLevel, type HangyumiRound, type HangyumiStart, type PartOfSpeech,
+  type StarweaverAward,
 } from "./rules";
 
 /* =========================================================
@@ -68,10 +70,12 @@ export function createSupabaseHangyumi(supabase: SupabaseClient): HangyumiServic
   return {
     async start({ roundId, language, level, hintLanguage, game = "hangyumi" }) {
       /* Hangyumi through the four-argument start, which every deployed page
-         calls; Wordvault through the one that knows the game. */
+         calls; Wordvault and Starweaver through the one that knows the game.
+         The server keeps the game on the round and pays by that, never by
+         what a page says later. */
       return readStart(await call("hangyumi_start", {
         p_round_id: roundId, p_language: language, p_level: level, p_hint_language: hintLanguage,
-        ...(game === "wordvault" ? { p_game: game } : {}),
+        ...(game !== "hangyumi" ? { p_game: game } : {}),
       }));
     },
     async guess(roundId, letter) {
@@ -112,6 +116,8 @@ type PreviewRound = {
   id: string; word: PracticeWord; hintLanguage: LanguageCode; guessed: string[]; misses: number;
   status: HangyumiRound["status"]; earned: number; keyboard: string[] | null;
   game: HangyumiGame; chest: ChestTier | null; chestReward: ChestReward | null; abandoned: boolean;
+  /** Starweaver, once won: the voyage it was and the relic it brought. */
+  voyage: number | null; award: StarweaverAward | null;
 };
 
 /** The same rules as the server, in memory, with nothing written anywhere. */
@@ -121,6 +127,8 @@ export function createPreviewHangyumi(options: {
   streak?: number; owned?: readonly string[];
   /** Picks a chest's piece from those on offer; random unless a test says. */
   pick?: (ids: string[]) => string;
+  /** Starweaver: voyages already completed, so the review can play the seventh. */
+  voyages?: number;
 } = {}): HangyumiService {
   const words = options.words ?? PRACTICE_WORDS;
   const rounds = new Map<string, PreviewRound>();
@@ -134,6 +142,35 @@ export function createPreviewHangyumi(options: {
   let streak = options.streak ?? 0;
   const owned = new Set(options.owned ?? []);
   const pick = options.pick ?? (ids => ids[Math.floor(Math.random() * ids.length)]);
+  let voyages = options.voyages ?? 0;
+
+  /* What private.starweaver_state answers. */
+  function starweaverState(round: PreviewRound) {
+    const held = STARWEAVER_ITEMS.filter(item => owned.has(item.id)).length;
+    return {
+      completedTotal: voyages,
+      cycleProgress: voyages % VOYAGES_PER_RELIC,
+      cycleLength: VOYAGES_PER_RELIC,
+      collectedCount: held,
+      collectionSize: STARWEAVER_ITEMS.length,
+      collectionComplete: held >= STARWEAVER_ITEMS.length,
+      award: round.status === "playing" ? null : round.award,
+    };
+  }
+
+  /* A Starweaver word won, as private.hangyumi_guess counts it: one voyage
+     per round, and every seventh a relic not owned yet. */
+  function finishVoyage(round: PreviewRound) {
+    if (round.status !== "won" || round.voyage !== null) return;
+    voyages += 1;
+    round.voyage = voyages;
+    if (voyages % VOYAGES_PER_RELIC !== 0) return;
+    const pool = STARWEAVER_ITEMS.map(item => item.id).filter(id => !owned.has(id));
+    if (!pool.length) return;
+    const itemId = pick(pool);
+    owned.add(itemId);
+    round.award = { id: voyages / VOYAGES_PER_RELIC, itemId };
+  }
 
   function state(round: PreviewRound): HangyumiRound {
     const chars = [...round.word.answer.normalize("NFC")];
@@ -162,6 +199,7 @@ export function createPreviewHangyumi(options: {
       chest: round.chest,
       streak: round.game === "wordvault" ? streak : null,
       chestReward: round.status === "playing" ? null : round.chestReward,
+      starweaver: round.game === "starweaver" ? starweaverState(round) : null,
     };
   }
 
@@ -241,7 +279,7 @@ export function createPreviewHangyumi(options: {
       }
       const round: PreviewRound = {
         id: roundId, word, hintLanguage, guessed: [], misses: 0, status: "playing", earned: 0, keyboard,
-        game, chest, chestReward: null, abandoned: false,
+        game, chest, chestReward: null, abandoned: false, voyage: null, award: null,
       };
       rounds.set(roundId, round);
       return state(round);
@@ -278,6 +316,7 @@ export function createPreviewHangyumi(options: {
       }
       round.earned += paid.letter + paid.word;
       if (round.game === "wordvault" && round.status !== "playing") finishChest(round);
+      if (round.game === "starweaver") finishVoyage(round);
       return { ...state(round), hit, repeat: false, paid, balance };
     },
     async today() {

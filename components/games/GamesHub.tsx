@@ -10,6 +10,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import hy from "@/components/hangyumi/Hangyumi.module.css";
 import { fill } from "@/lib/i18n/format";
 
+import StarweaverGlyph from "./StarweaverGlyph";
 import WordvaultGlyph from "./WordvaultGlyph";
 import styles from "./GamesHub.module.css";
 
@@ -17,10 +18,10 @@ import styles from "./GamesHub.module.css";
    Yumi's games: one key on Home, then a choice (Chi, 2026-10-26: "保留一
    個遊戲 icon，打開後選 Hangyumi／新遊戲")
 
-   Hangyumi's own signboard over two cards, the studio's ivory and the
-   vault's navy, and the cookies the two share: today's 333 is one
-   allowance whichever game earns it, because both are paid by the same
-   server functions.
+   Hangyumi's own signboard over three cards, the studio's ivory, the
+   vault's navy and Starweaver's ice (2026-11-10), and the cookies they
+   share: today's 333 is one allowance whichever game earns it, because
+   all three are paid by the same server functions.
    ========================================================= */
 
 type Props = {
@@ -28,7 +29,7 @@ type Props = {
   loadToday: () => Promise<number>;
   /** The cookies there are to spend. */
   loadBalance?: () => Promise<number>;
-  hrefs: { hangyumi: string; wordvault: string };
+  hrefs: { hangyumi: string; wordvault: string; starweaver: string };
   backHref: string;
 };
 
@@ -48,6 +49,7 @@ export default function GamesHub({ loadToday, loadBalance, hrefs, backHref }: Pr
   const games = [
     { id: "hangyumi", href: hrefs.hangyumi, name: t.hangyumi.title, subtitle: null, glyph: HangyumiGlyph, ...copy.hangyumi },
     { id: "wordvault", href: hrefs.wordvault, name: t.wordvault.title, subtitle: t.wordvault.subtitle, glyph: WordvaultGlyph, ...copy.wordvault },
+    { id: "starweaver", href: hrefs.starweaver, name: t.starweaver.title, subtitle: t.starweaver.subtitle, glyph: StarweaverGlyph, ...copy.starweaver },
   ] as const;
 
   return (

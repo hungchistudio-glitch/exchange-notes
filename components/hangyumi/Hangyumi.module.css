@@ -439,6 +439,24 @@
   animation: hy-enter 560ms cubic-bezier(.2, .8, .2, 1) 220ms both;
 }
 
+/* Starweaver's keys come up quicker behind its longer arrival, so the
+   whole of it, starlight to keys, is about a second and a half (Chi,
+   2026-11-11). */
+.page[data-game="starweaver"][data-arrival="landing"] > .below > :nth-child(1) {
+  animation-duration: 420ms;
+  animation-delay: 0ms;
+}
+
+.page[data-game="starweaver"][data-arrival="landing"] > .below > :nth-child(2) {
+  animation-duration: 420ms;
+  animation-delay: 70ms;
+}
+
+.page[data-game="starweaver"][data-arrival="landing"] > .below > :nth-child(n + 3) {
+  animation-duration: 420ms;
+  animation-delay: 140ms;
+}
+
 @keyframes hy-fade {
   from { opacity: 0; }
 }
@@ -567,6 +585,219 @@
 
 .flatYumi[data-free="true"] {
   transform: translateY(36px);
+}
+
+/* Yumi Starweaver's flat chart (components/starweaver/StarweaverStage.tsx):
+   warm white with a pale-silver gate and low ice-cyan light; in Cosmic,
+   obsidian and graphite with the same geometry. */
+.stageWrap:has(.stage[data-game="starweaver"]) {
+  background: radial-gradient(90% 80% at 78% 30%, #eef5f6, transparent 70%), #f6f5f1;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .stageWrap:has(.stage[data-game="starweaver"]) {
+  background: radial-gradient(90% 80% at 78% 30%, #1d2b30, transparent 70%), #0d0f12;
+}
+
+.swShadow {
+  fill: #00000014;
+  stroke: none;
+}
+
+.swSupport {
+  stroke: #b9b4a8;
+  stroke-width: 1.6;
+}
+
+.swRing {
+  stroke: #cfc6b0;
+  stroke-width: 2.4;
+  transition: d 600ms ease;
+}
+
+.swRing[data-inner="true"] {
+  stroke: #e2dccb;
+  stroke-width: 1.6;
+}
+
+.swCore {
+  stroke: #ffffffcc;
+  stroke-width: 0.8;
+  transition: r 500ms ease;
+}
+
+.flat[data-open="true"] .swCore {
+  filter: drop-shadow(0 0 4px #9fdbe6);
+}
+
+.swTrack {
+  stroke: #d9d5ca;
+  stroke-width: 2.2;
+  transition: stroke 300ms ease;
+}
+
+.swTrack[data-lit="true"] {
+  stroke: #7cc4d1;
+  filter: drop-shadow(0 0 1.5px #9fdbe6);
+}
+
+.swClone {
+  fill: #7cc4d1;
+  stroke: none;
+  font-family: system-ui, sans-serif;
+  font-weight: 800;
+  text-anchor: middle;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.swClone[data-out="true"] {
+  opacity: 0.85;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .swSupport { stroke: #4a4d55; }
+:global(html[data-interface-mode="yumi-cosmic"]) .swRing { stroke: #5b5f69; }
+:global(html[data-interface-mode="yumi-cosmic"]) .swRing[data-inner="true"] { stroke: #3f434b; }
+:global(html[data-interface-mode="yumi-cosmic"]) .swTrack { stroke: #2b2f36; }
+:global(html[data-interface-mode="yumi-cosmic"]) .stage[data-game="starweaver"] .flatEye { fill: #1c1f24; stroke: #e7e9ee; }
+:global(html[data-interface-mode="yumi-cosmic"]) .stage[data-game="starweaver"] .flatBody { stroke: #e7e9ee; }
+
+/* Starweaver's corner: this voyage's place in its seven, and the relics. */
+.voyage {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 1.75rem;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.8);
+  box-shadow: 0 1px 2px #00000014, inset 0 0 0 1px #0000000a;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.voyage b {
+  color: #24211b;
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.voyage .streakPips i[data-done="true"] {
+  background: #7cc4d1;
+}
+
+.voyage .streakPips i[data-now="true"] {
+  background: #2f6f7b;
+}
+
+/* The seventh: a small star, where Wordvault's chests are boxes. */
+.streakPips i[data-relic="true"] {
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+  transform: rotate(45deg) scale(0.8);
+  background: #c9e3e8;
+}
+
+.voyage .streakPips i[data-relic="true"][data-now="true"] {
+  background: #2f6f7b;
+  box-shadow: 0 0 0 2px #7cc4d140, 0 0 10px #9fdbe6;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .voyage {
+  background: rgb(20 22 26 / 0.78);
+  box-shadow: inset 0 0 0 1px #ffffff14;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .voyage b {
+  color: #e7e9ee;
+}
+
+.stageWrap:has(.stage[data-game="starweaver"]) .notices {
+  top: 5rem;
+}
+
+/* What a seventh voyage brought back: quiet, titanium and ice. */
+.relicReward {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 2px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: radial-gradient(120% 120% at 100% 0%, #9fdbe633, transparent 60%), linear-gradient(180deg, #f7f7f5, #eceef0);
+  box-shadow: inset 0 0 0 1px #7cc4d140;
+}
+
+.relicReward .rewardThumb {
+  background: radial-gradient(70% 60% at 50% 45%, #9fdbe640, transparent 75%), #ffffff;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .relicReward {
+  background: radial-gradient(120% 120% at 100% 0%, #2f6f7b55, transparent 60%), linear-gradient(180deg, #16191d, #0f1114);
+  box-shadow: inset 0 0 0 1px #7cc4d133;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .relicReward .rewardThumb {
+  background: radial-gradient(70% 60% at 50% 45%, #9fdbe633, transparent 75%), #0f1114;
+}
+
+.relicActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.relicActions .secondary {
+  min-height: 2.5rem;
+  font-size: 0.9375rem;
+}
+
+/* Starweaver's liquid light (components/starweaver/LiquidFlow.tsx): over
+   the whole screen, taking no taps, and not composited while idle. */
+.liquid {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  width: 100vw;
+  height: 100dvh;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.liquid[data-on="true"] {
+  visibility: visible;
+}
+
+/* Where there is no WebGL, or under reduced motion: a glow at the key that
+   fades in and out, with nothing moving. */
+.liquidGlow {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  background: radial-gradient(circle at var(--liquid-x, 50%) var(--liquid-y, 85%), #7cc4d159, #b9a3ff1f 22%, transparent 42%);
+}
+
+.liquidGlow[data-kind="word"] {
+  background: radial-gradient(circle at var(--liquid-x, 50%) var(--liquid-y, 85%), #7cc4d166, #b9a3ff26 32%, transparent 62%);
+}
+
+.liquidGlow[data-on="true"] {
+  visibility: visible;
+  animation: liquid-glow 520ms ease both;
+}
+
+.liquidGlow[data-on="true"][data-kind="word"] {
+  animation-duration: 900ms;
+}
+
+@keyframes liquid-glow {
+  0% { opacity: 0; }
+  35% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
 }
 
 /* What sits on the studio: frosted, in the studio's own light colours. */
@@ -1614,7 +1845,11 @@
   .key,
   .piece,
   .live,
-  .canvas {
+  .canvas,
+  .swRing,
+  .swCore,
+  .swTrack,
+  .swClone {
     transition: none;
   }
 

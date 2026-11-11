@@ -1347,6 +1347,76 @@
   opacity: 0.32;
 }
 
+/* Starwoven Relics (Yumi Starweaver, 2026-11-10): the third shelf apart
+   from the 333, graphite titanium with an ice seam, the game's own light.
+   Sealed relics stand as pale shadows with a cold glow and a seal number. */
+.shelf[data-relics="true"] {
+  --relic-ink: #e7e9ee;
+  --relic-muted: #a9b0b8;
+  --relic-ice: #9fdbe6;
+
+  margin: 12px -12px 8px;
+  padding: 14px 12px 4px;
+  border-block: 1px solid #7cc4d14d;
+  background:
+    radial-gradient(90% 120% at 100% 0%, #2f6f7b3d, transparent 60%),
+    radial-gradient(70% 90% at 0% 100%, #9f8fd61f, transparent 70%),
+    linear-gradient(180deg, #181b20, #0d0f12);
+  color: var(--relic-ink);
+}
+
+.shelf[data-relics="true"] .shelfHeading h3 {
+  background: linear-gradient(180deg, #ffffff, #cfe9ee 55%, #7cc4d1);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.shelf[data-relics="true"] .shelfHeading h3 > span,
+.shelf[data-relics="true"] .shelfHeading h3 > small {
+  color: var(--relic-muted);
+  -webkit-text-fill-color: var(--relic-muted);
+}
+
+.shelf[data-relics="true"] .seeAll {
+  color: var(--relic-ice);
+}
+
+.card[data-relic] {
+  --c: var(--relic-ice, #9fdbe6);
+  border-color: #7cc4d14d;
+  background: linear-gradient(180deg, #ffffff10, #0000 40%), #16191e;
+  box-shadow: 0 10px 22px -16px #000c, inset 0 0 0 1px #7cc4d12e;
+  color: var(--relic-ink, #e7e9ee);
+}
+
+.card[data-relic] .thumb {
+  background:
+    radial-gradient(70% 60% at 50% 45%, #9fdbe62e, transparent 75%),
+    radial-gradient(120% 100% at 50% 110%, #9f8fd633, transparent 60%),
+    #0f1114;
+}
+
+.card[data-relic] .price {
+  color: var(--relic-muted, #a9b0b8);
+}
+
+.card[data-relic="sealed"] .cardName {
+  color: var(--relic-ice, #9fdbe6);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+/* Nothing of a sealed relic's colour, material or detail: its outline, cold. */
+.sealedRelic img {
+  filter: brightness(0) invert(0.86) drop-shadow(0 0 5px #9fdbe688);
+  opacity: 0.3;
+}
+
+.limitedBadge[data-relic] {
+  background: linear-gradient(180deg, #e9f7fa, #9fdbe6 60%, #5fb3c2);
+  color: #0d2a30;
+}
+
 .limitedBadge {
   position: absolute;
   top: 9px;

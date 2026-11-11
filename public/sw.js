@@ -61,6 +61,7 @@ const APP_PAGE_ROOTS = [
   "/review",
   "/scanner",
   "/shop",
+  "/starweaver",
   "/vocabulary",
   "/wordvault",
 ];

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { cleanOutfit, shopItem, type YumiOutfit } from "./catalog";
 import { isMythic } from "./mythicCollection";
+import { isStarweaver } from "./starweaverCollection";
 
 /* =========================================================
    Energy cookies, and what they have bought
@@ -122,8 +123,8 @@ export function createPreviewWallet(startingBalance = 240, startOwned: readonly 
     async buy(itemId) {
       await settle();
       const item = shopItem(itemId);
-      /* The vault's pieces are won, never sold: the database refuses them too. */
-      if (!item || isMythic(itemId)) throw new Error("Unknown item.");
+      /* Limited pieces are won, never sold: the database refuses them too. */
+      if (!item || isMythic(itemId) || isStarweaver(itemId)) throw new Error("Unknown item.");
       if (state.owned.includes(itemId)) return { status: "owned", state };
       if (state.balance < item.price) return { status: "insufficient", state };
       state = {

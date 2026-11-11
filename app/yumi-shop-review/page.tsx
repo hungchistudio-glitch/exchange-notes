@@ -10,7 +10,8 @@ import { reviewRouteOnly } from "@/lib/reviewRoutes";
  *
  * ?sky=rain (or clear, snow, leaves, butterflies, stars) opens it under that
  * sky, and ?mode=cosmic in Cosmic, so each can be looked at by link.
- * ?vault=5 starts with the Mythic Vault's first five pieces won.
+ * ?vault=5 starts with the Mythic Vault's first five pieces won, and
+ * ?relics=4 with the first four Starwoven Relics found.
  */
 export const metadata = {
   title: "Yumi shop review",
@@ -18,12 +19,13 @@ export const metadata = {
 };
 
 export default async function YumiShopReviewPage({ searchParams }: {
-  searchParams: Promise<{ sky?: string; mode?: string; collection?: string; vault?: string }>;
+  searchParams: Promise<{ sky?: string; mode?: string; collection?: string; vault?: string; relics?: string }>;
 }) {
   reviewRouteOnly();
   const [storedMode, params] = await Promise.all([getServerInterfaceMode(), searchParams]);
   const sky = SCENE_CHOICES.includes(params.sky as SceneChoice) ? (params.sky as SceneChoice) : null;
   const cosmic = params.mode ? params.mode === "cosmic" : storedMode === "yumi-cosmic";
   const vault = Math.max(0, Math.min(33, Number(params.vault) || 0));
-  return <YumiShopReview startCosmic={cosmic} sky={sky} collection03={params.collection === "collection03"} vault={vault} />;
+  const relics = Math.max(0, Math.min(17, Number(params.relics) || 0));
+  return <YumiShopReview startCosmic={cosmic} sky={sky} collection03={params.collection === "collection03"} vault={vault} relics={relics} />;
 }

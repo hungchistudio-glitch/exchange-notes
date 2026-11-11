@@ -6,7 +6,9 @@ import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { createSupabaseHangyumi, type SaveWord } from "@/lib/hangyumi/service";
 import { INTERFACE_LANGUAGE_CODE, resolveSupportLanguage, type LanguageCode } from "@/lib/languages";
+import { shopItem } from "@/lib/shop/catalog";
 import { createSupabaseWallet } from "@/lib/shop/wallet";
+import { setWornOutfit } from "@/lib/shop/wornOutfit";
 import { createClient } from "@/lib/supabase/client";
 import { DuplicateVocabularyError, createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 
@@ -26,6 +28,19 @@ export default function HangyumiPage({ game = "hangyumi" }: { game?: GameKind })
   }, [supabase]);
 
   /* A word's gloss through the app's cached translation; null when none can be had. */
+  /* Starweaver's relic, put on through the wallet like any piece: the
+     server checks it is owned and in its slot, and what she wears is
+     remembered for Home and the other games. */
+  const wearPiece = useCallback(async (itemId: string) => {
+    const piece = shopItem(itemId);
+    if (!piece) throw new Error("Unknown piece.");
+    const wallet = createSupabaseWallet(supabase);
+    const state = await wallet.load();
+    const saved = await wallet.wear({ ...state.outfit, [piece.slot]: itemId });
+    setWornOutfit(saved.outfit);
+    return saved.outfit;
+  }, [supabase]);
+
   const translate = useCallback(async (text: string, from: LanguageCode, to: LanguageCode) => {
     try {
       const response = await fetch("/api/text-translate", {
@@ -86,6 +101,7 @@ export default function HangyumiPage({ game = "hangyumi" }: { game?: GameKind })
       nativeLanguage={nativeLanguage}
       saveWord={saveWord}
       game={game}
+      wearPiece={wearPiece}
       backHref="/games"
     />
   );

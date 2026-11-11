@@ -184,7 +184,20 @@ merge (Chi: "我授權你用 Supabase 套用"). It replaces the five-argument
 | --- | --- |
 | `20261027010000_hangyumi_resume_word_in_play` | `20261027000724` |
 
-**Twenty renames across thirteen occasions now. `apply_migration` always stamps its
+On 2026-11-11 Yumi Starweaver's voyages and relics, applied before the merge
+(Chi: "套用並上線"). It adds `yumi_shop_items.reward_pool`, points
+Wordvault's premium chest at `mythic_vault` by name, and adds three tables
+and 17 unbuyable rows; the four-argument start the live pages call still plays
+Hangyumi. It was first run on production inside a transaction that ended
+with a deliberate `raise exception` (migration plus `supabase/tests/starweaver.sql`).
+Afterwards, `md5(prosrc)` of the four functions and both constraints
+matched a local database built from this file:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261110200000_starweaver` | `20261111124129` |
+
+**Twenty-one renames across fourteen occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 

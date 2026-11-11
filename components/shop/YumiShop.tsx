@@ -61,6 +61,7 @@ import {
   SUPPLY_PACKS_USD,
 } from "@/lib/shop/energy";
 import { MYTHIC_ITEMS, isMythic } from "@/lib/shop/mythicCollection";
+import { STARWEAVER_ITEMS, isStarweaver, starweaverItem } from "@/lib/shop/starweaverCollection";
 import { markScrolling } from "@/lib/shop/scrollQuiet";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
@@ -235,6 +236,13 @@ export default function YumiShop({
   const vaultShelfItems = useMemo(
     () => [...vaultOwned, ...MYTHIC_ITEMS.filter(item => !owned.has(item.id))],
     [vaultOwned, owned],
+  );
+  /* Starwoven Relics: 17 more, from Yumi Starweaver's seventh voyages
+     (2026-11-10), on a shelf of their own. Owned first, then the sealed. */
+  const relicsOwned = useMemo(() => STARWEAVER_ITEMS.filter(item => owned.has(item.id)), [owned]);
+  const relicsShelfItems = useMemo(
+    () => [...relicsOwned, ...STARWEAVER_ITEMS.filter(item => !owned.has(item.id))],
+    [relicsOwned, owned],
   );
   /* Where the reader is, then what the filter sheet narrows it to. */
   const here = useMemo(() => browseShop({
@@ -483,6 +491,7 @@ export default function YumiShop({
         className={styles.card}
         data-collection={collectionOf(item)}
         data-mythic={isMythic(item.id) ? "owned" : undefined}
+        data-relic={isStarweaver(item.id) ? "owned" : undefined}
         data-coach-target="shop-item"
         aria-pressed={trying}
         disabled={busy || availability !== "open"}
@@ -491,6 +500,7 @@ export default function YumiShop({
         <ShopThumb item={item} className={styles.thumb} />
         {isNewArrival(item) && !trying && !wearing && <span className={styles.newBadge}>{collectionCopy.newItem}</span>}
         {isMythic(item.id) && !trying && !wearing && <span className={styles.limitedBadge}>{copy.vault.limited}</span>}
+        {isStarweaver(item.id) && !trying && !wearing && <span className={styles.limitedBadge} data-relic="true">{copy.relics.limited}</span>}
         {(trying || wearing) && (
           <span className={styles.tag} data-wearing={wearing ? "true" : "false"}>
             {wearing ? copy.wearing : copy.tryingOn}
@@ -521,6 +531,53 @@ export default function YumiShop({
         <span className={styles.cardName} aria-hidden="true">? ? ?</span>
         <span className={styles.price}><Lock size={12} strokeWidth={2.2} aria-hidden="true" />{copy.vault.locked}</span>
       </button>
+    );
+  }
+
+  /** A relic not yet found: its silhouette and its seal number, never its
+   * name, its colour or a try-on; read out as a seal, not by name. Tapping
+   * says how one is found. Three shell finishes share one silhouette, so
+   * the number is what tells them apart. */
+  function sealedRelicCard(item: ShopItem) {
+    const seal = fill(copy.relics.seal, { seal: starweaverItem(item.id)?.seal ?? "" });
+    return (
+      <button
+        type="button"
+        className={styles.card}
+        data-relic="sealed"
+        aria-label={`${seal} · ${copy.vault.locked} · ${copy.relics.title}`}
+        onClick={() => setNotice(copy.relics.hint)}
+      >
+        <ShopThumb item={item} className={`${styles.thumb} ${styles.sealedRelic}`} />
+        <span className={styles.cardName} aria-hidden="true">{seal}</span>
+        <span className={styles.price}><Lock size={12} strokeWidth={2.2} aria-hidden="true" />{copy.vault.locked}</span>
+      </button>
+    );
+  }
+
+  /** The relics' shelf: every relic in the showcase, only the found ones in the wardrobe. */
+  function relicsShelf(onlyFound: boolean) {
+    const items = onlyFound ? relicsOwned : relicsShelfItems;
+    if (!items.length) return null;
+    return (
+      <section aria-labelledby="shop-shelf-relics" className={styles.shelf} data-relics="true">
+        <header className={styles.shelfHeading}>
+          <h3 id="shop-shelf-relics">
+            {copy.relics.title}{" "}
+            <span>{fill(copy.relics.collected, { count: relicsOwned.length.toLocaleString(locale), total: STARWEAVER_ITEMS.length })}</span>
+            <small>{copy.relics.note}</small>
+          </h3>
+          {!onlyFound && (
+            <Link href="/starweaver" className={styles.seeAll}>
+              {copy.relics.play}
+              <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
+            </Link>
+          )}
+        </header>
+        <ul className={styles.shelfRow}>
+          {items.map(item => <li key={item.id}>{owned.has(item.id) ? card(item) : sealedRelicCard(item)}</li>)}
+        </ul>
+      </section>
     );
   }
 
@@ -745,11 +802,12 @@ export default function YumiShop({
             </p>
           )}
 
-          {shownCount === 0 && !(onlyOwned && vaultOwned.length) ? (
+          {shownCount === 0 && !(onlyOwned && (vaultOwned.length || relicsOwned.length)) ? (
             <p className={styles.empty}>{onlyOwned ? copy.emptyOwned : copy.empty}</p>
           ) : showcase ? (
             <>
               {vaultShelf(false)}
+              {relicsShelf(false)}
               {newShelf.length > 0 && (
                 <section aria-labelledby="shop-shelf-new" className={styles.shelf} data-new="true">
                   <header className={styles.shelfHeading}>
@@ -785,6 +843,7 @@ export default function YumiShop({
           ) : (
             <>
             {onlyOwned && vaultShelf(true)}
+            {onlyOwned && relicsShelf(true)}
             {groups.map(group => (
               <section key={group.key} aria-labelledby={`shop-department-${group.key}`} className={styles.department}>
                 <h3 id={`shop-department-${group.key}`} className={styles.departmentHeading}>

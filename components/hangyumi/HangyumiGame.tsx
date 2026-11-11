@@ -21,8 +21,12 @@ import {
   INTERFACE_LANGUAGE_CODE, LANGUAGE_CODES, getLanguage, getLanguageName, resolveSupportLanguage, type LanguageCode,
 } from "@/lib/languages";
 import { shopItem, type YumiOutfit } from "@/lib/shop/catalog";
+import { STARWEAVER_ITEMS } from "@/lib/shop/starweaverCollection";
+import { flowLiquid } from "@/lib/starweaver/liquid";
 import { announceEnergyLanded } from "@/lib/shop/energy";
 
+import LiquidFlow from "@/components/starweaver/LiquidFlow";
+import StarweaverStage from "@/components/starweaver/StarweaverStage";
 import WordvaultStage from "@/components/wordvault/WordvaultStage";
 import { VAULT_PIECES } from "@/lib/wordvault/presentation";
 
@@ -54,9 +58,15 @@ import styles from "./Hangyumi.module.css";
    same bank, server, cookies and 333 a day, shared between the two games,
    the same language and level, with its own stage, its own words for what
    happens, and its own round in progress. Only `game` tells them apart.
+
+   And Yumi Starweaver｜織星者 (Chi, 2026-11-10), the third: the same again,
+   on a stage where the letters weave a star chart and the word opens a
+   star gate. Every seventh word won brings back a relic, which the server
+   decides and the round reports (round.starweaver); this screen only shows
+   it, and offers to put it on.
    ========================================================= */
 
-export type GameKind = "hangyumi" | "wordvault";
+export type GameKind = "hangyumi" | "wordvault" | "starweaver";
 
 type Props = {
   service: HangyumiService;
@@ -74,6 +84,8 @@ type Props = {
   reviewHref?: string;
   /** Which game the screen plays; Hangyumi unless told. */
   game?: GameKind;
+  /** Starweaver: puts a relic just brought back on Yumi, through the wallet. */
+  wearPiece?: (itemId: string) => Promise<YumiOutfit>;
 };
 
 type Phase = "loading" | "ready" | "missing" | "error";
@@ -110,7 +122,7 @@ const QWERTY = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 
 export default function HangyumiGame({
   service, defaultLanguage, loadWallet, translate, nativeLanguage, saveWord, backHref = "/home", reviewHref = "/hangyumi/review",
-  game = "hangyumi",
+  game = "hangyumi", wearPiece,
 }: Props) {
   const { t, language: interfaceLanguage, locale } = useTranslation();
   const [chosenLanguage, setChosenLanguage] = useState<LanguageCode | null>(null);
@@ -123,8 +135,8 @@ export default function HangyumiGame({
      first; the clue, the word and the keys only as Yumi lands on the path,
      one after another ("landing"), and then never again. Hangyumi's line
      lowers in on its own, so it is "done" from the start. */
-  const [arrival, setArrival] = useState<"waiting" | "landing" | "done">(game === "wordvault" ? "waiting" : "done");
-  const waitingRef = useRef(game === "wordvault");
+  const [arrival, setArrival] = useState<"waiting" | "landing" | "done">(game !== "hangyumi" ? "waiting" : "done");
+  const waitingRef = useRef(game !== "hangyumi");
   const arrive = useCallback(() => {
     if (!waitingRef.current) return;
     waitingRef.current = false;
@@ -142,13 +154,19 @@ export default function HangyumiGame({
   const levelsRef = useRef<HTMLDivElement>(null);
   const learningLanguage = chosenLanguage ?? defaultLanguage;
   const hintLanguage = INTERFACE_LANGUAGE_CODE[interfaceLanguage];
-  /* Wordvault says what happens in its own words; everything else is shared. */
+  /* Wordvault and Starweaver say what happens in their own words;
+     everything else is shared. */
   const copy = useMemo(() => game === "wordvault"
     ? { ...t.hangyumi, ...t.wordvault, rules: { ...t.hangyumi.rules, ...t.wordvault.rules } }
-    : t.hangyumi, [game, t]);
-  const pieces = game === "wordvault" ? VAULT_PIECES : PIECES;
+    : game === "starweaver"
+      ? { ...t.hangyumi, ...t.starweaver, rules: { ...t.hangyumi.rules, ...t.starweaver.rules } }
+      : t.hangyumi, [game, t]);
+  /* Both sisters send her copies out U, I, O; Hangyumi hangs them O, I, U. */
+  const pieces = game === "hangyumi" ? PIECES : VAULT_PIECES;
   /* "Yumi Wordvault" is too long for the sign on a phone; it says Wordvault. */
-  const signTitle = game === "wordvault" ? t.wordvault.short : copy.title;
+  const signTitle = game === "wordvault" ? t.wordvault.short : game === "starweaver" ? t.starweaver.short : copy.title;
+  /* Starweaver: the relic card's wear button, for the round it belongs to. */
+  const [wearing, setWearing] = useState<{ id: string; state: "wearing" | "worn" | "failed" } | null>(null);
   const online = useOnline();
   const reducedMotion = useReducedMotion();
 
@@ -399,6 +417,12 @@ export default function HangyumiGame({
         return;
       }
       showRound(result);
+      /* Starweaver: liquid light across the screen for a right letter, and
+         a larger flow for the word (Chi, 2026-11-10). Shows only what the
+         server already said. */
+      if (game === "starweaver" && !result.repeat && (result.hit || result.status === "won")) {
+        flowLiquid(result.status === "won" ? "word" : "letter", from);
+      }
       if (!result.repeat) {
         if (result.status === "won") {
           sounds.win();
@@ -442,7 +466,7 @@ export default function HangyumiGame({
       pendingRef.current = false;
       setPending(false);
     }
-  }, [service, copy, t, flyCookies, reducedMotion, showRound, celebrate, setNotice]);
+  }, [service, copy, t, flyCookies, reducedMotion, showRound, celebrate, setNotice, game]);
 
   const keepWord = useCallback(async () => {
     const current = roundRef.current;
@@ -581,7 +605,7 @@ export default function HangyumiGame({
   const earned = todayEarned ?? round?.today.earned ?? 0;
 
   return (
-    <div className={styles.page} data-status={status} data-entering={entering ? "true" : "false"} data-arrival={arrival} data-own-arrival="">
+    <div className={styles.page} data-game={game} data-status={status} data-entering={entering ? "true" : "false"} data-arrival={arrival} data-own-arrival="">
       {/* The language and level keys wait for what was saved, so they never
           show B1 for a moment on the way to the level last played. */}
       <header className={styles.bar} data-prefs={prefsRead ? "read" : "pending"}>
@@ -685,7 +709,19 @@ export default function HangyumiGame({
               skipLabel={t.wordvault.skip}
             />
           )
-          : <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />}
+          : game === "starweaver"
+            ? (
+              <StarweaverStage
+                round={round}
+                outfit={outfit}
+                dressed={walletRead}
+                dealt={phase !== "loading"}
+                onArrived={arrive}
+                label={stageLabel}
+                skipLabel={t.starweaver.skip}
+              />
+            )
+            : <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />}
         <div className={styles.stageTop}>
           <span className={styles.stageTopLeft}>
             {/* Wordvault's streak: seven steps, the fourth and the seventh
@@ -709,6 +745,36 @@ export default function HangyumiGame({
                 )}
               </span>
             )}
+            {/* Starweaver's voyages: this one's place in its seven, and the
+                relics held. Never a streak: a loss takes nothing away. */}
+            {game === "starweaver" && round?.starweaver && (() => {
+              const sw = round.starweaver;
+              return (
+                <span
+                  className={styles.voyage}
+                  role="img"
+                  aria-label={fill(t.starweaver.progressLabel, {
+                    count: sw.cycleProgress, total: sw.cycleLength, held: sw.collectedCount, size: sw.collectionSize,
+                  })}
+                >
+                  <span className={styles.streakPips} aria-hidden="true">
+                    {Array.from({ length: sw.cycleLength }, (_, i) => (
+                      <i
+                        key={i}
+                        data-done={i < sw.cycleProgress ? "true" : "false"}
+                        data-now={round.status === "playing" && i === sw.cycleProgress ? "true" : "false"}
+                        data-relic={i === sw.cycleLength - 1 ? "true" : undefined}
+                      />
+                    ))}
+                  </span>
+                  <b aria-hidden="true">
+                    {sw.collectionComplete
+                      ? t.starweaver.collectionComplete
+                      : fill(t.starweaver.collection, { count: sw.collectedCount, total: sw.collectionSize })}
+                  </b>
+                </span>
+              );
+            })()}
             {/* Replayed for each new total, then gone after six seconds. */}
             {round && round.earned > 0
               ? <span key={`${round.id}:${round.earned}`} className={styles.roundEarned}>{fill(copy.roundEarned, { count: round.earned })}</span>
@@ -914,6 +980,54 @@ export default function HangyumiGame({
                     </div>
                   );
                 })()}
+                {game === "starweaver" && round.status === "won" && round.starweaver && (() => {
+                  const sw = round.starweaver;
+                  const relic = sw.award ? STARWEAVER_ITEMS.find(item => item.id === sw.award?.itemId) ?? null : null;
+                  /* A seventh voyage with every relic already held says so;
+                     any other word says nothing here. */
+                  if (!relic) {
+                    return sw.cycleProgress === 0 && sw.completedTotal > 0 && sw.collectionComplete
+                      ? <p className={styles.muted}>{t.starweaver.relicsAllHeld}</p>
+                      : null;
+                  }
+                  const wear = wearing?.id === round.id ? wearing.state : null;
+                  const isWorn = wear === "worn" || outfit?.[relic.slot] === relic.id;
+                  return (
+                    <div className={styles.relicReward}>
+                      <p className={styles.answerLabel}>{t.starweaver.relicTitle}</p>
+                      <div className={styles.rewardPiece}>
+                        <ShopThumb item={relic} className={styles.rewardThumb} />
+                        <span>
+                          <b>{relic.names[interfaceLanguage]}</b>
+                          <small>{t.starweaver.relicNew}</small>
+                        </span>
+                      </div>
+                      <div className={styles.relicActions}>
+                        {wearPiece && (
+                          <button
+                            type="button"
+                            className={styles.secondary}
+                            disabled={isWorn || wear === "wearing"}
+                            onClick={() => {
+                              setWearing({ id: round.id, state: "wearing" });
+                              void wearPiece(relic.id).then(
+                                next => {
+                                  setOutfit(next);
+                                  setWearing({ id: round.id, state: "worn" });
+                                },
+                                () => setWearing({ id: round.id, state: "failed" }),
+                              );
+                            }}
+                          >
+                            {isWorn ? t.starweaver.worn : wear === "wearing" ? t.starweaver.wearing : t.starweaver.wear}
+                          </button>
+                        )}
+                        <button type="button" className={styles.secondary} onClick={nextWord}>{t.starweaver.carryOn}</button>
+                      </div>
+                      {wear === "failed" && <p className={styles.saveError} role="alert">{t.starweaver.wearFailed}</p>}
+                    </div>
+                  );
+                })()}
                 <p className={styles.answerLabel}>{copy.answer}</p>
                 {round.answer && (() => {
                   const mine = gloss?.id === round.id ? gloss : null;
@@ -964,6 +1078,7 @@ export default function HangyumiGame({
       </div>
 
       <div ref={celebrateRef} className={styles.flight} aria-hidden="true" />
+      {game === "starweaver" && <LiquidFlow />}
       {flash > 0 && <div key={flash} className={styles.missFlash} aria-hidden="true" />}
       <div ref={flightRef} className={styles.flight} aria-hidden="true">
         <span data-cookie-template="" className={styles.cookieTemplate}><EnergyCookie /></span>
@@ -1000,6 +1115,7 @@ export default function HangyumiGame({
           {!isChinese && <li>{copy.rules.accents}</li>}
           <li>{copy.rules.learning}</li>
           {game === "wordvault" && <li>{t.wordvault.rules.chests}</li>}
+          {game === "starweaver" && <li>{t.starweaver.rules.relics}</li>}
         </ul>
         <button
           type="button"
