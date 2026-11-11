@@ -3,12 +3,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LanguageCode } from "@/lib/languages";
 import { SHOP_ITEMS } from "@/lib/shop/catalog";
 import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
+import { NIGHTSCALE_ITEMS, WINS_PER_PIECE } from "@/lib/shop/nightscaleCollection";
 import { STARWEAVER_ITEMS, VOYAGES_PER_RELIC } from "@/lib/shop/starweaverCollection";
 
 import {
   DAILY_CAP, MAX_MISSES, REWARDS, readGuess, readStart, readTodayState,
   type ChestReward, type ChestTier, type HangyumiCard, type HangyumiGame, type HangyumiGuessResult, type HangyumiLevel, type HangyumiRound, type HangyumiStart, type PartOfSpeech,
-  type StarweaverAward,
+  type NightscaleAward, type StarweaverAward,
 } from "./rules";
 
 /* =========================================================
@@ -118,6 +119,8 @@ type PreviewRound = {
   game: HangyumiGame; chest: ChestTier | null; chestReward: ChestReward | null; abandoned: boolean;
   /** Starweaver, once won: the voyage it was and the relic it brought. */
   voyage: number | null; award: StarweaverAward | null;
+  /** Hangyumi, once won: the win it was and the Nightscale piece it unlocked. */
+  win: number | null; piece: NightscaleAward | null;
 };
 
 /** The same rules as the server, in memory, with nothing written anywhere. */
@@ -129,6 +132,8 @@ export function createPreviewHangyumi(options: {
   pick?: (ids: string[]) => string;
   /** Starweaver: voyages already completed, so the review can play the seventh. */
   voyages?: number;
+  /** Hangyumi: words already won, so the review can play the third. */
+  wins?: number;
 } = {}): HangyumiService {
   const words = options.words ?? PRACTICE_WORDS;
   const rounds = new Map<string, PreviewRound>();
@@ -143,6 +148,7 @@ export function createPreviewHangyumi(options: {
   const owned = new Set(options.owned ?? []);
   const pick = options.pick ?? (ids => ids[Math.floor(Math.random() * ids.length)]);
   let voyages = options.voyages ?? 0;
+  let wins = options.wins ?? 0;
 
   /* What private.starweaver_state answers. */
   function starweaverState(round: PreviewRound) {
@@ -170,6 +176,34 @@ export function createPreviewHangyumi(options: {
     const itemId = pick(pool);
     owned.add(itemId);
     round.award = { id: voyages / VOYAGES_PER_RELIC, itemId };
+  }
+
+  /* What private.nightscale_state answers. */
+  function nightscaleState(round: PreviewRound) {
+    const held = NIGHTSCALE_ITEMS.filter(item => owned.has(item.id)).length;
+    return {
+      completedTotal: wins,
+      cycleProgress: wins % WINS_PER_PIECE,
+      cycleLength: WINS_PER_PIECE,
+      collectedCount: held,
+      collectionSize: NIGHTSCALE_ITEMS.length,
+      collectionComplete: held >= NIGHTSCALE_ITEMS.length,
+      award: round.status === "playing" ? null : round.piece,
+    };
+  }
+
+  /* A Hangyumi word won, as private.hangyumi_guess counts it: once per
+     round, and every third a Nightscale piece not owned yet. */
+  function finishWin(round: PreviewRound) {
+    if (round.status !== "won" || round.win !== null) return;
+    wins += 1;
+    round.win = wins;
+    if (wins % WINS_PER_PIECE !== 0) return;
+    const pool = NIGHTSCALE_ITEMS.map(item => item.id).filter(id => !owned.has(id));
+    if (!pool.length) return;
+    const itemId = pick(pool);
+    owned.add(itemId);
+    round.piece = { id: wins / WINS_PER_PIECE, itemId };
   }
 
   function state(round: PreviewRound): HangyumiRound {
@@ -200,6 +234,7 @@ export function createPreviewHangyumi(options: {
       streak: round.game === "wordvault" ? streak : null,
       chestReward: round.status === "playing" ? null : round.chestReward,
       starweaver: round.game === "starweaver" ? starweaverState(round) : null,
+      nightscale: round.game === "hangyumi" ? nightscaleState(round) : null,
     };
   }
 
@@ -279,7 +314,7 @@ export function createPreviewHangyumi(options: {
       }
       const round: PreviewRound = {
         id: roundId, word, hintLanguage, guessed: [], misses: 0, status: "playing", earned: 0, keyboard,
-        game, chest, chestReward: null, abandoned: false, voyage: null, award: null,
+        game, chest, chestReward: null, abandoned: false, voyage: null, award: null, win: null, piece: null,
       };
       rounds.set(roundId, round);
       return state(round);
@@ -317,6 +352,7 @@ export function createPreviewHangyumi(options: {
       round.earned += paid.letter + paid.word;
       if (round.game === "wordvault" && round.status !== "playing") finishChest(round);
       if (round.game === "starweaver") finishVoyage(round);
+      if (round.game === "hangyumi") finishWin(round);
       return { ...state(round), hit, repeat: false, paid, balance };
     },
     async today() {

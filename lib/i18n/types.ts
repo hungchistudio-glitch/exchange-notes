@@ -2703,6 +2703,24 @@ export type TranslationDictionary = {
       /** The shelf's way to the game. */
       play: string;
     };
+    /** Nightscale (Hangyumi, 2026-11-11): the fourth shelf of limited
+        pieces, unlocked by every third word won. A tribute in symbols only:
+        no line here may name a person, a team or a brand. */
+    nightscale: {
+      title: string;
+      note: string;
+      /** One line that names nobody (Chi, 2026-11-11). */
+      dedication: string;
+      /** {count} unlocked of {total}. */
+      collected: string;
+      /** A piece not yet unlocked: its number, {seal}, never its name. */
+      seal: string;
+      /** Said when a sealed piece is tapped: how one is unlocked. */
+      hint: string;
+      limited: string;
+      /** The shelf's way to the game. */
+      play: string;
+    };
     stage: string;
     hint: string;
     views: string;
@@ -2880,7 +2898,33 @@ export type TranslationDictionary = {
     offline: string;
     closed: string;
     rulesTitle: string;
-    rules: { letters: string; misses: string; cap: string; learning: string; accents: string };
+    rules: {
+      letters: string; misses: string; cap: string; learning: string; accents: string;
+      /** How Nightscale pieces are unlocked (2026-11-11). */
+      nightscale: string;
+    };
+    /** Nightscale (2026-11-11): every third word won unlocks one of 24
+        pieces. A tribute in symbols only: no line here may name a person,
+        a team or a brand. */
+    nightscale: {
+      /** Over the stage: pieces held, {count} of {total}. */
+      collection: string;
+      /** The progress read aloud: {count} of {total} towards the next, {held} of {size} held. */
+      progressLabel: string;
+      collectionComplete: string;
+      /** Over the piece a third win unlocked. */
+      title: string;
+      isNew: string;
+      /** A third win with every piece already held. */
+      allHeld: string;
+      wear: string;
+      wearing: string;
+      worn: string;
+      wearFailed: string;
+      carryOn: string;
+      /** Over the reveal: the piece's number, {seal}, and the collection. */
+      revealSeal: string;
+    };
     close: string;
     reviewPage: {
       title: string;
@@ -2939,6 +2983,9 @@ export type TranslationDictionary = {
     rewardCookies: string;
     rewardItem: string;
     rewardLimited: string;
+    /** Over a Mythic Vault piece's reveal (2026-11-11): its {origin} and the vault. */
+    revealSeal: string;
+    origins: Record<"greek" | "norse" | "egyptian" | "chinese" | "celtic" | "mesopotamian", string>;
     rewardAllOwned: string;
     /** The note over the stage when a chest pays: {count} cookies. */
     chestPaid: string;
@@ -2983,6 +3030,9 @@ export type TranslationDictionary = {
     carryOn: string;
     /** A seventh voyage with every relic already held. */
     relicsAllHeld: string;
+    /** The relic shown whole as it comes out of the gate: its seal, and the way out. */
+    revealSeal: string;
+    revealClose: string;
   };
   /** The games hub: one key on Home, then Hangyumi, Wordvault or Starweaver. */
   games: {

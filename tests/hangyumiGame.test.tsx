@@ -18,11 +18,24 @@ const reader = vi.hoisted(() => ({ language: "english" as "english" | "tradition
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => reader.language }));
 vi.mock("@/lib/speech", () => ({ speak: speech.speak, speechSupported: () => true, stopSpeech: vi.fn() }));
 vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => undefined }));
-vi.mock("@/components/hangyumi/HangyumiStage", () => ({
-  default: ({ misses, status, outfit, label }: { misses: number; status: string; outfit: unknown; label: string }) => (
-    <div data-testid="stage" data-misses={misses} data-status={status} data-outfit={JSON.stringify(outfit)} aria-label={label} />
-  ),
-}));
+/* The page waits for the first line to come to rest: the stand-in's is at
+   rest as soon as the word is dealt. */
+vi.mock("@/components/hangyumi/HangyumiStage", async () => {
+  const { useEffect } = await import("react");
+  type Props = {
+    misses: number; status: string; outfit: unknown; dealt: boolean; onArrived: () => void; label: string;
+    present?: { key: string; itemId: string } | null; onPresented?: () => void;
+  };
+  function Stage({ misses, status, outfit, dealt, onArrived, label, present, onPresented }: Props) {
+    useEffect(() => { if (dealt) onArrived(); }, [dealt, onArrived]);
+    /* The line lowers the piece at once here. */
+    useEffect(() => { if (present) onPresented?.(); }, [present, onPresented]);
+    return <div data-testid="stage" data-misses={misses} data-status={status} data-outfit={JSON.stringify(outfit)} aria-label={label} />;
+  }
+  return { default: Stage };
+});
+/* No WebGL here: the reveal keeps the piece's shop picture. */
+vi.mock("@/lib/starweaver/relicShowcase", () => ({ createRelicShowcase: () => null }));
 vi.mock("@/components/shop/EnergyCookie", () => ({ default: () => <span aria-hidden="true" /> }));
 
 const WORDS: PracticeWord[] = [
@@ -348,8 +361,8 @@ describe("the game's finish", () => {
     await screen.findByText("lasting a very short time");
     await guess("z");
     expect(screen.getByRole("button", { name: "z, already guessed" })).toHaveAttribute("data-latest", "true");
-    // A miss blushes the screen's edge.
-    expect(document.querySelector("[class*='missFlash']")).not.toBeNull();
+    // A miss blushes the screen's edge (with no WebGL here, the overlay's stand-in).
+    expect(document.querySelector("[class*='liquidGlow'][data-kind='miss'][data-on='true']")).not.toBeNull();
     await guess("é");
     expect(screen.getByRole("button", { name: "z, already guessed" })).toHaveAttribute("data-latest", "false");
     expect(screen.getByRole("button", { name: "é, already guessed" })).toHaveAttribute("data-latest", "true");
@@ -372,3 +385,69 @@ describe("the game's finish", () => {
     expect(window.localStorage.getItem("hangyumi-sound")).toBe("off");
   });
 });
+
+/* Nightscale (Chi, 2026-11-11): every third word won in Hangyumi unlocks
+   one of 24 pieces, counted by the server; a loss takes nothing away. */
+describe("Nightscale in Hangyumi", () => {
+  function playToward(wins: number) {
+    const service = createPreviewHangyumi({ words: WORDS, delayMs: 0, wins, pick: () => "ns-fang-drop" });
+    const loadWallet = vi.fn(async () => ({ outfit: { head: "beret" }, balance: 240 }));
+    const wearPiece = vi.fn(async (id: string) => ({ head: "beret", earrings: id }));
+    render(<HangyumiGame service={service} defaultLanguage="fr" loadWallet={loadWallet} wearPiece={wearPiece} />);
+    return { wearPiece };
+  }
+  const progress = () => screen.getByRole("img", { name: /towards the next Nightscale piece/ });
+
+  it("shows this word's place in its three and the pieces held, from the first", async () => {
+    playToward(1);
+    await screen.findByText("lasting a very short time");
+    expect(progress()).toHaveAccessibleName("1 of 3 words won towards the next Nightscale piece; 0 of 24 unlocked.");
+    expect(within(progress()).getByText("Nightscale 0 / 24")).toBeInTheDocument();
+  });
+
+  it("unlocks a piece on the third word won, shows it whole, and puts it on when asked", async () => {
+    const { wearPiece } = playToward(2);
+    await screen.findByText("lasting a very short time");
+    for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
+    // Lowered on the line, then shown whole: its number, name and a line about it.
+    const dialog = await screen.findByRole("dialog", { name: "Fang Drop" });
+    expect(dialog).toHaveAttribute("data-collection", "nightscale");
+    expect(within(dialog).getByText("No. 19 · Nightscale")).toBeInTheDocument();
+    expect(dialog).toHaveAccessibleDescription("One curved fang in black enamel, tipped with gold. One strike is enough.");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Wear it" }));
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Wearing it" })).toBeDisabled());
+    expect(wearPiece).toHaveBeenCalledWith("ns-fang-drop");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    // Under it, the card stays, and the count has moved on.
+    expect(screen.getByText("Unlocked by your third word")).toBeInTheDocument();
+    expect(screen.getByText("Nightscale · New in your wardrobe")).toBeInTheDocument();
+    expect(within(progress()).getByText("Nightscale 1 / 24")).toBeInTheDocument();
+  });
+
+  it("carries on to the next word from the reveal", async () => {
+    playToward(2);
+    await screen.findByText("lasting a very short time");
+    for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
+    const dialog = await screen.findByRole("dialog", { name: "Fang Drop" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Carry on" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await waitFor(() => expect(screen.queryByText("Unlocked by your third word")).toBeNull());
+  });
+
+  it("counts nothing for a word lost, and unlocks nothing before the third", async () => {
+    playToward(2);
+    await screen.findByText("lasting a very short time");
+    for (const char of ["z", "x", "w"]) await guess(char);
+    expect(screen.queryByText("Unlocked by your third word")).toBeNull();
+    expect(progress()).toHaveAccessibleName("2 of 3 words won towards the next Nightscale piece; 0 of 24 unlocked.");
+  });
+
+  it("says how pieces are unlocked in the rules", async () => {
+    playToward(0);
+    await screen.findByText("lasting a very short time");
+    fireEvent.click(screen.getByRole("button", { name: "How Hangyumi works" }));
+    expect(await screen.findByText(/Every third word you win unlocks one of 24 Nightscale pieces/)).toBeInTheDocument();
+  });
+});
+

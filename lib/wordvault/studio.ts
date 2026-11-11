@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { ARM_ROOT, EYE_REST, buildYumiActor } from "@/lib/yumi3d/actor";
 import { SHELL_RADIUS, TUBE_RADIUS } from "@/lib/yumi3d/anatomy";
-import { createOutfitRig } from "@/lib/yumi3d/outfit";
+import { buildThumbnailObject, createOutfitRig, disposeObject } from "@/lib/yumi3d/outfit";
 import { makeStudioEnvironment } from "@/lib/yumi3d/scene";
 
 import type { VaultBeat } from "./presentation";
@@ -24,7 +24,9 @@ import type { VaultBeat } from "./presentation";
    sees the cost, and only then drops from above onto her place on the
    path, squashes, bounces once and stands, with a ring of light where she
    landed (Chi, 2026-10-26: Hangyumi's line lowering in was smooth, and
-   Wordvault flashed in with her late). That is the first deal only; the
+   Wordvault flashed in with her late). As she touches the stone the page
+   sends the games' liquid light down the screen in the vault's gold
+   (`onLanded`; Chi, 2026-11-11). That is the first deal only; the
    words after it walk her back instead. Each place a right letter
    fills moves her one hop along the path. A wrong letter sends a copy of
    part of her, in warm gold light, at the chest: her U, then her I, then
@@ -64,6 +66,11 @@ export type WordvaultStudio = {
   play(beats: VaultBeat[], scene: VaultScene): void;
   /** Ends whatever is playing, where it would have ended. */
   skip(): void;
+  /** A Mythic Vault piece the chest gave: once the lid is open and the
+      word's show is over, it rises out of the chest, turns once and flies
+      to the camera; then `onShown` (at once under reduced motion). Another
+      word before then drops it, and `onShown` is never called. */
+  present(itemId: string, onShown: () => void): void;
   wear(outfit: YumiOutfit | null): void;
   dispose(): void;
 };
@@ -94,7 +101,13 @@ const pathX = (progress: number) => START_X + (END_X - START_X) * progress;
 
 export function createWordvaultStudio(
   canvas: HTMLCanvasElement,
-  options: { reducedMotion?: boolean; onBusy?: (busy: boolean) => void; onArrived?: () => void } = {},
+  options: {
+    reducedMotion?: boolean;
+    onBusy?: (busy: boolean) => void;
+    onArrived?: () => void;
+    /** She has dropped onto the stone, in the animated arrival only. */
+    onLanded?: () => void;
+  } = {},
 ): WordvaultStudio | null {
   let renderer: THREE.WebGLRenderer;
   try {
@@ -753,6 +766,106 @@ export function createWordvaultStudio(
     }
   }
 
+  // ------------------------------------------------------------ the gift
+  /* A Mythic Vault piece out of the open chest (Chi, 2026-11-11: every
+     game sends its piece out before the full-screen showing). Seconds. */
+  const GIFT_RISE = 0.9;
+  const GIFT_TURN = 1.0;
+  const GIFT_OUT = 0.6;
+  const GIFT_SIZE = 0.6;
+  const giftHolder = new THREE.Group();
+  giftHolder.visible = false;
+  set.add(giftHolder);
+  /* Built once the show is over and the scene is still: a piece's first
+     compile can hold a frame, and it should not be one of the key's. */
+  type Gift = { itemId: string; piece: THREE.Object3D | null; ready: boolean; started: number | null; onShown: () => void };
+  let gift: Gift | null = null;
+  const giftFrom = new THREE.Vector3(CHEST_X, 0.24 + H * 0.5, 0);
+  const giftHover = new THREE.Vector3(CHEST_X, 0.24 + H + 1.1, 0.15);
+  const giftNear = new THREE.Vector3();
+
+  function dropGift(shown: boolean) {
+    const current = gift;
+    if (!current) return;
+    gift = null;
+    giftHolder.visible = false;
+    const piece = current.piece;
+    if (piece) {
+      giftHolder.remove(piece);
+      afterCompiles(() => disposeObject(piece));
+    }
+    if (shown) current.onShown();
+  }
+
+  function buildGift(current: Gift) {
+    let piece: THREE.Object3D | null = null;
+    try {
+      piece = buildThumbnailObject(current.itemId);
+    } catch {
+      piece = null;
+    }
+    if (!piece) {
+      dropGift(true);
+      return;
+    }
+    /* Centred and made the same size whatever it is. */
+    const sphere = new THREE.Box3().setFromObject(piece).getBoundingSphere(new THREE.Sphere());
+    piece.position.sub(sphere.center);
+    const holder = new THREE.Group();
+    holder.add(piece);
+    holder.scale.setScalar(GIFT_SIZE / Math.max(0.05, sphere.radius));
+    holder.traverse(object => { if ((object as THREE.Mesh).isMesh) object.castShadow = true; });
+    giftHolder.add(holder);
+    current.piece = holder;
+    /* Its shaders compile inside the chest, out of sight. */
+    giftHolder.visible = true;
+    const compiled = compiling(renderer.compileAsync(giftHolder, camera, scene)).catch(() => undefined);
+    giftHolder.visible = false;
+    void compiled.then(() => {
+      current.ready = true;
+      wake();
+    });
+  }
+
+  function runGift(now: number) {
+    const current = gift;
+    if (!current) return;
+    if (current.started === null) {
+      /* After the key, the lid and the coins: the show is over. */
+      if (live || queue.length || reset || entry || rest.status !== "won") return;
+      if (!current.piece) buildGift(current);
+      if (!current.ready) return;
+      current.started = now;
+      giftHolder.visible = true;
+    }
+    const s = (now - current.started) / 1000;
+    if (s < GIFT_RISE) {
+      const q = easeOut(s / GIFT_RISE);
+      giftHolder.position.copy(giftFrom).lerp(giftHover, q);
+      giftHolder.scale.setScalar(0.3 + 0.7 * q);
+      giftHolder.rotation.set(0, q * Math.PI, 0);
+      return;
+    }
+    if (s < GIFT_RISE + GIFT_TURN) {
+      const t = (s - GIFT_RISE) / GIFT_TURN;
+      giftHolder.position.copy(giftHover);
+      giftHolder.position.y += Math.sin(t * Math.PI) * 0.08;
+      giftHolder.scale.setScalar(1);
+      giftHolder.rotation.set(0, Math.PI + easeInOut(t) * Math.PI * 2, 0);
+      return;
+    }
+    const out = clamp01((s - GIFT_RISE - GIFT_TURN) / GIFT_OUT);
+    const q = out * out * (3 - 2 * out);
+    /* To the middle of the frame, in front of the camera. */
+    camera.getWorldDirection(giftNear);
+    giftNear.multiplyScalar(6).add(camera.position);
+    set.worldToLocal(giftNear);
+    giftHolder.position.copy(giftHover).lerp(giftNear, q);
+    giftHolder.scale.setScalar(1 + q * 0.6);
+    giftHolder.rotation.y += 0.06;
+    if (out >= 1) dropGift(true);
+  }
+
   function startNext(now: number) {
     const beat = queue.shift();
     live = beat ? { beat, from: at, started: now } : null;
@@ -815,6 +928,7 @@ export function createWordvaultStudio(
       poseEntry(s);
       if (s >= FALL_S && !entry.landed) {
         entry.landed = true;
+        options.onLanded?.();
         options.onArrived?.();
       }
       if (s >= FALL_S + LAND_S) {
@@ -823,11 +937,12 @@ export function createWordvaultStudio(
       }
     }
     poseSwap(now);
+    runGift(now);
     if (starRing.visible) starRing.rotation.y += dt * 0.6;
     rig.sync(dt, reduced);
     renderer.render(scene, camera);
     /* The premium chest's stars keep turning while it waits. */
-    if (live || reset || entry || swap || (starRing.visible && !reduced)) frame = requestAnimationFrame(tick);
+    if (live || reset || entry || swap || gift || (starRing.visible && !reduced)) frame = requestAnimationFrame(tick);
   }
 
   function wake() {
@@ -930,6 +1045,8 @@ export function createWordvaultStudio(
       });
     },
     show(next, { reset: walkBack = false } = {}) {
+      /* Another word: the gift that was coming no longer is. */
+      if (next.status === "playing" && next.progress === 0) dropGift(false);
       endEntry();
       queue = [];
       live = null;
@@ -969,6 +1086,17 @@ export function createWordvaultStudio(
     },
     skip() {
       if (live || queue.length || reset || entry) finish();
+      else if (gift?.started != null) dropGift(true);
+    },
+    present(itemId, onShown) {
+      dropGift(false);
+      if (disposed) return;
+      if (reduced) {
+        onShown();
+        return;
+      }
+      gift = { itemId, piece: null, ready: false, started: null, onShown };
+      wake();
     },
     wear(outfit) {
       for (const piece of rig.apply(outfit ?? {})) {
@@ -978,6 +1106,7 @@ export function createWordvaultStudio(
     },
     dispose() {
       disposed = true;
+      dropGift(false);
       if (frame) cancelAnimationFrame(frame);
       observer?.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);

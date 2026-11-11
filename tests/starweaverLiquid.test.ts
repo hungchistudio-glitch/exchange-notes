@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { LIQUID, LIQUID_EVENT, flowLiquid, sweepLiquid, type LiquidFlowRequest } from "@/lib/starweaver/liquid";
+import { LIQUID, LIQUID_EVENT, PALETTES, flowLiquid, paletteFor, sweepLiquid, type LiquidFlowRequest } from "@/lib/starweaver/liquid";
 
 /* The arrival's sweep runs once from the top of the stage down the page
-   (Chi, 2026-11-11), and the page itself now carries data-game too, so
-   the stage must be found by its role, not by the attribute alone. */
+   (Chi, 2026-11-11). Every game's stage says it is the target
+   (data-liquid-stage); the page round it carries data-game too, and must
+   never be mistaken for it. */
 
 const listen = () => {
   const requests: LiquidFlowRequest[] = [];
@@ -20,6 +21,7 @@ const mount = () => {
   const stage = document.createElement("div");
   stage.setAttribute("role", "img");
   stage.dataset.game = "starweaver";
+  stage.dataset.liquidStage = "";
   stage.getBoundingClientRect = () => new DOMRect(20, 80, 360, 300);
   page.append(stage);
   document.body.append(page);
@@ -39,6 +41,19 @@ describe("Starweaver liquid", () => {
     expect(requests[0].to).toEqual({ x: window.innerWidth / 2, y: window.innerHeight });
   });
 
+  it("sweeps each game in on its own colours (Chi, 2026-11-11)", () => {
+    mount();
+    const { requests, stop } = listen();
+    sweepLiquid("hangyumi");
+    sweepLiquid("wordvault");
+    sweepLiquid("starweaver");
+    stop();
+    expect(requests.map(request => [request.kind, request.game])).toEqual([
+      ["sweep", "hangyumi"], ["sweep", "wordvault"], ["sweep", "starweaver"],
+    ]);
+    expect(requests.map(request => paletteFor(request))).toEqual([PALETTES.hangyumi, PALETTES.wordvault, PALETTES.starweaver]);
+  });
+
   it("flows a guess toward the stage, not the page round it", () => {
     mount();
     const { requests, stop } = listen();
@@ -50,6 +65,23 @@ describe("Starweaver liquid", () => {
 
   it("keeps the sweep lighter than a won word", () => {
     expect(LIQUID.sweep.strength).toBeLessThan(LIQUID.word.strength);
-    expect(LIQUID.sweep.seconds).toBeLessThan(1);
+  });
+
+  it("plays a little slower than it did, and a miss shorter than any right guess (Chi, 2026-11-11)", () => {
+    expect(LIQUID.letter.seconds).toBeCloseTo(0.7);
+    expect(LIQUID.word.seconds).toBeCloseTo(1.4);
+    expect(LIQUID.miss.seconds).toBeLessThan(LIQUID.letter.seconds);
+  });
+
+  it("colours each game its own way, and a miss dark red in every one", () => {
+    expect(paletteFor({ kind: "letter", game: "hangyumi" })).toBe(PALETTES.hangyumi);
+    expect(paletteFor({ kind: "word", game: "wordvault" })).toBe(PALETTES.wordvault);
+    expect(paletteFor({ kind: "letter", game: "starweaver" })).toBe(PALETTES.starweaver);
+    for (const game of ["hangyumi", "wordvault", "starweaver"] as const) {
+      expect(paletteFor({ kind: "miss", game })).toBe(PALETTES.miss);
+    }
+    const [r, g, b] = PALETTES.miss.body;
+    expect(r).toBeGreaterThan(g * 2);
+    expect(r).toBeGreaterThan(b * 2);
   });
 });

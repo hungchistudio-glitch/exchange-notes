@@ -92,6 +92,9 @@ export const isGame = (value: unknown): value is HangyumiGame => (GAMES as reado
 /** A relic a seventh voyage brought back: the cycle it ended, and the piece. */
 export type StarweaverAward = { id: number; itemId: string };
 
+/** A piece a third Hangyumi win unlocked: the cycle it ended, and the piece. */
+export type NightscaleAward = StarweaverAward;
+
 /**
  * Yumi Starweaver｜織星者 (Chi, 2026-11-10): the reader's voyages, counted by
  * the server. Every seventh word won brings back one of the 17 Starwoven
@@ -108,6 +111,16 @@ export type StarweaverState = {
   collectionComplete: boolean;
   /** Only once the word is over, and only for a seventh that found a relic. */
   award: StarweaverAward | null;
+};
+
+/**
+ * Hangyumi's Nightscale (Chi, 2026-11-11): the reader's words won, counted
+ * by the server. Every third unlocks one of the 24 pieces not owned yet; a
+ * loss takes nothing away. The same shape as Starweaver's, in threes.
+ */
+export type NightscaleState = Omit<StarweaverState, "award"> & {
+  /** Only once the word is over, and only for a third that found a piece. */
+  award: NightscaleAward | null;
 };
 
 export type HangyumiRound = {
@@ -140,6 +153,8 @@ export type HangyumiRound = {
   chestReward: ChestReward | null;
   /** Starweaver: voyages and relics. Never a chest. */
   starweaver: StarweaverState | null;
+  /** Hangyumi: words won and Nightscale pieces. */
+  nightscale: NightscaleState | null;
 };
 
 export type HangyumiPaid = { letter: number; word: number; already: boolean; capped: boolean };
@@ -207,11 +222,13 @@ function readChestReward(value: unknown): ChestReward | null {
   };
 }
 
-function readStarweaver(value: unknown, status: HangyumiStatus): StarweaverState | null {
+/* A collection's progress as the server reports it: Starweaver's in
+   sevens, Hangyumi's Nightscale in threes. */
+function readCollection(value: unknown, status: HangyumiStatus, cycle: number): StarweaverState | null {
   if (!value || typeof value !== "object") return null;
   const row = value as Record<string, unknown>;
   const award = (row.award ?? null) as Record<string, unknown> | null;
-  const cycleLength = count(row.cycleLength) || 7;
+  const cycleLength = count(row.cycleLength) || cycle;
   return {
     completedTotal: count(row.completedTotal),
     cycleProgress: Math.min(cycleLength - 1, count(row.cycleProgress)),
@@ -262,7 +279,8 @@ export function readRound(value: unknown): HangyumiRound {
     chest: isTier(row.chest) ? row.chest : null,
     streak: row.streak === null || row.streak === undefined ? null : Math.min(6, count(row.streak)),
     chestReward: status !== "playing" ? readChestReward(row.chestReward) : null,
-    starweaver: row.game === "starweaver" ? readStarweaver(row.starweaver, status) : null,
+    starweaver: row.game === "starweaver" ? readCollection(row.starweaver, status, 7) : null,
+    nightscale: isGame(row.game) && row.game !== "hangyumi" ? null : readCollection(row.nightscale, status, 3),
   };
 }
 

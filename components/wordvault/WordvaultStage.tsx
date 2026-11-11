@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import type { HangyumiRound } from "@/lib/hangyumi/rules";
 import type { YumiOutfit } from "@/lib/shop/catalog";
+import { sweepLiquid } from "@/lib/starweaver/liquid";
 import { plan, progress } from "@/lib/wordvault/presentation";
 import type { VaultScene, WordvaultStudio } from "@/lib/wordvault/studio";
 
@@ -21,6 +22,10 @@ type Props = {
   dealt: boolean;
   /** She has touched the stone, or there is no studio to arrive in. */
   onArrived: () => void;
+  /** A Mythic Vault piece the chest just gave, keyed by its round. */
+  present?: { key: string; itemId: string } | null;
+  /** The piece has flown out of the chest to us: the page shows it whole. */
+  onPresented?: () => void;
   label: string;
   skipLabel: string;
 };
@@ -41,7 +46,9 @@ const sceneOf = (round: HangyumiRound): VaultScene => ({
  * She arrives once (Chi, 2026-10-26): the set is compiled before the
  * canvas fades in, so it comes in empty and whole; when the wallet says
  * what she wears and the first word is dealt, she is dressed out of sight
- * and drops in, and the page lays the clue and the keys out as she lands.
+ * and drops in, and the page lays the clue and the keys out as she lands,
+ * under the games' liquid light swept down the screen in the vault's gold
+ * (Chi, 2026-11-11: each game comes in on it, as Starweaver does).
  * A wallet that has not answered in WALLET_WAIT_MS no longer holds her up:
  * she comes as she is and dresses when it does. A studio built again (the
  * GPU took the canvas back) finds her already there.
@@ -54,11 +61,19 @@ const sceneOf = (round: HangyumiRound): VaultScene => ({
  */
 const WALLET_WAIT_MS = 2500;
 
-export default function WordvaultStage({ round, outfit, dressed, dealt, onArrived, label, skipLabel }: Props) {
+export default function WordvaultStage({ round, outfit, dressed, dealt, onArrived, present = null, onPresented, label, skipLabel }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const studioRef = useRef<WordvaultStudio | null>(null);
   const shownRef = useRef<HangyumiRound | null>(null);
-  const latestRef = useRef({ round, outfit, dressed, dealt, onArrived });
+  const latestRef = useRef({ round, outfit, dressed, dealt, onArrived, onPresented });
+  /* The gift sent for, and whether the page has been told it arrived. */
+  const presentedRef = useRef<string | null>(null);
+  const awaitingRef = useRef(false);
+  const presentedNow = useRef(() => {
+    if (!awaitingRef.current) return;
+    awaitingRef.current = false;
+    latestRef.current.onPresented?.();
+  });
   /* The studio is drawn and showing; she has been sent for. */
   const readyRef = useRef(false);
   const sentRef = useRef(false);
@@ -85,8 +100,20 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
     latestRef.current.dressed = dressed;
     latestRef.current.dealt = dealt;
     latestRef.current.onArrived = onArrived;
+    latestRef.current.onPresented = onPresented;
     arriveRef.current();
-  }, [dressed, dealt, onArrived, walletLate]);
+  }, [dressed, dealt, onArrived, onPresented, walletLate]);
+
+  /* A Mythic Vault piece the chest just gave: the studio flies it out of
+     the chest, or, with no studio, the page shows it at once. Once per round. */
+  useEffect(() => {
+    if (!present || presentedRef.current === present.key) return;
+    presentedRef.current = present.key;
+    awaitingRef.current = true;
+    const studio = studioRef.current;
+    if (studio && readyRef.current) studio.present(present.itemId, presentedNow.current);
+    else presentedNow.current();
+  }, [present]);
 
   /* The wallet's wait, counted from the deal. */
   useEffect(() => {
@@ -130,6 +157,7 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
         reducedMotion,
         onBusy: next => { if (!cancelled) setBusy(next); },
         onArrived: () => { if (!cancelled) latestRef.current.onArrived(); },
+        onLanded: () => { if (!cancelled) sweepLiquid("wordvault"); },
       });
       studioRef.current = studio;
       if (!studio) {
@@ -159,6 +187,7 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
       setFailed(true);
       setBusy(false);
       latestRef.current.onArrived();
+      presentedNow.current();
     };
     canvas.addEventListener("webglcontextlost", lost);
     canvas.addEventListener("webglcontextrestored", build);
@@ -186,7 +215,7 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
   const open = round?.status === "won";
   return (
     <>
-    <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"} data-game="wordvault">
+    <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"} data-game="wordvault" data-liquid-stage="">
       <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
       {failed && (
         <svg className={styles.flat} viewBox="0 0 160 100" aria-hidden="true" focusable="false">

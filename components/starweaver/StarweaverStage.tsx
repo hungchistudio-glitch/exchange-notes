@@ -22,6 +22,8 @@ type Props = {
   dealt: boolean;
   /** She has arrived, or there is no studio to arrive in. */
   onArrived: () => void;
+  /** A seventh's relic is out of the gate, or there is no gate to show it: the page shows it whole. */
+  onRelic?: () => void;
   label: string;
   skipLabel: string;
 };
@@ -135,11 +137,11 @@ const WALLET_WAIT_MS = 2500;
  * awards: the server has decided the cookies and any relic before the
  * stage hears of the guess, and skipping changes nothing.
  */
-export default function StarweaverStage({ round, outfit, dressed, dealt, onArrived, label, skipLabel }: Props) {
+export default function StarweaverStage({ round, outfit, dressed, dealt, onArrived, onRelic, label, skipLabel }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const studioRef = useRef<StarweaverStudio | null>(null);
   const shownRef = useRef<HangyumiRound | null>(null);
-  const latestRef = useRef({ round, outfit, dressed, dealt, onArrived });
+  const latestRef = useRef({ round, outfit, dressed, dealt, onArrived, onRelic });
   const readyRef = useRef(false);
   const sentRef = useRef(false);
   const [live, setLive] = useState(false);
@@ -166,8 +168,9 @@ export default function StarweaverStage({ round, outfit, dressed, dealt, onArriv
     latestRef.current.dressed = dressed;
     latestRef.current.dealt = dealt;
     latestRef.current.onArrived = onArrived;
+    latestRef.current.onRelic = onRelic;
     arriveRef.current();
-  }, [dressed, dealt, onArrived, walletLate]);
+  }, [dressed, dealt, onArrived, onRelic, walletLate]);
 
   /* The wallet's wait, counted from the deal. */
   useEffect(() => {
@@ -182,8 +185,14 @@ export default function StarweaverStage({ round, outfit, dressed, dealt, onArriv
     const studio = studioRef.current;
     const before = shownRef.current;
     shownRef.current = round;
-    if (!studio || !round) return;
-    if (before && before.id === round.id && round.guessed.length > before.guessed.length) {
+    if (!round) return;
+    const guessed = !!before && before.id === round.id && round.guessed.length > before.guessed.length;
+    if (!studio) {
+      /* No gate to bring it out of: the page shows the relic at once. */
+      if (guessed && round.status === "won" && round.starweaver?.award) latestRef.current.onRelic?.();
+      return;
+    }
+    if (guessed) {
       studio.play(plan(before, round), sceneOf(round));
     } else {
       studio.show(sceneOf(round), { reset: !!before && before.id !== round.id });
@@ -213,7 +222,8 @@ export default function StarweaverStage({ round, outfit, dressed, dealt, onArriv
         onBusy: next => { if (!cancelled) setBusy(next); },
         onArrived: () => { if (!cancelled) latestRef.current.onArrived(); },
         /* As she touches down, light sweeps down the page and the keys rise with it. */
-        onLanded: () => { if (!cancelled) sweepLiquid(); },
+        onLanded: () => { if (!cancelled) sweepLiquid("starweaver"); },
+        onRelic: () => { if (!cancelled) latestRef.current.onRelic?.(); },
       });
       studioRef.current = studio;
       if (!studio) {
@@ -274,6 +284,7 @@ export default function StarweaverStage({ round, outfit, dressed, dealt, onArriv
         aria-label={label}
         data-live={live ? "true" : "false"}
         data-game="starweaver"
+        data-liquid-stage=""
         onPointerDown={() => { if (busy) studioRef.current?.skip(); }}
       >
         <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />

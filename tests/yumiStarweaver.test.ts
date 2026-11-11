@@ -75,6 +75,17 @@ describe("the relics' catalogue", () => {
     }
   });
 
+  it("says a line about each, in all five languages, the Chinese Traditional (Chi, 2026-11-11)", () => {
+    for (const item of STARWEAVER_ITEMS) {
+      const intros = Object.values(item.intro);
+      expect(intros.filter(line => line.trim().length > 12), item.id).toHaveLength(5);
+      expect(new Set(intros).size, item.id).toBe(5);
+      expect(SIMPLIFIED.test(item.intro["traditional-chinese"]), item.intro["traditional-chinese"]).toBe(false);
+      /* One or two sentences: short enough to read as it turns. */
+      expect(item.intro.english.length, item.id).toBeLessThan(150);
+    }
+  });
+
   it("is worn like any other piece once owned, and listed with what is owned", () => {
     expect(shopItem("sw-aurora-visor")?.slot).toBe("head");
     expect(cleanOutfit({ head: "sw-aurora-visor", earrings: "sw-orbit-drop" })).toEqual({ head: "sw-aurora-visor", earrings: "sw-orbit-drop" });

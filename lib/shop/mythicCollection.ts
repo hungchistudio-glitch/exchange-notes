@@ -18,7 +18,11 @@ import type { ShopItem } from "./catalog";
 
 export type MythOrigin = "greek" | "norse" | "egyptian" | "chinese" | "celtic" | "mesopotamian";
 
-export type MythicItem = ShopItem & { origin: MythOrigin };
+export type MythicItem = ShopItem & {
+  origin: MythOrigin;
+  /** One sentence, shown as it is revealed out of the chest (2026-11-11). */
+  intro: ShopItem["names"];
+};
 
 type Row = [id: string, slot: ShopItem["slot"], origin: MythOrigin, tone: string,
   zh: string, en: string, fr: string, it: string, es: string];
@@ -71,8 +75,249 @@ const ROWS: Row[] = [
   ["myth-ninetail-pendant", "necklace", "chinese", "#b9a3ff", "九尾狐月光墜鍊", "Nine-tailed fox pendant", "Pendentif renard à neuf queues", "Ciondolo volpe a nove code", "Colgante zorro de nueve colas"],
 ];
 
+
+/* What the reveal says about each (Chi, 2026-11-11: every game shows the
+   piece it unlocks whole, with a line about it), in the order zh, en, fr,
+   it, es: the story's object, never a god's likeness. */
+type Intro = [zh: string, en: string, fr: string, it: string, es: string];
+
+const INTROS: Record<string, Intro> = {
+  "myth-olympus-marble": [
+    "神諭山丘上的白色大理石，紋理裡流著眾神的金光。",
+    "White marble from the oracle’s hill, its veins running with the gods’ gold.",
+    "Un marbre blanc de la colline de l’oracle, veiné de l’or des dieux.",
+    "Marmo bianco dal colle dell’oracolo, venato dell’oro degli dèi.",
+    "Mármol blanco de la colina del oráculo, con vetas del oro de los dioses.",
+  ],
+  "myth-bifrost-frost": [
+    "連接眾世界的彩虹橋上結的霜，珍珠白上覆著一層極光。",
+    "Frost from the rainbow bridge between the worlds, pearl-white under an aurora.",
+    "Du givre du pont arc-en-ciel entre les mondes, blanc nacré sous une aurore.",
+    "Brina del ponte arcobaleno tra i mondi, bianco perla sotto un’aurora.",
+    "Escarcha del puente arcoíris entre los mundos, blanco perla bajo una aurora.",
+  ],
+  "myth-nile-lapis": [
+    "尼羅河的深藍青金石，灑著金砂，像河上的夜空。",
+    "Deep blue lapis of the Nile, flecked with gold like a night sky over the river.",
+    "Un lapis bleu profond du Nil, pailleté d’or comme un ciel de nuit sur le fleuve.",
+    "Lapislazzuli blu profondo del Nilo, punteggiato d’oro come un cielo notturno sul fiume.",
+    "Lapislázuli azul profundo del Nilo, salpicado de oro como un cielo nocturno sobre el río.",
+  ],
+  "myth-sun-disk": [
+    "一枚放出十二道光芒的太陽金盤，自己會發光。",
+    "A disk of sun-gold with twelve rays, giving its own light.",
+    "Un disque d’or solaire à douze rayons, qui brille de sa propre lumière.",
+    "Un disco d’oro solare a dodici raggi, che brilla di luce propria.",
+    "Un disco de oro solar con doce rayos, que brilla con luz propia.",
+  ],
+  "myth-moon-rabbit": [
+    "一彎新月，月宮裡的玉兔還在搗著仙藥。",
+    "A crescent moon with the rabbit who lives there, still pounding the elixir.",
+    "Un croissant de lune et le lapin qui y vit, pilant toujours l’élixir.",
+    "Una falce di luna con il coniglio che ci vive, ancora intento a pestare l’elisir.",
+    "Una luna creciente con el conejo que vive en ella, machacando aún el elixir.",
+  ],
+  "myth-gorgon-jade": [
+    "翡翠綠的虹膜裡盤著蛇髮女妖的蛇。可以看，但別看太久。",
+    "Emerald jade with the Gorgon’s serpents coiling through it. Look, but not for long.",
+    "Un jade émeraude où s’enroulent les serpents de la Gorgone. Regardez, mais pas trop longtemps.",
+    "Giada smeraldo in cui si attorcigliano i serpenti della Gorgone. Guardala, ma non troppo a lungo.",
+    "Jade esmeralda con las serpientes de la Gorgona enroscadas. Mírala, pero no demasiado tiempo.",
+  ],
+  "myth-bifrost-iris": [
+    "彩虹橋化成一圈圈的顏色，色帶之間結著霜。",
+    "The rainbow bridge in rings, with frost between the colours.",
+    "Le pont arc-en-ciel en anneaux, avec du givre entre les couleurs.",
+    "Il ponte arcobaleno ad anelli, con la brina tra i colori.",
+    "El puente arcoíris en anillos, con escarcha entre los colores.",
+  ],
+  "myth-ishtar-star": [
+    "伊什塔爾的八芒星，以金色畫在青金石般的夜空上。",
+    "Ishtar’s star of eight points, gold on a night of lapis.",
+    "L’étoile à huit branches d’Ishtar, en or sur une nuit de lapis.",
+    "La stella a otto punte di Ishtar, d’oro su una notte di lapislazzuli.",
+    "La estrella de ocho puntas de Ishtar, dorada sobre una noche de lapislázuli.",
+  ],
+  "myth-raven-monocle": [
+    "鏡框上揚起兩隻烏鴉的翅膀：一隻是思想，一隻是記憶。",
+    "Two ravens’ wings sweep up from the rim: one for thought, one for memory.",
+    "Deux ailes de corbeau s’élèvent de la monture : l’une pour la pensée, l’autre pour la mémoire.",
+    "Due ali di corvo si alzano dalla montatura: una per il pensiero, una per la memoria.",
+    "Dos alas de cuervo se alzan desde la montura: una para el pensamiento y otra para la memoria.",
+  ],
+  "myth-horus-visor": [
+    "鷹的紋樣以金色描在深藍鏡片四周，替你守望。",
+    "The falcon’s markings drawn in gold round a deep blue lens that watches over you.",
+    "Les marques du faucon dessinées en or autour d’un verre bleu profond qui veille sur vous.",
+    "I segni del falco tracciati in oro attorno a una lente blu profonda che veglia su di te.",
+    "Las marcas del halcón trazadas en oro alrededor de una lente azul profundo que vela por ti.",
+  ],
+  "myth-owl-spectacles": [
+    "有貓頭鷹眉形的圓眼鏡，讓你在黑暗中也看得清楚。",
+    "Round spectacles with an owl’s brow, for seeing clearly in the dark.",
+    "Des lunettes rondes au sourcil de chouette, pour voir clair dans le noir.",
+    "Occhiali tondi con le sopracciglia della civetta, per vedere chiaro nel buio.",
+    "Gafas redondas con cejas de búho, para ver con claridad en la oscuridad.",
+  ],
+  "myth-laurel-crown": [
+    "兩枝沐著陽光的月桂枝交成 V 字，金色葉片自己發著光。",
+    "Two sunlit branches of laurel rising into a V, their gold leaves giving light.",
+    "Deux branches de laurier ensoleillées qui montent en V, leurs feuilles d’or donnant la lumière.",
+    "Due rami di alloro al sole che salgono a V, con foglie d’oro che fanno luce.",
+    "Dos ramas de laurel bañadas de sol que suben en V, con hojas de oro que dan luz.",
+  ],
+  "myth-valkyrie-wings": [
+    "頭兩側各有一片月光下的鋼藍羽翼，向後掠起，像正在飛翔。",
+    "Moonlit steel-blue wings either side of the head, swept back as if in flight.",
+    "Des ailes bleu acier au clair de lune de chaque côté de la tête, rabattues comme en plein vol.",
+    "Ali blu acciaio al chiaro di luna ai lati della testa, tese all’indietro come in volo.",
+    "Alas azul acero a la luz de la luna a cada lado de la cabeza, echadas hacia atrás como en pleno vuelo.",
+  ],
+  "myth-phoenix-crown": [
+    "低低的金冠立著羽冠，三根長長的尾羽像拖著火光。",
+    "A low gold crown with a crest, and three long tail plumes trailing fire.",
+    "Une couronne d’or basse à crête, et trois longues plumes de queue qui traînent du feu.",
+    "Una bassa corona d’oro con la cresta e tre lunghe piume di coda che lasciano una scia di fuoco.",
+    "Una corona de oro baja con cresta y tres largas plumas de cola que dejan una estela de fuego.",
+  ],
+  "myth-golden-fleece": [
+    "英雄們航行到世界盡頭去找的金羊毛做成的圍巾，以公羊頭扣起。",
+    "A scarf of the fleece heroes sailed to the edge of the world for, clasped with a ram’s head.",
+    "Une écharpe de la toison que des héros allèrent chercher au bout du monde, fermée d’une tête de bélier.",
+    "Una sciarpa del vello che gli eroi andarono a cercare ai confini del mondo, chiusa da una testa di montone.",
+    "Una bufanda del vellocino que los héroes fueron a buscar al fin del mundo, cerrada con una cabeza de carnero.",
+  ],
+  "myth-selkie-shawl": [
+    "帶著珍珠光澤的海豹灰披肩，就是海豹仙子留在岸上的那一件。",
+    "A shawl of sealskin grey with a pearl sheen, the one a selkie leaves on the shore.",
+    "Un châle gris phoque aux reflets de perle, celui qu’une selkie laisse sur le rivage.",
+    "Uno scialle grigio foca con riflessi di perla, quello che una selkie lascia sulla riva.",
+    "Un chal gris foca con brillo de perla, el que una selkie deja en la orilla.",
+  ],
+  "myth-nuwa-ribbon": [
+    "五彩絲帶，顏色來自女媧補天的五色石。",
+    "A silk ribbon in the five colours of the stones that mended the sky.",
+    "Un ruban de soie aux cinq couleurs des pierres qui réparèrent le ciel.",
+    "Un nastro di seta nei cinque colori delle pietre che ripararono il cielo.",
+    "Una cinta de seda con los cinco colores de las piedras que repararon el cielo.",
+  ],
+  "myth-scarab-pin": [
+    "張開金翼的青金石聖甲蟲，把太陽高高托起。",
+    "A lapis beetle with gold wings opened wide, holding up the sun.",
+    "Un scarabée de lapis aux ailes d’or grandes ouvertes, qui porte le soleil.",
+    "Uno scarabeo di lapislazzuli con ali d’oro spalancate, che regge il sole.",
+    "Un escarabajo de lapislázuli con alas de oro abiertas, que sostiene el sol.",
+  ],
+  "myth-triskele-pin": [
+    "三道螺旋從同一個中心向外旋開，金色浮雕在綠色琺瑯上。",
+    "Three spirals turning out from one centre, in raised gold on green enamel.",
+    "Trois spirales qui tournent à partir d’un même centre, en or relevé sur émail vert.",
+    "Tre spirali che girano da un unico centro, in oro a rilievo su smalto verde.",
+    "Tres espirales que giran desde un mismo centro, en oro en relieve sobre esmalte verde.",
+  ],
+  "myth-qilin-pin": [
+    "環繞著雲紋的玉璧，上方是麒麟的一支角。",
+    "A jade disc ringed with cloud scrolls, and the qilin’s single horn above it.",
+    "Un disque de jade cerné de volutes de nuages, et au-dessus la corne unique du qilin.",
+    "Un disco di giada cinto di volute di nuvole, con sopra il corno unico del qilin.",
+    "Un disco de jade rodeado de volutas de nubes, y sobre él el cuerno único del qilin.",
+  ],
+  "myth-ambrosia-cup": [
+    "盛著眾神仙饌的寬口金杯，杯裡的仙饌自己發著光。",
+    "A wide gold cup of the gods’ own food, the ambrosia inside giving its own light.",
+    "Une large coupe d’or de la nourriture des dieux, l’ambroisie à l’intérieur brillant d’elle-même.",
+    "Un’ampia coppa d’oro del cibo degli dèi, con l’ambrosia che brilla di luce propria.",
+    "Una amplia copa de oro con el alimento de los dioses, cuya ambrosía brilla con luz propia.",
+  ],
+  "myth-immortal-peach": [
+    "王母瑤池裡的蟠桃，千年才熟一次。",
+    "A peach from the Queen Mother’s garden, which ripens once every thousand years.",
+    "Une pêche du jardin de la Reine Mère, qui ne mûrit qu’une fois tous les mille ans.",
+    "Una pesca del giardino della Regina Madre, che matura una volta ogni mille anni.",
+    "Un melocotón del jardín de la Reina Madre, que madura una vez cada mil años.",
+  ],
+  "myth-mjolnir": [
+    "雷神的短柄鎚，上面的符文閃著暴風雨般的藍光。",
+    "The thunder god’s short-handled hammer, its runes glowing storm blue.",
+    "Le marteau à manche court du dieu du tonnerre, ses runes luisant d’un bleu d’orage.",
+    "Il martello dal manico corto del dio del tuono, con le rune che brillano di un blu tempesta.",
+    "El martillo de mango corto del dios del trueno, con sus runas brillando en azul tormenta.",
+  ],
+  "myth-pandora-jar": [
+    "所有東西都從這只甕裡逃了出來，只有一點明亮的希望留在裡面。",
+    "The jar everything escaped from, and the one bright hope that stayed inside.",
+    "La jarre d’où tout s’est échappé, et le seul espoir lumineux resté à l’intérieur.",
+    "Il vaso da cui tutto è fuggito, e l’unica speranza luminosa rimasta dentro.",
+    "La tinaja de la que todo escapó, y la única esperanza luminosa que se quedó dentro.",
+  ],
+  "myth-destiny-tablet": [
+    "記載命運的泥板，楔形文字閃著金光。",
+    "A clay tablet of fates, its wedge-shaped script glowing gold.",
+    "Une tablette d’argile des destins, son écriture en coins luisant d’or.",
+    "Una tavoletta d’argilla dei destini, con la scrittura a cuneo che brilla d’oro.",
+    "Una tablilla de arcilla de los destinos, con su escritura cuneiforme brillando en oro.",
+  ],
+  "myth-pegasus-feather": [
+    "一根來自天馬的白羽，配著金色羽軸。",
+    "A white feather from the winged horse, on a gold shaft.",
+    "Une plume blanche du cheval ailé, sur une tige d’or.",
+    "Una piuma bianca del cavallo alato, su uno stelo d’oro.",
+    "Una pluma blanca del caballo alado, sobre un cálamo de oro.",
+  ],
+  "myth-dragon-pearl": [
+    "龍在雲間追逐的那顆寶珠，周圍環著自己的火焰。",
+    "The pearl dragons chase through the clouds, ringed with its own flames.",
+    "La perle que les dragons poursuivent à travers les nuages, cerclée de ses propres flammes.",
+    "La perla che i draghi inseguono tra le nuvole, cinta dalle sue stesse fiamme.",
+    "La perla que los dragones persiguen entre las nubes, rodeada de sus propias llamas.",
+  ],
+  "myth-selene-tear": [
+    "一彎月光，落下一滴藍色的淚。",
+    "A crescent of moonlight and one blue tear falling from it.",
+    "Un croissant de clair de lune et une larme bleue qui en tombe.",
+    "Una falce di luna e una lacrima azzurra che ne cade.",
+    "Una luna creciente y una lágrima azul que cae de ella.",
+  ],
+  "myth-hermes-wing": [
+    "眉上一片小小的翅膀，羽毛向後收起，像已經在路上。",
+    "A small wing on the brow, its feathers laid back as if already on its way.",
+    "Une petite aile sur le sourcil, ses plumes couchées comme si elle était déjà en route.",
+    "Una piccola ala sul sopracciglio, con le piume all’indietro come se fosse già in viaggio.",
+    "Un ala pequeña en la ceja, con las plumas hacia atrás como si ya estuviera en camino.",
+  ],
+  "myth-gungnir-cuff": [
+    "永不落空的長槍橫在眉上，符文環發著光。",
+    "The spear that never misses, laid along the brow, its rune bands glowing.",
+    "La lance qui ne manque jamais sa cible, posée le long du sourcil, ses bagues de runes luisantes.",
+    "La lancia che non manca mai il bersaglio, posata lungo il sopracciglio, con gli anelli di rune che brillano.",
+    "La lanza que nunca falla, tendida sobre la ceja, con sus anillos de runas brillando.",
+  ],
+  "myth-brisingamen": [
+    "愛之女神願意付出一切換來的琥珀火焰項鍊。",
+    "The necklace of amber flames the goddess of love would give anything for.",
+    "Le collier de flammes d’ambre pour lequel la déesse de l’amour aurait tout donné.",
+    "La collana di fiamme d’ambra per cui la dea dell’amore avrebbe dato qualsiasi cosa.",
+    "El collar de llamas de ámbar por el que la diosa del amor lo habría dado todo.",
+  ],
+  "myth-lamassu-pendant": [
+    "金色牌飾上，守護神獸的大翅膀在青金石上展開。",
+    "A gold plaque with the guardian’s great wing raised over lapis.",
+    "Une plaque d’or où la grande aile du gardien se déploie sur le lapis.",
+    "Una placca d’oro con la grande ala del guardiano spiegata sul lapislazzuli.",
+    "Una placa de oro con la gran ala del guardián desplegada sobre el lapislázuli.",
+  ],
+  "myth-ninetail-pendant": [
+    "月白色的新月，展開九條紫色火焰般的尾巴。",
+    "A moon-white crescent with nine tails of violet fire fanning out.",
+    "Un croissant blanc de lune d’où s’ouvrent neuf queues de feu violet.",
+    "Una falce bianca di luna da cui si aprono nove code di fuoco viola.",
+    "Una luna creciente blanca de la que se abren nueve colas de fuego violeta.",
+  ],
+};
+
 export const MYTHIC_ITEMS: readonly MythicItem[] = ROWS.map(([id, slot, origin, tone, zh, en, fr, it, es]) => ({
   id, slot, origin, tone,
+  intro: (([izh, ien, ifr, iit, ies]) => ({ "traditional-chinese": izh, english: ien, french: ifr, italian: iit, spanish: ies }))(INTROS[id]),
   country: "basic",
   /* Never sold; the database will not sell it either. */
   price: 0,
@@ -83,4 +328,8 @@ const MYTHIC_IDS = new Set(MYTHIC_ITEMS.map(item => item.id));
 
 export function isMythic(id: string | null | undefined): boolean {
   return !!id && MYTHIC_IDS.has(id);
+}
+
+export function mythicItem(id: string | null | undefined): MythicItem | null {
+  return id ? MYTHIC_ITEMS.find(item => item.id === id) ?? null : null;
 }

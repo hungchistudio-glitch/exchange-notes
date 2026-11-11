@@ -22,16 +22,34 @@ import { progress as vaultProgress } from "@/lib/wordvault/presentation";
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => "english" }));
 vi.mock("@/lib/speech", () => ({ speak: vi.fn(), speechSupported: () => true, stopSpeech: vi.fn() }));
 vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => undefined }));
-vi.mock("@/components/hangyumi/HangyumiStage", () => ({ default: () => <div data-testid="gallows" /> }));
-vi.mock("@/components/wordvault/WordvaultStage", () => ({ default: () => <div data-testid="vault" /> }));
+/* Hangyumi's page waits for its first line to come to rest: at once here. */
+vi.mock("@/components/hangyumi/HangyumiStage", async () => {
+  const { useEffect } = await import("react");
+  function Gallows({ dealt, onArrived }: { dealt: boolean; onArrived: () => void }) {
+    useEffect(() => { if (dealt) onArrived(); }, [dealt, onArrived]);
+    return <div data-testid="gallows" />;
+  }
+  return { default: Gallows };
+});
+/* Wordvault's page waits for its Yumi to land: the stand-in lands at once. */
+vi.mock("@/components/wordvault/WordvaultStage", async () => {
+  const { useEffect } = await import("react");
+  function Stage({ dealt, dressed, onArrived }: { dealt: boolean; dressed: boolean; onArrived: () => void }) {
+    useEffect(() => { if (dealt && dressed) onArrived(); }, [dealt, dressed, onArrived]);
+    return <div data-testid="vault" />;
+  }
+  return { default: Stage };
+});
 vi.mock("@/components/shop/EnergyCookie", () => ({ default: () => <span aria-hidden="true" /> }));
 vi.mock("@/components/shop/ShopThumb", () => ({ default: ({ item }: { item: { id: string } }) => <span data-testid="thumb" data-item={item.id} /> }));
 /* jsdom has no WebGL: the studio cannot be built, and the flat chart stands in. */
 vi.mock("@/lib/starweaver/studio", () => ({ createStarweaverStudio: () => null }));
-const liquid = vi.hoisted(() => ({ flows: [] as Array<{ kind: string; from: DOMRect | null }> }));
+/* No WebGL here: the reveal keeps the relic's shop picture. */
+vi.mock("@/lib/starweaver/relicShowcase", () => ({ createRelicShowcase: () => null }));
+const liquid = vi.hoisted(() => ({ flows: [] as Array<{ kind: string; from: DOMRect | null; game?: string }> }));
 vi.mock("@/lib/starweaver/liquid", async importOriginal => ({
   ...(await importOriginal<typeof import("@/lib/starweaver/liquid")>()),
-  flowLiquid: (kind: string, from: DOMRect | null) => liquid.flows.push({ kind, from }),
+  flowLiquid: (kind: string, from: DOMRect | null, game?: string) => liquid.flows.push({ kind, from, game }),
 }));
 
 const WORDS: PracticeWord[] = [
@@ -159,25 +177,53 @@ describe("the screen", () => {
     expect(within(progress).getByText("Relics 0 / 17")).toBeInTheDocument();
   });
 
-  it("on the seventh shows the relic it brought back, and puts it on when asked", async () => {
+  it("on the seventh shows the relic whole, with its seal and a line about it, and puts it on when asked", async () => {
     const { wearPiece } = play(service({ voyages: 6, pick: ids => ids.includes("sw-orbit-drop") ? "sw-orbit-drop" : ids[0] }));
     await screen.findByText("a round fruit");
     for (const char of ["a", "p", "l", "e"]) await guess(char);
     expect(await screen.findByText("The star gate opens!")).toBeInTheDocument();
-    expect(screen.getByText("Brought back from the voyage")).toBeInTheDocument();
-    expect(screen.getByText("Orbit Drop")).toBeInTheDocument();
-    expect(screen.getByTestId("thumb")).toHaveAttribute("data-item", "sw-orbit-drop");
-    fireEvent.click(screen.getByRole("button", { name: "Wear it" }));
+    const reveal = await screen.findByRole("dialog", { name: "Orbit Drop" });
+    expect(within(reveal).getByText("Brought back from the voyage")).toBeInTheDocument();
+    expect(within(reveal).getByText("Seal 04 · Starwoven Relic")).toBeInTheDocument();
+    expect(reveal).toHaveAccessibleDescription("A silver orbit wrapped round a small teardrop crystal, like a captured moon.");
+    expect(within(reveal).getByTestId("thumb")).toHaveAttribute("data-item", "sw-orbit-drop");
+    // Focus comes into the reveal, on its first way out.
+    expect(within(reveal).getByRole("button", { name: "Wear it" })).toHaveFocus();
+    fireEvent.click(within(reveal).getByRole("button", { name: "Wear it" }));
     expect(wearPiece).toHaveBeenCalledWith("sw-orbit-drop");
-    expect(await screen.findByRole("button", { name: "Wearing it" })).toBeDisabled();
+    expect(await within(reveal).findByRole("button", { name: "Wearing it" })).toBeDisabled();
   });
 
-  it("carries on to the next word from the relic card", async () => {
+  it("carries on to the next word from the reveal", async () => {
     play(service({ voyages: 6 }));
     await screen.findByText("a round fruit");
     for (const char of ["a", "p", "l", "e"]) await guess(char);
-    fireEvent.click(await screen.findByRole("button", { name: "Carry on" }));
+    const reveal = await screen.findByRole("dialog");
+    fireEvent.click(within(reveal).getByRole("button", { name: "Carry on" }));
     expect(await screen.findByText("honest and direct")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("closes the reveal, with its button or Escape, onto the result and its relic card", async () => {
+    play(service({ voyages: 6, pick: ids => ids.includes("sw-orbit-drop") ? "sw-orbit-drop" : ids[0] }));
+    await screen.findByText("a round fruit");
+    for (const char of ["a", "p", "l", "e"]) await guess(char);
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByText("Orbit Drop")).toBeInTheDocument();
+    expect(screen.getByText("Brought back from the voyage")).toBeInTheDocument();
+    // It does not come back by itself; the card carries on as before.
+    fireEvent.click(screen.getByRole("button", { name: "Carry on" }));
+    expect(await screen.findByText("honest and direct")).toBeInTheDocument();
+  });
+
+  it("closes on Escape", async () => {
+    play(service({ voyages: 6 }));
+    await screen.findByText("a round fruit");
+    for (const char of ["a", "p", "l", "e"]) await guess(char);
+    await screen.findByRole("dialog");
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
   it("says nothing about relics on an ordinary word", async () => {
@@ -187,6 +233,7 @@ describe("the screen", () => {
     await screen.findByText("The star gate opens!");
     expect(screen.queryByText("Brought back from the voyage")).toBeNull();
     expect(screen.queryByRole("button", { name: "Wear it" })).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("never shows Wordvault's streak or chests", async () => {
@@ -304,24 +351,33 @@ describe("the show, planned from the round before and after", () => {
 });
 
 describe("the liquid light", () => {
-  it("flows from a right letter's key, and larger for the word", async () => {
+  it("flows from a right letter's key, larger for the word, and in dark red for a miss", async () => {
     play(service({ voyages: 1 }));
     await screen.findByText("a round fruit");
     await guess("a");
-    expect(liquid.flows.at(-1)).toEqual(expect.objectContaining({ kind: "letter" }));
+    expect(liquid.flows.at(-1)).toEqual(expect.objectContaining({ kind: "letter", game: "starweaver" }));
     expect(liquid.flows.at(-1)!.from).not.toBeNull();
     await guess("z");
-    expect(liquid.flows).toHaveLength(1);
+    expect(liquid.flows.at(-1)).toEqual(expect.objectContaining({ kind: "miss", game: "starweaver" }));
+    expect(liquid.flows).toHaveLength(2);
     for (const char of ["p", "l", "e"]) await guess(char);
     expect(liquid.flows.at(-1)).toEqual(expect.objectContaining({ kind: "word" }));
   });
 
-  it("is Starweaver's alone", async () => {
-    const loadWallet = vi.fn(async () => ({ outfit: {}, balance: 240 }));
-    render(<HangyumiGame service={service()} defaultLanguage="en" loadWallet={loadWallet} game="hangyumi" />);
-    await screen.findByText("a round fruit");
-    await guess("a");
-    expect(liquid.flows).toEqual([]);
+  it("flows in the other two games too, in their own colours", async () => {
+    for (const game of ["hangyumi", "wordvault"] as const) {
+      liquid.flows.length = 0;
+      const loadWallet = vi.fn(async () => ({ outfit: {}, balance: 240 }));
+      const { unmount } = render(<HangyumiGame service={service()} defaultLanguage="en" loadWallet={loadWallet} game={game} />);
+      await screen.findByText("a round fruit");
+      await guess("a");
+      await guess("z");
+      expect(liquid.flows).toEqual([
+        expect.objectContaining({ kind: "letter", game }),
+        expect.objectContaining({ kind: "miss", game }),
+      ]);
+      unmount();
+    }
   });
 
   it("asks the overlay for a flow from the key towards the stage", async () => {
@@ -331,6 +387,6 @@ describe("the liquid light", () => {
     window.addEventListener(LIQUID_EVENT, listener);
     flowLiquid("word", new DOMRect(10, 700, 40, 50));
     window.removeEventListener(LIQUID_EVENT, listener);
-    expect(heard).toEqual([expect.objectContaining({ kind: "word", from: { x: 30, y: 725 } })]);
+    expect(heard).toEqual([expect.objectContaining({ kind: "word", game: "starweaver", from: { x: 30, y: 725 } })]);
   });
 });

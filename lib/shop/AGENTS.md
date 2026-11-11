@@ -2,8 +2,12 @@
 
 - **The catalogue** is `catalog.ts`; the cultural pieces are in
   `culturalCollection.ts`. `SHOP_ITEMS` is the 333 on the shelves; the 33
-  Mythic Vault pieces (`mythicCollection.ts`) are not in it. They are won
-  from Wordvault's premium chest, never sold (their database rows are
+  Mythic Vault pieces (`mythicCollection.ts`), Starweaver's 17 relics
+  (`starweaverCollection.ts`) and Hangyumi's 24 Nightscale pieces
+  (`nightscaleCollection.ts`) are not in it. They are won in the games
+  (the vault's from Wordvault's premium chest, the relics by every seventh
+  Starweaver word, Nightscale by every third Hangyumi word), each drawn from
+  its own `reward_pool` by name, never sold (their database rows are
   `limited` and not `available`), and every lookup by id still knows them so
   they can be worn. Every piece is built in code by `lib/yumi3d/`
   (see `lib/yumi3d/AGENTS.md`).

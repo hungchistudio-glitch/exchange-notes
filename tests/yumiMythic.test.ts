@@ -79,6 +79,18 @@ describe("the vault's catalogue", () => {
   });
 });
 
+describe("the vault's reveal (2026-11-11)", () => {
+  it("says a line about each piece, in all five languages, the Chinese Traditional", () => {
+    for (const item of MYTHIC_ITEMS) {
+      const intros = Object.values(item.intro);
+      expect(intros.filter(line => line.trim().length > 12), item.id).toHaveLength(5);
+      expect(new Set(intros).size, item.id).toBe(5);
+      expect(SIMPLIFIED.test(item.intro["traditional-chinese"]), item.intro["traditional-chinese"]).toBe(false);
+      expect(item.intro.english.length, item.id).toBeLessThan(150);
+    }
+  });
+});
+
 describe("on the rig", () => {
   it("builds every piece with finite, bounded geometry inside the phone's budget", () => {
     stubCanvas();

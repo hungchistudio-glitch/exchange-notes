@@ -4,7 +4,7 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 import useReducedMotion from "@/hooks/useReducedMotion";
-import { FRAGMENT, LIQUID, LIQUID_EVENT, VERTEX, type LiquidFlowRequest } from "@/lib/starweaver/liquid";
+import { FRAGMENT, LIQUID, LIQUID_EVENT, VERTEX, paletteFor, type LiquidFlowRequest } from "@/lib/starweaver/liquid";
 
 import styles from "@/components/hangyumi/Hangyumi.module.css";
 
@@ -15,9 +15,12 @@ const RESOLUTION = 0.5;
 /* Mounted on the client only: the overlay is portalled to the body. */
 const subscribeNothing = () => () => {};
 
+const UNIFORMS = ["uRes", "uFrom", "uTo", "uT", "uSeed", "uStrength", "uWidth", "uMiss", "uDeep", "uBody", "uTint", "uCrest"] as const;
+type UniformName = (typeof UNIFORMS)[number];
+
 type Gl = {
   gl: WebGLRenderingContext;
-  uniforms: Record<"uRes" | "uFrom" | "uTo" | "uT" | "uSeed" | "uStrength" | "uWidth", WebGLUniformLocation | null>;
+  uniforms: Record<UniformName, WebGLUniformLocation | null>;
   dispose: () => void;
 };
 
@@ -48,13 +51,9 @@ function setUp(canvas: HTMLCanvasElement): Gl | null {
   gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  const uniform = (name: string) => gl.getUniformLocation(program, name);
   return {
     gl,
-    uniforms: {
-      uRes: uniform("uRes"), uFrom: uniform("uFrom"), uTo: uniform("uTo"), uT: uniform("uT"),
-      uSeed: uniform("uSeed"), uStrength: uniform("uStrength"), uWidth: uniform("uWidth"),
-    },
+    uniforms: Object.fromEntries(UNIFORMS.map(name => [name, gl.getUniformLocation(program, name)])) as Gl["uniforms"],
     dispose: () => {
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
@@ -65,11 +64,12 @@ function setUp(canvas: HTMLCanvasElement): Gl | null {
 }
 
 /**
- * The liquid light over the whole screen (lib/starweaver/liquid.ts): a
- * fixed canvas that takes no taps and is drawn only while a flow plays,
- * hidden otherwise so the page composites nothing extra. Where WebGL is
- * not to be had, or under reduced motion, a soft glow at the key fades in
- * and out instead: no movement, the same news.
+ * The liquid light over the whole screen, in all three games
+ * (lib/starweaver/liquid.ts): a fixed canvas that takes no taps and is
+ * drawn only while a flow plays, hidden otherwise so the page composites
+ * nothing extra. Where WebGL is not to be had, or under reduced motion, a
+ * soft glow at the key fades in and out instead, and a miss blushes the
+ * screen's edge red: no movement, the same news.
  */
 export default function LiquidFlow() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -87,6 +87,7 @@ export default function LiquidFlow() {
       glow.style.setProperty("--liquid-x", `${request.from.x}px`);
       glow.style.setProperty("--liquid-y", `${request.from.y}px`);
       glow.dataset.kind = request.kind;
+      glow.dataset.game = request.game;
       glow.dataset.on = "false";
       void glow.offsetWidth;
       glow.dataset.on = "true";
@@ -123,6 +124,12 @@ export default function LiquidFlow() {
       gl.uniform1f(uniforms.uSeed, Math.random() * 10);
       gl.uniform1f(uniforms.uStrength, cosmic ? settings.cosmicStrength : settings.strength);
       gl.uniform1f(uniforms.uWidth, settings.width);
+      gl.uniform1f(uniforms.uMiss, request.kind === "miss" ? 1 : 0);
+      const palette = paletteFor(request);
+      gl.uniform3fv(uniforms.uDeep, palette.deep);
+      gl.uniform3fv(uniforms.uBody, palette.body);
+      gl.uniform3fv(uniforms.uTint, palette.tint);
+      gl.uniform3fv(uniforms.uCrest, palette.crest);
       if (state.frame) cancelAnimationFrame(state.frame);
       canvas.dataset.on = "true";
       const started = performance.now();
