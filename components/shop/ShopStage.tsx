@@ -49,6 +49,19 @@ function wake(until: { current: number }, ms = 1600) {
 const ZOOM_MIN = 0.7;
 const ZOOM_MAX = 1.8;
 
+/* Yumi's way onto the stand (Chi, 2026-11-12: "光柱傳送降落"): a beam
+   drops onto the pad, points of light pour down it, she comes down into
+   place out of them, and the pad's rim and its three lights pulse as she
+   lands. The first time she is drawn, a beat after the page opens so the
+   shop's scan has reached the stand; about a second and a half; a touch
+   on the stand ends it. Not under reduced motion. */
+const BEAM_AFTER_MS = 240;
+const BEAM_MS = 1600;
+const MOTES = Array.from({ length: 16 }, (_, i) => ({
+  x: `${Math.round(((i * 37) % 17 - 8) * 5.5)}px`,
+  delay: `${80 + ((i * 53) % 11) * 55}ms`,
+}));
+
 export default function ShopStage({
   outfit,
   isCosmic,
@@ -81,6 +94,8 @@ export default function ShopStage({
   const [failed, setFailed] = useState(false);
   const [turned, setTurned] = useState(false);
   const [view, setView] = useState<YumiView | null>("three-quarter");
+  const [beam, setBeam] = useState<"off" | "wait" | "in">("off");
+  const mountedAt = useRef(0);
 
   const outfitRef = useRef(outfit);
   const cosmicRef = useRef(isCosmic);
@@ -104,6 +119,7 @@ export default function ShopStage({
     let handle: YumiSceneHandle | null = null;
     let raf = 0;
     let cancelled = false;
+    mountedAt.current = performance.now();
     let onScreen = true;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -150,6 +166,8 @@ export default function ShopStage({
         handle.setOutfit?.(outfitRef.current);
         handle.setView?.("three-quarter", true);
         setLive(true);
+        /* Held out of sight until her beam comes for her. */
+        if (!reduced) setBeam("wait");
         if (process.env.NODE_ENV === "development") {
           // For checking the stand from a script while the window is hidden.
           (window as unknown as { __yumiStand?: unknown }).__yumiStand = {
@@ -184,6 +202,18 @@ export default function ShopStage({
     };
   }, []);
 
+  /* The beam comes once she is drawn, a beat after the page opened. */
+  useEffect(() => {
+    if (beam === "wait") {
+      const timer = window.setTimeout(() => setBeam("in"), Math.max(0, mountedAt.current + BEAM_AFTER_MS - performance.now()));
+      return () => window.clearTimeout(timer);
+    }
+    if (beam === "in") {
+      const timer = window.setTimeout(() => setBeam("off"), BEAM_MS);
+      return () => window.clearTimeout(timer);
+    }
+  }, [beam]);
+
   function zoomBy(factor: number) {
     wake(activeUntil, 600);
     zoomRef.current = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomRef.current * factor));
@@ -206,6 +236,8 @@ export default function ShopStage({
   }
 
   function onPointerDown(event: PointerEvent<HTMLCanvasElement>) {
+    /* Taken in hand: she is simply there. */
+    if (beam !== "off") setBeam("off");
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     event.currentTarget.setPointerCapture?.(event.pointerId);
     // Her frames first while she is in hand; the catalogue's pictures wait.
@@ -272,13 +304,13 @@ export default function ShopStage({
   }
 
   return (
-    <div ref={boxRef} className={styles.stage}>
+    <div ref={boxRef} className={styles.stage} data-holo-frame="">
       <OrbitalBackdrop scene={scene} celebrateKey={celebrateKey} />
       {/* A boutique plinth: a spotlight from above, polished stone and a
           contact shadow under her (Chi, 2026-10-13). Her live reflection
           was dropped: copying each 3D frame back for it was the costliest
           thing an iPhone did here. */}
-      <StationDock />
+      <StationDock landing={beam === "in"} />
       <div className={styles.astrolabe} aria-hidden="true">
         <svg viewBox="0 0 400 400" fill="none">
           <circle cx="200" cy="200" r="174" />
@@ -297,10 +329,22 @@ export default function ShopStage({
         <p className={styles.stageNote}>{labels.unavailable}</p>
       )}
 
+      {beam === "in" && (
+        <div className={styles.beam} aria-hidden="true">
+          <span className={styles.beamColumn} />
+          <span className={styles.beamMotes}>
+            {MOTES.map((mote, i) => (
+              <i key={i} style={{ ["--mx" as string]: mote.x, animationDelay: mote.delay }} />
+            ))}
+          </span>
+        </div>
+      )}
+
       <canvas
         ref={canvasRef}
         className={styles.stageCanvas}
         data-live={live ? "true" : "false"}
+        data-beam={beam}
         tabIndex={live ? 0 : -1}
         role="img"
         aria-label={labels.stage}

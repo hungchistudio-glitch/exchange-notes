@@ -3,7 +3,7 @@
 import { ArrowLeft, BookmarkPlus, Check, ChevronRight, Globe, Layers, Lock, Moon, SlidersHorizontal, Sun, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import HangyumiGlyph from "@/components/hangyumi/HangyumiGlyph";
@@ -69,6 +69,7 @@ import { setWornOutfit } from "@/lib/shop/wornOutfit";
 
 import EnergyCookie from "./EnergyCookie";
 import EnergyReward from "./EnergyReward";
+import HoloEntrance from "./HoloEntrance";
 import ShopStage from "./ShopStage";
 import ShopCollectionSwitch, { SHOP_COLLECTION_TILES } from "./ShopCollectionSwitch";
 import ShopFilterSheet from "./ShopFilterSheet";
@@ -113,18 +114,24 @@ const without = (group: FilterGroup, option: string) => (current: ShopFilters) =
 
 type Availability = "loading" | "open" | "closed" | "failed";
 
+const subscribeNothing = () => () => {};
+
 export default function YumiShop({
   wallet,
   isCosmic,
   onToggleMode,
   preview = false,
   startCollection = "all",
+  replayEntrance = false,
 }: {
   wallet: ShopWallet;
   isCosmic: boolean;
   onToggleMode: () => void;
   preview?: boolean;
   startCollection?: ShopCollection;
+  /** The review screen: the scan even on a page the server drew, which is
+      held out of sight until it starts. */
+  replayEntrance?: boolean;
 }) {
   const { t, language, locale } = useTranslation();
   const copy = t.shop;
@@ -172,6 +179,17 @@ export default function YumiShop({
     [sceneChoice, weather, quarter],
   );
   const pageRef = useRef<HTMLDivElement>(null);
+  /* The way in (Chi, 2026-11-12): a holographic scan, every visit, about a
+     second and a half (HoloEntrance). "idle" is the server's page and the
+     old gentle rise; a visit the server already drew (a reload) keeps that,
+     since the page is on screen before the scan could start. */
+  const [holo, setHolo] = useState<"idle" | "pending" | "scan" | "done">(replayEntrance ? "pending" : "idle");
+  const drawnByServer = useRef(useSyncExternalStore(subscribeNothing, () => false, () => true));
+  useLayoutEffect(() => {
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    setHolo(reduced || (drawnByServer.current && !replayEntrance) ? "done" : "scan");
+  }, [replayEntrance]);
+  const endHolo = useCallback(() => setHolo("done"), []);
   const topRef = useRef<HTMLDivElement>(null);
   const catalogRef = useRef<HTMLElement>(null);
   useShopReveal(catalogRef, `.${styles.grid} > li, .${styles.shelfRow} > li`);
@@ -497,6 +515,7 @@ export default function YumiShop({
       <button
         type="button"
         className={styles.card}
+        data-holo-frame=""
         data-collection={collectionOf(item)}
         data-mythic={isMythic(item.id) ? "owned" : undefined}
         data-relic={isStarweaver(item.id) ? "owned" : undefined}
@@ -533,6 +552,7 @@ export default function YumiShop({
       <button
         type="button"
         className={styles.card}
+        data-holo-frame=""
         data-mythic="sealed"
         aria-label={`${copy.vault.locked} · ${copy.vault.title}`}
         onClick={() => setNotice(copy.vault.hint)}
@@ -554,6 +574,7 @@ export default function YumiShop({
       <button
         type="button"
         className={styles.card}
+        data-holo-frame=""
         data-relic="sealed"
         aria-label={`${seal} · ${copy.vault.locked} · ${copy.relics.title}`}
         onClick={() => setNotice(copy.relics.hint)}
@@ -599,6 +620,7 @@ export default function YumiShop({
       <button
         type="button"
         className={styles.card}
+        data-holo-frame=""
         data-nightscale="sealed"
         aria-label={`${seal} · ${copy.vault.locked} · ${copy.nightscale.title}`}
         onClick={() => setNotice(copy.nightscale.hint)}
@@ -659,7 +681,8 @@ export default function YumiShop({
   }
 
   return (
-    <div ref={pageRef} className={styles.page} data-own-arrival="">
+    <div ref={pageRef} className={styles.page} data-own-arrival="" data-holo={holo}>
+      {holo === "scan" && <HoloEntrance rootRef={pageRef} onDone={endHolo} />}
       <div ref={topRef} className={styles.top} data-shrunk="false">
         <header className={styles.header}>
           <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={() => void goBack()}>
@@ -670,7 +693,7 @@ export default function YumiShop({
               lacquered plate on two rods, the name lit in gilt, and where
               the station is under it. */}
           <div className={styles.signArea}>
-            <h1 ref={signRef} className={styles.sign}>
+            <h1 ref={signRef} className={styles.sign} data-holo-frame="">
               <span className={styles.signHooks} aria-hidden="true" />
               <span className={styles.signName}>{copy.title}</span>
               <span className={styles.signOrbit} aria-hidden="true">
@@ -692,6 +715,7 @@ export default function YumiShop({
             <button
               type="button"
               className={styles.balance}
+              data-holo-frame=""
               aria-haspopup="dialog"
               aria-label={`${cookies(state.balance)}. ${copy.energy.open}`}
               onClick={() => setSupplyOpen(true)}
@@ -788,7 +812,7 @@ export default function YumiShop({
         {/* Stuck under the shrunk stand, so a department is one tap away
             from anywhere in the catalogue. */}
         <nav ref={navRef} className={styles.nav} aria-label={copy.browse.all}>
-          <div className={styles.tabs} role="group" aria-label={copy.browse.all}>
+          <div className={styles.tabs} role="group" aria-label={copy.browse.all} data-holo-frame="">
             {(["all", ...SHOP_DEPARTMENTS] as const).map(key => (
               <button key={key} type="button" className={styles.tab} aria-pressed={!newOnly && category === key} onClick={() => chooseDepartment(key)}>
                 {key === "all" ? copy.browse.all : copy.browse.departments[key]}

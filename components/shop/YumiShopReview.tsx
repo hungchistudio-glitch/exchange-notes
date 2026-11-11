@@ -19,7 +19,7 @@ import YumiShop from "./YumiShop";
  * CosmicYumiReview for why a review page must not write the reader's real
  * mode).
  */
-export default function YumiShopReview({ startCosmic, sky = null, collection03 = false, vault = 0, relics = 0, nightscale = 0 }: {
+export default function YumiShopReview({ startCosmic, sky = null, collection03 = false, vault = 0, relics = 0, nightscale = 0, entrance = true }: {
   startCosmic: boolean; sky?: SceneChoice | null; collection03?: boolean;
   /** How many of the Mythic Vault's pieces the preview starts with. */
   vault?: number;
@@ -27,6 +27,8 @@ export default function YumiShopReview({ startCosmic, sky = null, collection03 =
   relics?: number;
   /** How many Nightscale pieces the preview starts with. */
   nightscale?: number;
+  /** Play the shop's way in on this link too (a link is drawn by the server). */
+  entrance?: boolean;
 }) {
   const wallet = useMemo(
     () => createPreviewWallet(collection03 ? 3300 : 240, [
@@ -61,6 +63,7 @@ export default function YumiShopReview({ startCosmic, sky = null, collection03 =
       onToggleMode={() => setCosmic(value => !value)}
       preview
       startCollection={collection03 ? "collection03" : "all"}
+      replayEntrance={entrance}
     />
   );
 }

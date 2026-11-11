@@ -14,7 +14,11 @@ import styles from "./StationDock.module.css";
    Standard pad.
    ========================================================= */
 
-export default function StationDock({ className }: { className?: string }) {
+export default function StationDock({ className, landing = false }: {
+  className?: string;
+  /** Yumi is beaming down (the shop's way in): the rim and lights pulse as she lands. */
+  landing?: boolean;
+}) {
   return (
     <div className={`${styles.dock} ${className ?? ""}`} aria-hidden="true">
       <div className={styles.spotlight} data-part="spotlight" />
@@ -22,6 +26,8 @@ export default function StationDock({ className }: { className?: string }) {
         <span className={styles.plinthSide} />
         <span className={styles.plinthTop} />
         <span className={styles.contactShadow} />
+        {landing && <span className={styles.landLights} />}
+        {landing && <span className={styles.landRing} />}
       </div>
     </div>
   );

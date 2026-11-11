@@ -2222,6 +2222,27 @@
   box-shadow: 0 8px 24px -10px #e7c27acc;
 }
 
+/* A medium chest's shelf piece: Wordvault's own navy and brass. */
+.reveal[data-collection="chest"] {
+  color: #f6f0e2;
+  background: radial-gradient(circle at 50% 36%, #1c2a44f2 0%, #0f1626f5 42%, #070a12f7 72%);
+}
+
+.reveal[data-collection="chest"] .revealBurst {
+  background: radial-gradient(circle, #fff6dcd9 0%, #d9b45e73 10%, #3a5a9a26 24%, #d9b45e00 42%);
+}
+
+.reveal[data-collection="chest"] .revealTitle,
+.reveal[data-collection="chest"] .revealSeal {
+  color: #e6cf98cc;
+}
+
+.reveal[data-collection="chest"] .revealPrimary {
+  color: #1c1608;
+  background: linear-gradient(180deg, #fff1c8, #d9b45e);
+  box-shadow: 0 8px 24px -10px #d9b45ecc;
+}
+
 .reveal[data-reduced="true"] .revealBurst {
   display: none;
 }

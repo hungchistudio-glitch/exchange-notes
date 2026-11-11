@@ -16,9 +16,9 @@ import styles from "@/components/hangyumi/Hangyumi.module.css";
 export type RevealPiece = ShopItem & { intro: ShopItem["names"] };
 
 /** Whose piece: each collection in its own light. */
-export type RevealCollection = "starweaver" | "nightscale" | "mythic";
+export type RevealCollection = "starweaver" | "nightscale" | "mythic" | "chest";
 
-const PALETTE: Record<RevealCollection, RevealPalette> = { starweaver: "ice", nightscale: "gold", mythic: "gilt" };
+const PALETTE: Record<RevealCollection, RevealPalette> = { starweaver: "ice", nightscale: "gold", mythic: "gilt", chest: "gilt" };
 
 type Props = {
   item: RevealPiece;

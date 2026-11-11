@@ -3108,6 +3108,8 @@ const english: TranslationDictionary = {
     rewardItem: "New in your wardrobe",
     rewardLimited: "From the Mythic Vault",
     revealSeal: "{origin} · The Mythic Vault",
+    revealShelfSeal: "Medium chest · Yumi Shop",
+    revealShelfIntro: "The chest brought you a piece from the shop’s shelves. It’s in your wardrobe now.",
     origins: {
       greek: "Greek myth",
       norse: "Norse myth",

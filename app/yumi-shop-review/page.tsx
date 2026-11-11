@@ -12,7 +12,9 @@ import { reviewRouteOnly } from "@/lib/reviewRoutes";
  * sky, and ?mode=cosmic in Cosmic, so each can be looked at by link.
  * ?vault=5 starts with the Mythic Vault's first five pieces won, and
  * ?relics=4 with the first four Starwoven Relics found, and ?nightscale=6
- * with the first six Nightscale pieces unlocked.
+ * with the first six Nightscale pieces unlocked. The shop's holographic way
+ * in plays on every load here (a link is drawn by the server, which the
+ * live shop skips); ?entrance=0 leaves it out.
  */
 export const metadata = {
   title: "Yumi shop review",
@@ -20,7 +22,7 @@ export const metadata = {
 };
 
 export default async function YumiShopReviewPage({ searchParams }: {
-  searchParams: Promise<{ sky?: string; mode?: string; collection?: string; vault?: string; relics?: string; nightscale?: string }>;
+  searchParams: Promise<{ sky?: string; mode?: string; collection?: string; vault?: string; relics?: string; nightscale?: string; entrance?: string }>;
 }) {
   reviewRouteOnly();
   const [storedMode, params] = await Promise.all([getServerInterfaceMode(), searchParams]);
@@ -33,6 +35,7 @@ export default async function YumiShopReviewPage({ searchParams }: {
     <YumiShopReview
       startCosmic={cosmic} sky={sky} collection03={params.collection === "collection03"}
       vault={vault} relics={relics} nightscale={nightscale}
+      entrance={params.entrance !== "0"}
     />
   );
 }

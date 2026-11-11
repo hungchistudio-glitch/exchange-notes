@@ -2910,6 +2910,8 @@ const french: TranslationDictionary = {
     rewardItem: "Nouveau dans votre garde-robe",
     rewardLimited: "Du Trésor des Mythes",
     revealSeal: "{origin} · Le Trésor des Mythes",
+    revealShelfSeal: "Coffre moyen · Boutique Yumi",
+    revealShelfIntro: "Le coffre vous apporte une pièce des étagères de la boutique. Elle est déjà dans votre garde-robe.",
     origins: {
       greek: "Mythe grec",
       norse: "Mythe nordique",

@@ -246,6 +246,8 @@ describe("Wordvault's chests on the screen", () => {
     for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
     expect(await screen.findByRole("heading", { name: "The vault opens!" })).toBeInTheDocument();
     expect(screen.getByText("+90 cookies, beyond today's 333")).toBeInTheDocument();
+    // The piece is shown whole first; under the reveal, the card names it too.
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Close" }));
     expect(screen.getByText(SHOP_ITEMS[0].names.english)).toBeInTheDocument();
     expect(screen.getByTestId("thumb")).toHaveAttribute("data-item", SHOP_ITEMS[0].id);
     expect(screen.getByRole("img", { name: /^4 words won in a row/ })).toBeInTheDocument();
@@ -268,11 +270,15 @@ describe("Wordvault's chests on the screen", () => {
     expect(screen.getByText(/From the Mythic Vault/)).toBeInTheDocument();
   });
 
-  it("shows no reveal for a medium chest's piece from the shelves", async () => {
+  it("shows a medium chest's piece from the shelves whole too (Chi, 2026-11-12)", async () => {
     play(createPreviewHangyumi({ words: WORDS, delayMs: 0, streak: 3, pick: ids => ids[0] }));
     await screen.findByText("lasting a very short time");
     for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
     expect(await screen.findByText(/beyond today's 333/)).toBeInTheDocument();
-    expect(screen.queryByRole("dialog")).toBeNull();
+    const piece = SHOP_ITEMS[0];
+    const dialog = await screen.findByRole("dialog", { name: piece.names.english });
+    expect(dialog).toHaveAttribute("data-collection", "chest");
+    expect(within(dialog).getByText("Medium chest · Yumi Shop")).toBeInTheDocument();
+    expect(dialog).toHaveAccessibleDescription("The chest brought you a piece from the shop’s shelves. It’s in your wardrobe now.");
   });
 });

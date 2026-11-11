@@ -2910,6 +2910,8 @@ const italian: TranslationDictionary = {
     rewardItem: "Nuovo nel tuo guardaroba",
     rewardLimited: "Dal Tesoro dei Miti",
     revealSeal: "{origin} · Il Tesoro dei Miti",
+    revealShelfSeal: "Scrigno medio · Negozio Yumi",
+    revealShelfIntro: "Lo scrigno ti porta un pezzo dagli scaffali del negozio. È già nel tuo guardaroba.",
     origins: {
       greek: "Mito greco",
       norse: "Mito norreno",
