@@ -2961,6 +2961,7 @@ const spanish: TranslationDictionary = {
   },
   hangyumi: {
     title: "Hangyumi",
+    subtitle: "Una cuerda de escamas de noche",
     open: "Jugar a Hangyumi",
     back: "Volver",
     sound: "Efectos de sonido",
@@ -3170,16 +3171,17 @@ const spanish: TranslationDictionary = {
     today: "{earned} / {cap} galletas hoy",
     shared: "Los tres juegos comparten las 333 de hoy.",
     hangyumi: {
-      tagline: "Adivina la palabra, libera a Yumi",
-      detail: "Cada error cuelga su O, su I, su U.",
+      howTo: "Adivina la palabra; tres fallos cuelgan su O, I, U.",
+      reward: "Cada tercera palabra ganada desbloquea una pieza Escamas de noche.",
     },
     wordvault: {
-      tagline: "Adivina la palabra, abre el cofre",
-      detail: "Cada letra es un paso; la palabra es la llave.",
+      howTo: "Adivina la palabra; cada acierto es un paso hacia el cofre.",
+      reward: "Cuatro seguidas abren un cofre mediano; siete, uno prémium.",
+      streak: "Racha {count} / {total}",
     },
     starweaver: {
-      tagline: "Adivina la palabra, abre el portal estelar",
-      detail: "Cada letra teje el mapa; cada séptima palabra trae una reliquia.",
+      howTo: "Adivina la palabra; cada acierto teje el mapa estelar.",
+      reward: "Cada séptima palabra trae una Reliquia tejida de estrellas.",
     },
   },
   hello: {

@@ -1,13 +1,24 @@
 /*
   The games hub: Hangyumi's page and signboard (its tokens, its bar), with
-  two cards under it. The studio's card is ivory paper; the vault's is
-  the signboard's lacquered navy with gilt, so the two read apart at a
-  glance. The cards rise into place once, one after the other.
+  three cards under it (Chi, 2026-11-12: "同版型、各用遊戲配色"). One
+  layout in three games' colours: Hangyumi's ink and honey gold,
+  Wordvault's navy and brass, Starweaver's deep space and ice. All three
+  are dark in either interface mode, so they read as a set.
+
+  Each comes in its own way, once, in about a second (GamesHub.tsx). Only
+  transforms and opacity move, with no filter or blur, because Chi plays on
+  an iPhone.
 */
 
 .hub {
   gap: 14px;
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+/* The sign stays over Hangyumi's ropes and the star gate's ring. */
+.bar {
+  position: relative;
+  z-index: 2;
 }
 
 .choose {
@@ -20,6 +31,8 @@
 }
 
 .cards {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 14px;
   margin: 0;
@@ -28,70 +41,84 @@
 }
 
 .cards > li {
-  animation: card-in 560ms cubic-bezier(.2, .8, .2, 1) var(--card-delay, 0ms) backwards;
+  position: relative;
 }
 
-@keyframes card-in {
-  from { opacity: 0; transform: translateY(16px); }
-}
+/* ---------------------------------------------------------- the card */
 
 .card {
-  --card-ink: var(--hy-ink);
-  --card-muted: var(--hy-muted);
-  /* The key surface: paper in Standard, the deck's control grey in Cosmic. */
-  --card-art: var(--hy-key);
-  --card-accent: #c9a55a;
+  --card-ink: #f5ecd9;
+  --card-muted: #bcae95;
+  --card-accent: #e9b54d;
+  --card-ring: #e9b54d66;
+  --card-line: #e9b54d2e;
+  --card-art: #27221c;
+  --card-step: #f5ecd924;
 
   position: relative;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "art head go"
+    "body body body";
   align-items: center;
-  gap: 16px;
-  min-height: 8.5rem;
-  padding: 18px 18px 18px 16px;
-  border: 1px solid var(--hy-line);
+  column-gap: 14px;
+  row-gap: 14px;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid var(--card-line);
   border-radius: 22px;
-  background: linear-gradient(180deg, var(--hy-gloss), #0000 38%), var(--hy-card);
-  box-shadow: var(--hy-card-shadow), inset 0 1px 0 var(--hy-gloss);
   color: var(--card-ink);
   text-decoration: none;
-  transition: transform 200ms cubic-bezier(.3, 1.6, .5, 1), box-shadow 200ms ease;
+  transition: transform 200ms cubic-bezier(.3, 1.6, .5, 1);
 }
 
+/* Hangyumi: warm ink, honey gold, and a faint weave of night scales. */
+.card[data-game="hangyumi"] {
+  background:
+    radial-gradient(120% 90% at 88% 0%, #e9b54d24, #0000 60%),
+    radial-gradient(circle at 50% 0, #e9b54d08 0 6px, #0000 6.5px) 0 0 / 14px 9px,
+    linear-gradient(180deg, #1f1b16, #12100d);
+  box-shadow: 0 14px 28px -18px #000c, inset 0 0 0 1.5px #e9b54d3d, inset 0 1px 0 #ffffff14;
+}
+
+/* Wordvault: the signboard's lacquered navy, with brass. */
 .card[data-game="wordvault"] {
   --card-ink: #f4ead2;
-  --card-muted: #c9bfa6;
+  --card-muted: #c3b89e;
+  --card-accent: #ecc77c;
+  --card-ring: #c9a55a80;
+  --card-line: #c9a55a40;
   --card-art: #2a3955;
-  --card-accent: #f3d38a;
+  --card-step: #f4ead224;
 
-  border-color: #c9a55a73;
   background:
-    radial-gradient(120% 90% at 85% 0%, #f3d38a26, #0000 60%),
+    radial-gradient(120% 90% at 88% 0%, #f3d38a26, #0000 60%),
     linear-gradient(180deg, #24324a, #141d2c);
   box-shadow: 0 14px 28px -18px #141d2ccc, inset 0 0 0 1.5px #c9a55a59, inset 0 1px 0 #ffffff1f;
 }
 
-/* Starweaver: pale titanium and ice by day, obsidian with an ice seam in Cosmic. */
+/* Starweaver: deep space, a few stars, and an ice-cyan seam. */
 .card[data-game="starweaver"] {
-  --card-art: #e9eef0;
-  --card-accent: #5fb3c2;
-
-  border-color: #7cc4d14d;
-  background:
-    radial-gradient(120% 90% at 85% 0%, #9fdbe633, #0000 60%),
-    linear-gradient(180deg, #fbfbfa, #eef1f2);
-}
-
-:global(html[data-interface-mode="yumi-cosmic"]) .card[data-game="starweaver"] {
-  --card-ink: #e7e9ee;
-  --card-muted: #a9b0b8;
-  --card-art: #1a1e23;
-  --card-accent: #7cc4d1;
+  --card-ink: #e6f3f7;
+  --card-muted: #9db2bc;
+  --card-accent: #8fe6ff;
+  --card-ring: #8fe6ff66;
+  --card-line: #8fe6ff2e;
+  --card-art: #0e1828;
+  --card-step: #e6f3f724;
 
   background:
-    radial-gradient(120% 90% at 85% 0%, #2f6f7b40, #0000 60%),
-    linear-gradient(180deg, #15181c, #0d0f12);
-  box-shadow: 0 14px 28px -18px #000c, inset 0 0 0 1.5px #7cc4d133, inset 0 1px 0 #ffffff14;
+    radial-gradient(circle at 14% 22%, #ffffffb3 0 0.7px, #0000 1.3px),
+    radial-gradient(circle at 37% 78%, #ffffff8c 0 0.6px, #0000 1.2px),
+    radial-gradient(circle at 63% 16%, #d8f6ffb3 0 0.8px, #0000 1.4px),
+    radial-gradient(circle at 81% 64%, #ffffff80 0 0.6px, #0000 1.2px),
+    radial-gradient(circle at 92% 30%, #ffffffa6 0 0.7px, #0000 1.3px),
+    radial-gradient(circle at 52% 46%, #ffffff59 0 0.5px, #0000 1.1px),
+    radial-gradient(120% 90% at 88% 0%, #2f8fa838, #0000 60%),
+    radial-gradient(90% 120% at 0% 100%, #3b2f6e33, #0000 60%),
+    linear-gradient(180deg, #0c1424, #060a12);
+  box-shadow: 0 14px 28px -18px #000c, inset 0 0 0 1.5px #8fe6ff33, inset 0 1px 0 #ffffff14;
 }
 
 .card:active {
@@ -99,24 +126,25 @@
 }
 
 .card:focus-visible {
-  outline: 3px solid var(--hy-accent);
+  outline: 3px solid var(--card-accent);
   outline-offset: 3px;
 }
 
 .art {
+  grid-area: art;
   display: grid;
   place-items: center;
-  width: 4.5rem;
-  height: 4.5rem;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 50%;
-  background: var(--card-art);
-  box-shadow: inset 0 0 0 1px #0000000f, 0 6px 14px -10px #0000004d;
+  background: radial-gradient(circle at 50% 30%, #ffffff12, #0000 70%), var(--card-art);
+  box-shadow: inset 0 0 0 1.5px var(--card-ring), 0 6px 14px -8px #000c;
   color: var(--card-ink);
 }
 
 .glyph {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2rem;
+  height: 2rem;
 }
 
 .accent {
@@ -124,50 +152,258 @@
   stroke: var(--card-accent);
 }
 
-.text {
+.head {
+  grid-area: head;
   display: grid;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 
 .name {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 8px;
   font-family: var(--font-display, Georgia, serif);
-  font-size: 1.375rem;
+  font-size: 1.3125rem;
   font-weight: 700;
   line-height: 1.15;
 }
 
-.name small {
+.subtitle {
   color: var(--card-accent);
-  font-family: var(--font-sans, system-ui, sans-serif);
   font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.card[data-game="hangyumi"] .name small {
-  color: var(--card-muted);
-}
-
-.tagline {
-  font-size: 0.9375rem;
-  font-weight: 650;
-  line-height: 1.35;
-}
-
-.detail {
-  color: var(--card-muted);
-  font-size: 0.8125rem;
-  line-height: 1.4;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
 }
 
 .go {
+  grid-area: go;
   color: var(--card-muted);
 }
+
+.body {
+  grid-area: body;
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--card-line);
+}
+
+.howTo {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+.reward {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: var(--card-muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+.rewardIcon {
+  flex-shrink: 0;
+  margin-top: 0.1em;
+  color: var(--card-accent);
+}
+
+/* The steps to the next piece, then the count. It keeps its place while
+   it loads and fades in once it is known. */
+.progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  min-height: 1.25rem;
+  opacity: 0;
+  transition: opacity 240ms ease;
+}
+
+.progress[data-ready] {
+  opacity: 1;
+}
+
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.step {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--card-step);
+}
+
+.step[data-on] {
+  background: var(--card-accent);
+  box-shadow: 0 0 6px var(--card-ring);
+}
+
+/* Wordvault's 4th and 7th words: a small chest, its lid a shade apart. */
+.step[data-chest] {
+  width: 12px;
+  height: 10px;
+  border-radius: 4px 4px 2px 2px;
+  background: none;
+  box-shadow: inset 0 0 0 1.5px var(--card-ring), inset 0 3.5px 0 -2px var(--card-ring);
+}
+
+.step[data-chest][data-on] {
+  background: var(--card-accent);
+  box-shadow: 0 0 6px var(--card-ring), inset 0 3.5px 0 -2px #0000004d;
+}
+
+.count {
+  color: var(--card-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------- the way in */
+
+/* Hangyumi's card is let down on two ropes from the sign, and sways to rest. */
+.cards[data-entrance="play"] > li[data-game="hangyumi"] {
+  transform-origin: 50% -48px;
+  animation: lower 820ms cubic-bezier(.3, .6, .4, 1) both;
+}
+
+@keyframes lower {
+  0% { opacity: 0; transform: translateY(-104px) rotate(0deg); }
+  7% { opacity: 1; }
+  50% { transform: translateY(5px) rotate(-1.6deg); }
+  70% { transform: translateY(-2px) rotate(1.1deg); }
+  87% { transform: translateY(0) rotate(-0.4deg); }
+  100% { opacity: 1; transform: translateY(0) rotate(0deg); }
+}
+
+.ropes {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% - 6px);
+  height: 60vh;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.ropes > span {
+  position: absolute;
+  bottom: 0;
+  width: 2px;
+  height: 100%;
+  border-radius: 1px;
+  background:
+    repeating-linear-gradient(160deg, #0000 0 3px, #00000038 3px 5px),
+    linear-gradient(180deg, #c9a05500, #c9a055 35%, #e9b54d);
+}
+
+.ropes > span:first-child { left: 16%; }
+.ropes > span:last-child { right: 16%; }
+
+/* Where each rope is tied to the card. */
+.ropes > span::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  bottom: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e9b54d;
+}
+
+.cards[data-entrance="play"] .ropes {
+  animation: ropes 820ms ease both;
+}
+
+@keyframes ropes {
+  0%, 62% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Wordvault's swings open on its top edge like the chest's lid, overshoots
+   a little, and a glint of gold crosses it. */
+.cards[data-entrance="play"] > li[data-game="wordvault"] {
+  transform-origin: 50% 0;
+  animation: lid 760ms cubic-bezier(.25, .8, .3, 1) 150ms both;
+}
+
+@keyframes lid {
+  0% { opacity: 0; transform: perspective(900px) rotateX(-84deg); }
+  18% { opacity: 1; }
+  66% { transform: perspective(900px) rotateX(7deg); }
+  85% { transform: perspective(900px) rotateX(-2deg); }
+  100% { opacity: 1; transform: perspective(900px) rotateX(0deg); }
+}
+
+.glint {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(90deg, #0000, #ffe6a826 30%, #fff1c88c 50%, #ffe6a826 70%, #0000);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-130%) skewX(-18deg);
+}
+
+.cards[data-entrance="play"] .glint {
+  animation: glint 440ms cubic-bezier(.4, 0, .25, 1) 640ms both;
+}
+
+@keyframes glint {
+  0% { opacity: 1; transform: translateX(-130%) skewX(-18deg); }
+  100% { opacity: 1; transform: translateX(330%) skewX(-18deg); }
+}
+
+/* Starweaver's opens out of a star gate: a ring of ice widens from where
+   its medallion will be, and the card grows out of it. */
+.cards[data-entrance="play"] > li[data-game="starweaver"] > .card {
+  transform-origin: calc(17px + 1.75rem) calc(17px + 1.75rem);
+  animation: gate-open 700ms cubic-bezier(.2, .85, .25, 1) 380ms both;
+}
+
+@keyframes gate-open {
+  0% { opacity: 0; transform: scale(.2); }
+  35% { opacity: 1; }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.gate {
+  position: absolute;
+  left: calc(17px + 1.75rem);
+  top: calc(17px + 1.75rem);
+  z-index: 1;
+  width: 4rem;
+  height: 4rem;
+  margin: -2rem 0 0 -2rem;
+  border: 2px solid #bff2ff;
+  border-radius: 50%;
+  background: radial-gradient(circle, #8fe6ff59, #8fe6ff00 62%);
+  box-shadow: 0 0 14px #8fe6ffa6, inset 0 0 12px #8fe6ff80;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.cards[data-entrance="play"] .gate {
+  animation: gate 760ms cubic-bezier(.2, .7, .2, 1) 300ms both;
+}
+
+@keyframes gate {
+  0% { opacity: 0; transform: scale(.1); }
+  22% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(7); }
+}
+
+/* ---------------------------------------------------------- footer */
 
 .shared {
   display: flex;
@@ -197,11 +433,19 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cards > li {
+  .cards[data-entrance] > li,
+  .cards[data-entrance] > li > .card {
     animation: none;
   }
 
-  .card {
+  .ropes,
+  .gate,
+  .glint {
+    display: none;
+  }
+
+  .card,
+  .progress {
     transition: none;
   }
 }
