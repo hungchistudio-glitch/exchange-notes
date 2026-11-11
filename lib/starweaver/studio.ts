@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { buildYumiActor, ARM_ROOT, EYE_REST } from "@/lib/yumi3d/actor";
@@ -14,22 +15,27 @@ import type { WeaveBeat } from "./presentation";
 
    The same Yumi as Home and the other two games, from lib/yumi3d/actor.ts,
    in what she wears from the shop from the moment she arrives. She stands
-   front left; a star gate stands back right: two incomplete rings of satin
-   titanium (champagne by day, graphite in Cosmic) on three slender legs,
-   round a clear lens, and a low ice-cyan light that only says where it is.
+   front left; a star gate stands back right, a precise machine (Chi,
+   2026-11-11: "更寫實更科幻科技感"): a frame of machined metal (champagne by
+   day, graphite in Cosmic) with a scale, bolts and small lights; inside it
+   the word's ring, one segment for each place, and a bearing of eight arcs,
+   turning slowly opposite ways; inside those, a liquid of ice light that
+   ripples and turns, faint while the gate is shut. It stands on a column
+   over a plinth with a ring of light. At rest it keeps moving, gently.
    A seamless room, warm white by day and obsidian in Cosmic; the key light
    high on the right, so her contact shadow falls back and left. The camera
    holds one three-quarter view (about 25° round, 12° down); in a voyage it
    leans in a few percent, and under reduced motion not at all.
 
    The word is the track: one piece of light for each place to guess, from
-   above her shoulder to the lens. A right letter flies up as a small flake
+   above her shoulder to the gate, and the same on the gate's own ring. A right letter flies up as a small flake
    of light and becomes its pieces (all of a batch at once). A wrong one
    sends an energy copy of her U, I or O, in ice light, to an orbit outside
    the gate; she stays whole. The end of a round brings every copy home. A
-   won word closes the track in a ring round the lens, the rings turn true,
-   the gate opens, and she sails through it and back; a seventh brings a
-   relic back with her, under a quiet light.
+   won word closes the track in a ring round the surface, the rings spin up,
+   the gate opens, and she sails through it and back; a seventh's relic
+   rises out of the surface and comes towards us, and the page shows it
+   whole (components/starweaver/RelicReveal.tsx).
 
    Plays what lib/starweaver/presentation.ts plans, and only that: nothing
    here pays or awards. Renders only while something moves, never while the
@@ -72,6 +78,8 @@ export type StudioOptions = {
   onArrived?: () => void;
   /** The animated arrival only: the moment she touches down (for the page's sweep of light). */
   onLanded?: () => void;
+  /** A relic is out of the gate (or its flight was skipped): the page shows it. */
+  onRelic?: () => void;
 };
 
 const SCALE = 0.5;
@@ -82,9 +90,29 @@ const YUMI_AT = new THREE.Vector3(-1.6, STAND_Y, 0.55);
 const FACING = 0.32;
 const GATE_AT = new THREE.Vector3(1.45, 1.62, -1.25);
 const GATE_TURN = -0.42;
-const OUTER_R = 1.02;
-const INNER_R = 0.79;
-const LENS_R = 0.24;
+/* The gate's rings, outside in: outer and inner radius, depth through the gate. */
+const FRAME_OUT = 1.08;
+const FRAME_IN = 0.95;
+const FRAME_D = 0.12;
+const SEG_OUT = 0.925;
+const SEG_IN = 0.855;
+const SEG_D = 0.06;
+const INNER_OUT = 0.835;
+const INNER_IN = 0.77;
+const INNER_D = 0.075;
+const LIP_OUT = 0.758;
+const LIP_IN = 0.722;
+const LIP_D = 0.095;
+const SURFACE_R = 0.724;
+/* At rest the gate turns slowly, its surface ripples and its lights breathe:
+   20 frames a second, only while the stage is on screen and the page is
+   shown, never under reduced motion. A frame at rest moves only the rings
+   (see tick), so it costs a fraction of a frame in play. */
+const IDLE_FRAME_MS = 50;
+/* After this long with nothing happening (no guess, no tap, no word), the
+   gate's motion eases to a stop, and starts again with the next thing. */
+const REST_AFTER_MS = 15000;
+const STILL_S = 1.2;
 /** Where U, I and O wait: three orbits outside the gate, in its own plane. */
 const ORBITS: readonly { radius: number; angle: number }[] = [
   { radius: 1.3, angle: THREE.MathUtils.degToRad(150) },
@@ -95,8 +123,8 @@ const ORBITS: readonly { radius: number; angle: number }[] = [
  * The first arrival (Chi, 2026-11-11: "新遊戲進場…優雅一點"; chose starlight
  * gathering into the gate and Yumi coming out of it, about 1.5 s with the
  * page, the keys rising once she stands). Points of light gather into the
- * gate's two rings as they turn into place and its legs rise from the
- * floor; the lens lights; the gate opens and she glides out of it along an
+ * gate's rings as they turn into place and its column rises from the
+ * plinth; the surface lights; the gate opens and she glides out of it along an
  * arc, small at first, turning to face us, and touches down; the gate
  * closes and the track appears piece by piece. Once only: a new word never
  * plays it again, and a studio built again finds her already there.
@@ -160,6 +188,145 @@ function nightEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
   return environment;
 }
 
+/*
+ * Fine concentric lines, as a lathe leaves them: the bump and roughness of
+ * the gate's metal. ExtrudeGeometry's own UVs are positions in the gate's
+ * plane, so every ring shares one centre; a radius of 1.2 reaches the edge.
+ */
+function brushedTexture(): THREE.CanvasTexture {
+  const size = 512;
+  const paper = document.createElement("canvas");
+  paper.width = paper.height = size;
+  const ink = paper.getContext("2d")!;
+  ink.fillStyle = "rgb(128,128,128)";
+  ink.fillRect(0, 0, size, size);
+  let seed = 7;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  ink.lineWidth = 0.9;
+  for (let r = 1; r < size * 0.72; r += 0.75) {
+    const v = Math.round(112 + rand() * 40);
+    ink.strokeStyle = `rgba(${v},${v},${v},0.55)`;
+    ink.beginPath();
+    ink.arc(size / 2, size / 2, r, 0, Math.PI * 2);
+    ink.stroke();
+  }
+  const texture = new THREE.CanvasTexture(paper);
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.repeat.set(1 / 2.4, 1 / 2.4);
+  texture.offset.set(0.5, 0.5);
+  texture.anisotropy = 4;
+  return texture;
+}
+
+/* A solid of `shape`, `depth` through, centred on z = 0, its edges chamfered. */
+function extrude(shape: THREE.Shape, depth: number, segments: number, bevel: number): THREE.ExtrudeGeometry {
+  const core = Math.max(0.001, depth - bevel * 2);
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: core, curveSegments: segments, bevelEnabled: bevel > 0,
+    bevelThickness: bevel, bevelSize: bevel, bevelOffset: -bevel, bevelSegments: 2,
+  });
+  geometry.translate(0, 0, -core / 2);
+  return geometry;
+}
+
+/** A flat ring, machined: `outer` to `inner` radius. */
+function annulus(outer: number, inner: number, depth: number, segments = 96, bevel = 0.008): THREE.ExtrudeGeometry {
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, outer, 0, Math.PI * 2, false);
+  const hole = new THREE.Path();
+  hole.absarc(0, 0, inner, 0, Math.PI * 2, true);
+  shape.holes.push(hole);
+  return extrude(shape, depth, segments, bevel);
+}
+
+/** A piece of a ring, from angle `from` to `to`. */
+function sector(outer: number, inner: number, from: number, to: number, depth: number, bevel = 0.005): THREE.ExtrudeGeometry {
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, outer, from, to, false);
+  shape.absarc(0, 0, inner, to, from, true);
+  shape.closePath();
+  return extrude(shape, depth, Math.max(4, Math.ceil(((to - from) / (Math.PI * 2)) * 96)), bevel);
+}
+
+/*
+ * The energy surface: a liquid of light that turns and ripples inward,
+ * aqua in its depth, pale at its heart and rim, a little violet in its
+ * swirl. Faint and slow while the gate is shut; bright and fast as it opens
+ * (uOpen), and flaring as something passes through (uFlare). Laid over the
+ * room by day, added to it at night.
+ */
+function energySurface(cosmic: boolean): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uOpen: { value: 0 },
+      uFlare: { value: 0 },
+      uDay: { value: cosmic ? 0 : 1 },
+      uDeep: { value: new THREE.Color(cosmic ? 0x0f3a47 : 0x4ea6bb) },
+      uBody: { value: new THREE.Color(cosmic ? 0x4fa8c2 : 0x95d3e0) },
+      uTint: { value: new THREE.Color(cosmic ? 0x8e7cf0 : 0xa496f0) },
+      uBright: { value: new THREE.Color(cosmic ? 0xe6fbff : 0xf4fcfd) },
+    },
+    vertexShader: `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`,
+    fragmentShader: `
+uniform float uTime;
+uniform float uOpen;
+uniform float uFlare;
+uniform float uDay;
+uniform vec3 uDeep;
+uniform vec3 uBody;
+uniform vec3 uTint;
+uniform vec3 uBright;
+varying vec2 vUv;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+float fbm(vec2 p) {
+  float v = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 3; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; }
+  return v;
+}
+void main() {
+  vec2 p = vUv * 2.0 - 1.0;
+  float r = length(p);
+  if (r > 1.0) discard;
+  float a = atan(p.y, p.x);
+  float t = uTime * (0.22 + 0.9 * uOpen);
+  float swirl = (0.8 + 2.6 * uOpen) * (1.0 - r) * (1.0 - r);
+  vec2 q = vec2(cos(a + swirl + t), sin(a + swirl + t)) * r;
+  float f = fbm(q * 3.2 + vec2(t * 0.7, -t * 0.5));
+  float ripple = 0.5 + 0.5 * sin(r * 30.0 - uTime * (1.4 + 4.5 * uOpen) + f * 5.0);
+  float body = mix(f, ripple, 0.4);
+  float core = 1.0 - smoothstep(0.0, 0.6, r);
+  float rim = smoothstep(0.78, 0.98, r);
+  vec3 col = mix(uDeep, uBody, body);
+  col = mix(col, uTint, smoothstep(0.55, 0.9, f) * 0.35 * (1.0 - core));
+  col = mix(col, uBright, clamp(core * (0.2 + 0.7 * uOpen) + rim * 0.3 + uFlare * 0.6, 0.0, 1.0));
+  float energy = 0.45 + 0.55 * uOpen + 0.5 * uFlare;
+  float edge = 1.0 - smoothstep(0.95, 1.0, r);
+  float alpha = mix(0.9 * energy, 0.55 + 0.4 * uOpen + 0.3 * uFlare, uDay) * edge;
+  gl_FragColor = vec4(mix(col * energy, col, uDay), clamp(alpha, 0.0, 1.0));
+  #include <colorspace_fragment>
+}`,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    fog: false,
+    toneMapped: false,
+    blending: cosmic ? THREE.AdditiveBlending : THREE.NormalBlending,
+  });
+}
+
 export function createStarweaverStudio(canvas: HTMLCanvasElement, options: StudioOptions = {}): StarweaverStudio | null {
   let renderer: THREE.WebGLRenderer;
   try {
@@ -190,6 +357,9 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   renderer.toneMappingExposure = cosmic ? 1.08 : 1.02;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
+  /* Shadows are drawn when something that casts one moves, never for the
+     gate's idle turning, which leaves them as they were. */
+  renderer.shadowMap.autoUpdate = false;
   renderer.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
 
   const backdrop = cosmic ? 0x0c0d10 : 0xf5f4f0;
@@ -226,25 +396,27 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
 
   // ------------------------------------------------------- materials
   const floorMaterial = new THREE.MeshStandardMaterial({ color: backdrop, roughness: 1, metalness: 0 });
-  const titanium = new THREE.MeshStandardMaterial({
-    color: cosmic ? 0x3d4047 : 0xd8cfbc, metalness: 0.88, roughness: cosmic ? 0.34 : 0.3, envMapIntensity: cosmic ? 1.1 : 0.95,
+  /* Machined metal, turned on a lathe: fine concentric lines in its bump
+     and roughness catch the light as it moves round the rings. Champagne by
+     day, graphite in Cosmic. */
+  const brushed = brushedTexture();
+  const metal = new THREE.MeshPhysicalMaterial({
+    color: cosmic ? 0x4a4e56 : 0xd9d0bd, metalness: 0.92, roughness: cosmic ? 0.3 : 0.27,
+    roughnessMap: brushed, bumpMap: brushed, bumpScale: 0.5,
+    clearcoat: 0.3, clearcoatRoughness: 0.22, envMapIntensity: cosmic ? 1.15 : 1,
   });
-  const titaniumDark = new THREE.MeshStandardMaterial({
-    color: cosmic ? 0x2a2c31 : 0xbdb3a0, metalness: 0.85, roughness: 0.38, envMapIntensity: 0.9,
+  const metalDark = new THREE.MeshPhysicalMaterial({
+    color: cosmic ? 0x2c2f35 : 0xb4aa96, metalness: 0.9, roughness: 0.36,
+    roughnessMap: brushed, bumpMap: brushed, bumpScale: 0.4, envMapIntensity: 0.95,
   });
-  /* The lens: clear-coated, a little cold, never a refraction pass. */
-  const lensMaterial = new THREE.MeshPhysicalMaterial({
-    color: cosmic ? 0x9fc6cd : 0xe9f4f6, metalness: 0.1, roughness: 0.06, clearcoat: 1, clearcoatRoughness: 0.05,
-    emissive: ICE, emissiveIntensity: cosmic ? 0.18 : 0.08, envMapIntensity: 1.2,
+  const polished = new THREE.MeshPhysicalMaterial({
+    color: cosmic ? 0x9aa3ad : 0xeee8db, metalness: 1, roughness: 0.12, clearcoat: 0.6, envMapIntensity: 1.25,
   });
-  const seamMaterial = new THREE.MeshBasicMaterial({ color: ICE, transparent: true, opacity: cosmic ? 0.55 : 0.35, fog: false });
+  const engraving = new THREE.MeshStandardMaterial({ color: cosmic ? 0x14161a : 0x7a7163, metalness: 0.6, roughness: 0.65 });
   const loopMaterial = new THREE.MeshBasicMaterial({ color: ICE, transparent: true, opacity: 0, depthWrite: false, fog: false });
   /* Added light reads as light only on a dark room; on warm white it turns
      to flat white paper. By day the glows are tinted and laid over. */
   const glowBlending = cosmic ? THREE.AdditiveBlending : THREE.NormalBlending;
-  const portalMaterial = new THREE.MeshBasicMaterial({
-    transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, fog: false, blending: glowBlending,
-  });
   const energy = new THREE.MeshStandardMaterial({
     color: cosmic ? 0xc8eef4 : 0x8fd3df, emissive: ICE, emissiveIntensity: cosmic ? 0.9 : 0.75, metalness: 0.2, roughness: 0.25,
     transparent: true, opacity: cosmic ? 0.62 : 0.8, depthWrite: false,
@@ -253,6 +425,9 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   const flakeMaterial = new THREE.SpriteMaterial({
     map: glow, color: cosmic ? 0xd6f0f5 : 0x5fbccc, transparent: true, depthWrite: false, blending: glowBlending, fog: false,
   });
+  /* The gate's small lights: ice, brighter as it opens. By day a deeper cyan, so they read on champagne. */
+  const lampColor = new THREE.Color(cosmic ? 0xaee6ef : 0x2f9fb4);
+  const lampMaterial = () => new THREE.MeshBasicMaterial({ color: lampColor.clone(), fog: false });
 
   const solid = <M extends THREE.Mesh>(mesh: M, parent: THREE.Object3D = scene) => {
     mesh.castShadow = true;
@@ -268,70 +443,168 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   scene.add(floor);
 
   // ------------------------------------------------------------- gate
+  /*
+   * A precise machine (Chi, 2026-11-11: "更寫實更科幻科技感", chose
+   * machined rings and an energy surface). From the outside in:
+   *  - the frame: a fixed ring with chamfered edges, an engraved line,
+   *    a scale of fine ticks, hex bolts, four small lights and four clamps;
+   *  - the word's ring: one segment for each place to guess, lit as the
+   *    track is, turning slowly one way;
+   *  - a bearing ring of eight arcs with a light in each gap, turning the
+   *    other way;
+   *  - a polished lip, and inside it a rippling liquid of energy with a
+   *    halo and drifting motes, faint while the gate is shut and bright and
+   *    fast as it opens.
+   * It stands on a column over a two-step plinth with a ring of light.
+   */
   const gate = new THREE.Group();
   gate.position.copy(GATE_AT);
   gate.rotation.y = GATE_TURN;
   scene.add(gate);
-  /* Two rings, each open on a different side, so the gate reads as unfinished until a word closes it. */
-  const outer = solid(new THREE.Mesh(new THREE.TorusGeometry(OUTER_R, 0.048, 14, 120, Math.PI * 1.62), titanium), gate);
-  const inner = solid(new THREE.Mesh(new THREE.TorusGeometry(INNER_R, 0.032, 12, 100, Math.PI * 1.48), titaniumDark), gate);
-  const OUTER_REST = 0.9;
-  const INNER_REST = 2.6;
-  outer.rotation.z = OUTER_REST;
-  inner.rotation.z = INNER_REST;
-  /* A hairline seam of ice on the outer ring's inner edge. */
-  const seam = new THREE.Mesh(new THREE.TorusGeometry(OUTER_R - 0.05, 0.006, 6, 120, Math.PI * 1.62), seamMaterial);
-  outer.add(seam);
-  const lens = solid(new THREE.Mesh(new THREE.SphereGeometry(LENS_R, 40, 24), lensMaterial), gate);
-  lens.scale.set(1, 1, 0.38);
-  /* The lens's bezel. */
-  const bezel = solid(new THREE.Mesh(new THREE.TorusGeometry(LENS_R + 0.02, 0.022, 10, 64), titanium), gate);
-  /* Three legs, from the floor to just under the outer ring. */
-  const legs: { leg: THREE.Mesh; foot: THREE.Vector3; along: THREE.Vector3; length: number }[] = [];
-  const legGeometry = new THREE.CylinderGeometry(0.022, 0.03, 1, 10);
-  const apex = new THREE.Vector3(0, -OUTER_R - 0.04, 0);
-  for (const foot of [new THREE.Vector3(-0.62, -GATE_AT.y, 0.32), new THREE.Vector3(0.62, -GATE_AT.y, 0.32), new THREE.Vector3(0, -GATE_AT.y, -0.62)]) {
-    const leg = solid(new THREE.Mesh(legGeometry, titaniumDark), gate);
-    const along = apex.clone().sub(foot);
-    const length = along.length();
-    leg.position.copy(foot).addScaledVector(along, 0.5);
-    leg.scale.set(1, length, 1);
-    leg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), along.clone().normalize());
-    legs.push({ leg, foot, along, length });
+
+  const gateFrame = new THREE.Group();
+  gate.add(gateFrame);
+  solid(new THREE.Mesh(annulus(FRAME_OUT, FRAME_IN, FRAME_D), metal), gateFrame);
+  /* Pieces that never move apart are one geometry each, so one draw. */
+  const merged = (parts: THREE.BufferGeometry[]) => {
+    const geometry = mergeGeometries(parts) ?? parts[0];
+    for (const part of parts) if (part !== geometry) part.dispose();
+    return geometry;
+  };
+  gateFrame.add(new THREE.Mesh(merged([1, -1].map(side =>
+    new THREE.TorusGeometry(1.046, 0.0045, 4, 128).translate(0, 0, side * (FRAME_D / 2 + 0.008)))), engraving));
+  /* The scale: sixty ticks, every fifth a long one. */
+  const ticks = new THREE.InstancedMesh(new THREE.BoxGeometry(0.006, 0.026, 0.006), engraving, 60);
+  const placing = new THREE.Object3D();
+  for (let i = 0; i < 60; i++) {
+    const angle = (i / 60) * Math.PI * 2;
+    const long = i % 5 === 0;
+    placing.position.set(Math.cos(angle) * (long ? 0.976 : 0.97), Math.sin(angle) * (long ? 0.976 : 0.97), FRAME_D / 2 + 0.009);
+    placing.rotation.set(0, 0, angle - Math.PI / 2);
+    placing.scale.set(1, long ? 1.6 : 1, 1);
+    placing.updateMatrix();
+    ticks.setMatrixAt(i, placing.matrix);
   }
-  /* The finished word's loop round the lens, and the open gate's light. */
-  const loop = new THREE.Mesh(new THREE.TorusGeometry(LENS_R + 0.11, 0.012, 8, 96), loopMaterial);
+  gateFrame.add(ticks);
+  const boltGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.012, 6);
+  boltGeometry.rotateX(Math.PI / 2);
+  const bolts = new THREE.InstancedMesh(boltGeometry, polished, 12);
+  for (let i = 0; i < 12; i++) {
+    const angle = THREE.MathUtils.degToRad(15 + i * 30);
+    placing.position.set(Math.cos(angle) * 1.013, Math.sin(angle) * 1.013, FRAME_D / 2 + 0.012);
+    placing.rotation.set(0, 0, angle);
+    placing.scale.setScalar(1);
+    placing.updateMatrix();
+    bolts.setMatrixAt(i, placing.matrix);
+  }
+  gateFrame.add(bolts);
+  /* Four small lights between the bolts, at the diagonals. */
+  const lamps = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.011, 0.036, 4, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false }), 4);
+  [45, 135, 225, 315].forEach((degrees, i) => {
+    const angle = THREE.MathUtils.degToRad(degrees);
+    placing.position.set(Math.cos(angle) * 1.013, Math.sin(angle) * 1.013, FRAME_D / 2 + 0.012);
+    placing.rotation.set(0, 0, angle);
+    placing.updateMatrix();
+    lamps.setMatrixAt(i, placing.matrix);
+    lamps.setColorAt(i, lampColor);
+  });
+  gateFrame.add(lamps);
+  /* Clamps over the frame's edge, top and sides; the column's at the foot. */
+  solid(new THREE.Mesh(merged([0, 90, 180, 270].map(degrees => {
+    const angle = THREE.MathUtils.degToRad(degrees);
+    const clamp = new THREE.BoxGeometry(degrees === 270 ? 0.2 : 0.11, 0.16, FRAME_D + 0.06);
+    clamp.rotateZ(angle + Math.PI / 2);
+    return clamp.translate(Math.cos(angle) * (FRAME_OUT + 0.01), Math.sin(angle) * (FRAME_OUT + 0.01), 0);
+  })), metalDark), gateFrame);
+
+  /* The word's ring: segments built for each word (setSegments), over a dark base. */
+  const segRing = new THREE.Group();
+  gate.add(segRing);
+  solid(new THREE.Mesh(annulus(SEG_OUT - 0.008, SEG_IN + 0.008, SEG_D - 0.022, 96, 0.004), metalDark), segRing);
+
+  /* The bearing: eight arcs, a light in each gap. */
+  const bearing = new THREE.Group();
+  gate.add(bearing);
+  const BEARING_GAP = THREE.MathUtils.degToRad(5);
+  solid(new THREE.Mesh(merged(Array.from({ length: 8 }, (_, i) => {
+    const from = (i / 8) * Math.PI * 2 + BEARING_GAP / 2;
+    return sector(INNER_OUT, INNER_IN, from, from + Math.PI / 4 - BEARING_GAP, INNER_D);
+  })), metal), bearing);
+  const beads = new THREE.InstancedMesh(new THREE.SphereGeometry(0.01, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false }), 8);
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    placing.position.set(Math.cos(angle) * (INNER_OUT + INNER_IN) / 2, Math.sin(angle) * (INNER_OUT + INNER_IN) / 2, INNER_D / 2);
+    placing.rotation.set(0, 0, 0);
+    placing.updateMatrix();
+    beads.setMatrixAt(i, placing.matrix);
+    beads.setColorAt(i, lampColor);
+  }
+  bearing.add(beads);
+
+  const lip = solid(new THREE.Mesh(annulus(LIP_OUT, LIP_IN, LIP_D, 96, 0.006), polished), gate);
+
+  /* The energy surface (energySurface below): a liquid of light inside the lip. */
+  const surfaceMaterial = energySurface(cosmic);
+  const surface = new THREE.Mesh(new THREE.CircleGeometry(SURFACE_R, 96), surfaceMaterial);
+  gate.add(surface);
+
+  /* The finished word's ring of light round the lip, and the open gate's along the frame. */
+  const loop = new THREE.Mesh(new THREE.TorusGeometry(LIP_OUT + 0.012, 0.009, 8, 128), loopMaterial);
+  loop.position.z = LIP_D / 2;
   gate.add(loop);
-  const fullRing = new THREE.Mesh(new THREE.TorusGeometry(OUTER_R, 0.012, 8, 160), loopMaterial.clone());
+  const fullRing = new THREE.Mesh(new THREE.TorusGeometry(FRAME_IN + 0.004, 0.008, 8, 160), loopMaterial.clone());
+  fullRing.position.z = FRAME_D / 2;
   gate.add(fullRing);
-  const portalTexture = (() => {
-    const paper = document.createElement("canvas");
-    paper.width = paper.height = 256;
-    const ink = paper.getContext("2d")!;
-    const gradient = ink.createRadialGradient(128, 128, 8, 128, 128, 128);
-    if (cosmic) {
-      gradient.addColorStop(0, "rgba(240,252,255,0.95)");
-      gradient.addColorStop(0.35, "rgba(159,219,230,0.55)");
-      gradient.addColorStop(0.75, "rgba(124,150,230,0.18)");
-      gradient.addColorStop(1, "rgba(124,196,209,0)");
-    } else {
-      /* By day: clear water lit from within, cyan at the heart, violet at the rim. */
-      gradient.addColorStop(0, "rgba(232,248,251,0.9)");
-      gradient.addColorStop(0.3, "rgba(150,214,226,0.75)");
-      gradient.addColorStop(0.72, "rgba(140,150,226,0.32)");
-      gradient.addColorStop(1, "rgba(124,196,209,0)");
-    }
-    ink.fillStyle = gradient;
-    ink.fillRect(0, 0, 256, 256);
-    const texture = new THREE.CanvasTexture(paper);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  })();
-  portalMaterial.map = portalTexture;
-  const portal = new THREE.Mesh(new THREE.CircleGeometry(INNER_R - 0.02, 64), portalMaterial);
-  portal.position.z = 0.01;
-  portal.visible = false;
-  gate.add(portal);
+
+  /* The pedestal: a two-step plinth with a ring of light, a column, two collars. */
+  const pedestal = new THREE.Group();
+  pedestal.position.y = -GATE_AT.y;
+  gate.add(pedestal);
+  const plinth = solid(new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.64, 0.05, 72), metalDark), pedestal);
+  plinth.position.y = 0.025;
+  const step = solid(new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.44, 0.06, 64), metal), pedestal);
+  step.position.y = 0.08;
+  const strip = new THREE.Mesh(new THREE.TorusGeometry(0.505, 0.006, 6, 96), lampMaterial());
+  strip.rotation.x = Math.PI / 2;
+  strip.position.y = 0.052;
+  pedestal.add(strip);
+  const COLUMN_FROM = 0.11;
+  const COLUMN_LENGTH = GATE_AT.y - FRAME_OUT - 0.02 - COLUMN_FROM;
+  const column = solid(new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.074, 1, 32), metal), pedestal);
+  const collars = [0.12, 0.86].map(at => {
+    const collar = solid(new THREE.Mesh(new THREE.CylinderGeometry(0.086, 0.086, 0.04, 32), polished), pedestal);
+    return { collar, at };
+  });
+
+  /* Light round the surface, and motes drifting into it: kept apart from
+     the gate so the camera frames the machine, not its glow. */
+  const gateFx = new THREE.Group();
+  gateFx.position.copy(GATE_AT);
+  gateFx.rotation.y = GATE_TURN;
+  scene.add(gateFx);
+  const haloMaterial = new THREE.SpriteMaterial({
+    map: glow, color: cosmic ? 0x9fdbe6 : 0x7cc4d1, transparent: true, opacity: 0, depthWrite: false, blending: glowBlending, fog: false,
+  });
+  const halo = new THREE.Sprite(haloMaterial);
+  halo.position.z = -0.04;
+  halo.scale.setScalar(2.3);
+  gateFx.add(halo);
+  const MOTES_IN = 48;
+  const drift = Array.from({ length: MOTES_IN }, (_, i) => ({
+    angle: (i / MOTES_IN) * Math.PI * 2 * 3.7,
+    radius: 0.12 + ((i * 37) % MOTES_IN) / MOTES_IN * (SURFACE_R - 0.16),
+    speed: 0.6 + ((i * 13) % 7) / 7,
+  }));
+  const driftPositions = new Float32Array(MOTES_IN * 3);
+  const driftGeometry = new THREE.BufferGeometry();
+  driftGeometry.setAttribute("position", new THREE.BufferAttribute(driftPositions, 3));
+  const driftMaterial = new THREE.PointsMaterial({
+    map: glow, color: cosmic ? 0xd6f0f5 : 0x4fb3c6, size: 0.05, sizeAttenuation: true,
+    transparent: true, opacity: 0, depthWrite: false, blending: glowBlending, fog: false,
+  });
+  const motesIn = new THREE.Points(driftGeometry, driftMaterial);
+  motesIn.frustumCulled = false;
+  gateFx.add(motesIn);
 
   /* Where things go in the gate's plane, in the world. */
   function gatePoint(radius: number, angle: number, out = new THREE.Vector3()) {
@@ -343,13 +616,17 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   const gateCentre = gatePoint(0, 0);
 
   // ------------------------------------------------------------ track
-  /* From above her shoulder, up and over, to the lens. */
+  /* From above her shoulder, up and over, to the gate's surface. */
   const trackCurve = new THREE.QuadraticBezierCurve3(
     new THREE.Vector3(YUMI_AT.x + 0.7, YUMI_AT.y + 0.95, YUMI_AT.z + 0.05),
     new THREE.Vector3(0.05, 3.25, 0.15),
     gateCentre.clone().add(new THREE.Vector3(-0.16, 0, 0.18)),
   );
-  type Piece = { mesh: THREE.Mesh; material: THREE.MeshStandardMaterial; level: number; middle: THREE.Vector3 };
+  type Piece = {
+    mesh: THREE.Mesh; material: THREE.MeshStandardMaterial; level: number; middle: THREE.Vector3;
+    /** Its segment on the gate's ring, lit with it. */
+    segment: THREE.Mesh; segmentMaterial: THREE.MeshStandardMaterial;
+  };
   let pieces: Piece[] = [];
   /* The places the track was built for (it holds at most 24 pieces). */
   let trackFor = -1;
@@ -361,15 +638,24 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     trackFor = count;
     const old = pieces;
     pieces = [];
-    for (const piece of old) trackGroup.remove(piece.mesh);
+    for (const piece of old) {
+      trackGroup.remove(piece.mesh);
+      segRing.remove(piece.segment);
+    }
     afterCompiles(() => {
       for (const piece of old) {
         piece.mesh.geometry.dispose();
         piece.material.dispose();
+        piece.segmentMaterial.dispose();
       }
+      old[0]?.segment.geometry.dispose();
     });
     const n = count <= 0 ? 0 : Math.min(24, count);
     const gap = 0.012;
+    /* The ring's segments, in word order clockwise from the top. */
+    const arc = (Math.PI * 2) / Math.max(1, n);
+    const segmentGap = Math.min(arc * 0.18, THREE.MathUtils.degToRad(3));
+    const segmentGeometry = n ? sector(SEG_OUT, SEG_IN, 0, arc - segmentGap, SEG_D) : null;
     for (let i = 0; i < n; i++) {
       const start = i / n + gap;
       const end = (i + 1) / n - gap;
@@ -380,7 +666,14 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       const mesh = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 12, 0.026, 6, false), material);
       mesh.castShadow = true;
       trackGroup.add(mesh);
-      pieces.push({ mesh, material, level: 0, middle: trackCurve.getPoint((start + end) / 2) });
+      const segmentMaterial = new THREE.MeshStandardMaterial({
+        color: dimColor, metalness: 0.7, roughness: 0.34, emissive: ICE, emissiveIntensity: 0, envMapIntensity: 0.9,
+      });
+      const segment = new THREE.Mesh(segmentGeometry!, segmentMaterial);
+      segment.rotation.z = Math.PI / 2 - (i + 1) * arc + segmentGap / 2;
+      segment.castShadow = true;
+      segRing.add(segment);
+      pieces.push({ mesh, material, level: 0, middle: trackCurve.getPoint((start + end) / 2), segment, segmentMaterial });
     }
   }
 
@@ -391,6 +684,8 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     piece.level = level;
     piece.material.emissiveIntensity = (cosmic ? 1.6 : 0.85) * level;
     piece.material.color.copy(dimColor).lerp(litColor, level);
+    piece.segmentMaterial.emissiveIntensity = (cosmic ? 1.8 : 0.95) * level;
+    piece.segmentMaterial.color.copy(dimColor).lerp(litColor, level);
   }
 
   // ------------------------------------------------------------ flakes
@@ -413,9 +708,9 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       const sprite = new THREE.Sprite(flakeMaterial.clone());
       sprite.visible = false;
       scene.add(sprite);
-      const onOuter = i % 2 === 0;
-      const angle = (onOuter ? 0.9 : 2.6) + (i / 28) * (onOuter ? Math.PI * 1.62 : Math.PI * 1.48);
-      const to = gatePoint(onOuter ? OUTER_R : INNER_R, angle, new THREE.Vector3());
+      const onFrame = i % 2 === 0;
+      const angle = (i / 28) * Math.PI * 2 + (onFrame ? 0 : 0.3);
+      const to = gatePoint(onFrame ? 1.013 : (SEG_OUT + SEG_IN) / 2, angle, new THREE.Vector3());
       const from = to.clone().add(new THREE.Vector3((rand() - 0.5) * 3.2, (rand() - 0.2) * 2.2, (rand() - 0.3) * 2.2));
       return { sprite, from, to, delay: rand() * 0.12 };
     });
@@ -495,6 +790,9 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   }));
   relicHalo.scale.setScalar(1.1);
   relic.add(relicHalo);
+  const RELIC_HALO = cosmic ? 0.55 : 0.45;
+  /* Where it comes to on its way out of the gate, towards us. */
+  const relicNear = new THREE.Vector3();
   /* The quiet light it is shown in: a soft pool on the floor beneath it. */
   const coneMaterial = new THREE.MeshBasicMaterial({
     map: glow, color: cosmic ? 0xdff4f7 : 0x9fd6e0, transparent: true, opacity: 0, depthWrite: false, fog: false, blending: glowBlending,
@@ -563,6 +861,15 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   /* How far the gate has gathered, 0 nothing to 1 whole: nothing until she arrives. */
   let assembly = reduced ? 1 : 0;
   let readyAt = 0;
+  /* The gate's own motion at rest: time, and how far each ring has turned. */
+  let clock = 0;
+  const spin = { seg: 0, bearing: 0 };
+  /* A relic is on its way: the page shows it once it is out of the gate. */
+  let relicPending = false;
+  let onScreen = true;
+  /* How much the gate moves at rest, 1 turning to 0 still; and when something last happened. */
+  let motion = 1;
+  let lastEvent = performance.now();
 
   function setBusy(next: boolean) {
     if (busy === next) return;
@@ -570,35 +877,87 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     options.onBusy?.(next);
   }
 
-  /* The gate as far as it has gathered: rings grown and turned into place, legs risen, lens lit. */
+  /* The gate as far as it has gathered: plinth spread, column risen, rings grown and turned into place, surface lit. */
   function poseAssembly(a: number) {
     assembly = a;
-    const q = easeOut(a);
-    const size = Math.max(0.001, q);
-    outer.scale.setScalar(size);
-    inner.scale.setScalar(Math.max(0.001, easeOut(window01(a, 0.15, 1))));
-    lens.scale.set(size, size, size * 0.38);
-    bezel.scale.setScalar(size);
-    for (const { leg, foot, along, length } of legs) {
-      const rise = Math.max(0.001, easeOut(window01(a, 0.25, 1)));
-      leg.position.copy(foot).addScaledVector(along.clone().normalize(), (length * rise) / 2);
-      leg.scale.set(1, length * rise, 1);
+    const grow = (from: number) => Math.max(0.001, easeOut(window01(a, from, 1)));
+    gateFrame.scale.setScalar(grow(0));
+    segRing.scale.setScalar(grow(0.12));
+    bearing.scale.setScalar(grow(0.22));
+    lip.scale.setScalar(grow(0.3));
+    surface.scale.setScalar(grow(0.4));
+    plinth.scale.set(grow(0), 1, grow(0));
+    step.scale.set(grow(0.1), 1, grow(0.1));
+    const rise = grow(0.2);
+    column.scale.set(1, COLUMN_LENGTH * rise, 1);
+    column.position.y = COLUMN_FROM + (COLUMN_LENGTH * rise) / 2;
+    for (const { collar, at } of collars) {
+      collar.visible = rise >= at;
+      collar.position.y = COLUMN_FROM + COLUMN_LENGTH * at;
     }
+    gateFx.visible = a >= 0.4;
     trackGroup.visible = a >= 1;
+    applyRings();
+  }
+
+  function applyRings() {
+    const q = easeInOut(gateOpen);
+    const gathering = 1 - easeOut(assembly);
+    segRing.rotation.z = q * 1.25 + gathering * 2.2 + spin.seg;
+    bearing.rotation.z = -q * 1.6 - gathering * 2.8 - spin.bearing;
   }
 
   function poseGate(open: number) {
     gateOpen = open;
     const q = easeInOut(open);
-    const gathering = 1 - easeOut(assembly);
-    outer.rotation.z = OUTER_REST + q * 1.25 + gathering * 2.2;
-    inner.rotation.z = INNER_REST - q * 1.6 - gathering * 2.8;
     (fullRing.material as THREE.MeshBasicMaterial).opacity = 0.85 * q;
-    portal.visible = q > 0.01;
-    portalMaterial.opacity = 0.75 * q;
-    portal.scale.setScalar(0.4 + 0.6 * q);
-    lensMaterial.emissiveIntensity = (cosmic ? 0.18 : 0.08) + q * 1.2;
+    surfaceMaterial.uniforms.uOpen.value = q;
+    haloMaterial.opacity = (cosmic ? 0.22 : 0.14) + q * (cosmic ? 0.5 : 0.32);
+    driftMaterial.opacity = (cosmic ? 0.6 : 0.55) * (0.45 + 0.55 * q);
     gateLight.intensity = (cosmic ? 1.2 : 0.6) + q * (cosmic ? 5 : 4);
+    applyRings();
+    breathe();
+  }
+
+  /* The lights: the frame's four breathe in turn, the bearing's chase round, brighter as the gate opens. */
+  const bead = new THREE.Color();
+  function breathe() {
+    const q = easeInOut(gateOpen);
+    for (let k = 0; k < 4; k++) {
+      const level = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(clock * 1.6 - k * 1.57));
+      lamps.setColorAt(k, bead.copy(lampColor).multiplyScalar(level * (1 + 0.8 * q)));
+    }
+    if (lamps.instanceColor) lamps.instanceColor.needsUpdate = true;
+    for (let i = 0; i < 8; i++) {
+      const level = 0.35 + 0.65 * Math.max(0, Math.sin(clock * 2.2 - i * 0.785)) ** 3;
+      beads.setColorAt(i, bead.copy(lampColor).multiplyScalar(level * (1 + q)));
+    }
+    if (beads.instanceColor) beads.instanceColor.needsUpdate = true;
+    (strip.material as THREE.MeshBasicMaterial).color.copy(lampColor).multiplyScalar(0.7 + 0.6 * q);
+  }
+
+  /* Time passes for the gate: its rings turn, its surface moves, the motes drift in. */
+  function advance(dt: number) {
+    const q = easeInOut(gateOpen);
+    const busyNow = Boolean(live || reset || entry);
+    const resting = !busyNow && performance.now() - lastEvent > REST_AFTER_MS;
+    motion = resting ? Math.max(0, motion - dt / STILL_S) : Math.min(1, motion + dt / STILL_S);
+    const step = dt * motion;
+    clock += step;
+    spin.seg += step * (0.1 + 1.1 * q);
+    spin.bearing += step * (0.16 + 1.5 * q);
+    surfaceMaterial.uniforms.uTime.value = clock;
+    drift.forEach((mote, i) => {
+      mote.radius -= step * mote.speed * (0.04 + 0.26 * q);
+      mote.angle += step * mote.speed * (0.4 + 1.6 * q);
+      if (mote.radius < 0.06) mote.radius = SURFACE_R - 0.04;
+      driftPositions[i * 3] = Math.cos(mote.angle) * mote.radius;
+      driftPositions[i * 3 + 1] = Math.sin(mote.angle) * mote.radius;
+      driftPositions[i * 3 + 2] = 0.03 + 0.025 * Math.sin(clock * 1.3 + i);
+    });
+    driftGeometry.attributes.position.needsUpdate = true;
+    applyRings();
+    breathe();
   }
 
   function poseCopies(out: number) {
@@ -631,6 +990,9 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     relic.visible = won && Boolean(rest.relic);
     relic.position.copy(RELIC_AT);
     relic.scale.setScalar(1);
+    relicHalo.scale.setScalar(1.1);
+    (relicHalo.material as THREE.SpriteMaterial).opacity = RELIC_HALO;
+    surfaceMaterial.uniforms.uFlare.value = 0;
     cone.visible = relic.visible;
     coneMaterial.opacity = relic.visible ? (cosmic ? 0.5 : 0.55) : 0;
     cameraPush = 0;
@@ -693,7 +1055,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       }
       case "voyage": {
         poseGate(easeOut(window01(t, 0, 0.28)));
-        /* In: along an arc into the lens, smaller as she goes. */
+        /* In: along an arc into the surface, smaller as she goes. */
         const going = window01(t, 0.22, 0.52);
         const back = window01(t, 0.62, 0.94);
         const into = gateCentre.clone().add(new THREE.Vector3(0, 0, 0.06));
@@ -710,8 +1072,8 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
           model.scale.setScalar(SCALE * (1 - 0.88 * easeIn(going)));
           model.rotation.set(0, FACING + easeIn(going) * Math.PI, 0);
         }
-        /* The portal flares while she is through it. */
-        portalMaterial.opacity = 0.75 + 0.25 * Math.sin(Math.PI * window01(t, 0.48, 0.68));
+        /* The surface flares while she is through it. */
+        surfaceMaterial.uniforms.uFlare.value = Math.sin(Math.PI * window01(t, 0.44, 0.7));
         cameraPush = reduced ? 0 : 0.035 * Math.sin(Math.PI * t);
         if (t >= 1) {
           model.position.copy(YUMI_AT);
@@ -721,16 +1083,31 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
         break;
       }
       case "relic": {
+        /* The surface flares, and the relic rises out of it and comes
+           towards us, larger and turning, until its light fills the view;
+           the page then shows it whole (onRelic). */
         relic.visible = true;
-        cone.visible = true;
-        const q = easeOut(t);
-        arcPoint(gateCentre, RELIC_AT, q, 0.35, relic.position);
-        relic.scale.setScalar(0.3 + 0.7 * q);
-        relic.rotation.y = q * Math.PI * 1.5;
-        coneMaterial.opacity = (cosmic ? 0.5 : 0.55) * easeInOut(window01(t, 0.35, 1));
+        cone.visible = false;
+        surfaceMaterial.uniforms.uFlare.value = Math.sin(Math.PI * window01(t, 0, 0.55));
+        relicNear.copy(gateCentre).lerp(camera.position, 0.55);
+        const out = easeInOut(window01(t, 0.1, 0.9));
+        relic.position.copy(gateCentre).lerp(relicNear, out);
+        relic.position.y += Math.sin(Math.PI * out) * 0.12;
+        relic.scale.setScalar(0.25 + 2.1 * out);
+        relic.rotation.y = out * Math.PI * 2.2;
+        const bloom = window01(t, 0.62, 1);
+        relicHalo.scale.setScalar(1.1 + 3.4 * easeIn(bloom));
+        (relicHalo.material as THREE.SpriteMaterial).opacity = Math.min(1, RELIC_HALO + 0.45 * out);
+        if (t >= 1) showRelic();
         break;
       }
     }
+  }
+
+  function showRelic() {
+    if (!relicPending) return;
+    relicPending = false;
+    options.onRelic?.();
   }
 
   function startNext(now: number) {
@@ -751,6 +1128,8 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     settle();
     setBusy(false);
     render();
+    showRelic();
+    wake();
   }
 
   // -------------------------------------------------------- rendering
@@ -762,13 +1141,32 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     if (disposed) return;
     placeCamera();
     rig.sync(0, reduced);
+    renderer.shadowMap.needsUpdate = true;
     renderer.render(scene, camera);
+  }
+
+  const idling = () => !reduced && arrived && onScreen && !disposed && !document.hidden
+    && (motion > 0 || performance.now() - lastEvent <= REST_AFTER_MS);
+  /* At rest, a frame every IDLE_FRAME_MS, woken by a timer rather than every screen refresh. */
+  let restTimer = 0;
+  function restSoon() {
+    if (restTimer || frame || disposed) return;
+    restTimer = window.setTimeout(() => {
+      restTimer = 0;
+      if (!frame && !disposed && !document.hidden) frame = requestAnimationFrame(tick);
+    }, IDLE_FRAME_MS);
+  }
+  /* Something happened: the gate moves again, if it had come to rest. */
+  function stir() {
+    lastEvent = performance.now();
+    wake();
   }
 
   function tick(now: number) {
     frame = 0;
     if (disposed || document.hidden) return;
-    const dt = Math.min(0.05, (now - lastSeen) / 1000);
+    const active = Boolean(live || reset || entry);
+    const dt = Math.min(active ? 0.05 : 0.08, (now - lastSeen) / 1000);
     lastSeen = now;
     if (entry) poseEntry(Math.max(0, (now - entry.started) / 1000));
     if (reset) {
@@ -785,10 +1183,24 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       animate(live.beat, t);
       if (t >= 1) startNext(now);
     }
-    rig.sync(dt, reduced);
-    placeCamera();
-    renderer.render(scene, camera);
+    if (!reduced) advance(dt);
+    /* Begun in play (even if it ended this frame, and settled everything): drawn in full. */
+    if (active) {
+      rig.sync(dt, reduced);
+      placeCamera();
+      renderer.shadowMap.needsUpdate = true;
+      renderer.render(scene, camera);
+    } else {
+      /* At rest only the rings turn: their matrices, and nothing else's;
+         she and her outfit hold still, and so does the camera. */
+      segRing.updateMatrixWorld(true);
+      bearing.updateMatrixWorld(true);
+      scene.matrixWorldAutoUpdate = false;
+      renderer.render(scene, camera);
+      scene.matrixWorldAutoUpdate = true;
+    }
     if (live || reset || entry) frame = requestAnimationFrame(tick);
+    else if (idling()) restSoon();
   }
 
   /* The arrival, `s` seconds in (see ENTRY_S). */
@@ -807,7 +1219,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     const opening = easeOut(window01(s, 0.4, 0.56));
     const closing = easeInOut(window01(s, 0.95, ENTRY_S));
     poseGate(0.85 * opening * (1 - closing));
-    /* She glides out of the lens along an arc, turning to face us. */
+    /* She glides out of the surface along an arc, turning to face us. */
     const out = window01(s, 0.5, ENTRY_LAND_S);
     model.visible = out > 0;
     if (out > 0) {
@@ -838,7 +1250,12 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   }
 
   function wake() {
-    if (disposed || frame || document.hidden) return;
+    if (disposed || document.hidden) return;
+    if (restTimer) {
+      window.clearTimeout(restTimer);
+      restTimer = 0;
+    }
+    if (frame) return;
     lastSeen = performance.now();
     frame = requestAnimationFrame(tick);
   }
@@ -901,8 +1318,16 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     if (document.hidden) return;
     if (live || queue.length || reset || entry) finish();
     fit();
+    stir();
   };
+  canvas.addEventListener("pointerdown", stir);
   document.addEventListener("visibilitychange", onVisibility);
+  /* Scrolled away, the gate stops turning; back, it goes on. */
+  const sight = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver(([seen]) => {
+    onScreen = seen?.isIntersecting ?? true;
+    if (onScreen) stir();
+  });
+  sight?.observe(canvas);
   setTrack(1);
   settle();
   fit();
@@ -913,6 +1338,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
         .catch(() => undefined)
         .then(() => {
           if (disposed) return;
+          renderer.shadowMap.needsUpdate = true;
           showingAll(() => renderer.render(scene, camera));
           render();
           readyAt = performance.now();
@@ -935,6 +1361,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
           settle();
           render();
           options.onArrived?.();
+          wake();
           return;
         }
         entry = { started: Math.max(performance.now(), readyAt + ENTRY_WAIT_MS), landed: false };
@@ -945,9 +1372,11 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       });
     },
     show(next, { reset: fresh = false } = {}) {
+      lastEvent = performance.now();
       if (next.places !== trackFor) setTrack(next.places);
       rest = next;
       setRelic(next.relic);
+      relicPending = false;
       /* She is still arriving: it ends where this round is. Cutting it
          short would also leave the page waiting for her to land. */
       if (entry) return;
@@ -967,8 +1396,10 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       settle();
       setBusy(false);
       render();
+      wake();
     },
     play(beats, next) {
+      lastEvent = performance.now();
       /* A newer round while one plays: jump to where the last one ended, then on. */
       if (live || queue.length || reset || entry) {
         if (entry && !entry.landed) options.onArrived?.();
@@ -981,6 +1412,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       if (next.places !== trackFor) setTrack(next.places);
       rest = next;
       setRelic(next.relic);
+      relicPending = beats.some(beat => beat.phase === "relic");
       if (reduced || beats.length === 0) {
         finish();
         return;
@@ -998,11 +1430,15 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
         piece.traverse(object => { if ((object as THREE.Mesh).isMesh) object.castShadow = true; });
       }
       render();
+      stir();
     },
     dispose() {
       disposed = true;
       if (frame) cancelAnimationFrame(frame);
+      if (restTimer) window.clearTimeout(restTimer);
+      canvas.removeEventListener("pointerdown", stir);
       observer?.disconnect();
+      sight?.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       rig.dispose();
       setTrack(0);
@@ -1012,15 +1448,19 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
         const materials = new Set<THREE.Material>();
         scene.traverse(object => {
           const mesh = object as THREE.Mesh;
-          if (!mesh.isMesh && !(object as THREE.Sprite).isSprite) return;
+          if (!mesh.isMesh && !(object as THREE.Sprite).isSprite && !(object as THREE.Points).isPoints) return;
           if (mesh.geometry) geometries.add(mesh.geometry);
           const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
           for (const material of list) if (material) materials.add(material);
         });
         geometries.forEach(geometry => geometry.dispose());
         materials.forEach(material => material.dispose());
+        ticks.dispose();
+        bolts.dispose();
+        beads.dispose();
+        lamps.dispose();
         glow.dispose();
-        portalTexture.dispose();
+        brushed.dispose();
         environment.dispose();
         renderer.dispose();
       });

@@ -2983,6 +2983,9 @@ export type TranslationDictionary = {
     carryOn: string;
     /** A seventh voyage with every relic already held. */
     relicsAllHeld: string;
+    /** The relic shown whole as it comes out of the gate: its seal, and the way out. */
+    revealSeal: string;
+    revealClose: string;
   };
   /** The games hub: one key on Home, then Hangyumi, Wordvault or Starweaver. */
   games: {

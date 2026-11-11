@@ -3127,6 +3127,8 @@ const english: TranslationDictionary = {
     wearFailed: "It couldn't be put on. It's in your wardrobe.",
     carryOn: "Carry on",
     relicsAllHeld: "You hold every relic, so this voyage brought back the voyage itself.",
+    revealSeal: "Seal {seal} · Starwoven Relic",
+    revealClose: "Close",
   },
   games: {
     title: "Yumi's games",

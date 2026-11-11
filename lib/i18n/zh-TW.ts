@@ -3083,6 +3083,8 @@ const traditionalChinese: TranslationDictionary = {
     wearFailed: "沒有穿上，但已收進衣櫥。",
     carryOn: "繼續",
     relicsAllHeld: "你已擁有全部遺物，這趟航行帶回的是旅程本身。",
+    revealSeal: "封印 {seal}・織星遺物",
+    revealClose: "關閉",
   },
   games: {
     title: "Yumi 遊戲室",

@@ -2929,6 +2929,8 @@ const italian: TranslationDictionary = {
     wearFailed: "Non è stato possibile indossarla. È nel tuo guardaroba.",
     carryOn: "Continua",
     relicsAllHeld: "Hai tutte le reliquie: questo viaggio ha riportato il viaggio stesso.",
+    revealSeal: "Sigillo {seal} · Reliquia tessuta di stelle",
+    revealClose: "Chiudi",
   },
   games: {
     title: "I giochi di Yumi",

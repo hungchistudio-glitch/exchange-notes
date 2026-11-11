@@ -3123,6 +3123,8 @@ const spanish: TranslationDictionary = {
     wearFailed: "No se pudo poner. Está en tu armario.",
     carryOn: "Seguir",
     relicsAllHeld: "Ya tienes todas las reliquias, así que este viaje trajo el propio viaje.",
+    revealSeal: "Sello {seal} · Reliquia tejida de estrellas",
+    revealClose: "Cerrar",
   },
   games: {
     title: "Los juegos de Yumi",

@@ -348,8 +348,8 @@ describe("the game's finish", () => {
     await screen.findByText("lasting a very short time");
     await guess("z");
     expect(screen.getByRole("button", { name: "z, already guessed" })).toHaveAttribute("data-latest", "true");
-    // A miss blushes the screen's edge.
-    expect(document.querySelector("[class*='missFlash']")).not.toBeNull();
+    // A miss blushes the screen's edge (with no WebGL here, the overlay's stand-in).
+    expect(document.querySelector("[class*='liquidGlow'][data-kind='miss'][data-on='true']")).not.toBeNull();
     await guess("é");
     expect(screen.getByRole("button", { name: "z, already guessed" })).toHaveAttribute("data-latest", "false");
     expect(screen.getByRole("button", { name: "é, already guessed" })).toHaveAttribute("data-latest", "true");

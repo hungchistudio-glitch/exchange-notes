@@ -2929,6 +2929,8 @@ const french: TranslationDictionary = {
     wearFailed: "Impossible de la mettre. Elle est dans votre garde-robe.",
     carryOn: "Continuer",
     relicsAllHeld: "Vous avez toutes les reliques : ce voyage a rapporté le voyage lui-même.",
+    revealSeal: "Sceau {seal} · Relique tissée d’étoiles",
+    revealClose: "Fermer",
   },
   games: {
     title: "Les jeux de Yumi",

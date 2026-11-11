@@ -90,7 +90,7 @@ export default function HangyumiStage({ misses, status, outfit, label }: Props) 
 
   const hung = status === "playing" ? misses : 3;
   return (
-    <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"}>
+    <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"} data-liquid-stage="">
       <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
       {failed && (
         <svg className={styles.flat} viewBox="0 0 120 120" aria-hidden="true" focusable="false">

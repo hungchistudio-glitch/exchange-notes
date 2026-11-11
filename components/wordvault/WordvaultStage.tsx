@@ -186,7 +186,7 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
   const open = round?.status === "won";
   return (
     <>
-    <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"} data-game="wordvault">
+    <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"} data-game="wordvault" data-liquid-stage="">
       <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
       {failed && (
         <svg className={styles.flat} viewBox="0 0 160 100" aria-hidden="true" focusable="false">
