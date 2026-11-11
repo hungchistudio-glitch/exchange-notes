@@ -212,7 +212,19 @@ local database built from this file:
 | --- | --- |
 | `20261111200000_hangyumi_nightscale` | `20261111185814` |
 
-**Twenty-two renames across fifteen occasions now. `apply_migration` always stamps its
+On 2026-11-12 the games hub's progress row, applied before the merge (Chi:
+"套用到資料庫"). It only adds `games_progress`, which reads; the live hub
+does not call it, and the new one hides its row until it answers. It was
+first run on production inside a transaction that ended with a deliberate
+`raise exception` (migration plus `supabase/tests/games_progress.sql`), and
+afterwards `md5(prosrc)` of both functions matched a local database built
+from this file:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261111225945_games_progress` | `20261111235459` |
+
+**Twenty-three renames across sixteen occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 
