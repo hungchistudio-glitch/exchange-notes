@@ -3003,6 +3003,7 @@ const traditionalChinese: TranslationDictionary = {
       worn: "已穿上",
       wearFailed: "沒有穿上，但已收進衣櫥。",
       carryOn: "繼續",
+      revealSeal: "第 {seal} 號・夜鱗典藏",
     },
     close: "關閉",
     reviewPage: {
@@ -3062,6 +3063,15 @@ const traditionalChinese: TranslationDictionary = {
     rewardCookies: "額外 +{count} 塊餅乾，不計入每天 333",
     rewardItem: "已收進衣櫥",
     rewardLimited: "神話秘藏",
+    revealSeal: "{origin}・神話秘藏",
+    origins: {
+      greek: "希臘神話",
+      norse: "北歐神話",
+      egyptian: "埃及神話",
+      chinese: "中國神話",
+      celtic: "凱爾特傳說",
+      mesopotamian: "美索不達米亞神話",
+    },
     rewardAllOwned: "你已擁有它可能開出的每一件，所以這次給你餅乾。",
     chestPaid: "寶箱裡還有 {count} 塊餅乾。",
   },

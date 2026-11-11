@@ -14,7 +14,10 @@ import { LIQUID_EVENT, type LiquidFlowRequest } from "@/lib/starweaver/liquid";
    the studio itself is a stub that records what it is asked.
    ========================================================= */
 
-type Built = { set: ReturnType<typeof vi.fn>; dispose: ReturnType<typeof vi.fn>; rest: (lowered: boolean) => void };
+type Built = {
+  set: ReturnType<typeof vi.fn>; dispose: ReturnType<typeof vi.fn>; present: ReturnType<typeof vi.fn>;
+  rest: (lowered: boolean) => void;
+};
 const studio = vi.hoisted(() => ({
   create: vi.fn(),
   built: [] as Built[],
@@ -23,7 +26,7 @@ const studio = vi.hoisted(() => ({
 vi.mock("@/lib/hangyumi/studio", () => ({
   createHangyumiStudio: studio.create.mockImplementation(
     (_canvas: HTMLCanvasElement, options: { onArrived?: (lowered: boolean) => void }) => {
-      const one = { set: vi.fn(), dispose: vi.fn(), rest: (lowered: boolean) => options.onArrived?.(lowered) };
+      const one = { set: vi.fn(), dispose: vi.fn(), present: vi.fn(), rest: (lowered: boolean) => options.onArrived?.(lowered) };
       studio.built.push(one);
       return one;
     },
@@ -118,3 +121,44 @@ describe("the way in", () => {
     expect(requests).toHaveLength(0);
   });
 });
+
+/* A Nightscale piece a third win unlocked (Chi, 2026-11-11): the line
+   lowers it, then the page shows it whole. */
+describe("a piece lowered on the line", () => {
+  const won = (present: { key: string; itemId: string } | null, onPresented: () => void) => (
+    <HangyumiStage misses={0} status="won" outfit={null} dealt onArrived={() => {}} present={present} onPresented={onPresented} label="studio" />
+  );
+
+  it("asks the studio to lower it once per round, and tells the page when it has reached us", async () => {
+    const presented = vi.fn();
+    const { rerender } = render(won(null, presented));
+    await waitFor(() => expect(studio.built).toHaveLength(1));
+    rerender(won({ key: "r1", itemId: "ns-fang-drop" }, presented));
+    expect(studio.built[0].present).toHaveBeenCalledTimes(1);
+    expect(studio.built[0].present.mock.calls[0][0]).toBe("ns-fang-drop");
+    expect(presented).not.toHaveBeenCalled();
+    act(() => studio.built[0].present.mock.calls[0][1]());
+    expect(presented).toHaveBeenCalledTimes(1);
+    rerender(won({ key: "r1", itemId: "ns-fang-drop" }, presented));
+    expect(studio.built[0].present).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends it straight to the page when the GPU takes the canvas back on the way", async () => {
+    const presented = vi.fn();
+    const { container, rerender } = render(won(null, presented));
+    await waitFor(() => expect(studio.built).toHaveLength(1));
+    rerender(won({ key: "r2", itemId: "ns-two-banners" }, presented));
+    act(() => { container.querySelector("canvas")!.dispatchEvent(new Event("webglcontextlost", { cancelable: true })); });
+    expect(presented).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows it at once where there is no studio", async () => {
+    const presented = vi.fn();
+    studio.create.mockImplementationOnce(() => null);
+    const { rerender } = render(won(null, presented));
+    await waitFor(() => expect(studio.create).toHaveBeenCalled());
+    rerender(won({ key: "r3", itemId: "ns-seam-pin" }, presented));
+    expect(presented).toHaveBeenCalledTimes(1);
+  });
+});
+

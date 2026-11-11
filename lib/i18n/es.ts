@@ -3043,6 +3043,7 @@ const spanish: TranslationDictionary = {
       worn: "Puesta",
       wearFailed: "No se pudo poner. Está en tu armario.",
       carryOn: "Seguir",
+      revealSeal: "N.º {seal} · Escamas de noche",
     },
     close: "Cerrar",
     reviewPage: {
@@ -3102,6 +3103,15 @@ const spanish: TranslationDictionary = {
     rewardCookies: "+{count} galletas, aparte de las 333 de hoy",
     rewardItem: "Nuevo en tu armario",
     rewardLimited: "Del Tesoro Mítico",
+    revealSeal: "{origin} · El Tesoro Mítico",
+    origins: {
+      greek: "Mito griego",
+      norse: "Mito nórdico",
+      egyptian: "Mito egipcio",
+      chinese: "Leyenda china",
+      celtic: "Leyenda celta",
+      mesopotamian: "Mito mesopotámico",
+    },
     rewardAllOwned: "Ya tienes todas las piezas que podía traer, así que dio galletas.",
     chestPaid: "El cofre guardaba {count} galletas más.",
   },

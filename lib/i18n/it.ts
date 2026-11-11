@@ -2849,6 +2849,7 @@ const italian: TranslationDictionary = {
       worn: "Indossato",
       wearFailed: "Non è stato possibile indossarlo. È nel tuo guardaroba.",
       carryOn: "Continua",
+      revealSeal: "N. {seal} · Squame di notte",
     },
     close: "Chiudi",
     reviewPage: {
@@ -2908,6 +2909,15 @@ const italian: TranslationDictionary = {
     rewardCookies: "+{count} biscotti, oltre ai 333 di oggi",
     rewardItem: "Nuovo nel tuo guardaroba",
     rewardLimited: "Dal Tesoro dei Miti",
+    revealSeal: "{origin} · Il Tesoro dei Miti",
+    origins: {
+      greek: "Mito greco",
+      norse: "Mito norreno",
+      egyptian: "Mito egizio",
+      chinese: "Leggenda cinese",
+      celtic: "Leggenda celtica",
+      mesopotamian: "Mito mesopotamico",
+    },
     rewardAllOwned: "Hai già tutti i pezzi che poteva contenere, quindi ha dato biscotti.",
     chestPaid: "Lo scrigno conteneva altri {count} biscotti.",
   },

@@ -2849,6 +2849,7 @@ const french: TranslationDictionary = {
       worn: "Portée",
       wearFailed: "Impossible de la mettre. Elle est dans votre garde-robe.",
       carryOn: "Continuer",
+      revealSeal: "N° {seal} · Écailles de nuit",
     },
     close: "Fermer",
     reviewPage: {
@@ -2908,6 +2909,15 @@ const french: TranslationDictionary = {
     rewardCookies: "+{count} biscuits, en plus des 333 du jour",
     rewardItem: "Nouveau dans votre garde-robe",
     rewardLimited: "Du Trésor des Mythes",
+    revealSeal: "{origin} · Le Trésor des Mythes",
+    origins: {
+      greek: "Mythe grec",
+      norse: "Mythe nordique",
+      egyptian: "Mythe égyptien",
+      chinese: "Légende chinoise",
+      celtic: "Légende celtique",
+      mesopotamian: "Mythe mésopotamien",
+    },
     rewardAllOwned: "Vous avez déjà toutes les pièces qu’il pouvait contenir : il a donné des biscuits.",
     chestPaid: "Le coffre contenait {count} biscuits de plus.",
   },

@@ -16,6 +16,16 @@ import { makeStudioEnvironment } from "@/lib/yumi3d/scene";
    turn. components/starweaver/RelicReveal.tsx loads this lazily.
    ========================================================= */
 
+/** The light it turns in: Starweaver's ice, Nightscale's gold over ink,
+    the Mythic Vault's warm gilt. */
+export type RevealPalette = "ice" | "gold" | "gilt";
+
+const LIGHT: Record<RevealPalette, { stops: [string, string, string, string]; rim: number; fill: number }> = {
+  ice: { stops: ["rgba(236,250,252,0.95)", "rgba(150,214,226,0.45)", "rgba(140,130,230,0.12)", "rgba(124,196,209,0)"], rim: 0x9fe3ee, fill: 0xc4ccff },
+  gold: { stops: ["rgba(255,244,214,0.95)", "rgba(224,189,106,0.45)", "rgba(110,70,160,0.14)", "rgba(224,189,106,0)"], rim: 0xe9c77a, fill: 0xb9a3e0 },
+  gilt: { stops: ["rgba(255,248,226,0.95)", "rgba(240,200,120,0.45)", "rgba(220,150,90,0.12)", "rgba(240,200,120,0)"], rim: 0xffe0a0, fill: 0xffd8c4 },
+};
+
 export type RelicShowcase = {
   /** Resolves once the relic has been drawn for the first time. */
   ready: Promise<void>;
@@ -24,15 +34,15 @@ export type RelicShowcase = {
 
 const easeOut = (t: number) => 1 - (1 - t) ** 3;
 
-function glowTexture(): THREE.CanvasTexture {
+function glowTexture(stops: readonly string[]): THREE.CanvasTexture {
   const paper = document.createElement("canvas");
   paper.width = paper.height = 128;
   const ink = paper.getContext("2d")!;
   const gradient = ink.createRadialGradient(64, 64, 0, 64, 64, 64);
-  gradient.addColorStop(0, "rgba(236,250,252,0.95)");
-  gradient.addColorStop(0.3, "rgba(150,214,226,0.45)");
-  gradient.addColorStop(0.7, "rgba(140,130,230,0.12)");
-  gradient.addColorStop(1, "rgba(124,196,209,0)");
+  gradient.addColorStop(0, stops[0]);
+  gradient.addColorStop(0.3, stops[1]);
+  gradient.addColorStop(0.7, stops[2]);
+  gradient.addColorStop(1, stops[3]);
   ink.fillStyle = gradient;
   ink.fillRect(0, 0, 128, 128);
   const texture = new THREE.CanvasTexture(paper);
@@ -43,7 +53,7 @@ function glowTexture(): THREE.CanvasTexture {
 export function createRelicShowcase(
   canvas: HTMLCanvasElement,
   itemId: string,
-  { reducedMotion = false }: { reducedMotion?: boolean } = {},
+  { reducedMotion = false, palette = "ice" }: { reducedMotion?: boolean; palette?: RevealPalette } = {},
 ): RelicShowcase | null {
   let renderer: THREE.WebGLRenderer;
   try {
@@ -75,11 +85,12 @@ export function createRelicShowcase(
   const key = new THREE.DirectionalLight(0xfff6ea, 2.4);
   key.position.set(3, 5, 4);
   scene.add(key);
-  /* A cold rim from behind, the gate's light still on it. */
-  const rim = new THREE.DirectionalLight(0x9fe3ee, 2.4);
+  const light = LIGHT[palette];
+  /* A rim from behind in the collection's light: the gate's ice, the gold. */
+  const rim = new THREE.DirectionalLight(light.rim, 2.4);
   rim.position.set(-4, 2, -3);
   scene.add(rim);
-  const fill = new THREE.DirectionalLight(0xc4ccff, 0.6);
+  const fill = new THREE.DirectionalLight(light.fill, 0.6);
   fill.position.set(-3, -1, 3);
   scene.add(fill);
 
@@ -93,7 +104,7 @@ export function createRelicShowcase(
   spinner.add(holder);
   scene.add(spinner);
 
-  const glow = glowTexture();
+  const glow = glowTexture(light.stops);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({
     map: glow, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending,
   }));

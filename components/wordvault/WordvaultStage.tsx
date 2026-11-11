@@ -22,6 +22,10 @@ type Props = {
   dealt: boolean;
   /** She has touched the stone, or there is no studio to arrive in. */
   onArrived: () => void;
+  /** A Mythic Vault piece the chest just gave, keyed by its round. */
+  present?: { key: string; itemId: string } | null;
+  /** The piece has flown out of the chest to us: the page shows it whole. */
+  onPresented?: () => void;
   label: string;
   skipLabel: string;
 };
@@ -57,11 +61,19 @@ const sceneOf = (round: HangyumiRound): VaultScene => ({
  */
 const WALLET_WAIT_MS = 2500;
 
-export default function WordvaultStage({ round, outfit, dressed, dealt, onArrived, label, skipLabel }: Props) {
+export default function WordvaultStage({ round, outfit, dressed, dealt, onArrived, present = null, onPresented, label, skipLabel }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const studioRef = useRef<WordvaultStudio | null>(null);
   const shownRef = useRef<HangyumiRound | null>(null);
-  const latestRef = useRef({ round, outfit, dressed, dealt, onArrived });
+  const latestRef = useRef({ round, outfit, dressed, dealt, onArrived, onPresented });
+  /* The gift sent for, and whether the page has been told it arrived. */
+  const presentedRef = useRef<string | null>(null);
+  const awaitingRef = useRef(false);
+  const presentedNow = useRef(() => {
+    if (!awaitingRef.current) return;
+    awaitingRef.current = false;
+    latestRef.current.onPresented?.();
+  });
   /* The studio is drawn and showing; she has been sent for. */
   const readyRef = useRef(false);
   const sentRef = useRef(false);
@@ -88,8 +100,20 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
     latestRef.current.dressed = dressed;
     latestRef.current.dealt = dealt;
     latestRef.current.onArrived = onArrived;
+    latestRef.current.onPresented = onPresented;
     arriveRef.current();
-  }, [dressed, dealt, onArrived, walletLate]);
+  }, [dressed, dealt, onArrived, onPresented, walletLate]);
+
+  /* A Mythic Vault piece the chest just gave: the studio flies it out of
+     the chest, or, with no studio, the page shows it at once. Once per round. */
+  useEffect(() => {
+    if (!present || presentedRef.current === present.key) return;
+    presentedRef.current = present.key;
+    awaitingRef.current = true;
+    const studio = studioRef.current;
+    if (studio && readyRef.current) studio.present(present.itemId, presentedNow.current);
+    else presentedNow.current();
+  }, [present]);
 
   /* The wallet's wait, counted from the deal. */
   useEffect(() => {
@@ -163,6 +187,7 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
       setFailed(true);
       setBusy(false);
       latestRef.current.onArrived();
+      presentedNow.current();
     };
     canvas.addEventListener("webglcontextlost", lost);
     canvas.addEventListener("webglcontextrestored", build);

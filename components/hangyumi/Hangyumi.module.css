@@ -2179,6 +2179,49 @@
 }
 
 /* Reduced motion: it fades in, still; nothing grows, flies or bursts. */
+/* Each collection in its own light (2026-11-11): Starweaver's ice above;
+   Nightscale's ink with gold and a trace of purple; the Mythic Vault's
+   night with warm gilt. */
+.reveal[data-collection="nightscale"] {
+  color: #f6f1e4;
+  background: radial-gradient(circle at 50% 36%, #2a2418f2 0%, #121310f5 42%, #070807f7 72%);
+}
+
+.reveal[data-collection="nightscale"] .revealBurst {
+  background: radial-gradient(circle, #fff4d6d9 0%, #e0bd6a73 10%, #6e46a02e 24%, #e0bd6a00 42%);
+}
+
+.reveal[data-collection="nightscale"] .revealTitle,
+.reveal[data-collection="nightscale"] .revealSeal {
+  color: #e9cf8fcc;
+}
+
+.reveal[data-collection="nightscale"] .revealPrimary {
+  color: #1b1408;
+  background: linear-gradient(180deg, #fff1c8, #e0bd6a);
+  box-shadow: 0 8px 24px -10px #e0bd6acc;
+}
+
+.reveal[data-collection="mythic"] {
+  color: #f8f2e6;
+  background: radial-gradient(circle at 50% 36%, #2a2440f2 0%, #14121ef5 42%, #08070bf7 72%);
+}
+
+.reveal[data-collection="mythic"] .revealBurst {
+  background: radial-gradient(circle, #fff8e2d9 0%, #f0c87873 10%, #dc965a26 24%, #f0c87800 42%);
+}
+
+.reveal[data-collection="mythic"] .revealTitle,
+.reveal[data-collection="mythic"] .revealSeal {
+  color: #eed9a8cc;
+}
+
+.reveal[data-collection="mythic"] .revealPrimary {
+  color: #22180a;
+  background: linear-gradient(180deg, #fff6dc, #e7c27a);
+  box-shadow: 0 8px 24px -10px #e7c27acc;
+}
+
 .reveal[data-reduced="true"] .revealBurst {
   display: none;
 }

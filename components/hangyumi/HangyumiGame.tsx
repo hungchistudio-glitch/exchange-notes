@@ -22,6 +22,7 @@ import {
 } from "@/lib/languages";
 import { shopItem, type YumiOutfit } from "@/lib/shop/catalog";
 import { nightscaleItem } from "@/lib/shop/nightscaleCollection";
+import { mythicItem } from "@/lib/shop/mythicCollection";
 import { STARWEAVER_ITEMS, starweaverItem } from "@/lib/shop/starweaverCollection";
 import { flowLiquid } from "@/lib/starweaver/liquid";
 import { announceEnergyLanded } from "@/lib/shop/energy";
@@ -171,6 +172,11 @@ export default function HangyumiGame({
   const [wearing, setWearing] = useState<{ id: string; state: "wearing" | "worn" | "failed" } | null>(null);
   /* Starweaver: the round whose relic is shown whole, once it is out of the gate. */
   const [revealFor, setRevealFor] = useState<string | null>(null);
+  /* A piece a guess has just unlocked, for the stage to send out before the
+     reveal: Hangyumi's line lowers it, Wordvault's chest flies it out. Set
+     only by a guess, never by a round picked up again, so a reload never
+     replays it. Starweaver's gate keeps its own (StarweaverStage). */
+  const [presentFor, setPresentFor] = useState<{ key: string; itemId: string } | null>(null);
   const online = useOnline();
   const reducedMotion = useReducedMotion();
 
@@ -341,7 +347,8 @@ export default function HangyumiGame({
     setDeal(n => n + 1);
   }, [queuedLevel, queuedLanguage, level, learningLanguage, game, applyLanguage]);
 
-  /* A relic, out of the gate: shown whole; closed, or carried on to the next word. */
+  /* A piece out of the gate, off the line or out of the chest: shown whole;
+     closed, or carried on to the next word. */
   const showRelic = useCallback(() => setRevealFor(roundRef.current?.id ?? null), []);
   const closeRelic = useCallback(() => setRevealFor(null), []);
   const carryOnFromRelic = useCallback(() => {
@@ -448,6 +455,12 @@ export default function HangyumiGame({
       if (!result.repeat) {
         if (result.hit || result.status === "won") flowLiquid(result.status === "won" ? "word" : "letter", from, game);
         else flowLiquid("miss", from, game);
+      }
+      if (!result.repeat && result.status === "won") {
+        const unlocked = game === "hangyumi" ? result.nightscale?.award?.itemId
+          : game === "wordvault" && result.chestReward?.limited ? result.chestReward.item
+            : null;
+        if (unlocked) setPresentFor({ key: result.id, itemId: unlocked });
       }
       if (!result.repeat) {
         if (result.status === "won") {
@@ -729,6 +742,8 @@ export default function HangyumiGame({
               dressed={walletRead}
               dealt={phase !== "loading"}
               onArrived={arrive}
+              present={presentFor && presentFor.key === round?.id ? presentFor : null}
+              onPresented={showRelic}
               label={stageLabel}
               skipLabel={t.wordvault.skip}
             />
@@ -753,6 +768,8 @@ export default function HangyumiGame({
                 outfit={outfit}
                 dealt={phase !== "loading"}
                 onArrived={arrive}
+                present={presentFor && presentFor.key === round?.id ? presentFor : null}
+                onPresented={showRelic}
                 label={stageLabel}
               />
             )}
@@ -1173,27 +1190,60 @@ export default function HangyumiGame({
 
       <div ref={celebrateRef} className={styles.flight} aria-hidden="true" />
       <LiquidFlow />
-      {game === "starweaver" && round && revealFor === round.id && (() => {
-        const relic = starweaverItem(round.starweaver?.award?.itemId);
-        if (!relic) return null;
+      {round && revealFor === round.id && (() => {
+        /* The piece this round unlocked, whichever game: Starweaver's
+           relic, Hangyumi's Nightscale piece, or the Mythic Vault piece in
+           Wordvault's chest (Chi, 2026-11-11: every game shows it whole). */
+        const shown = game === "starweaver"
+          ? (() => {
+              const relic = starweaverItem(round.starweaver?.award?.itemId);
+              return relic && {
+                item: relic, collection: "starweaver" as const,
+                title: t.starweaver.relicTitle, seal: fill(t.starweaver.revealSeal, { seal: relic.seal }),
+                words: t.starweaver, close: t.starweaver.revealClose,
+              };
+            })()
+          : game === "hangyumi"
+            ? (() => {
+                const piece = nightscaleItem(round.nightscale?.award?.itemId);
+                return piece && {
+                  item: piece, collection: "nightscale" as const,
+                  title: t.hangyumi.nightscale.title, seal: fill(t.hangyumi.nightscale.revealSeal, { seal: piece.seal }),
+                  words: t.hangyumi.nightscale, close: t.hangyumi.close,
+                };
+              })()
+            : (() => {
+                const reward = round.chestReward;
+                const piece = reward?.limited ? mythicItem(reward.item) : null;
+                return piece && {
+                  item: piece, collection: "mythic" as const,
+                  title: t.wordvault.rewardTitle,
+                  seal: fill(t.wordvault.revealSeal, { origin: t.wordvault.origins[piece.origin] }),
+                  /* "Wear it" and the rest, said of a piece. */
+                  words: t.hangyumi.nightscale, close: t.hangyumi.close,
+                };
+              })();
+        if (!shown) return null;
+        const { item, words } = shown;
         const wear = wearing?.id === round.id ? wearing.state : null;
         return (
           <RelicReveal
-            item={relic}
+            item={item}
+            collection={shown.collection}
             language={interfaceLanguage}
             labels={{
-              title: t.starweaver.relicTitle,
-              seal: fill(t.starweaver.revealSeal, { seal: relic.seal }),
-              wear: t.starweaver.wear,
-              wearing: t.starweaver.wearing,
-              worn: t.starweaver.worn,
-              wearFailed: t.starweaver.wearFailed,
-              carryOn: t.starweaver.carryOn,
-              close: t.starweaver.revealClose,
+              title: shown.title,
+              seal: shown.seal,
+              wear: words.wear,
+              wearing: words.wearing,
+              worn: words.worn,
+              wearFailed: words.wearFailed,
+              carryOn: words.carryOn,
+              close: shown.close,
             }}
             wear={wear}
-            isWorn={wear === "worn" || outfit?.[relic.slot] === relic.id}
-            onWear={wearPiece ? () => wearRelic(round.id, relic.id) : undefined}
+            isWorn={wear === "worn" || outfit?.[item.slot] === item.id}
+            onWear={wearPiece ? () => wearRelic(round.id, item.id) : undefined}
             onCarryOn={carryOnFromRelic}
             onClose={closeRelic}
           />

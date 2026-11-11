@@ -3047,6 +3047,7 @@ const english: TranslationDictionary = {
       worn: "Wearing it",
       wearFailed: "It couldn't be put on. It's in your wardrobe.",
       carryOn: "Carry on",
+      revealSeal: "No. {seal} · Nightscale",
     },
     close: "Close",
     reviewPage: {
@@ -3106,6 +3107,15 @@ const english: TranslationDictionary = {
     rewardCookies: "+{count} cookies, beyond today's 333",
     rewardItem: "New in your wardrobe",
     rewardLimited: "From the Mythic Vault",
+    revealSeal: "{origin} · The Mythic Vault",
+    origins: {
+      greek: "Greek myth",
+      norse: "Norse myth",
+      egyptian: "Egyptian myth",
+      chinese: "Chinese legend",
+      celtic: "Celtic legend",
+      mesopotamian: "Mesopotamian myth",
+    },
     rewardAllOwned: "You already own every piece it could hold, so it gave cookies.",
     chestPaid: "The chest held {count} more cookies.",
   },

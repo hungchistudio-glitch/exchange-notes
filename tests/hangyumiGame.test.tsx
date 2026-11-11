@@ -22,13 +22,20 @@ vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => undefined }));
    rest as soon as the word is dealt. */
 vi.mock("@/components/hangyumi/HangyumiStage", async () => {
   const { useEffect } = await import("react");
-  type Props = { misses: number; status: string; outfit: unknown; dealt: boolean; onArrived: () => void; label: string };
-  function Stage({ misses, status, outfit, dealt, onArrived, label }: Props) {
+  type Props = {
+    misses: number; status: string; outfit: unknown; dealt: boolean; onArrived: () => void; label: string;
+    present?: { key: string; itemId: string } | null; onPresented?: () => void;
+  };
+  function Stage({ misses, status, outfit, dealt, onArrived, label, present, onPresented }: Props) {
     useEffect(() => { if (dealt) onArrived(); }, [dealt, onArrived]);
+    /* The line lowers the piece at once here. */
+    useEffect(() => { if (present) onPresented?.(); }, [present, onPresented]);
     return <div data-testid="stage" data-misses={misses} data-status={status} data-outfit={JSON.stringify(outfit)} aria-label={label} />;
   }
   return { default: Stage };
 });
+/* No WebGL here: the reveal keeps the piece's shop picture. */
+vi.mock("@/lib/starweaver/relicShowcase", () => ({ createRelicShowcase: () => null }));
 vi.mock("@/components/shop/EnergyCookie", () => ({ default: () => <span aria-hidden="true" /> }));
 
 const WORDS: PracticeWord[] = [
@@ -398,17 +405,34 @@ describe("Nightscale in Hangyumi", () => {
     expect(within(progress()).getByText("Nightscale 0 / 24")).toBeInTheDocument();
   });
 
-  it("unlocks a piece on the third word won, says what it is, and puts it on when asked", async () => {
+  it("unlocks a piece on the third word won, shows it whole, and puts it on when asked", async () => {
     const { wearPiece } = playToward(2);
     await screen.findByText("lasting a very short time");
     for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
-    expect(await screen.findByText("Unlocked by your third word")).toBeInTheDocument();
-    expect(screen.getByText("Fang Drop")).toBeInTheDocument();
+    // Lowered on the line, then shown whole: its number, name and a line about it.
+    const dialog = await screen.findByRole("dialog", { name: "Fang Drop" });
+    expect(dialog).toHaveAttribute("data-collection", "nightscale");
+    expect(within(dialog).getByText("No. 19 · Nightscale")).toBeInTheDocument();
+    expect(dialog).toHaveAccessibleDescription("One curved fang in black enamel, tipped with gold. One strike is enough.");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Wear it" }));
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Wearing it" })).toBeDisabled());
+    expect(wearPiece).toHaveBeenCalledWith("ns-fang-drop");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    // Under it, the card stays, and the count has moved on.
+    expect(screen.getByText("Unlocked by your third word")).toBeInTheDocument();
     expect(screen.getByText("Nightscale · New in your wardrobe")).toBeInTheDocument();
     expect(within(progress()).getByText("Nightscale 1 / 24")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Wear it" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Wearing it" })).toBeDisabled());
-    expect(wearPiece).toHaveBeenCalledWith("ns-fang-drop");
+  });
+
+  it("carries on to the next word from the reveal", async () => {
+    playToward(2);
+    await screen.findByText("lasting a very short time");
+    for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
+    const dialog = await screen.findByRole("dialog", { name: "Fang Drop" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Carry on" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await waitFor(() => expect(screen.queryByText("Unlocked by your third word")).toBeNull());
   });
 
   it("counts nothing for a word lost, and unlocks nothing before the third", async () => {

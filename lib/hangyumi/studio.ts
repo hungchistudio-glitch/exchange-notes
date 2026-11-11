@@ -4,7 +4,7 @@ import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { ARM_ROOT, EYE_REST, buildYumiActor } from "@/lib/yumi3d/actor";
 import { EYE_RADIUS, SHELL_RADIUS, TUBE_RADIUS } from "@/lib/yumi3d/anatomy";
-import { createOutfitRig } from "@/lib/yumi3d/outfit";
+import { buildThumbnailObject, createOutfitRig, disposeObject } from "@/lib/yumi3d/outfit";
 import { makeStudioEnvironment } from "@/lib/yumi3d/scene";
 
 import { createGrains, type Grain } from "./particles";
@@ -51,6 +51,11 @@ export type StudioPose = {
 
 export type HangyumiStudio = {
   set(pose: StudioPose): void;
+  /** A Nightscale piece a third win unlocked: once she is free and on her
+      stand, the empty line lowers it beside her, it turns once and flies
+      to the camera; then `onShown` (at once under reduced motion). Another
+      word dealt before then drops it, and `onShown` is never called. */
+  present(itemId: string, onShown: () => void): void;
   dispose(): void;
 };
 
@@ -70,6 +75,8 @@ const easeOutBounce = (t: number) => {
   return 7.5625 * (t -= 2.625 / 2.75) * t + 0.984375;
 };
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
+/* Past the end a little and back: a line catching its weight. */
+const easeOutBack = (t: number) => 1 + 2.2 * (t - 1) ** 3 + 1.2 * (t - 1) ** 2;
 
 /** How long the first line takes to lower and come to rest, bounce and all:
     within a hundredth of its length by then, and the sweep's front takes a
@@ -190,6 +197,147 @@ export function createHangyumiStudio(
     joint.position.set(x, y, material === sage ? TUBE * 0.9 : 0);
   }
 
+  // ------------------------------------------------- the set, dressed
+  /* Chi, 2026-11-11: the studio as finished as the gate and the chest
+     ("絞台、地板、燈光與背景道具更精緻"). All of it is still, so it costs
+     only while something else moves. */
+  const canvasTexture = (width: number, height: number, draw: (ctx: CanvasRenderingContext2D) => void) => {
+    const paper = document.createElement("canvas");
+    paper.width = width;
+    paper.height = height;
+    const ink = paper.getContext("2d");
+    if (ink) draw(ink);
+    const texture = new THREE.CanvasTexture(paper);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 4;
+    return texture;
+  };
+  const dressingTextures: THREE.Texture[] = [];
+
+  /* The floor: a round inlay under the whole set, fine concentric grooves
+     and one silver ring, so the white has a place to stand. */
+  const inlayMap = canvasTexture(1024, 1024, ink => {
+    const c = 512;
+    ink.fillStyle = "#f1eee7";
+    ink.fillRect(0, 0, 1024, 1024);
+    for (let r = 40; r < 510; r += 22) {
+      ink.strokeStyle = r % 88 === 40 ? "rgba(150,140,120,0.22)" : "rgba(150,140,120,0.1)";
+      ink.lineWidth = 1.5;
+      ink.beginPath();
+      ink.arc(c, c, r, 0, Math.PI * 2);
+      ink.stroke();
+    }
+    for (let i = 0; i < 24; i += 1) {
+      const a = (i / 24) * Math.PI * 2;
+      ink.strokeStyle = "rgba(150,140,120,0.08)";
+      ink.beginPath();
+      ink.moveTo(c + Math.cos(a) * 300, c + Math.sin(a) * 300);
+      ink.lineTo(c + Math.cos(a) * 505, c + Math.sin(a) * 505);
+      ink.stroke();
+    }
+  });
+  dressingTextures.push(inlayMap);
+  const inlay = new THREE.Mesh(new THREE.CircleGeometry(6.2, 96), new THREE.MeshStandardMaterial({ map: inlayMap, roughness: 0.85, metalness: 0 }));
+  inlay.rotation.x = -Math.PI / 2;
+  inlay.position.set(-1.1, 0.004, 0);
+  inlay.receiveShadow = true;
+  scene.add(inlay);
+  const inlayRing = new THREE.Mesh(new THREE.RingGeometry(6.12, 6.2, 128), silver);
+  inlayRing.rotation.x = -Math.PI / 2;
+  inlayRing.position.set(-1.1, 0.006, 0);
+  scene.add(inlayRing);
+
+  /* The post stands in a square foot plate, bolted down; brackets hold the
+     corner where the beam meets it. Her silver and sage, as her joints. */
+  const plate = solid(new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.08, 0.95), lacquer));
+  plate.position.set(POST_X, 0.04, 0);
+  const boltGeometry = new THREE.CylinderGeometry(0.045, 0.045, 0.05, 12);
+  for (const [dx, dz] of [[-0.34, -0.34], [0.34, -0.34], [-0.34, 0.34], [0.34, 0.34]]) {
+    const bolt = solid(new THREE.Mesh(boltGeometry, silver));
+    bolt.position.set(POST_X + dx, 0.1, dz);
+  }
+  const collar = solid(new THREE.Mesh(new THREE.CylinderGeometry(TUBE * 1.35, TUBE * 1.35, 0.22, 32), silver));
+  collar.position.set(POST_X, BASE_TOP + 0.08, 0);
+  for (const side of [-1, 1]) {
+    const bracket = solid(new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.62, 0.03), lacquer));
+    bracket.position.set(POST_X + 0.2, BEAM_Y - 0.2, side * (TUBE + 0.02));
+    for (const [bx, by] of [[0.05, -0.05], [0.38, -0.05], [0.05, -0.38]]) {
+      const rivet = solid(new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), sage));
+      rivet.position.set(POST_X + bx, BEAM_Y + by, side * (TUBE + 0.045));
+    }
+  }
+  /* A sage band where the line hangs, and a small end cap on the beam. */
+  const hangBand = solid(new THREE.Mesh(new THREE.CylinderGeometry(TUBE * 1.12, TUBE * 1.12, 0.16, 28), sage));
+  hangBand.rotation.z = Math.PI / 2;
+  hangBand.position.set(0, BEAM_Y, 0);
+
+  /* The stand gets a brass plate on its front, with the game's name. */
+  const plaqueMap = canvasTexture(512, 96, ink => {
+    const g = ink.createLinearGradient(0, 0, 0, 96);
+    g.addColorStop(0, "#d9bc7c");
+    g.addColorStop(1, "#a9873f");
+    ink.fillStyle = g;
+    ink.fillRect(0, 0, 512, 96);
+    ink.strokeStyle = "#7a5f28";
+    ink.lineWidth = 4;
+    ink.strokeRect(6, 6, 500, 84);
+    ink.fillStyle = "#3a2c10";
+    ink.font = "600 46px Georgia, 'Times New Roman', serif";
+    ink.textAlign = "center";
+    ink.textBaseline = "middle";
+    ink.fillText("H A N G Y U M I", 256, 51);
+  });
+  dressingTextures.push(plaqueMap);
+  const plaque = solid(new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.16, 0.02), [
+    silver, silver, silver, silver,
+    new THREE.MeshStandardMaterial({ map: plaqueMap, metalness: 0.7, roughness: 0.35 }),
+    silver,
+  ]));
+  plaque.position.set(0, BASE_TOP * 0.55, 2.55);
+  plaque.rotation.x = -0.08;
+
+  /* By the post: three letter tiles, stacked as if left from the last
+     word, and the spare line, coiled. */
+  const wood = new THREE.MeshStandardMaterial({ color: 0xe2cfa8, roughness: 0.62, metalness: 0 });
+  const tileFace = (letter: string) => {
+    const map = canvasTexture(128, 128, ink => {
+      ink.fillStyle = "#e9d8b4";
+      ink.fillRect(0, 0, 128, 128);
+      ink.strokeStyle = "rgba(120,90,40,0.25)";
+      ink.strokeRect(6, 6, 116, 116);
+      ink.fillStyle = "#16171a";
+      ink.font = "700 84px Georgia, 'Times New Roman', serif";
+      ink.textAlign = "center";
+      ink.textBaseline = "middle";
+      ink.fillText(letter, 64, 70);
+    });
+    dressingTextures.push(map);
+    return new THREE.MeshStandardMaterial({ map, roughness: 0.6 });
+  };
+  const tileGeometry = new THREE.BoxGeometry(0.46, 0.46, 0.46);
+  for (const [letter, x, y, z, turn] of [["Y", -4.05, 0.23, 0.9, 0.25], ["U", -3.5, 0.23, 1.15, -0.2], ["M", -3.8, 0.69, 1.0, 0.05]] as const) {
+    const face = tileFace(letter);
+    const tile = solid(new THREE.Mesh(tileGeometry, [wood, wood, wood, wood, face, wood]));
+    tile.position.set(x, y, z);
+    tile.rotation.y = turn;
+  }
+  for (let i = 0; i < 4; i += 1) {
+    const turn = solid(new THREE.Mesh(new THREE.TorusGeometry(0.34 - i * 0.015, 0.03, 8, 40), silver));
+    turn.rotation.x = Math.PI / 2;
+    turn.position.set(-2.35, 0.035 + i * 0.055, 1.25);
+  }
+
+  /* A soft pool of light on the stand, and a faint warm light from behind
+     the gallows, so the set has a front and a back. No shadows: the key
+     casts those. */
+  const pool = new THREE.SpotLight(0xfff4e2, 18, 16, 0.42, 0.9, 1.6);
+  pool.position.set(0.4, 11.5, 2.4);
+  pool.target.position.set(0, 0, 0.3);
+  scene.add(pool, pool.target);
+  const back = new THREE.DirectionalLight(0xffe6c4, 0.45);
+  back.position.set(-5, 6, -8);
+  scene.add(back);
+
   /* Everything that swings hangs from this pivot, at the beam. */
   const pivot = new THREE.Group();
   pivot.position.set(0, BEAM_Y, 0.05 * SCALE);
@@ -204,6 +352,23 @@ export function createHangyumiStudio(
   ring.castShadow = true;
   pivot.add(ring);
   const fullLine = BEAM_Y - EYE_TOP;
+
+  /* The gift's own line, to her left and clear of the brace: it lowers a
+     Nightscale piece (Chi, 2026-11-11: "空繩把飾品吊下來"). */
+  const GIFT_X = -1.45;
+  const GIFT_HANG = 1.35;
+  const GIFT_SIZE = 0.95;
+  const giftLine = new THREE.Mesh(lineGeometry, silver);
+  giftLine.castShadow = true;
+  giftLine.visible = false;
+  giftLine.position.set(GIFT_X, BEAM_Y, 0.05 * SCALE);
+  scene.add(giftLine);
+  const giftHook = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.018, 8, 24), silver);
+  giftHook.visible = false;
+  scene.add(giftHook);
+  const giftHolder = new THREE.Group();
+  giftHolder.visible = false;
+  scene.add(giftHolder);
 
   // ------------------------------------------------------------ Yumi
   const actor = buildYumiActor();
@@ -466,10 +631,82 @@ export function createHangyumiStudio(
   let arriving: number | null = options.onArrived ? 0 : null;
 
   function moving(now: number) {
-    return exit !== null || grainsActive || arriving !== null || springs.some(s => !settled(s)) || free !== freeWanted
+    return exit !== null || grainsActive || arriving !== null || gift !== null || springs.some(s => !settled(s)) || free !== freeWanted
       || now - blinkAt < BLINK_MS
       || (lostAt !== null && (now - lostAt) / 1000 < STRUGGLE_DELAY + DEATH_SECONDS)
       || Math.abs(angle) > 0.0004 || Math.abs(velocity) > 0.0004;
+  }
+
+  // ------------------------------------------------------------ the gift
+  /* Lowered, turned once, flown to us. Seconds for each. */
+  const GIFT_IN = 0.95;
+  const GIFT_TURN = 1.15;
+  const GIFT_OUT = 0.6;
+  /* After she is free, a breath before the line comes. */
+  const GIFT_WAIT_MS = 300;
+  /* Built once she has landed and the scene is still: a piece's first
+     compile can hold a frame, and it should not be one of her drop. */
+  const GIFT_BUILD_MS = FREE_MS + 100;
+  type Gift = {
+    piece: THREE.Object3D | null; compiled: Promise<unknown>; ready: boolean; started: number | null;
+    onShown: () => void; timer: number;
+  };
+  let gift: Gift | null = null;
+  const giftNear = new THREE.Vector3();
+  const giftAt = new THREE.Vector3();
+  const giftView = new THREE.Vector3();
+
+  function dropGift(shown: boolean) {
+    const current = gift;
+    if (!current) return;
+    gift = null;
+    window.clearTimeout(current.timer);
+    giftHolder.visible = giftLine.visible = giftHook.visible = false;
+    const piece = current.piece;
+    if (piece) {
+      giftHolder.remove(piece);
+      /* Nothing goes while its compile is in flight (lib/yumi3d/AGENTS.md). */
+      void current.compiled.finally(() => disposeObject(piece));
+    }
+    if (shown) current.onShown();
+  }
+
+  function runGift(now: number) {
+    const current = gift;
+    if (!current) return;
+    if (current.started === null) {
+      const freed = freeWanted === 1 && free >= 1 && now - freeStartedAt >= FREE_MS + GIFT_WAIT_MS;
+      if (!freed || !current.ready) return;
+      current.started = now;
+      giftHolder.visible = giftLine.visible = giftHook.visible = true;
+    }
+    const s = (now - current.started) / 1000;
+    const drop = GIFT_HANG;
+    if (s < GIFT_IN + GIFT_TURN) {
+      /* Down with a little give at the bottom, then a slow full turn. */
+      const lower = s < GIFT_IN ? easeOutBack(clamp01(s / GIFT_IN)) : 1;
+      const length = drop * lower;
+      giftLine.scale.y = Math.max(0.001, length);
+      giftHook.position.set(GIFT_X, BEAM_Y - length, 0.05 * SCALE);
+      giftAt.set(GIFT_X, BEAM_Y - length - GIFT_SIZE * 1.05, 0.05 * SCALE);
+      giftHolder.position.copy(giftAt);
+      const turn = s < GIFT_IN ? 0 : clamp01((s - GIFT_IN) / GIFT_TURN);
+      giftHolder.rotation.set(0, (turn < 0.5 ? 2 * turn * turn : 1 - (-2 * turn + 2) ** 2 / 2) * Math.PI * 2, Math.sin(s * 2.4) * 0.05 * (1 - turn));
+      giftHolder.scale.setScalar(1);
+      return;
+    }
+    /* Off the hook and to us, into the middle of the frame; the line draws
+       back up as it goes. */
+    const out = clamp01((s - GIFT_IN - GIFT_TURN) / GIFT_OUT);
+    const q = out * out * (3 - 2 * out);
+    giftLine.scale.y = Math.max(0.001, drop * (1 - q));
+    giftHook.position.set(GIFT_X, BEAM_Y - drop * (1 - q), 0.05 * SCALE);
+    camera.getWorldDirection(giftView);
+    giftNear.copy(camera.position).addScaledVector(giftView, 6);
+    giftHolder.position.set(GIFT_X, BEAM_Y - drop - GIFT_SIZE * 1.05, 0.05 * SCALE).lerp(giftNear, q);
+    giftHolder.scale.setScalar(1 + q * 0.6);
+    giftHolder.rotation.y += 0.06;
+    if (out >= 1) dropGift(true);
   }
 
   function tick(now: number) {
@@ -489,6 +726,7 @@ export function createHangyumiStudio(
     rig.sync(dt, reduced);
     if (exit) runExit(now);
     runGrains(now);
+    runGift(now);
     renderer.render(scene, camera);
     if (arriving !== null) {
       arriving += Math.max(0, dt);
@@ -707,7 +945,50 @@ export function createHangyumiStudio(
   fit();
 
   return {
+    present(itemId, onShown) {
+      dropGift(false);
+      if (disposed) return;
+      if (reduced) {
+        onShown();
+        return;
+      }
+      const next: Gift = { piece: null, compiled: Promise.resolve(), ready: false, started: null, onShown, timer: 0 };
+      gift = next;
+      next.timer = window.setTimeout(() => {
+        if (gift !== next || disposed) return;
+        let piece: THREE.Object3D | null = null;
+        try {
+          piece = buildThumbnailObject(itemId);
+        } catch {
+          piece = null;
+        }
+        if (!piece) {
+          dropGift(true);
+          return;
+        }
+        /* Centred and made the same size whatever it is. */
+        const sphere = new THREE.Box3().setFromObject(piece).getBoundingSphere(new THREE.Sphere());
+        piece.position.sub(sphere.center);
+        const holder = new THREE.Group();
+        holder.add(piece);
+        holder.scale.setScalar(GIFT_SIZE / Math.max(0.05, sphere.radius));
+        holder.traverse(object => { if ((object as THREE.Mesh).isMesh) object.castShadow = true; });
+        giftHolder.add(holder);
+        next.piece = holder;
+        /* Its shaders compile while she is still being freed, out of sight. */
+        giftHolder.visible = true;
+        next.compiled = renderer.compileAsync(giftHolder, camera, scene).catch(() => undefined);
+        giftHolder.visible = false;
+        void next.compiled.then(() => {
+          next.ready = true;
+          wake();
+        });
+      }, GIFT_BUILD_MS);
+      wake();
+    },
     set(pose) {
+      /* Another word: the gift that was coming no longer is. */
+      if (pose.status === "playing" && pose.misses === 0) dropGift(false);
       if (exit) {
         /* The next word while she is still leaving: it waits its turn,
            unless it is already being played, which ends the leaving now. */
@@ -729,6 +1010,7 @@ export function createHangyumiStudio(
     },
     dispose() {
       disposed = true;
+      dropGift(false);
       if (frame) cancelAnimationFrame(frame);
       observer?.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
@@ -744,6 +1026,7 @@ export function createHangyumiStudio(
       });
       geometries.forEach(geometry => geometry.dispose());
       materials.forEach(material => material.dispose());
+      dressingTextures.forEach(texture => texture.dispose());
       environment.dispose();
       renderer.dispose();
     },

@@ -18,6 +18,10 @@ type Props = {
   dealt: boolean;
   /** The first line has come to rest, or there is no studio to wait for. */
   onArrived: () => void;
+  /** A Nightscale piece a guess just unlocked, keyed by its round. */
+  present?: { key: string; itemId: string } | null;
+  /** The piece has been lowered and flown to us: the page shows it whole. */
+  onPresented?: () => void;
   label: string;
 };
 
@@ -36,11 +40,14 @@ type Props = {
  * finds the page already in. With no studio to wait for, the page comes in
  * at once, and with nothing moving (reduced motion) there is no sweep.
  */
-export default function HangyumiStage({ misses, status, outfit, dealt, onArrived, label }: Props) {
+export default function HangyumiStage({ misses, status, outfit, dealt, onArrived, present = null, onPresented, label }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const studioRef = useRef<HangyumiStudio | null>(null);
   const poseRef = useRef({ misses, status, outfit });
-  const latestRef = useRef({ dealt, onArrived });
+  const latestRef = useRef({ dealt, onArrived, onPresented });
+  /* The gift sent for, and whether the page has been told it arrived. */
+  const presentedRef = useRef<string | null>(null);
+  const awaitingRef = useRef(false);
   /* The line has come to rest: true once it lowered, false if nothing moved. */
   const restedRef = useRef<boolean | null>(null);
   /* The page has been told. */
@@ -56,17 +63,36 @@ export default function HangyumiStage({ misses, status, outfit, dealt, onArrived
     if (restedRef.current) sweepLiquid("hangyumi");
     latestRef.current.onArrived();
   }, []);
-  /* No studio to wait for: the page comes in now, as it is. */
+  /* The gift has been shown, or cannot be: the page shows it whole. */
+  const presented = useCallback(() => {
+    if (!awaitingRef.current) return;
+    awaitingRef.current = false;
+    latestRef.current.onPresented?.();
+  }, []);
+  /* No studio to wait for: the page comes in now, as it is, and a gift on
+     its way goes straight to the page. */
   const giveUp = useCallback(() => {
+    presented();
     if (arrivedRef.current) return;
     arrivedRef.current = true;
     latestRef.current.onArrived();
-  }, []);
+  }, [presented]);
 
   useEffect(() => {
-    latestRef.current = { dealt, onArrived };
+    latestRef.current = { dealt, onArrived, onPresented };
     comeIn();
-  }, [dealt, onArrived, comeIn]);
+  }, [dealt, onArrived, onPresented, comeIn]);
+
+  /* A piece a guess just unlocked: the studio lowers it on the line, or,
+     with no studio, the page shows it at once. Once per round. */
+  useEffect(() => {
+    if (!present || presentedRef.current === present.key) return;
+    presentedRef.current = present.key;
+    awaitingRef.current = true;
+    const studio = studioRef.current;
+    if (studio) studio.present(present.itemId, presented);
+    else presented();
+  }, [present, presented]);
 
   useEffect(() => {
     poseRef.current = { misses, status, outfit };

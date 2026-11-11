@@ -2922,6 +2922,8 @@ export type TranslationDictionary = {
       worn: string;
       wearFailed: string;
       carryOn: string;
+      /** Over the reveal: the piece's number, {seal}, and the collection. */
+      revealSeal: string;
     };
     close: string;
     reviewPage: {
@@ -2981,6 +2983,9 @@ export type TranslationDictionary = {
     rewardCookies: string;
     rewardItem: string;
     rewardLimited: string;
+    /** Over a Mythic Vault piece's reveal (2026-11-11): its {origin} and the vault. */
+    revealSeal: string;
+    origins: Record<"greek" | "norse" | "egyptian" | "chinese" | "celtic" | "mesopotamian", string>;
     rewardAllOwned: string;
     /** The note over the stage when a chest pays: {count} cookies. */
     chestPaid: string;

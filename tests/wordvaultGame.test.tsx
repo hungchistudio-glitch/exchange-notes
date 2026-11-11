@@ -33,12 +33,17 @@ vi.mock("@/components/hangyumi/HangyumiStage", async () => {
 });
 vi.mock("@/components/wordvault/WordvaultStage", async () => {
   const { useEffect } = await import("react");
-  type Props = { round: HangyumiRound | null; outfit: unknown; dressed: boolean; dealt: boolean; onArrived: () => void; label: string };
-  function Stage({ round, outfit, dressed, dealt, onArrived, label }: Props) {
+  type Props = {
+    round: HangyumiRound | null; outfit: unknown; dressed: boolean; dealt: boolean; onArrived: () => void; label: string;
+    present?: { key: string; itemId: string } | null; onPresented?: () => void;
+  };
+  function Stage({ round, outfit, dressed, dealt, onArrived, label, present, onPresented }: Props) {
     useEffect(() => {
       stage.land = onArrived;
       if (dealt && dressed && !stage.hold) onArrived();
     }, [dealt, dressed, onArrived]);
+    /* The chest sends the piece out at once here. */
+    useEffect(() => { if (present) onPresented?.(); }, [present, onPresented]);
     return (
       <div
         data-testid="vault"
@@ -53,6 +58,8 @@ vi.mock("@/components/wordvault/WordvaultStage", async () => {
   }
   return { default: Stage };
 });
+/* No WebGL here: the reveal keeps the piece's shop picture. */
+vi.mock("@/lib/starweaver/relicShowcase", () => ({ createRelicShowcase: () => null }));
 vi.mock("@/components/shop/EnergyCookie", () => ({ default: () => <span aria-hidden="true" /> }));
 vi.mock("@/components/shop/ShopThumb", () => ({ default: ({ item }: { item: { id: string } }) => <span data-testid="thumb" data-item={item.id} /> }));
 
@@ -250,7 +257,22 @@ describe("Wordvault's chests on the screen", () => {
     expect(screen.getByText("Premium chest ×3")).toBeInTheDocument();
     for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
     expect(await screen.findByText("+180 cookies, beyond today's 333")).toBeInTheDocument();
+    // Out of the chest, shown whole first: its origin, its name, a line about it.
+    const dialog = await screen.findByRole("dialog", { name: MYTHIC_ITEMS[0].names.english });
+    expect(dialog).toHaveAttribute("data-collection", "mythic");
+    expect(within(dialog).getByText("Greek myth · The Mythic Vault")).toBeInTheDocument();
+    expect(dialog).toHaveAccessibleDescription(MYTHIC_ITEMS[0].intro.english);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByText(MYTHIC_ITEMS[0].names.english)).toBeInTheDocument();
     expect(screen.getByText(/From the Mythic Vault/)).toBeInTheDocument();
+  });
+
+  it("shows no reveal for a medium chest's piece from the shelves", async () => {
+    play(createPreviewHangyumi({ words: WORDS, delayMs: 0, streak: 3, pick: ids => ids[0] }));
+    await screen.findByText("lasting a very short time");
+    for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
+    expect(await screen.findByText(/beyond today's 333/)).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
