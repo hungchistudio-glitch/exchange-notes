@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { SkipForward } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
+import useReducedMotion from "@/hooks/useReducedMotion";
 import { revealProgress, type HangyumiRound } from "@/lib/hangyumi/rules";
 import type { YumiOutfit } from "@/lib/shop/catalog";
+import { litPlaces, plan } from "@/lib/starweaver/presentation";
+import type { StarweaverStudio, WeaveScene } from "@/lib/starweaver/studio";
 
 import styles from "@/components/hangyumi/Hangyumi.module.css";
 
@@ -58,77 +62,223 @@ const GATE = { x: 118, y: 46 };
 const CLONE_SPOTS: readonly [number, number][] = [[142, 30], [146, 50], [140, 68]];
 const CLONE_NAMES = ["U", "I", "O"] as const;
 
-/**
- * Yumi Starweaver's stage (Chi, 2026-11-10): the letters of the word woven
- * into a track of light towards a star gate, which the finished word opens.
- *
- * This is the chart drawn flat: the same state as the studio, read off the
- * round, never ahead of it. Each place a right guess filled lights one
- * piece of track (so the P of APPLE lights two, paid once); a wrong guess
- * sends out a copy of her U, then her I, then her O, which wait by the
- * gate while she stays whole; a lost word brings them home and lights
- * nothing it did not earn, though the answer is shown; a won word closes
- * the track and opens the gate.
- *
- * Nothing here pays or awards. The server has decided the cookies and any
- * relic before the stage hears of the guess.
- */
-export default function StarweaverStage({ round, dealt, onArrived, label }: Props) {
-  const arrivedRef = useRef(false);
-
-  /* No studio to arrive in yet: the page lays out as soon as a word is dealt. */
-  useEffect(() => {
-    if (!dealt || arrivedRef.current) return;
-    arrivedRef.current = true;
-    onArrived();
-  }, [dealt, onArrived]);
-
+/* The chart drawn flat: where WebGL cannot run, the same state as the studio. */
+function FlatChart({ round }: { round: HangyumiRound | null }) {
   const built = round ? revealProgress(round) : { total: 0, revealed: 0, fraction: 0 };
-  const lit = new Set<number>();
-  if (round) {
-    /* Lit in the order the places stand in the word, as guessed. */
-    let place = 0;
-    for (const slot of round.slots) {
-      if (!slot.letter) continue;
-      if (slot.char !== null && round.guessed.includes(slot.char.normalize("NFC").toLocaleLowerCase())) lit.add(place);
-      place += 1;
-    }
-  }
+  const lit = new Set(round ? litPlaces(round) : []);
   const out = round && round.status === "playing" ? round.misses : 0;
   const open = round?.status === "won";
   const track = segments(Math.max(1, built.total));
+  return (
+    <svg className={styles.flat} viewBox="0 0 160 100" aria-hidden="true" focusable="false" data-open={open ? "true" : "false"}>
+      <defs>
+        <radialGradient id="sw-core" cx="50%" cy="45%" r="60%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="60%" stopColor="#d6eef2" />
+          <stop offset="100%" stopColor="#9fc9d2" />
+        </radialGradient>
+      </defs>
+      {/* The floor, and the contact shadow behind her. */}
+      <ellipse className={styles.swShadow} cx="26" cy="86" rx="16" ry="2.4" />
+      {/* The gate: three supports, two incomplete rings, a lens. */}
+      <path className={styles.swSupport} d={`M${GATE.x - 14} 84L${GATE.x - 6} 66M${GATE.x + 14} 84L${GATE.x + 6} 66M${GATE.x} 84V72`} />
+      <path className={styles.swRing} d={open ? arc(GATE.x, GATE.y, 24, -90, 269.9) : arc(GATE.x, GATE.y, 24, -60, 220)} />
+      <path className={styles.swRing} d={open ? arc(GATE.x, GATE.y, 18, 90, 449.9) : arc(GATE.x, GATE.y, 18, 120, 400)} data-inner="true" />
+      <circle className={styles.swCore} cx={GATE.x} cy={GATE.y} r={open ? 12 : 7} fill="url(#sw-core)" />
+      {/* The star track, one piece for each place in the word. */}
+      {track.map((d, i) => (
+        <path key={i} className={styles.swTrack} d={d} data-lit={lit.has(i) || open ? "true" : "false"} />
+      ))}
+      {/* Yumi, whole: her O as an eye, her U below it. */}
+      <circle className={styles.flatEye} cx="26" cy="64" r="6" />
+      <path className={styles.flatBody} d="M16 70a10 10 0 0 0 20 0" />
+      {/* The copies a wrong guess sent out, waiting by the gate. */}
+      {CLONE_SPOTS.map(([x, y], i) => (
+        <text key={CLONE_NAMES[i]} className={styles.swClone} x={x} y={y} data-out={i < out ? "true" : "false"}>
+          {CLONE_NAMES[i]}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+/* Cosmic or not, read off the page (the review screens have no provider). */
+function subscribeMode(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-interface-mode"] });
+  return () => observer.disconnect();
+}
+const isCosmicNow = () => document.documentElement.dataset.interfaceMode === "yumi-cosmic";
+
+const sceneOf = (round: HangyumiRound): WeaveScene => ({
+  places: revealProgress(round).total,
+  lit: litPlaces(round),
+  misses: round.misses,
+  status: round.status,
+  relic: Boolean(round.starweaver?.award),
+});
+
+/** How long a wallet that has not answered may hold her up. */
+const WALLET_WAIT_MS = 2500;
+
+/**
+ * Yumi Starweaver's stage (Chi, 2026-11-10): the real Yumi, in what she
+ * wears, beside a star gate; the letters of the word woven into a track of
+ * light to it (lib/starweaver/studio.ts). The studio loads once the page is
+ * up (three.js and the outfit builders are a large download); the flat
+ * chart stands in only where WebGL cannot be had, or while the GPU has
+ * taken the canvas back, and shows the same state.
+ *
+ * The show is read off the round itself, the round before a guess and the
+ * round after it (lib/starweaver/presentation.ts). Nothing here pays or
+ * awards: the server has decided the cookies and any relic before the
+ * stage hears of the guess, and skipping changes nothing.
+ */
+export default function StarweaverStage({ round, outfit, dressed, dealt, onArrived, label, skipLabel }: Props) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const studioRef = useRef<StarweaverStudio | null>(null);
+  const shownRef = useRef<HangyumiRound | null>(null);
+  const latestRef = useRef({ round, outfit, dressed, dealt, onArrived });
+  const readyRef = useRef(false);
+  const sentRef = useRef(false);
+  const [live, setLive] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [walletLate, setWalletLate] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const cosmic = useSyncExternalStore(subscribeMode, isCosmicNow, () => false);
+
+  /* Sends for her once everything she arrives with is here. */
+  const arriveRef = useRef(() => {});
+  useEffect(() => {
+    arriveRef.current = () => {
+      const studio = studioRef.current;
+      const latest = latestRef.current;
+      if (!studio || !readyRef.current || sentRef.current || !latest.dealt) return;
+      if (!latest.dressed && !walletLate) return;
+      sentRef.current = true;
+      studio.arrive(latest.dressed ? latest.outfit : null);
+    };
+  });
+
+  useEffect(() => {
+    latestRef.current.dressed = dressed;
+    latestRef.current.dealt = dealt;
+    latestRef.current.onArrived = onArrived;
+    arriveRef.current();
+  }, [dressed, dealt, onArrived, walletLate]);
+
+  /* The wallet's wait, counted from the deal. */
+  useEffect(() => {
+    if (!dealt || dressed) return;
+    const timer = window.setTimeout(() => setWalletLate(true), WALLET_WAIT_MS);
+    return () => window.clearTimeout(timer);
+  }, [dealt, dressed]);
+
+  // A guess, a new word, or the same round picked up again.
+  useEffect(() => {
+    latestRef.current.round = round;
+    const studio = studioRef.current;
+    const before = shownRef.current;
+    shownRef.current = round;
+    if (!studio || !round) return;
+    if (before && before.id === round.id && round.guessed.length > before.guessed.length) {
+      studio.play(plan(before, round), sceneOf(round));
+    } else {
+      studio.show(sceneOf(round), { reset: !!before && before.id !== round.id });
+    }
+  }, [round]);
+
+  /* Once she is there; before, she is dressed as she arrives. */
+  useEffect(() => {
+    latestRef.current.outfit = outfit;
+    if (sentRef.current) studioRef.current?.wear(outfit);
+  }, [outfit]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    let create: typeof import("@/lib/starweaver/studio").createStarweaverStudio | null = null;
+
+    /* (Re)builds the studio on the canvas, where the round has got to. */
+    const build = () => {
+      if (cancelled || !create) return;
+      studioRef.current?.dispose();
+      readyRef.current = false;
+      const studio = create(canvas, {
+        reducedMotion,
+        cosmic,
+        onBusy: next => { if (!cancelled) setBusy(next); },
+        onArrived: () => { if (!cancelled) latestRef.current.onArrived(); },
+      });
+      studioRef.current = studio;
+      if (!studio) {
+        setLive(false);
+        setFailed(true);
+        latestRef.current.onArrived();
+        return;
+      }
+      const current = latestRef.current.round;
+      shownRef.current = current;
+      if (current) studio.show(sceneOf(current));
+      void studio.ready().then(() => {
+        if (cancelled || studioRef.current !== studio) return;
+        readyRef.current = true;
+        setFailed(false);
+        setLive(true);
+        if (sentRef.current) studio.arrive(latestRef.current.outfit, { instant: true });
+        else arriveRef.current();
+      });
+    };
+
+    /* The GPU can take the canvas back; the flat chart stands in until the
+       browser returns it, and then the studio is built again. */
+    const lost = (event: Event) => {
+      event.preventDefault();
+      setLive(false);
+      setFailed(true);
+      setBusy(false);
+      latestRef.current.onArrived();
+    };
+    canvas.addEventListener("webglcontextlost", lost);
+    canvas.addEventListener("webglcontextrestored", build);
+
+    void import("@/lib/starweaver/studio").then(studio => {
+      create = studio.createStarweaverStudio;
+      build();
+    }, () => {
+      if (cancelled) return;
+      setFailed(true);
+      latestRef.current.onArrived();
+    });
+    return () => {
+      cancelled = true;
+      canvas.removeEventListener("webglcontextlost", lost);
+      canvas.removeEventListener("webglcontextrestored", build);
+      studioRef.current?.dispose();
+      studioRef.current = null;
+      setLive(false);
+    };
+  }, [reducedMotion, cosmic]);
 
   return (
-    <div className={styles.stage} role="img" aria-label={label} data-live="false" data-game="starweaver">
-      <svg className={styles.flat} viewBox="0 0 160 100" aria-hidden="true" focusable="false" data-open={open ? "true" : "false"}>
-        <defs>
-          <radialGradient id="sw-core" cx="50%" cy="45%" r="60%">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="60%" stopColor="#d6eef2" />
-            <stop offset="100%" stopColor="#9fc9d2" />
-          </radialGradient>
-        </defs>
-        {/* The floor, and the contact shadow behind her. */}
-        <ellipse className={styles.swShadow} cx="26" cy="86" rx="16" ry="2.4" />
-        {/* The gate: three supports, two incomplete rings, a lens. */}
-        <path className={styles.swSupport} d={`M${GATE.x - 14} 84L${GATE.x - 6} 66M${GATE.x + 14} 84L${GATE.x + 6} 66M${GATE.x} 84V72`} />
-        <path className={styles.swRing} d={open ? arc(GATE.x, GATE.y, 24, -90, 269.9) : arc(GATE.x, GATE.y, 24, -60, 220)} />
-        <path className={styles.swRing} d={open ? arc(GATE.x, GATE.y, 18, 90, 449.9) : arc(GATE.x, GATE.y, 18, 120, 400)} data-inner="true" />
-        <circle className={styles.swCore} cx={GATE.x} cy={GATE.y} r={open ? 12 : 7} fill="url(#sw-core)" />
-        {/* The star track, one piece for each place in the word. */}
-        {track.map((d, i) => (
-          <path key={i} className={styles.swTrack} d={d} data-lit={lit.has(i) || open ? "true" : "false"} />
-        ))}
-        {/* Yumi, whole: her O as an eye, her U below it. */}
-        <circle className={styles.flatEye} cx="26" cy="64" r="6" />
-        <path className={styles.flatBody} d="M16 70a10 10 0 0 0 20 0" />
-        {/* The copies a wrong guess sent out, waiting by the gate. */}
-        {CLONE_SPOTS.map(([x, y], i) => (
-          <text key={CLONE_NAMES[i]} className={styles.swClone} x={x} y={y} data-out={i < out ? "true" : "false"}>
-            {CLONE_NAMES[i]}
-          </text>
-        ))}
-      </svg>
-    </div>
+    <>
+      <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"} data-game="starweaver">
+        <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
+        {failed && <FlatChart round={round} />}
+      </div>
+      {busy && (
+        <button
+          type="button"
+          className={styles.skip}
+          onClick={() => studioRef.current?.skip()}
+          aria-label={skipLabel}
+          title={skipLabel}
+        >
+          <SkipForward size={15} strokeWidth={1.9} aria-hidden="true" />
+        </button>
+      )}
+    </>
   );
 }

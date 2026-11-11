@@ -1,8 +1,9 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HangyumiGame from "@/components/hangyumi/HangyumiGame";
 import StarweaverStage from "@/components/starweaver/StarweaverStage";
+import { duration, plan } from "@/lib/starweaver/presentation";
 import { readRound, revealProgress, type HangyumiRound } from "@/lib/hangyumi/rules";
 import { createPreviewHangyumi, createSupabaseHangyumi, type HangyumiService, type PracticeWord } from "@/lib/hangyumi/service";
 import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
@@ -25,6 +26,13 @@ vi.mock("@/components/hangyumi/HangyumiStage", () => ({ default: () => <div data
 vi.mock("@/components/wordvault/WordvaultStage", () => ({ default: () => <div data-testid="vault" /> }));
 vi.mock("@/components/shop/EnergyCookie", () => ({ default: () => <span aria-hidden="true" /> }));
 vi.mock("@/components/shop/ShopThumb", () => ({ default: ({ item }: { item: { id: string } }) => <span data-testid="thumb" data-item={item.id} /> }));
+/* jsdom has no WebGL: the studio cannot be built, and the flat chart stands in. */
+vi.mock("@/lib/starweaver/studio", () => ({ createStarweaverStudio: () => null }));
+const liquid = vi.hoisted(() => ({ flows: [] as Array<{ kind: string; from: DOMRect | null }> }));
+vi.mock("@/lib/starweaver/liquid", async importOriginal => ({
+  ...(await importOriginal<typeof import("@/lib/starweaver/liquid")>()),
+  flowLiquid: (kind: string, from: DOMRect | null) => liquid.flows.push({ kind, from }),
+}));
 
 const WORDS: PracticeWord[] = [
   { language: "en", level: "B1", answer: "apple", partOfSpeech: "noun", clues: { en: "a round fruit" } },
@@ -52,6 +60,7 @@ async function guess(char: string) {
 beforeEach(() => {
   window.localStorage.clear();
   window.localStorage.setItem("hangyumi-level", "B1");
+  liquid.flows.length = 0;
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -195,14 +204,16 @@ describe("the flat star chart", () => {
     guessed: ["a", "p"], misses: 0, ...over,
   } as never);
 
-  it("lights one piece of track for each place filled", () => {
+  it("lights one piece of track for each place filled", async () => {
     const { container } = render(<StarweaverStage round={round({})} outfit={null} dressed dealt onArrived={() => {}} label="chart" skipLabel="skip" />);
+    await waitFor(() => expect(container.querySelector("svg")).not.toBeNull());
     expect(container.querySelectorAll('path[data-lit="true"]')).toHaveLength(3);
     expect(container.querySelectorAll('path[data-lit="false"]')).toHaveLength(2);
   });
 
-  it("sends out U, then I, then O, and opens the gate only for a word won", () => {
+  it("sends out U, then I, then O, and opens the gate only for a word won", async () => {
     const { container, rerender } = render(<StarweaverStage round={round({ misses: 2 })} outfit={null} dressed dealt onArrived={() => {}} label="chart" skipLabel="skip" />);
+    await waitFor(() => expect(container.querySelector("svg")).not.toBeNull());
     const out = () => [...container.querySelectorAll('text[data-out="true"]')].map(node => node.textContent);
     expect(out()).toEqual(["U", "I"]);
     rerender(<StarweaverStage round={round({ status: "lost", misses: 3, slots: [{ letter: true, char: "a" }, { letter: true, char: "b" }] })} outfit={null} dressed dealt onArrived={() => {}} label="chart" skipLabel="skip" />);
@@ -212,14 +223,10 @@ describe("the flat star chart", () => {
     expect(container.querySelector("svg")).toHaveAttribute("data-open", "true");
   });
 
-  it("lets the page lay out once a word is dealt", async () => {
+  it("lets the page lay out when there is no studio to arrive in", async () => {
     const arrived = vi.fn();
-    const { rerender } = render(<StarweaverStage round={null} outfit={null} dressed dealt={false} onArrived={arrived} label="chart" skipLabel="skip" />);
-    expect(arrived).not.toHaveBeenCalled();
-    await act(async () => {
-      rerender(<StarweaverStage round={null} outfit={null} dressed dealt onArrived={arrived} label="chart" skipLabel="skip" />);
-    });
-    expect(arrived).toHaveBeenCalledTimes(1);
+    render(<StarweaverStage round={null} outfit={null} dressed dealt onArrived={arrived} label="chart" skipLabel="skip" />);
+    await waitFor(() => expect(arrived).toHaveBeenCalled());
   });
 });
 
@@ -227,5 +234,103 @@ describe("the wallet never sells a relic", () => {
   it("refuses to buy one, as the database does", async () => {
     const wallet = createPreviewWallet(100_000);
     await expect(wallet.buy("sw-orbit-drop")).rejects.toThrow();
+  });
+});
+
+describe("the show, planned from the round before and after", () => {
+  const before = (over: Partial<HangyumiRound> = {}): HangyumiRound => readRound({
+    id: "r", status: "playing", language: "en", level: "B1", game: "starweaver",
+    slots: [
+      { letter: true, char: null }, { letter: true, char: null }, { letter: true, char: null },
+      { letter: true, char: null }, { letter: true, char: null },
+    ],
+    guessed: [], misses: 0, ...over,
+  } as never);
+  const word = (chars: (string | null)[], guessed: string[], over: Record<string, unknown> = {}) => readRound({
+    id: "r", status: "playing", language: "en", level: "B1", game: "starweaver",
+    slots: chars.map(char => ({ letter: true, char })), guessed, misses: 0, ...over,
+  } as never);
+
+  it("weaves a letter quickly, and several places of one letter as one batch", () => {
+    const one = plan(before(), word(["a", null, null, null, null], ["a"]));
+    expect(one).toEqual([expect.objectContaining({ phase: "weave", places: [0] })]);
+    expect(one[0].seconds).toBeGreaterThanOrEqual(0.28);
+    expect(one[0].seconds).toBeLessThanOrEqual(0.42);
+    const many = plan(before(), word([null, "p", "p", null, null], ["p"]));
+    expect(many).toEqual([expect.objectContaining({ phase: "weave", places: [1, 2] })]);
+    expect(many[0].seconds).toBeLessThanOrEqual(0.5);
+  });
+
+  it("sends U, then I, then O out, and the third brings them all home within 0.9–1.2 s", () => {
+    const first = plan(before(), word([null, null, null, null, null], ["z"], { misses: 1 }));
+    expect(first).toEqual([expect.objectContaining({ phase: "release", piece: 0 })]);
+    expect(first[0].seconds).toBeGreaterThanOrEqual(0.45);
+    expect(first[0].seconds).toBeLessThanOrEqual(0.6);
+    const third = plan(before({ misses: 2 }), word(["a", "b", "c", "d", "e"], ["x", "y", "z"], { status: "lost", misses: 3 }));
+    expect(third.map(beat => beat.phase)).toEqual(["release", "recall"]);
+    expect(third[0].piece).toBe(2);
+    expect(duration(third)).toBeGreaterThanOrEqual(0.9);
+    expect(duration(third)).toBeLessThanOrEqual(1.2);
+  });
+
+  it("never weaves the answer a lost round shows, and never opens the gate for it", () => {
+    const lost = plan(before({ misses: 2 }), word(["a", "b", "c", "d", "e"], ["q", "x", "z"], { status: "lost", misses: 3 }));
+    expect(lost.some(beat => beat.phase === "weave" || beat.phase === "voyage")).toBe(false);
+  });
+
+  it("plays a won word in 1.6–2.2 s, and a seventh's relic in at most 0.9 s more", () => {
+    const won = plan(before({ misses: 1 }), word(["a", "a", "a", "a", "a"], ["z", "a"], { status: "won", misses: 1 }));
+    expect(won.map(beat => beat.phase)).toEqual(["weave", "recall", "close", "voyage"]);
+    expect(duration(won)).toBeGreaterThanOrEqual(1.6);
+    expect(duration(won)).toBeLessThanOrEqual(2.2);
+    const seventh = plan(before(), word(["a", "a", "a", "a", "a"], ["a"], {
+      status: "won", starweaver: { completedTotal: 7, cycleProgress: 0, cycleLength: 7, award: { id: 1, itemId: "sw-orbit-drop" } },
+    }));
+    expect(seventh.at(-1)).toEqual(expect.objectContaining({ phase: "relic" }));
+    expect(seventh.at(-1)!.seconds).toBeLessThanOrEqual(0.9);
+  });
+
+  it("takes as long for a long word as for a short one", () => {
+    const short = plan(readRound({ id: "s", status: "playing", language: "en", level: "B1", game: "starweaver", slots: [{ letter: true, char: null }, { letter: true, char: null }], guessed: [] } as never),
+      readRound({ id: "s", status: "won", language: "en", level: "B1", game: "starweaver", slots: [{ letter: true, char: "a" }, { letter: true, char: "a" }], guessed: ["a"] } as never));
+    const long = plan(readRound({ id: "l", status: "playing", language: "en", level: "C2", game: "starweaver", slots: Array.from({ length: 14 }, () => ({ letter: true, char: null })), guessed: [] } as never),
+      readRound({ id: "l", status: "won", language: "en", level: "C2", game: "starweaver", slots: Array.from({ length: 14 }, () => ({ letter: true, char: "a" })), guessed: ["a"] } as never));
+    expect(duration(long)).toBe(duration(short));
+  });
+
+  it("plays nothing for a guess sent again", () => {
+    expect(plan(before(), { ...word(["a", null, null, null, null], ["a"]), hit: false, repeat: true, paid: { letter: 0, word: 0, already: false, capped: false }, balance: null })).toEqual([]);
+  });
+});
+
+describe("the liquid light", () => {
+  it("flows from a right letter's key, and larger for the word", async () => {
+    play(service({ voyages: 1 }));
+    await screen.findByText("a round fruit");
+    await guess("a");
+    expect(liquid.flows.at(-1)).toEqual(expect.objectContaining({ kind: "letter" }));
+    expect(liquid.flows.at(-1)!.from).not.toBeNull();
+    await guess("z");
+    expect(liquid.flows).toHaveLength(1);
+    for (const char of ["p", "l", "e"]) await guess(char);
+    expect(liquid.flows.at(-1)).toEqual(expect.objectContaining({ kind: "word" }));
+  });
+
+  it("is Starweaver's alone", async () => {
+    const loadWallet = vi.fn(async () => ({ outfit: {}, balance: 240 }));
+    render(<HangyumiGame service={service()} defaultLanguage="en" loadWallet={loadWallet} game="hangyumi" />);
+    await screen.findByText("a round fruit");
+    await guess("a");
+    expect(liquid.flows).toEqual([]);
+  });
+
+  it("asks the overlay for a flow from the key towards the stage", async () => {
+    const { flowLiquid, LIQUID_EVENT } = await vi.importActual<typeof import("@/lib/starweaver/liquid")>("@/lib/starweaver/liquid");
+    const heard: unknown[] = [];
+    const listener = (event: Event) => heard.push((event as CustomEvent).detail);
+    window.addEventListener(LIQUID_EVENT, listener);
+    flowLiquid("word", new DOMRect(10, 700, 40, 50));
+    window.removeEventListener(LIQUID_EVENT, listener);
+    expect(heard).toEqual([expect.objectContaining({ kind: "word", from: { x: 30, y: 725 } })]);
   });
 });

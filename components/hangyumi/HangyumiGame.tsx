@@ -22,8 +22,10 @@ import {
 } from "@/lib/languages";
 import { shopItem, type YumiOutfit } from "@/lib/shop/catalog";
 import { STARWEAVER_ITEMS } from "@/lib/shop/starweaverCollection";
+import { flowLiquid } from "@/lib/starweaver/liquid";
 import { announceEnergyLanded } from "@/lib/shop/energy";
 
+import LiquidFlow from "@/components/starweaver/LiquidFlow";
 import StarweaverStage from "@/components/starweaver/StarweaverStage";
 import WordvaultStage from "@/components/wordvault/WordvaultStage";
 import { VAULT_PIECES } from "@/lib/wordvault/presentation";
@@ -415,6 +417,12 @@ export default function HangyumiGame({
         return;
       }
       showRound(result);
+      /* Starweaver: liquid light across the screen for a right letter, and
+         a larger flow for the word (Chi, 2026-11-10). Shows only what the
+         server already said. */
+      if (game === "starweaver" && !result.repeat && (result.hit || result.status === "won")) {
+        flowLiquid(result.status === "won" ? "word" : "letter", from);
+      }
       if (!result.repeat) {
         if (result.status === "won") {
           sounds.win();
@@ -458,7 +466,7 @@ export default function HangyumiGame({
       pendingRef.current = false;
       setPending(false);
     }
-  }, [service, copy, t, flyCookies, reducedMotion, showRound, celebrate, setNotice]);
+  }, [service, copy, t, flyCookies, reducedMotion, showRound, celebrate, setNotice, game]);
 
   const keepWord = useCallback(async () => {
     const current = roundRef.current;
@@ -1070,6 +1078,7 @@ export default function HangyumiGame({
       </div>
 
       <div ref={celebrateRef} className={styles.flight} aria-hidden="true" />
+      {game === "starweaver" && <LiquidFlow />}
       {flash > 0 && <div key={flash} className={styles.missFlash} aria-hidden="true" />}
       <div ref={flightRef} className={styles.flight} aria-hidden="true">
         <span data-cookie-template="" className={styles.cookieTemplate}><EnergyCookie /></span>

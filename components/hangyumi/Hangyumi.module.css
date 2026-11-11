@@ -734,6 +734,53 @@
   font-size: 0.9375rem;
 }
 
+/* Starweaver's liquid light (components/starweaver/LiquidFlow.tsx): over
+   the whole screen, taking no taps, and not composited while idle. */
+.liquid {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  width: 100vw;
+  height: 100dvh;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.liquid[data-on="true"] {
+  visibility: visible;
+}
+
+/* Where there is no WebGL, or under reduced motion: a glow at the key that
+   fades in and out, with nothing moving. */
+.liquidGlow {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  background: radial-gradient(circle at var(--liquid-x, 50%) var(--liquid-y, 85%), #7cc4d159, #b9a3ff1f 22%, transparent 42%);
+}
+
+.liquidGlow[data-kind="word"] {
+  background: radial-gradient(circle at var(--liquid-x, 50%) var(--liquid-y, 85%), #7cc4d166, #b9a3ff26 32%, transparent 62%);
+}
+
+.liquidGlow[data-on="true"] {
+  visibility: visible;
+  animation: liquid-glow 520ms ease both;
+}
+
+.liquidGlow[data-on="true"][data-kind="word"] {
+  animation-duration: 900ms;
+}
+
+@keyframes liquid-glow {
+  0% { opacity: 0; }
+  35% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
 /* What sits on the studio: frosted, in the studio's own light colours. */
 .stageTop,
 .stageBottom {
