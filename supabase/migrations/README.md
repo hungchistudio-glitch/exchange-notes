@@ -197,7 +197,22 @@ matched a local database built from this file:
 | --- | --- |
 | `20261110200000_starweaver` | `20261111124129` |
 
-**Twenty-one renames across fourteen occasions now. `apply_migration` always stamps its
+On 2026-11-11 Hangyumi's Nightscale pieces, applied just before the merge
+(Chi: "套用並上線"), because the live pages play Hangyumi and a third win
+would otherwise put a piece in a wardrobe the live pages do not show. It
+adds the 'nightscale' pool, three tables and 24 unbuyable rows, and
+replaces `hangyumi_round_state` and `hangyumi_guess` with the same
+arguments and the same answer plus `nightscale`. It was first run on
+production inside a transaction that ended with a deliberate `raise
+exception` (migration plus `supabase/tests/nightscale.sql`), and afterwards
+`md5(prosrc)` of the three functions and the pool's constraint matched a
+local database built from this file:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261111200000_hangyumi_nightscale` | `20261111185814` |
+
+**Twenty-two renames across fifteen occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 
