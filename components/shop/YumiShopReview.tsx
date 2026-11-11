@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { SceneChoice } from "@/lib/shop/atmosphere";
 import { setSceneChoice } from "@/lib/shop/useShopWeather";
 import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
+import { NIGHTSCALE_ITEMS } from "@/lib/shop/nightscaleCollection";
 import { STARWEAVER_ITEMS } from "@/lib/shop/starweaverCollection";
 import { createPreviewWallet } from "@/lib/shop/wallet";
 
@@ -18,16 +19,20 @@ import YumiShop from "./YumiShop";
  * CosmicYumiReview for why a review page must not write the reader's real
  * mode).
  */
-export default function YumiShopReview({ startCosmic, sky = null, collection03 = false, vault = 0, relics = 0 }: {
+export default function YumiShopReview({ startCosmic, sky = null, collection03 = false, vault = 0, relics = 0, nightscale = 0 }: {
   startCosmic: boolean; sky?: SceneChoice | null; collection03?: boolean;
   /** How many of the Mythic Vault's pieces the preview starts with. */
   vault?: number;
   /** How many Starwoven Relics the preview starts with. */
   relics?: number;
+  /** How many Nightscale pieces the preview starts with. */
+  nightscale?: number;
 }) {
   const wallet = useMemo(
-    () => createPreviewWallet(collection03 ? 3300 : 240, [...MYTHIC_ITEMS.slice(0, vault), ...STARWEAVER_ITEMS.slice(0, relics)].map(item => item.id)),
-    [collection03, vault, relics],
+    () => createPreviewWallet(collection03 ? 3300 : 240, [
+      ...MYTHIC_ITEMS.slice(0, vault), ...STARWEAVER_ITEMS.slice(0, relics), ...NIGHTSCALE_ITEMS.slice(0, nightscale),
+    ].map(item => item.id)),
+    [collection03, vault, relics, nightscale],
   );
   const [isCosmic, setCosmic] = useState(startCosmic);
 

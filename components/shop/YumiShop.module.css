@@ -1417,6 +1417,90 @@
   color: #0d2a30;
 }
 
+/* Nightscale (Hangyumi, 2026-11-11): the fourth shelf apart from the 333,
+   ink black with scales in the dark and an olive sheen, gold for the
+   numbers, purple only as a thin line. Its dedication names nobody.
+   Sealed pieces stand as pale shadows with a warm glow and a number. */
+.shelf[data-nightscale="true"] {
+  --ns-ink: #ece6d6;
+  --ns-muted: #aaa797;
+  --ns-gold: #e0bd6a;
+
+  margin: 12px -12px 8px;
+  padding: 14px 12px 4px;
+  border-top: 1px solid #e0bd6a40;
+  border-bottom: 2px solid #4b2a7299;
+  background:
+    radial-gradient(80% 110% at 0% 0%, #7d866a24, transparent 62%),
+    radial-gradient(70% 90% at 100% 100%, #4b2a7238, transparent 70%),
+    repeating-radial-gradient(circle at 50% 120%, #ffffff05 0 6px, transparent 6px 12px),
+    linear-gradient(180deg, #171815, #0b0c0b);
+  color: var(--ns-ink);
+}
+
+.shelf[data-nightscale="true"] .shelfHeading h3 {
+  background: linear-gradient(180deg, #fff6dc, #e0bd6a 60%, #a8823a);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.shelf[data-nightscale="true"] .shelfHeading h3 > span,
+.shelf[data-nightscale="true"] .shelfHeading h3 > small {
+  color: var(--ns-muted);
+  -webkit-text-fill-color: var(--ns-muted);
+}
+
+.dedication {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ns-gold, #e0bd6a);
+  -webkit-text-fill-color: var(--ns-gold, #e0bd6a);
+}
+
+.shelf[data-nightscale="true"] .seeAll {
+  color: var(--ns-gold);
+}
+
+.card[data-nightscale] {
+  --c: var(--ns-gold, #e0bd6a);
+  border-color: #e0bd6a3d;
+  background: linear-gradient(180deg, #ffffff0d, #0000 40%), #141513;
+  box-shadow: 0 10px 22px -16px #000c, inset 0 0 0 1px #7d866a2e;
+  color: var(--ns-ink, #ece6d6);
+}
+
+.card[data-nightscale] .thumb {
+  background:
+    radial-gradient(70% 60% at 50% 45%, #e0bd6a24, transparent 75%),
+    radial-gradient(120% 100% at 50% 110%, #4b2a7240, transparent 60%),
+    #0e0f0d;
+}
+
+.card[data-nightscale] .price {
+  color: var(--ns-muted, #aaa797);
+}
+
+.card[data-nightscale="sealed"] .cardName {
+  color: var(--ns-gold, #e0bd6a);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+/* Nothing of a sealed piece's colour, material or detail: its outline, warm. */
+.sealedNightscale img {
+  filter: brightness(0) invert(0.84) drop-shadow(0 0 5px #e0bd6a88);
+  opacity: 0.3;
+}
+
+.limitedBadge[data-nightscale] {
+  background: linear-gradient(180deg, #fff1c8, #e0bd6a 60%, #a8823a);
+  color: #1b1408;
+}
+
 .limitedBadge {
   position: absolute;
   top: 9px;

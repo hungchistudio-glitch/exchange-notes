@@ -61,6 +61,7 @@ import {
   SUPPLY_PACKS_USD,
 } from "@/lib/shop/energy";
 import { MYTHIC_ITEMS, isMythic } from "@/lib/shop/mythicCollection";
+import { NIGHTSCALE_ITEMS, isNightscale, nightscaleItem } from "@/lib/shop/nightscaleCollection";
 import { STARWEAVER_ITEMS, isStarweaver, starweaverItem } from "@/lib/shop/starweaverCollection";
 import { markScrolling } from "@/lib/shop/scrollQuiet";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
@@ -243,6 +244,13 @@ export default function YumiShop({
   const relicsShelfItems = useMemo(
     () => [...relicsOwned, ...STARWEAVER_ITEMS.filter(item => !owned.has(item.id))],
     [relicsOwned, owned],
+  );
+  /* Nightscale: 24 more, unlocked by every third word won in Hangyumi
+     (2026-11-11), on a shelf of their own. Owned first, then the sealed. */
+  const nightscaleOwned = useMemo(() => NIGHTSCALE_ITEMS.filter(item => owned.has(item.id)), [owned]);
+  const nightscaleShelfItems = useMemo(
+    () => [...nightscaleOwned, ...NIGHTSCALE_ITEMS.filter(item => !owned.has(item.id))],
+    [nightscaleOwned, owned],
   );
   /* Where the reader is, then what the filter sheet narrows it to. */
   const here = useMemo(() => browseShop({
@@ -492,6 +500,7 @@ export default function YumiShop({
         data-collection={collectionOf(item)}
         data-mythic={isMythic(item.id) ? "owned" : undefined}
         data-relic={isStarweaver(item.id) ? "owned" : undefined}
+        data-nightscale={isNightscale(item.id) ? "owned" : undefined}
         data-coach-target="shop-item"
         aria-pressed={trying}
         disabled={busy || availability !== "open"}
@@ -501,6 +510,7 @@ export default function YumiShop({
         {isNewArrival(item) && !trying && !wearing && <span className={styles.newBadge}>{collectionCopy.newItem}</span>}
         {isMythic(item.id) && !trying && !wearing && <span className={styles.limitedBadge}>{copy.vault.limited}</span>}
         {isStarweaver(item.id) && !trying && !wearing && <span className={styles.limitedBadge} data-relic="true">{copy.relics.limited}</span>}
+        {isNightscale(item.id) && !trying && !wearing && <span className={styles.limitedBadge} data-nightscale="true">{copy.nightscale.limited}</span>}
         {(trying || wearing) && (
           <span className={styles.tag} data-wearing={wearing ? "true" : "false"}>
             {wearing ? copy.wearing : copy.tryingOn}
@@ -576,6 +586,53 @@ export default function YumiShop({
         </header>
         <ul className={styles.shelfRow}>
           {items.map(item => <li key={item.id}>{owned.has(item.id) ? card(item) : sealedRelicCard(item)}</li>)}
+        </ul>
+      </section>
+    );
+  }
+
+  /** A Nightscale piece not yet unlocked: its silhouette and its number,
+   * never its name, its colour or a try-on. Tapping says how one is unlocked. */
+  function sealedNightscaleCard(item: ShopItem) {
+    const seal = fill(copy.nightscale.seal, { seal: nightscaleItem(item.id)?.seal ?? "" });
+    return (
+      <button
+        type="button"
+        className={styles.card}
+        data-nightscale="sealed"
+        aria-label={`${seal} · ${copy.vault.locked} · ${copy.nightscale.title}`}
+        onClick={() => setNotice(copy.nightscale.hint)}
+      >
+        <ShopThumb item={item} className={`${styles.thumb} ${styles.sealedNightscale}`} />
+        <span className={styles.cardName} aria-hidden="true">{seal}</span>
+        <span className={styles.price}><Lock size={12} strokeWidth={2.2} aria-hidden="true" />{copy.vault.locked}</span>
+      </button>
+    );
+  }
+
+  /** Nightscale's shelf, with its dedication: every piece in the showcase,
+   * only the unlocked ones in the wardrobe. */
+  function nightscaleShelf(onlyUnlocked: boolean) {
+    const items = onlyUnlocked ? nightscaleOwned : nightscaleShelfItems;
+    if (!items.length) return null;
+    return (
+      <section aria-labelledby="shop-shelf-nightscale" className={styles.shelf} data-nightscale="true">
+        <header className={styles.shelfHeading}>
+          <h3 id="shop-shelf-nightscale">
+            {copy.nightscale.title}{" "}
+            <span>{fill(copy.nightscale.collected, { count: nightscaleOwned.length.toLocaleString(locale), total: NIGHTSCALE_ITEMS.length })}</span>
+            <small>{copy.nightscale.note}</small>
+            <em className={styles.dedication}>{copy.nightscale.dedication}</em>
+          </h3>
+          {!onlyUnlocked && (
+            <Link href="/hangyumi" className={styles.seeAll}>
+              {copy.nightscale.play}
+              <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
+            </Link>
+          )}
+        </header>
+        <ul className={styles.shelfRow}>
+          {items.map(item => <li key={item.id}>{owned.has(item.id) ? card(item) : sealedNightscaleCard(item)}</li>)}
         </ul>
       </section>
     );
@@ -808,6 +865,7 @@ export default function YumiShop({
             <>
               {vaultShelf(false)}
               {relicsShelf(false)}
+              {nightscaleShelf(false)}
               {newShelf.length > 0 && (
                 <section aria-labelledby="shop-shelf-new" className={styles.shelf} data-new="true">
                   <header className={styles.shelfHeading}>
@@ -844,6 +902,7 @@ export default function YumiShop({
             <>
             {onlyOwned && vaultShelf(true)}
             {onlyOwned && relicsShelf(true)}
+            {onlyOwned && nightscaleShelf(true)}
             {groups.map(group => (
               <section key={group.key} aria-labelledby={`shop-department-${group.key}`} className={styles.department}>
                 <h3 id={`shop-department-${group.key}`} className={styles.departmentHeading}>

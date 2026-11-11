@@ -2,6 +2,7 @@ import { COLLECTION03_ITEMS } from "./collection03";
 import { COLLECTION04_ITEMS } from "./collection04";
 import { CULTURAL_ITEMS } from "./culturalCollection";
 import { MYTHIC_ITEMS } from "./mythicCollection";
+import { NIGHTSCALE_ITEMS } from "./nightscaleCollection";
 import { STARWEAVER_ITEMS } from "./starweaverCollection";
 
 import type { InterfaceLanguage } from "@/lib/appPreferences";
@@ -231,9 +232,10 @@ export const SHOP_ITEMS: readonly ShopItem[] = [...SHOP_COUNTRIES.flatMap(countr
 ), ...CULTURAL_ITEMS, ...COLLECTION03_ITEMS, ...COLLECTION04_ITEMS];
 
 /* The limited pieces are not on the shelves (they are not in SHOP_ITEMS,
-   which is the 333): the Mythic Vault's 33 and Starweaver's 17 relics. Once
+   which is the 333): the Mythic Vault's 33, Starweaver's 17 relics and
+   Hangyumi's 24 Nightscale pieces. Once
    owned they are worn like any other: every lookup by id knows them. */
-const LIMITED_ITEMS: readonly ShopItem[] = [...MYTHIC_ITEMS, ...STARWEAVER_ITEMS];
+const LIMITED_ITEMS: readonly ShopItem[] = [...MYTHIC_ITEMS, ...STARWEAVER_ITEMS, ...NIGHTSCALE_ITEMS];
 const BY_ID = new Map([...SHOP_ITEMS, ...LIMITED_ITEMS].map(item => [item.id, item]));
 
 export function shopItem(id: string | null | undefined): ShopItem | undefined {

@@ -17,7 +17,7 @@
  *
  * Options: --base http://localhost:3000 --port 9222 --out public/shop-thumbs
  *          --collection station33   (or cultural, earrings, collection03,
- *                                   collection04, mythic, starweaver: only those pieces,
+ *                                   collection04, mythic, starweaver, nightscale: only those pieces,
  *                                   so the other pictures are not rewritten)
  *
  * No dependencies: Node's global WebSocket speaks the DevTools protocol

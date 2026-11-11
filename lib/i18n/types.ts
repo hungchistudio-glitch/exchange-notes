@@ -2703,6 +2703,24 @@ export type TranslationDictionary = {
       /** The shelf's way to the game. */
       play: string;
     };
+    /** Nightscale (Hangyumi, 2026-11-11): the fourth shelf of limited
+        pieces, unlocked by every third word won. A tribute in symbols only:
+        no line here may name a person, a team or a brand. */
+    nightscale: {
+      title: string;
+      note: string;
+      /** One line that names nobody (Chi, 2026-11-11). */
+      dedication: string;
+      /** {count} unlocked of {total}. */
+      collected: string;
+      /** A piece not yet unlocked: its number, {seal}, never its name. */
+      seal: string;
+      /** Said when a sealed piece is tapped: how one is unlocked. */
+      hint: string;
+      limited: string;
+      /** The shelf's way to the game. */
+      play: string;
+    };
     stage: string;
     hint: string;
     views: string;

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { cleanOutfit, shopItem, type YumiOutfit } from "./catalog";
 import { isMythic } from "./mythicCollection";
+import { isNightscale } from "./nightscaleCollection";
 import { isStarweaver } from "./starweaverCollection";
 
 /* =========================================================
@@ -124,7 +125,7 @@ export function createPreviewWallet(startingBalance = 240, startOwned: readonly 
       await settle();
       const item = shopItem(itemId);
       /* Limited pieces are won, never sold: the database refuses them too. */
-      if (!item || isMythic(itemId) || isStarweaver(itemId)) throw new Error("Unknown item.");
+      if (!item || isMythic(itemId) || isStarweaver(itemId) || isNightscale(itemId)) throw new Error("Unknown item.");
       if (state.owned.includes(itemId)) return { status: "owned", state };
       if (state.balance < item.price) return { status: "insufficient", state };
       state = {
