@@ -13,8 +13,7 @@ import { reviewRouteOnly } from "@/lib/reviewRoutes";
  * ?vault=5 starts with the Mythic Vault's first five pieces won, and
  * ?relics=4 with the first four Starwoven Relics found, and ?nightscale=6
  * with the first six Nightscale pieces unlocked. The shop's holographic way
- * in plays on every load here (a link is drawn by the server, which the
- * live shop skips); ?entrance=0 leaves it out.
+ * in plays on every load, as in the live shop; ?entrance=0 leaves it out.
  */
 export const metadata = {
   title: "Yumi shop review",

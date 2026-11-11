@@ -30,8 +30,11 @@
   - a builder for every piece (`buildableIds()`);
   - a name in all five interface languages, with the Chinese one in
     Traditional characters.
-- **The way in** (Chi, 2026-11-12):
-  - `components/shop/HoloEntrance.tsx`: a holographic scan over the page. Parts marked `data-holo-frame` get outlines, and the pieces on the first screen fade in as the line reaches them (`--holo-delay`).
-  - `ShopStage`: Yumi's beam-down. `StationDock`'s `landing` prop pulses the pad's rim and lights.
-  - It runs about 1.5 s on every client-side visit and ends at a tap. It never runs under reduced motion, or on a page the server drew (a reload), except on the review screen (`replayEntrance`).
-  - Keep it to opacity and transform: no filter or backdrop-filter.
+- **The way in** (Chi, 2026-11-12; made smoother the same day):
+  - `components/shop/HoloEntrance.tsx` is a soft-light holographic scan, about 1.2 s.
+    - The veil slides down while the blueprint inside it slides up by the same amount. Only the soft edge sweeps; the outlines (one SVG of the parts marked `data-holo-frame`) stand still.
+    - It is rendered with the page, and the sweep waits for hydration (`data-go`).
+  - `ShopStage` builds Yumi's scene only after the scan (`holdScene`), then beams her down; `StationDock`'s `landing` prop pulses the pad.
+  - A tap, a scroll or a key ends the scan. It never shows under reduced motion; `?entrance=0` on the review screen leaves it out.
+  - Keep it to transforms and opacity on a few layers, with no filter, backdrop-filter or blur.
+  - Don't bring back the old rise: when it came back on at the scan's end, it played a second time (the flash).
