@@ -16,7 +16,7 @@
    was paid.
    ========================================================= */
 
-export type LiquidKind = "letter" | "word";
+export type LiquidKind = "letter" | "word" | "sweep";
 
 export type LiquidFlowRequest = {
   kind: LiquidKind;
@@ -32,6 +32,9 @@ export const LIQUID_EVENT = "starweaver:liquid";
 export const LIQUID = {
   letter: { seconds: 0.5, strength: 0.55, cosmicStrength: 0.45, width: 1 },
   word: { seconds: 1.0, strength: 0.7, cosmicStrength: 0.58, width: 1.7 },
+  /* The arrival's: once, from the stage down over the page as she lands
+     (Chi, 2026-11-11: "從上往下輕掃一次"), carrying the keys in. */
+  sweep: { seconds: 0.9, strength: 0.5, cosmicStrength: 0.45, width: 1.4 },
 } as const;
 
 const centre = (rect: DOMRect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
@@ -42,11 +45,24 @@ const centre = (rect: DOMRect) => ({ x: rect.left + rect.width / 2, y: rect.top 
  */
 export function flowLiquid(kind: LiquidKind, from: DOMRect | null) {
   if (typeof window === "undefined") return;
-  const stage = document.querySelector<HTMLElement>('[data-game="starweaver"]');
+  const stage = document.querySelector<HTMLElement>('[role="img"][data-game="starweaver"]');
   const request: LiquidFlowRequest = {
     kind,
     from: from ? centre(from) : { x: window.innerWidth / 2, y: window.innerHeight * 0.85 },
     to: stage ? centre(stage.getBoundingClientRect()) : { x: window.innerWidth / 2, y: window.innerHeight * 0.25 },
+  };
+  window.dispatchEvent(new CustomEvent<LiquidFlowRequest>(LIQUID_EVENT, { detail: request }));
+}
+
+/** The arrival's sweep: from the top of the stage, down the page. */
+export function sweepLiquid() {
+  if (typeof window === "undefined") return;
+  const stage = document.querySelector<HTMLElement>('[role="img"][data-game="starweaver"]');
+  const rect = stage?.getBoundingClientRect();
+  const request: LiquidFlowRequest = {
+    kind: "sweep",
+    from: rect ? { x: rect.left + rect.width / 2, y: rect.top } : { x: window.innerWidth / 2, y: 0 },
+    to: { x: window.innerWidth / 2, y: window.innerHeight },
   };
   window.dispatchEvent(new CustomEvent<LiquidFlowRequest>(LIQUID_EVENT, { detail: request }));
 }

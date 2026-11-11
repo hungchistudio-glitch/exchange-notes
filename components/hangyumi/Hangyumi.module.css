@@ -439,6 +439,24 @@
   animation: hy-enter 560ms cubic-bezier(.2, .8, .2, 1) 220ms both;
 }
 
+/* Starweaver's keys come up quicker behind its longer arrival, so the
+   whole of it, starlight to keys, is about a second and a half (Chi,
+   2026-11-11). */
+.page[data-game="starweaver"][data-arrival="landing"] > .below > :nth-child(1) {
+  animation-duration: 420ms;
+  animation-delay: 0ms;
+}
+
+.page[data-game="starweaver"][data-arrival="landing"] > .below > :nth-child(2) {
+  animation-duration: 420ms;
+  animation-delay: 70ms;
+}
+
+.page[data-game="starweaver"][data-arrival="landing"] > .below > :nth-child(n + 3) {
+  animation-duration: 420ms;
+  animation-delay: 140ms;
+}
+
 @keyframes hy-fade {
   from { opacity: 0; }
 }

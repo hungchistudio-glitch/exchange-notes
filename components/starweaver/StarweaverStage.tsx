@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import { revealProgress, type HangyumiRound } from "@/lib/hangyumi/rules";
 import type { YumiOutfit } from "@/lib/shop/catalog";
+import { sweepLiquid } from "@/lib/starweaver/liquid";
 import { litPlaces, plan } from "@/lib/starweaver/presentation";
 import type { StarweaverStudio, WeaveScene } from "@/lib/starweaver/studio";
 
@@ -211,6 +212,8 @@ export default function StarweaverStage({ round, outfit, dressed, dealt, onArriv
         cosmic,
         onBusy: next => { if (!cancelled) setBusy(next); },
         onArrived: () => { if (!cancelled) latestRef.current.onArrived(); },
+        /* As she touches down, light sweeps down the page and the keys rise with it. */
+        onLanded: () => { if (!cancelled) sweepLiquid(); },
       });
       studioRef.current = studio;
       if (!studio) {
@@ -264,7 +267,15 @@ export default function StarweaverStage({ round, outfit, dressed, dealt, onArriv
 
   return (
     <>
-      <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"} data-game="starweaver">
+      {/* A tap on the stage skips what is playing, the arrival included, as the button does. */}
+      <div
+        className={styles.stage}
+        role="img"
+        aria-label={label}
+        data-live={live ? "true" : "false"}
+        data-game="starweaver"
+        onPointerDown={() => { if (busy) studioRef.current?.skip(); }}
+      >
         <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
         {failed && <FlatChart round={round} />}
       </div>

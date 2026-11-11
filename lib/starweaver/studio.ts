@@ -70,6 +70,8 @@ export type StudioOptions = {
   cosmic?: boolean;
   onBusy?: (busy: boolean) => void;
   onArrived?: () => void;
+  /** The animated arrival only: the moment she touches down (for the page's sweep of light). */
+  onLanded?: () => void;
 };
 
 const SCALE = 0.5;
@@ -89,9 +91,20 @@ const ORBITS: readonly { radius: number; angle: number }[] = [
   { radius: 1.52, angle: THREE.MathUtils.degToRad(32) },
   { radius: 1.74, angle: THREE.MathUtils.degToRad(208) },
 ];
-/** The first arrival, soft: 450–650 ms (DESIGN.md §3). */
-const ENTRY_S = 0.56;
-const ENTRY_DROP = 0.55;
+/*
+ * The first arrival (Chi, 2026-11-11: "新遊戲進場…優雅一點"; chose starlight
+ * gathering into the gate and Yumi coming out of it, about 1.5 s with the
+ * page, the keys rising once she stands). Points of light gather into the
+ * gate's two rings as they turn into place and its legs rise from the
+ * floor; the lens lights; the gate opens and she glides out of it along an
+ * arc, small at first, turning to face us, and touches down; the gate
+ * closes and the track appears piece by piece. Once only: a new word never
+ * plays it again, and a studio built again finds her already there.
+ */
+const ENTRY_S = 1.15;
+const ENTRY_LAND_S = 0.98;
+/* The canvas's own fade-in, first: the room appears empty, then gathers. */
+const ENTRY_WAIT_MS = 260;
 /** A new word: the track goes and the gate closes, 250–350 ms. */
 const RESET_S = 0.3;
 const ICE = new THREE.Color(0x7cc4d1);
@@ -272,18 +285,19 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   const lens = solid(new THREE.Mesh(new THREE.SphereGeometry(LENS_R, 40, 24), lensMaterial), gate);
   lens.scale.set(1, 1, 0.38);
   /* The lens's bezel. */
-  solid(new THREE.Mesh(new THREE.TorusGeometry(LENS_R + 0.02, 0.022, 10, 64), titanium), gate);
+  const bezel = solid(new THREE.Mesh(new THREE.TorusGeometry(LENS_R + 0.02, 0.022, 10, 64), titanium), gate);
   /* Three legs, from the floor to just under the outer ring. */
-  const legs: THREE.Mesh[] = [];
+  const legs: { leg: THREE.Mesh; foot: THREE.Vector3; along: THREE.Vector3; length: number }[] = [];
   const legGeometry = new THREE.CylinderGeometry(0.022, 0.03, 1, 10);
   const apex = new THREE.Vector3(0, -OUTER_R - 0.04, 0);
   for (const foot of [new THREE.Vector3(-0.62, -GATE_AT.y, 0.32), new THREE.Vector3(0.62, -GATE_AT.y, 0.32), new THREE.Vector3(0, -GATE_AT.y, -0.62)]) {
     const leg = solid(new THREE.Mesh(legGeometry, titaniumDark), gate);
     const along = apex.clone().sub(foot);
+    const length = along.length();
     leg.position.copy(foot).addScaledVector(along, 0.5);
-    leg.scale.set(1, along.length(), 1);
-    leg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), along.normalize());
-    legs.push(leg);
+    leg.scale.set(1, length, 1);
+    leg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), along.clone().normalize());
+    legs.push({ leg, foot, along, length });
   }
   /* The finished word's loop round the lens, and the open gate's light. */
   const loop = new THREE.Mesh(new THREE.TorusGeometry(LENS_R + 0.11, 0.012, 8, 96), loopMaterial);
@@ -389,6 +403,23 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     return sprite;
   });
   const FLAKE_FROM = new THREE.Vector3(-0.2, 0.25, 2.4);
+
+  /* The starlight the gate gathers from: points scattered round it that
+     draw in onto its rings. Seeded, so every arrival looks the same. */
+  const motes = (() => {
+    let seed = 2026;
+    const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    return Array.from({ length: 28 }, (_, i) => {
+      const sprite = new THREE.Sprite(flakeMaterial.clone());
+      sprite.visible = false;
+      scene.add(sprite);
+      const onOuter = i % 2 === 0;
+      const angle = (onOuter ? 0.9 : 2.6) + (i / 28) * (onOuter ? Math.PI * 1.62 : Math.PI * 1.48);
+      const to = gatePoint(onOuter ? OUTER_R : INNER_R, angle, new THREE.Vector3());
+      const from = to.clone().add(new THREE.Vector3((rand() - 0.5) * 3.2, (rand() - 0.2) * 2.2, (rand() - 0.3) * 2.2));
+      return { sprite, from, to, delay: rand() * 0.12 };
+    });
+  })();
 
   // ------------------------------------------------------------ Yumi
   const actor = buildYumiActor();
@@ -527,8 +558,11 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   let busy = false;
   let arriving = false;
   let arrived = false;
-  let entry: { started: number } | null = null;
+  let entry: { started: number; landed: boolean } | null = null;
   let cameraPush = 0;
+  /* How far the gate has gathered, 0 nothing to 1 whole: nothing until she arrives. */
+  let assembly = reduced ? 1 : 0;
+  let readyAt = 0;
 
   function setBusy(next: boolean) {
     if (busy === next) return;
@@ -536,11 +570,29 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     options.onBusy?.(next);
   }
 
+  /* The gate as far as it has gathered: rings grown and turned into place, legs risen, lens lit. */
+  function poseAssembly(a: number) {
+    assembly = a;
+    const q = easeOut(a);
+    const size = Math.max(0.001, q);
+    outer.scale.setScalar(size);
+    inner.scale.setScalar(Math.max(0.001, easeOut(window01(a, 0.15, 1))));
+    lens.scale.set(size, size, size * 0.38);
+    bezel.scale.setScalar(size);
+    for (const { leg, foot, along, length } of legs) {
+      const rise = Math.max(0.001, easeOut(window01(a, 0.25, 1)));
+      leg.position.copy(foot).addScaledVector(along.clone().normalize(), (length * rise) / 2);
+      leg.scale.set(1, length * rise, 1);
+    }
+    trackGroup.visible = a >= 1;
+  }
+
   function poseGate(open: number) {
     gateOpen = open;
     const q = easeInOut(open);
-    outer.rotation.z = OUTER_REST + q * 1.25;
-    inner.rotation.z = INNER_REST - q * 1.6;
+    const gathering = 1 - easeOut(assembly);
+    outer.rotation.z = OUTER_REST + q * 1.25 + gathering * 2.2;
+    inner.rotation.z = INNER_REST - q * 1.6 - gathering * 2.8;
     (fullRing.material as THREE.MeshBasicMaterial).opacity = 0.85 * q;
     portal.visible = q > 0.01;
     portalMaterial.opacity = 0.75 * q;
@@ -562,7 +614,12 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   function settle() {
     const lit = new Set(rest.lit);
     const won = rest.status === "won";
-    pieces.forEach((piece, i) => lightPiece(piece, won || lit.has(i) ? 1 : 0));
+    poseAssembly(arrived || reduced ? 1 : assembly);
+    pieces.forEach((piece, i) => {
+      lightPiece(piece, won || lit.has(i) ? 1 : 0);
+      piece.mesh.visible = true;
+    });
+    motes.forEach(mote => { mote.sprite.visible = false; });
     loopMaterial.opacity = won ? 0.9 : 0;
     poseGate(won ? 1 : 0);
     poseCopies(rest.status === "playing" ? rest.misses : 0);
@@ -686,6 +743,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
   }
 
   function finish() {
+    if (entry && !entry.landed) options.onArrived?.();
     entry = null;
     queue = [];
     live = null;
@@ -712,19 +770,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     if (disposed || document.hidden) return;
     const dt = Math.min(0.05, (now - lastSeen) / 1000);
     lastSeen = now;
-    if (entry) {
-      const t = clamp01((now - entry.started) / 1000 / ENTRY_S);
-      const q = easeOut(t);
-      const squash = t > 0.7 ? 0.06 * Math.sin(Math.PI * window01(t, 0.7, 1)) : 0;
-      model.position.set(YUMI_AT.x, YUMI_AT.y + ENTRY_DROP * (1 - q) - squash * STAND_Y, YUMI_AT.z);
-      model.scale.set(SCALE * (1 + squash * 0.5), SCALE * (1 - squash), SCALE * (1 + squash * 0.5));
-      model.rotation.set(0, FACING + (1 - q) * 0.6, 0);
-      if (t >= 1) {
-        entry = null;
-        settle();
-        options.onArrived?.();
-      }
-    }
+    if (entry) poseEntry(Math.max(0, (now - entry.started) / 1000));
     if (reset) {
       const t = clamp01((now - reset.started) / 1000 / RESET_S);
       poseGate(reset.from * (1 - easeInOut(t)));
@@ -743,6 +789,52 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     placeCamera();
     renderer.render(scene, camera);
     if (live || reset || entry) frame = requestAnimationFrame(tick);
+  }
+
+  /* The arrival, `s` seconds in (see ENTRY_S). */
+  function poseEntry(s: number) {
+    if (!entry) return;
+    /* Starlight gathers onto the rings as they grow and turn into place. */
+    poseAssembly(window01(s, 0.04, 0.5));
+    for (const { sprite, from, to, delay } of motes) {
+      const u = window01(s, delay, delay + 0.4);
+      sprite.visible = u > 0 && u < 1;
+      sprite.position.copy(from).lerp(to, easeInOut(u));
+      sprite.scale.setScalar(0.1 + 0.12 * Math.sin(Math.PI * u));
+      (sprite.material as THREE.SpriteMaterial).opacity = Math.sin(Math.PI * u) * 0.95;
+    }
+    /* The gate opens for her, and closes behind her. */
+    const opening = easeOut(window01(s, 0.4, 0.56));
+    const closing = easeInOut(window01(s, 0.95, ENTRY_S));
+    poseGate(0.85 * opening * (1 - closing));
+    /* She glides out of the lens along an arc, turning to face us. */
+    const out = window01(s, 0.5, ENTRY_LAND_S);
+    model.visible = out > 0;
+    if (out > 0) {
+      const q = easeOut(out);
+      arcPoint(gateCentre.clone().add(new THREE.Vector3(0, 0, 0.08)), YUMI_AT, q, 0.55, scratch);
+      const squash = s > ENTRY_LAND_S ? 0.05 * Math.sin(Math.PI * window01(s, ENTRY_LAND_S, ENTRY_S)) : 0;
+      model.position.set(scratch.x, scratch.y - squash * STAND_Y, scratch.z);
+      const size = SCALE * (0.12 + 0.88 * q);
+      model.scale.set(size * (1 + squash * 0.5), size * (1 - squash), size * (1 + squash * 0.5));
+      model.rotation.set(0, FACING - (1 - q) * 1.4, 0);
+    }
+    /* The track appears behind her, piece by piece, from her side. */
+    const shown = window01(s, 0.62, 1.05);
+    trackGroup.visible = shown > 0;
+    pieces.forEach((piece, i) => { piece.mesh.visible = shown * pieces.length > i; });
+    if (s >= ENTRY_LAND_S && !entry.landed) {
+      entry.landed = true;
+      options.onLanded?.();
+      options.onArrived?.();
+    }
+    if (s >= ENTRY_S) {
+      const landed = entry.landed;
+      entry = null;
+      settle();
+      setBusy(false);
+      if (!landed) options.onArrived?.();
+    }
   }
 
   function wake() {
@@ -823,6 +915,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
           if (disposed) return;
           showingAll(() => renderer.render(scene, camera));
           render();
+          readyAt = performance.now();
         });
       return readyPromise;
     },
@@ -844,19 +937,23 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
           options.onArrived?.();
           return;
         }
-        model.visible = true;
-        entry = { started: performance.now() };
+        entry = { started: Math.max(performance.now(), readyAt + ENTRY_WAIT_MS), landed: false };
+        poseEntry(0);
+        setBusy(true);
+        render();
         wake();
       });
     },
     show(next, { reset: fresh = false } = {}) {
-      entry = null;
-      queue = [];
-      live = null;
-      const wasOpen = gateOpen;
       if (next.places !== trackFor) setTrack(next.places);
       rest = next;
       setRelic(next.relic);
+      /* She is still arriving: it ends where this round is. Cutting it
+         short would also leave the page waiting for her to land. */
+      if (entry) return;
+      queue = [];
+      live = null;
+      const wasOpen = gateOpen;
       if (fresh && !reduced && wasOpen > 0.01) {
         /* The last word's gate closes as the empty track appears. */
         settle();
@@ -874,6 +971,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
     play(beats, next) {
       /* A newer round while one plays: jump to where the last one ended, then on. */
       if (live || queue.length || reset || entry) {
+        if (entry && !entry.landed) options.onArrived?.();
         entry = null;
         queue = [];
         live = null;
@@ -893,9 +991,7 @@ export function createStarweaverStudio(canvas: HTMLCanvasElement, options: Studi
       wake();
     },
     skip() {
-      const landing = entry !== null;
       if (live || queue.length || reset || entry) finish();
-      if (landing) options.onArrived?.();
     },
     wear(outfit) {
       for (const piece of rig.apply(outfit ?? {})) {
