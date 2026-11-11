@@ -18,11 +18,17 @@ const reader = vi.hoisted(() => ({ language: "english" as "english" | "tradition
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => reader.language }));
 vi.mock("@/lib/speech", () => ({ speak: speech.speak, speechSupported: () => true, stopSpeech: vi.fn() }));
 vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => undefined }));
-vi.mock("@/components/hangyumi/HangyumiStage", () => ({
-  default: ({ misses, status, outfit, label }: { misses: number; status: string; outfit: unknown; label: string }) => (
-    <div data-testid="stage" data-misses={misses} data-status={status} data-outfit={JSON.stringify(outfit)} aria-label={label} />
-  ),
-}));
+/* The page waits for the first line to come to rest: the stand-in's is at
+   rest as soon as the word is dealt. */
+vi.mock("@/components/hangyumi/HangyumiStage", async () => {
+  const { useEffect } = await import("react");
+  type Props = { misses: number; status: string; outfit: unknown; dealt: boolean; onArrived: () => void; label: string };
+  function Stage({ misses, status, outfit, dealt, onArrived, label }: Props) {
+    useEffect(() => { if (dealt) onArrived(); }, [dealt, onArrived]);
+    return <div data-testid="stage" data-misses={misses} data-status={status} data-outfit={JSON.stringify(outfit)} aria-label={label} />;
+  }
+  return { default: Stage };
+});
 vi.mock("@/components/shop/EnergyCookie", () => ({ default: () => <span aria-hidden="true" /> }));
 
 const WORDS: PracticeWord[] = [

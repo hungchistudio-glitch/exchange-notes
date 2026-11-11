@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import type { HangyumiRound } from "@/lib/hangyumi/rules";
 import type { YumiOutfit } from "@/lib/shop/catalog";
+import { sweepLiquid } from "@/lib/starweaver/liquid";
 import { plan, progress } from "@/lib/wordvault/presentation";
 import type { VaultScene, WordvaultStudio } from "@/lib/wordvault/studio";
 
@@ -41,7 +42,9 @@ const sceneOf = (round: HangyumiRound): VaultScene => ({
  * She arrives once (Chi, 2026-10-26): the set is compiled before the
  * canvas fades in, so it comes in empty and whole; when the wallet says
  * what she wears and the first word is dealt, she is dressed out of sight
- * and drops in, and the page lays the clue and the keys out as she lands.
+ * and drops in, and the page lays the clue and the keys out as she lands,
+ * under the games' liquid light swept down the screen in the vault's gold
+ * (Chi, 2026-11-11: each game comes in on it, as Starweaver does).
  * A wallet that has not answered in WALLET_WAIT_MS no longer holds her up:
  * she comes as she is and dresses when it does. A studio built again (the
  * GPU took the canvas back) finds her already there.
@@ -130,6 +133,7 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
         reducedMotion,
         onBusy: next => { if (!cancelled) setBusy(next); },
         onArrived: () => { if (!cancelled) latestRef.current.onArrived(); },
+        onLanded: () => { if (!cancelled) sweepLiquid("wordvault"); },
       });
       studioRef.current = studio;
       if (!studio) {

@@ -22,7 +22,15 @@ import { progress as vaultProgress } from "@/lib/wordvault/presentation";
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => "english" }));
 vi.mock("@/lib/speech", () => ({ speak: vi.fn(), speechSupported: () => true, stopSpeech: vi.fn() }));
 vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => undefined }));
-vi.mock("@/components/hangyumi/HangyumiStage", () => ({ default: () => <div data-testid="gallows" /> }));
+/* Hangyumi's page waits for its first line to come to rest: at once here. */
+vi.mock("@/components/hangyumi/HangyumiStage", async () => {
+  const { useEffect } = await import("react");
+  function Gallows({ dealt, onArrived }: { dealt: boolean; onArrived: () => void }) {
+    useEffect(() => { if (dealt) onArrived(); }, [dealt, onArrived]);
+    return <div data-testid="gallows" />;
+  }
+  return { default: Gallows };
+});
 /* Wordvault's page waits for its Yumi to land: the stand-in lands at once. */
 vi.mock("@/components/wordvault/WordvaultStage", async () => {
   const { useEffect } = await import("react");

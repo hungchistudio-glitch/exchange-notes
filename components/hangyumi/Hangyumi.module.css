@@ -412,10 +412,13 @@
   animation: hy-enter 600ms cubic-bezier(.2, .8, .2, 1) 150ms both;
 }
 
-/* Wordvault's way in (Chi, 2026-10-26): until Yumi has landed on the path
-   the page is the bar and the empty studio; as she lands, the notes on
-   the studio fade up and the clue, the word and the keys rise one after
-   another. Hidden, not removed, so nothing moves when they come. */
+/* Every game's way in (Wordvault's first, Chi, 2026-10-26; all three
+   since 2026-11-11): until the stage is ready (Yumi landed on the path or
+   out of the gate, or Hangyumi's first line at rest) the page is the bar
+   and the empty studio; then, under the liquid light swept down the
+   screen, the notes on the studio fade up and the clue, the word and the
+   keys rise one after another. Hidden, not removed, so nothing moves when
+   they come. */
 .page[data-arrival="waiting"] > .below > *,
 .page[data-arrival="waiting"] .stageTop,
 .page[data-arrival="waiting"] .stageBottom {

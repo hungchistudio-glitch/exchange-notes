@@ -16,6 +16,9 @@ import type { HangyumiGame } from "@/lib/hangyumi/rules";
    warm honey gold, Wordvault gold and bronze, Starweaver ice cyan with a
    little violet (冰青虹彩液光).
 
+   Each game also comes in on it: one sweep from the stage down the page,
+   in its own colours, as the clue and the keys are laid out.
+
    A wrong guess, in every game: a thin dark-red liquid surges in from the
    edges of the screen and recedes, shorter than a right one (Chi: 暗紅液光
    從邊緣湧入又退去).
@@ -44,8 +47,11 @@ export const LIQUID_EVENT = "starweaver:liquid";
 export const LIQUID = {
   letter: { seconds: 0.7, strength: 0.6, cosmicStrength: 0.5, width: 1 },
   word: { seconds: 1.4, strength: 0.74, cosmicStrength: 0.62, width: 1.7 },
-  /* The arrival's: once, from the stage down over the page as she lands
-     (Chi, 2026-11-11: "從上往下輕掃一次"), carrying the keys in. */
+  /* The way in: once, from the stage down over the page as the stage is
+     ready (Chi, 2026-11-11: "從上往下輕掃一次"), carrying the keys in. In
+     every game since (Chi, 2026-11-11): as Starweaver's Yumi lands out of
+     the gate, as Wordvault's lands on the path, and as Hangyumi's first
+     line comes to rest. */
   sweep: { seconds: 1.1, strength: 0.5, cosmicStrength: 0.45, width: 1.4 },
   /* In from the edges and out again: shorter than any right guess. */
   miss: { seconds: 0.6, strength: 0.9, cosmicStrength: 0.72, width: 1 },
@@ -94,7 +100,7 @@ export function flowLiquid(kind: Exclude<LiquidKind, "sweep">, from: DOMRect | n
   });
 }
 
-/** The arrival's sweep: from the top of the stage, down the page. */
+/** A game's way in: from the top of its stage, down the page, in its colours. */
 export function sweepLiquid(game: HangyumiGame = "starweaver") {
   if (typeof window === "undefined") return;
   const rect = stageRect();

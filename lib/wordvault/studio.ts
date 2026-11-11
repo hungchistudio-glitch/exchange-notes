@@ -24,7 +24,9 @@ import type { VaultBeat } from "./presentation";
    sees the cost, and only then drops from above onto her place on the
    path, squashes, bounces once and stands, with a ring of light where she
    landed (Chi, 2026-10-26: Hangyumi's line lowering in was smooth, and
-   Wordvault flashed in with her late). That is the first deal only; the
+   Wordvault flashed in with her late). As she touches the stone the page
+   sends the games' liquid light down the screen in the vault's gold
+   (`onLanded`; Chi, 2026-11-11). That is the first deal only; the
    words after it walk her back instead. Each place a right letter
    fills moves her one hop along the path. A wrong letter sends a copy of
    part of her, in warm gold light, at the chest: her U, then her I, then
@@ -94,7 +96,13 @@ const pathX = (progress: number) => START_X + (END_X - START_X) * progress;
 
 export function createWordvaultStudio(
   canvas: HTMLCanvasElement,
-  options: { reducedMotion?: boolean; onBusy?: (busy: boolean) => void; onArrived?: () => void } = {},
+  options: {
+    reducedMotion?: boolean;
+    onBusy?: (busy: boolean) => void;
+    onArrived?: () => void;
+    /** She has dropped onto the stone, in the animated arrival only. */
+    onLanded?: () => void;
+  } = {},
 ): WordvaultStudio | null {
   let renderer: THREE.WebGLRenderer;
   try {
@@ -815,6 +823,7 @@ export function createWordvaultStudio(
       poseEntry(s);
       if (s >= FALL_S && !entry.landed) {
         entry.landed = true;
+        options.onLanded?.();
         options.onArrived?.();
       }
       if (s >= FALL_S + LAND_S) {

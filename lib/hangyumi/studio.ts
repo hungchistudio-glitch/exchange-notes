@@ -31,6 +31,12 @@ import { createGrains, type Grain } from "./particles";
    her stand, shrinks to nothing and leaves a few golden glints. Then the
    empty line lowers from the beam for the next word.
 
+   The page comes in on the first of those lines (Chi, 2026-11-11): once
+   it has lowered and come to rest, `onArrived` says so, and the page
+   sends the games' liquid light down the screen in Hangyumi's honey gold
+   and lays out the clue and the keys, as the other two games do when
+   their Yumi lands.
+
    Built from lib/yumi3d/actor.ts, the same parts the home stage moves, so
    she cannot drift from herself. Renders only while something moves, and
    not at all while the page is hidden.
@@ -65,7 +71,20 @@ const easeOutBounce = (t: number) => {
 };
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 
-export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reducedMotion?: boolean } = {}): HangyumiStudio | null {
+/** How long the first line takes to lower and come to rest, bounce and all:
+    within a hundredth of its length by then, and the sweep's front takes a
+    moment to well up at the top of the stage, so it is seen as the line stops. */
+export const LINE_IN_S = 0.7;
+
+export function createHangyumiStudio(
+  canvas: HTMLCanvasElement,
+  options: {
+    reducedMotion?: boolean;
+    /** Once, when the first line has come to rest: `lowered` is false where
+        nothing moved (reduced motion), so there is nothing to follow. */
+    onArrived?: (lowered: boolean) => void;
+  } = {},
+): HangyumiStudio | null {
   let renderer: THREE.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
@@ -439,9 +458,15 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
   let frame = 0;
   let last = performance.now();
   let disposed = false;
+  /* Seconds since the first line began lowering, until the page is told
+     it has come to rest; then null. Counted in frames drawn, so a slow
+     first frame does not tell the page before anyone has seen the line
+     move. A frame's time can come before the wake that asked for it, so
+     the first step can be a hair below zero: never counted backwards. */
+  let arriving: number | null = options.onArrived ? 0 : null;
 
   function moving(now: number) {
-    return exit !== null || grainsActive || springs.some(s => !settled(s)) || free !== freeWanted
+    return exit !== null || grainsActive || arriving !== null || springs.some(s => !settled(s)) || free !== freeWanted
       || now - blinkAt < BLINK_MS
       || (lostAt !== null && (now - lostAt) / 1000 < STRUGGLE_DELAY + DEATH_SECONDS)
       || Math.abs(angle) > 0.0004 || Math.abs(velocity) > 0.0004;
@@ -465,6 +490,13 @@ export function createHangyumiStudio(canvas: HTMLCanvasElement, options: { reduc
     if (exit) runExit(now);
     runGrains(now);
     renderer.render(scene, camera);
+    if (arriving !== null) {
+      arriving += Math.max(0, dt);
+      if (reduced || arriving >= LINE_IN_S) {
+        arriving = null;
+        options.onArrived?.(!reduced);
+      }
+    }
     if (moving(now)) frame = requestAnimationFrame(tick);
   }
 

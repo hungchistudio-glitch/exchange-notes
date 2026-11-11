@@ -41,6 +41,19 @@ describe("Starweaver liquid", () => {
     expect(requests[0].to).toEqual({ x: window.innerWidth / 2, y: window.innerHeight });
   });
 
+  it("sweeps each game in on its own colours (Chi, 2026-11-11)", () => {
+    mount();
+    const { requests, stop } = listen();
+    sweepLiquid("hangyumi");
+    sweepLiquid("wordvault");
+    sweepLiquid("starweaver");
+    stop();
+    expect(requests.map(request => [request.kind, request.game])).toEqual([
+      ["sweep", "hangyumi"], ["sweep", "wordvault"], ["sweep", "starweaver"],
+    ]);
+    expect(requests.map(request => paletteFor(request))).toEqual([PALETTES.hangyumi, PALETTES.wordvault, PALETTES.starweaver]);
+  });
+
   it("flows a guess toward the stage, not the page round it", () => {
     mount();
     const { requests, stop } = listen();

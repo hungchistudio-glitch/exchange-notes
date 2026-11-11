@@ -222,7 +222,7 @@ export default function StarweaverStage({ round, outfit, dressed, dealt, onArriv
         onBusy: next => { if (!cancelled) setBusy(next); },
         onArrived: () => { if (!cancelled) latestRef.current.onArrived(); },
         /* As she touches down, light sweeps down the page and the keys rise with it. */
-        onLanded: () => { if (!cancelled) sweepLiquid(); },
+        onLanded: () => { if (!cancelled) sweepLiquid("starweaver"); },
         onRelic: () => { if (!cancelled) latestRef.current.onRelic?.(); },
       });
       studioRef.current = studio;

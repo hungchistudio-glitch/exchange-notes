@@ -132,12 +132,14 @@ export default function HangyumiGame({
   /* The page's way in: its bands rise into place once, on arrival, and
      never again for a new word (Chi: "進入遊戲頁…加一個簡單的動畫"). */
   const [entering, setEntering] = useState(true);
-  /* Wordvault's way in (Chi, 2026-10-26): the bar and the empty studio
-     first; the clue, the word and the keys only as Yumi lands on the path,
-     one after another ("landing"), and then never again. Hangyumi's line
-     lowers in on its own, so it is "done" from the start. */
-  const [arrival, setArrival] = useState<"waiting" | "landing" | "done">(game !== "hangyumi" ? "waiting" : "done");
-  const waitingRef = useRef(game !== "hangyumi");
+  /* Every game's way in (Wordvault first, Chi, 2026-10-26; Hangyumi too
+     since 2026-11-11): the bar and the empty studio first; the clue, the
+     word and the keys only as the stage says it is ready, one after
+     another ("landing"), under the liquid light it sweeps down the screen,
+     and then never again. Wordvault's Yumi lands on the path, Starweaver's
+     glides out of the gate, and Hangyumi's first line comes to rest. */
+  const [arrival, setArrival] = useState<"waiting" | "landing" | "done">("waiting");
+  const waitingRef = useRef(true);
   const arrive = useCallback(() => {
     if (!waitingRef.current) return;
     waitingRef.current = false;
@@ -743,7 +745,16 @@ export default function HangyumiGame({
                 skipLabel={t.starweaver.skip}
               />
             )
-            : <HangyumiStage misses={misses} status={status} outfit={outfit} label={stageLabel} />}
+            : (
+              <HangyumiStage
+                misses={misses}
+                status={status}
+                outfit={outfit}
+                dealt={phase !== "loading"}
+                onArrived={arrive}
+                label={stageLabel}
+              />
+            )}
         <div className={styles.stageTop}>
           <span className={styles.stageTopLeft}>
             {/* Wordvault's streak: seven steps, the fourth and the seventh

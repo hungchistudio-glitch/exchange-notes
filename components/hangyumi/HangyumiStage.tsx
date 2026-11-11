@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import useReducedMotion from "@/hooks/useReducedMotion";
 import type { HangyumiStatus } from "@/lib/hangyumi/rules";
 import type { HangyumiStudio } from "@/lib/hangyumi/studio";
 import type { YumiOutfit } from "@/lib/shop/catalog";
+import { sweepLiquid } from "@/lib/starweaver/liquid";
 
 import styles from "./Hangyumi.module.css";
 
@@ -13,6 +14,10 @@ type Props = {
   misses: number;
   status: HangyumiStatus;
   outfit: YumiOutfit | null;
+  /** The first deal has come back, whatever it held: the keys can come in. */
+  dealt: boolean;
+  /** The first line has come to rest, or there is no studio to wait for. */
+  onArrived: () => void;
   label: string;
 };
 
@@ -23,14 +28,45 @@ type Props = {
  * could never be the same shape and size, and the swap showed (Chi,
  * 2026-10-26). The flat drawing is only for where WebGL is not to be had,
  * or while the GPU has taken the canvas back.
+ *
+ * The page comes in on the first line (Chi, 2026-11-11, as in the other
+ * two games): when it has lowered and come to rest and the first word is
+ * dealt, the games' liquid light sweeps down the screen in honey gold and
+ * the page lays out the clue and the keys. Once only: a studio built again
+ * finds the page already in. With no studio to wait for, the page comes in
+ * at once, and with nothing moving (reduced motion) there is no sweep.
  */
-export default function HangyumiStage({ misses, status, outfit, label }: Props) {
+export default function HangyumiStage({ misses, status, outfit, dealt, onArrived, label }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const studioRef = useRef<HangyumiStudio | null>(null);
   const poseRef = useRef({ misses, status, outfit });
+  const latestRef = useRef({ dealt, onArrived });
+  /* The line has come to rest: true once it lowered, false if nothing moved. */
+  const restedRef = useRef<boolean | null>(null);
+  /* The page has been told. */
+  const arrivedRef = useRef(false);
   const [live, setLive] = useState(false);
   const [failed, setFailed] = useState(false);
   const reducedMotion = useReducedMotion();
+
+  /* The page comes in once the line is at rest and the word is dealt. */
+  const comeIn = useCallback(() => {
+    if (arrivedRef.current || restedRef.current === null || !latestRef.current.dealt) return;
+    arrivedRef.current = true;
+    if (restedRef.current) sweepLiquid("hangyumi");
+    latestRef.current.onArrived();
+  }, []);
+  /* No studio to wait for: the page comes in now, as it is. */
+  const giveUp = useCallback(() => {
+    if (arrivedRef.current) return;
+    arrivedRef.current = true;
+    latestRef.current.onArrived();
+  }, []);
+
+  useEffect(() => {
+    latestRef.current = { dealt, onArrived };
+    comeIn();
+  }, [dealt, onArrived, comeIn]);
 
   useEffect(() => {
     poseRef.current = { misses, status, outfit };
@@ -47,11 +83,19 @@ export default function HangyumiStage({ misses, status, outfit, label }: Props) 
     const build = () => {
       if (cancelled || !create) return;
       studioRef.current?.dispose();
-      const studio = create(canvas, { reducedMotion });
+      const studio = create(canvas, {
+        reducedMotion,
+        onArrived: lowered => {
+          if (cancelled) return;
+          restedRef.current ??= lowered;
+          comeIn();
+        },
+      });
       studioRef.current = studio;
       if (!studio) {
         setLive(false);
         setFailed(true);
+        giveUp();
         return;
       }
       studio.set(poseRef.current);
@@ -70,6 +114,7 @@ export default function HangyumiStage({ misses, status, outfit, label }: Props) 
       event.preventDefault();
       setLive(false);
       setFailed(true);
+      giveUp();
     };
     canvas.addEventListener("webglcontextlost", lost);
     canvas.addEventListener("webglcontextrestored", build);
@@ -77,7 +122,11 @@ export default function HangyumiStage({ misses, status, outfit, label }: Props) 
     void import("@/lib/hangyumi/studio").then(studio => {
       create = studio.createHangyumiStudio;
       build();
-    }, () => { if (!cancelled) setFailed(true); });
+    }, () => {
+      if (cancelled) return;
+      setFailed(true);
+      giveUp();
+    });
     return () => {
       cancelled = true;
       canvas.removeEventListener("webglcontextlost", lost);
@@ -86,7 +135,7 @@ export default function HangyumiStage({ misses, status, outfit, label }: Props) 
       studioRef.current = null;
       setLive(false);
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, comeIn, giveUp]);
 
   const hung = status === "playing" ? misses : 3;
   return (
