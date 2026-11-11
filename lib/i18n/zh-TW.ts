@@ -3064,6 +3064,8 @@ const traditionalChinese: TranslationDictionary = {
     rewardItem: "已收進衣櫥",
     rewardLimited: "神話秘藏",
     revealSeal: "{origin}・神話秘藏",
+    revealShelfSeal: "中等寶箱・Yumi 商店",
+    revealShelfIntro: "寶箱為你帶來一件商店架上的飾品，已經收進衣櫥。",
     origins: {
       greek: "希臘神話",
       norse: "北歐神話",

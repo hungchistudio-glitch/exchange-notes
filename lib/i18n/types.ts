@@ -2985,6 +2985,10 @@ export type TranslationDictionary = {
     rewardLimited: string;
     /** Over a Mythic Vault piece's reveal (2026-11-11): its {origin} and the vault. */
     revealSeal: string;
+    /** Over a medium chest's shelf piece's reveal (2026-11-12): where it came from. */
+    revealShelfSeal: string;
+    /** The line under a shelf piece's name in its reveal: shelf pieces have no intro of their own. */
+    revealShelfIntro: string;
     origins: Record<"greek" | "norse" | "egyptian" | "chinese" | "celtic" | "mesopotamian", string>;
     rewardAllOwned: string;
     /** The note over the stage when a chest pays: {count} cookies. */

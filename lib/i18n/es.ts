@@ -3104,6 +3104,8 @@ const spanish: TranslationDictionary = {
     rewardItem: "Nuevo en tu armario",
     rewardLimited: "Del Tesoro Mítico",
     revealSeal: "{origin} · El Tesoro Mítico",
+    revealShelfSeal: "Cofre mediano · Tienda Yumi",
+    revealShelfIntro: "El cofre te trae una pieza de las estanterías de la tienda. Ya está en tu armario.",
     origins: {
       greek: "Mito griego",
       norse: "Mito nórdico",

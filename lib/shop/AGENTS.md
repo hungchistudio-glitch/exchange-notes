@@ -30,3 +30,8 @@
   - a builder for every piece (`buildableIds()`);
   - a name in all five interface languages, with the Chinese one in
     Traditional characters.
+- **The way in** (Chi, 2026-11-12):
+  - `components/shop/HoloEntrance.tsx`: a holographic scan over the page. Parts marked `data-holo-frame` get outlines, and the pieces on the first screen fade in as the line reaches them (`--holo-delay`).
+  - `ShopStage`: Yumi's beam-down. `StationDock`'s `landing` prop pulses the pad's rim and lights.
+  - It runs about 1.5 s on every client-side visit and ends at a tap. It never runs under reduced motion, or on a page the server drew (a reload), except on the review screen (`replayEntrance`).
+  - Keep it to opacity and transform: no filter or backdrop-filter.

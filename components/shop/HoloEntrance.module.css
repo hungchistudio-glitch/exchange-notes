@@ -1,0 +1,115 @@
+/* The shop's holographic way in (HoloEntrance.tsx). Opacity and
+   transform only. Over the page and its bar, under every sheet. */
+.holo {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  pointer-events: none;
+  overflow: hidden;
+  --holo-ink: #8fe6ff;
+  --holo-ease: cubic-bezier(.45, .05, .55, .95);
+}
+
+/* The blueprint: dark glass with a fine grid, everything under the line.
+   Its top edge is the line; the two move down as one. */
+.veil {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 120vh;
+  background:
+    repeating-linear-gradient(0deg, #8fe6ff12 0 1px, #0000 1px 22px),
+    repeating-linear-gradient(90deg, #8fe6ff12 0 1px, #0000 1px 22px),
+    linear-gradient(180deg, #071823e6, #0a1a26de 40%, #06121ce0);
+  animation: holo-sweep var(--holo-scan) linear var(--holo-lead) both;
+}
+
+/* The line: a bright core and a glow trailing up behind it. */
+.line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -2px;
+  height: 2px;
+  background: linear-gradient(90deg, #8fe6ff00, #e9fbff 12%, #ffffff 50%, #e9fbff 88%, #8fe6ff00);
+  box-shadow: 0 0 10px 2px #8fe6ffcc, 0 0 28px 6px #8fe6ff59;
+  animation:
+    holo-sweep var(--holo-scan) linear var(--holo-lead) both,
+    holo-line-out 260ms ease calc(var(--holo-lead) + var(--holo-scan)) forwards;
+}
+
+.line::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 90px;
+  background: linear-gradient(180deg, #8fe6ff00, #8fe6ff1f 70%, #bff3ff4d);
+}
+
+/* A small readout riding the line at its right end. */
+.readout {
+  position: absolute;
+  right: 14px;
+  top: 6px;
+  font: 600 0.5625rem/1 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.22em;
+  color: #c9f5ff;
+  text-shadow: 0 0 8px #8fe6ff;
+  white-space: nowrap;
+}
+
+/* What is about to be there, drawn in light on the blueprint: its
+   outline, four corner brackets, a faint fill. Each flashes and goes as
+   the line crosses it. */
+.frames {
+  position: absolute;
+  inset: 0;
+}
+
+.frame {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid #8fe6ffb3;
+  background: #8fe6ff0d;
+  box-shadow: 0 0 12px #8fe6ff40, inset 0 0 18px #8fe6ff1a;
+  animation: holo-frame-out 240ms ease both;
+}
+
+.frame b {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: #e9fbff;
+  border-style: solid;
+  border-width: 0;
+}
+
+.frame b:nth-child(1) { left: -1px; top: -1px; border-left-width: 2px; border-top-width: 2px; }
+.frame b:nth-child(2) { right: -1px; top: -1px; border-right-width: 2px; border-top-width: 2px; }
+.frame b:nth-child(3) { left: -1px; bottom: -1px; border-left-width: 2px; border-bottom-width: 2px; }
+.frame b:nth-child(4) { right: -1px; bottom: -1px; border-right-width: 2px; border-bottom-width: 2px; }
+
+@keyframes holo-sweep {
+  from { transform: translateY(0); }
+  to { transform: translateY(100vh); }
+}
+
+@keyframes holo-line-out {
+  to { opacity: 0; }
+}
+
+/* Bright as the line arrives, then gone. */
+@keyframes holo-frame-out {
+  0% { opacity: 1; }
+  35% { opacity: 1; transform: scale(1.012); }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo {
+    display: none;
+  }
+}

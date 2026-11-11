@@ -457,8 +457,11 @@ export default function HangyumiGame({
         else flowLiquid("miss", from, game);
       }
       if (!result.repeat && result.status === "won") {
+        /* Every piece a chest gives, the medium chest's from the shelves as
+           well as the premium chest's from the Mythic Vault (Chi,
+           2026-11-12: Wordvault shows what it unlocks like the others). */
         const unlocked = game === "hangyumi" ? result.nightscale?.award?.itemId
-          : game === "wordvault" && result.chestReward?.limited ? result.chestReward.item
+          : game === "wordvault" ? result.chestReward?.item
             : null;
         if (unlocked) setPresentFor({ key: result.id, itemId: unlocked });
       }
@@ -1214,13 +1217,31 @@ export default function HangyumiGame({
               })()
             : (() => {
                 const reward = round.chestReward;
-                const piece = reward?.limited ? mythicItem(reward.item) : null;
-                return piece && {
-                  item: piece, collection: "mythic" as const,
+                /* "Wear it" and the rest, said of a piece. */
+                const words = t.hangyumi.nightscale;
+                const mythic = reward?.limited ? mythicItem(reward.item) : null;
+                if (mythic) {
+                  return {
+                    item: mythic, collection: "mythic" as const,
+                    title: t.wordvault.rewardTitle,
+                    seal: fill(t.wordvault.revealSeal, { origin: t.wordvault.origins[mythic.origin] }),
+                    words, close: t.hangyumi.close,
+                  };
+                }
+                /* A medium chest's piece from the shelves: no line of its own,
+                   so the reveal says where it came from. */
+                const shelf = reward && !reward.limited ? shopItem(reward.item) : undefined;
+                if (!shelf) return null;
+                const line = t.wordvault.revealShelfIntro;
+                return {
+                  item: {
+                    ...shelf,
+                    intro: { "traditional-chinese": line, english: line, french: line, italian: line, spanish: line },
+                  },
+                  collection: "chest" as const,
                   title: t.wordvault.rewardTitle,
-                  seal: fill(t.wordvault.revealSeal, { origin: t.wordvault.origins[piece.origin] }),
-                  /* "Wear it" and the rest, said of a piece. */
-                  words: t.hangyumi.nightscale, close: t.hangyumi.close,
+                  seal: t.wordvault.revealShelfSeal,
+                  words, close: t.hangyumi.close,
                 };
               })();
         if (!shown) return null;
