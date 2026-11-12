@@ -969,7 +969,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #d8d2c4;
+  background: var(--pip-off, #d8d2c4);
   transition: background-color 300ms ease, transform 300ms cubic-bezier(.3, 1.6, .5, 1);
 }
 
@@ -980,11 +980,11 @@
 }
 
 .streakPips i[data-chest="medium"] {
-  background: #b9d8c8;
+  background: var(--pip-medium, #b9d8c8);
 }
 
 .streakPips i[data-chest="premium"] {
-  background: #c9bdf0;
+  background: var(--pip-premium, #c9bdf0);
 }
 
 .streakPips i[data-done="true"] {
@@ -992,7 +992,7 @@
 }
 
 .streakPips i[data-now="true"] {
-  background: #4f6248;
+  background: var(--pip-now, #4f6248);
   transform: scale(1.3);
 }
 
@@ -1121,6 +1121,63 @@
 
 .missesText:empty {
   display: none;
+}
+
+/* In Yumi Cosmic every game's studio is at night (Chi, 2026-11-12:
+   Hangyumi's honey-lit workshop, Wordvault's vault with its emerald light,
+   Starweaver's dark), and what sits on it is dark glass, as Starweaver's
+   voyage and Hangyumi's Nightscale already were. The frame shows the
+   studio's own night while it loads. */
+:global(html[data-interface-mode="yumi-cosmic"]) .stageWrap {
+  background: #0f0d0b;
+  box-shadow: inset 0 0 0 1px #ffffff12, 0 18px 40px -30px #000;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .stageWrap:has(.stage[data-game="wordvault"]) {
+  background: #0a0f1a;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .streak,
+:global(html[data-interface-mode="yumi-cosmic"]) .info,
+:global(html[data-interface-mode="yumi-cosmic"]) .missesText,
+:global(html[data-interface-mode="yumi-cosmic"]) .skip,
+:global(html[data-interface-mode="yumi-cosmic"]) .queued,
+:global(html[data-interface-mode="yumi-cosmic"]) .piece:not([data-hung="true"]) {
+  background: rgb(20 22 26 / 0.74);
+  color: #e7e9ee;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .streak,
+:global(html[data-interface-mode="yumi-cosmic"]) .info,
+:global(html[data-interface-mode="yumi-cosmic"]) .skip,
+:global(html[data-interface-mode="yumi-cosmic"]) .queued {
+  box-shadow: inset 0 0 0 1px #ffffff17;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .piece:not([data-hung="true"]) {
+  box-shadow: inset 0 0 0 1.5px #ffffff26;
+  color: #aeb3bc;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .missesText {
+  color: #c3c7cf;
+}
+
+/* Wordvault's streak: brass where it has been, its chests in their own
+   colours, darkened for the night. */
+:global(html[data-interface-mode="yumi-cosmic"]) .streak {
+  --pip-off: #ffffff2b;
+  --pip-medium: #2f6f5a;
+  --pip-premium: #4b3f86;
+  --pip-now: #ecc77c;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .streak b {
+  color: #ece6d6;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .streak b[data-chest="medium"] {
+  color: #6fd3ad;
 }
 
 /* What comes next and what was paid, over the studio rather than in rows. */

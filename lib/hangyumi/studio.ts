@@ -5,7 +5,7 @@ import type { YumiOutfit } from "@/lib/shop/catalog";
 import { ARM_ROOT, EYE_REST, buildYumiActor } from "@/lib/yumi3d/actor";
 import { EYE_RADIUS, SHELL_RADIUS, TUBE_RADIUS } from "@/lib/yumi3d/anatomy";
 import { buildThumbnailObject, createOutfitRig, disposeObject } from "@/lib/yumi3d/outfit";
-import { makeStudioEnvironment } from "@/lib/yumi3d/scene";
+import { makeHaloTexture, makeNightEnvironment, makeStudioEnvironment } from "@/lib/yumi3d/scene";
 
 import { createGrains, type Grain } from "./particles";
 
@@ -37,6 +37,12 @@ import { createGrains, type Grain } from "./particles";
    and lays out the clue and the keys, as the other two games do when
    their Yumi lands.
 
+   In Yumi Cosmic the studio is the same set at night (Chi, 2026-11-12:
+   "夜工作室・蜂蜜燈"): warm ink all round, one honey lamp overhead whose
+   cone of light falls on the gallows and the stand, the floor's grooves
+   and ring lit faintly gold, and a warm rim down her side so her black C
+   keeps its edge against the dark.
+
    Built from lib/yumi3d/actor.ts, the same parts the home stage moves, so
    she cannot drift from herself. Renders only while something moves, and
    not at all while the page is hidden.
@@ -60,6 +66,10 @@ export type HangyumiStudio = {
 };
 
 const BACKDROP = 0xf7f6f2;
+/** The studio at night: warm ink. */
+const NIGHT = 0x0f0d0b;
+/** The night lamp's honey, as the games hub's Hangyumi card. */
+const HONEY = 0xffc35a;
 const BEAM_Y = 7.3;
 const HANG_Y = 3.7;
 const SCALE = 0.95;
@@ -90,6 +100,11 @@ export function createHangyumiStudio(
     /** Once, when the first line has come to rest: `lowered` is false where
         nothing moved (reduced motion), so there is nothing to follow. */
     onArrived?: (lowered: boolean) => void;
+    /** The studio at night, for Yumi Cosmic. */
+    cosmic?: boolean;
+    /** Built again for a page already in (the mode switched, the GPU gave the
+        canvas back): the line is already down, and nothing is announced. */
+    settled?: boolean;
   } = {},
 ): HangyumiStudio | null {
   let renderer: THREE.WebGLRenderer;
@@ -99,11 +114,13 @@ export function createHangyumiStudio(
     return null;
   }
   const reduced = options.reducedMotion ?? false;
+  const cosmic = options.cosmic ?? false;
+  const backdrop = cosmic ? NIGHT : BACKDROP;
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.02;
+  renderer.toneMappingExposure = cosmic ? 1.08 : 1.02;
   renderer.shadowMap.enabled = true;
   /* three 0.186 has no PCFSoftShadowMap (it falls back with a warning). Its
      PCF filter now samples a Vogel disk scaled by the light's
@@ -115,19 +132,22 @@ export function createHangyumiStudio(
   renderer.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(BACKDROP);
+  scene.background = new THREE.Color(backdrop);
   /* The floor fades into the backdrop instead of meeting it at a line. */
-  scene.fog = new THREE.Fog(BACKDROP, 26, 48);
-  const environment = makeStudioEnvironment(renderer);
+  scene.fog = new THREE.Fog(backdrop, cosmic ? 20 : 26, cosmic ? 40 : 48);
+  const environment = cosmic
+    ? makeNightEnvironment(renderer, { top: "#3a3026", middle: "#16120e", bottom: "#050403", lamp: "rgba(255,226,170,0.95)" })
+    : makeStudioEnvironment(renderer);
   scene.environment = environment;
 
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
   const target = new THREE.Vector3(-0.35, 3.75, 0);
 
   // ------------------------------------------------------------- light
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b2a6, 0.5));
-  /* The key: high on the right, throwing her shadow long to the left. */
-  const key = new THREE.DirectionalLight(0xffffff, 3.3);
+  scene.add(new THREE.HemisphereLight(cosmic ? 0xffe9c8 : 0xffffff, cosmic ? 0x17130f : 0xb8b2a6, cosmic ? 0.3 : 0.5));
+  /* The key: high on the right, throwing her shadow long to the left. At
+     night a warm lamp, weaker, so the honey pool overhead leads. */
+  const key = new THREE.DirectionalLight(cosmic ? 0xffe6c0 : 0xffffff, cosmic ? 1.9 : 3.3);
   key.position.set(7.5, 11, 5.5);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
@@ -136,16 +156,17 @@ export function createHangyumiStudio(
   key.shadow.normalBias = 0.02;
   key.shadow.radius = 3;
   scene.add(key);
-  /* The highlight down her right side. */
-  const rim = new THREE.DirectionalLight(0xffffff, 1.1);
+  /* The highlight down her right side; at night it keeps her black C apart
+     from the dark. */
+  const rim = new THREE.DirectionalLight(cosmic ? 0xfff0d8 : 0xffffff, cosmic ? 1.8 : 1.1);
   rim.position.set(6, 3, -4);
   scene.add(rim);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.3);
+  const fill = new THREE.DirectionalLight(0xffffff, cosmic ? 0.18 : 0.3);
   fill.position.set(-6, 2, 4);
   scene.add(fill);
 
   // ------------------------------------------------------- the studio
-  const floorMaterial = new THREE.MeshStandardMaterial({ color: BACKDROP, roughness: 1, metalness: 0 });
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: backdrop, roughness: cosmic ? 0.78 : 1, metalness: cosmic ? 0.12 : 0 });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), floorMaterial);
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
@@ -157,8 +178,9 @@ export function createHangyumiStudio(
   });
   const silver = new THREE.MeshStandardMaterial({ color: 0x8d9399, metalness: 0.95, roughness: 0.23, envMapIntensity: 0.95 });
   const sage = new THREE.MeshStandardMaterial({ color: 0x8fa79a, metalness: 0.35, roughness: 0.3 });
-  /* The stand: warm stone a shade darker than the floor, so it reads on white. */
-  const stone = new THREE.MeshStandardMaterial({ color: 0xd6d1c6, metalness: 0.04, roughness: 0.55 });
+  /* The stand: warm stone a shade darker than the floor, so it reads on
+     white; at night a shade lighter, so it reads in the lamp's pool. */
+  const stone = new THREE.MeshStandardMaterial({ color: cosmic ? 0x3d352c : 0xd6d1c6, metalness: 0.04, roughness: 0.55 });
 
   const solid = (mesh: THREE.Mesh) => {
     mesh.castShadow = true;
@@ -216,12 +238,13 @@ export function createHangyumiStudio(
 
   /* The floor: a round inlay under the whole set, fine concentric grooves
      and one silver ring, so the white has a place to stand. */
+  const groove = cosmic ? "233,181,77" : "150,140,120";
   const inlayMap = canvasTexture(1024, 1024, ink => {
     const c = 512;
-    ink.fillStyle = "#f1eee7";
+    ink.fillStyle = cosmic ? "#17130f" : "#f1eee7";
     ink.fillRect(0, 0, 1024, 1024);
     for (let r = 40; r < 510; r += 22) {
-      ink.strokeStyle = r % 88 === 40 ? "rgba(150,140,120,0.22)" : "rgba(150,140,120,0.1)";
+      ink.strokeStyle = r % 88 === 40 ? `rgba(${groove},0.22)` : `rgba(${groove},0.1)`;
       ink.lineWidth = 1.5;
       ink.beginPath();
       ink.arc(c, c, r, 0, Math.PI * 2);
@@ -229,7 +252,7 @@ export function createHangyumiStudio(
     }
     for (let i = 0; i < 24; i += 1) {
       const a = (i / 24) * Math.PI * 2;
-      ink.strokeStyle = "rgba(150,140,120,0.08)";
+      ink.strokeStyle = `rgba(${groove},0.08)`;
       ink.beginPath();
       ink.moveTo(c + Math.cos(a) * 300, c + Math.sin(a) * 300);
       ink.lineTo(c + Math.cos(a) * 505, c + Math.sin(a) * 505);
@@ -242,7 +265,11 @@ export function createHangyumiStudio(
   inlay.position.set(-1.1, 0.004, 0);
   inlay.receiveShadow = true;
   scene.add(inlay);
-  const inlayRing = new THREE.Mesh(new THREE.RingGeometry(6.12, 6.2, 128), silver);
+  /* At night the ring glows faintly gold, a line of light round the set. */
+  const inlayRing = new THREE.Mesh(
+    new THREE.RingGeometry(6.12, 6.2, 128),
+    cosmic ? new THREE.MeshBasicMaterial({ color: 0xa87c34 }) : silver,
+  );
   inlayRing.rotation.x = -Math.PI / 2;
   inlayRing.position.set(-1.1, 0.006, 0);
   scene.add(inlayRing);
@@ -330,13 +357,71 @@ export function createHangyumiStudio(
   /* A soft pool of light on the stand, and a faint warm light from behind
      the gallows, so the set has a front and a back. No shadows: the key
      casts those. */
-  const pool = new THREE.SpotLight(0xfff4e2, 18, 16, 0.42, 0.9, 1.6);
+  const pool = new THREE.SpotLight(cosmic ? HONEY : 0xfff4e2, cosmic ? 60 : 18, 16, 0.42, 0.9, 1.6);
   pool.position.set(0.4, 11.5, 2.4);
   pool.target.position.set(0, 0, 0.3);
   scene.add(pool, pool.target);
-  const back = new THREE.DirectionalLight(0xffe6c4, 0.45);
+  const back = new THREE.DirectionalLight(cosmic ? 0xffb45e : 0xffe6c4, cosmic ? 0.6 : 0.45);
   back.position.set(-5, 6, -8);
   scene.add(back);
+
+  if (cosmic) {
+    /* The lamp's cone, seen in the dark: brightest where it leaves the
+       lamp and along the middle of the beam, gone at its edges and before
+       it reaches the floor. Added light, so it only ever brightens. */
+    const length = 11.2;
+    const coneGeometry = new THREE.CylinderGeometry(0.35, Math.tan(0.36) * length, length, 48, 1, true);
+    coneGeometry.translate(0, -length / 2, 0);
+    const cone = new THREE.Mesh(coneGeometry, new THREE.ShaderMaterial({
+      uniforms: { uColor: { value: new THREE.Color(HONEY) }, uLength: { value: length } },
+      vertexShader: `
+        varying float vAlong;
+        varying vec3 vNormal;
+        varying vec3 vView;
+        void main() {
+          vAlong = -position.y;
+          vec4 world = modelMatrix * vec4(position, 1.0);
+          vNormal = normalize(mat3(modelMatrix) * normal);
+          vView = normalize(cameraPosition - world.xyz);
+          gl_Position = projectionMatrix * viewMatrix * world;
+        }`,
+      fragmentShader: `
+        uniform vec3 uColor;
+        uniform float uLength;
+        varying float vAlong;
+        varying vec3 vNormal;
+        varying vec3 vView;
+        void main() {
+          float along = clamp(vAlong / uLength, 0.0, 1.0);
+          float face = pow(abs(dot(normalize(vNormal), normalize(vView))), 1.6);
+          float fade = pow(1.0 - along, 1.4) * smoothstep(0.0, 0.08, along);
+          gl_FragColor = vec4(uColor * face * fade * 0.16, 1.0);
+        }`,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      fog: false,
+    }));
+    cone.position.copy(pool.position);
+    cone.lookAt(pool.target.position);
+    cone.rotateX(-Math.PI / 2);
+    scene.add(cone);
+
+    /* Where the cone lands: a soft honey pool on the floor round the stand. */
+    const haloMap = makeHaloTexture();
+    dressingTextures.push(haloMap);
+    const halo = new THREE.Mesh(
+      new THREE.PlaneGeometry(9, 9),
+      new THREE.MeshBasicMaterial({
+        map: haloMap, color: HONEY, transparent: true, opacity: 0.22,
+        depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+      }),
+    );
+    halo.rotation.x = -Math.PI / 2;
+    halo.position.set(0, 0.012, 0.3);
+    scene.add(halo);
+  }
 
   /* Everything that swings hangs from this pivot, at the beam. */
   const pivot = new THREE.Group();
@@ -423,8 +508,9 @@ export function createHangyumiStudio(
   const tug = spring(320, 15);
   /* The empty line lowering from the beam for a new word. */
   const lineIn = spring(70, 8.5);
-  /* On arrival the empty line lowers from the beam too. */
-  lineIn.x = reduced ? 1 : 0;
+  /* On arrival the empty line lowers from the beam too; a studio built
+     again for a page already in finds it down. */
+  lineIn.x = reduced || options.settled ? 1 : 0;
   lineIn.to = 1;
   const springs = [eyeIn, neckIn, bodyIn, bob, tug, lineIn];
   const settled = (s: Spring) => Math.abs(s.x - s.to) < 0.0008 && Math.abs(s.v) < 0.0008;
@@ -628,7 +714,7 @@ export function createHangyumiStudio(
      first frame does not tell the page before anyone has seen the line
      move. A frame's time can come before the wake that asked for it, so
      the first step can be a hair below zero: never counted backwards. */
-  let arriving: number | null = options.onArrived ? 0 : null;
+  let arriving: number | null = options.onArrived && !options.settled ? 0 : null;
 
   function moving(now: number) {
     return exit !== null || grainsActive || arriving !== null || gift !== null || springs.some(s => !settled(s)) || free !== freeWanted

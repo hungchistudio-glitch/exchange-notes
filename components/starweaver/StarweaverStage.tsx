@@ -1,8 +1,9 @@
 "use client";
 
 import { SkipForward } from "lucide-react";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import useCosmicMode from "@/hooks/useCosmicMode";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import { revealProgress, type HangyumiRound } from "@/lib/hangyumi/rules";
 import type { YumiOutfit } from "@/lib/shop/catalog";
@@ -105,14 +106,6 @@ function FlatChart({ round }: { round: HangyumiRound | null }) {
   );
 }
 
-/* Cosmic or not, read off the page (the review screens have no provider). */
-function subscribeMode(onChange: () => void) {
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-interface-mode"] });
-  return () => observer.disconnect();
-}
-const isCosmicNow = () => document.documentElement.dataset.interfaceMode === "yumi-cosmic";
-
 const sceneOf = (round: HangyumiRound): WeaveScene => ({
   places: revealProgress(round).total,
   lit: litPlaces(round),
@@ -149,7 +142,7 @@ export default function StarweaverStage({ round, outfit, dressed, dealt, onArriv
   const [busy, setBusy] = useState(false);
   const [walletLate, setWalletLate] = useState(false);
   const reducedMotion = useReducedMotion();
-  const cosmic = useSyncExternalStore(subscribeMode, isCosmicNow, () => false);
+  const cosmic = useCosmicMode();
 
   /* Sends for her once everything she arrives with is here. */
   const arriveRef = useRef(() => {});
