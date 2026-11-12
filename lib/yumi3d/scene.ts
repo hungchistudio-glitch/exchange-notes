@@ -261,6 +261,58 @@ export function makeStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Text
   return environment;
 }
 
+/**
+ * A studio at night, for the games' stages in Yumi Cosmic (Chi, 2026-11-12:
+ * Hangyumi and Wordvault, after Starweaver): the same painted environment
+ * as by day, dark and tinted, with one soft lamp for her lacquer to catch.
+ */
+export function makeNightEnvironment(
+  renderer: THREE.WebGLRenderer,
+  tones: { top: string; middle: string; bottom: string; lamp: string },
+): THREE.Texture {
+  const source = document.createElement("canvas");
+  source.width = 512;
+  source.height = 256;
+  const ctx = source.getContext("2d")!;
+  const sky = ctx.createLinearGradient(0, 0, 0, 256);
+  sky.addColorStop(0, tones.top);
+  sky.addColorStop(0.55, tones.middle);
+  sky.addColorStop(1, tones.bottom);
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, 512, 256);
+  const lamp = ctx.createRadialGradient(150, 70, 4, 150, 70, 100);
+  lamp.addColorStop(0, tones.lamp);
+  lamp.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = lamp;
+  ctx.fillRect(0, 0, 512, 256);
+  const texture = new THREE.CanvasTexture(source);
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  const environment = pmrem.fromEquirectangular(texture).texture;
+  pmrem.dispose();
+  texture.dispose();
+  return environment;
+}
+
+/** A round soft glow, bright in the middle and gone at the edge: for light
+    laid on a dark floor with additive blending. */
+export function makeHaloTexture(): THREE.CanvasTexture {
+  const paper = document.createElement("canvas");
+  paper.width = paper.height = 256;
+  const ctx = paper.getContext("2d")!;
+  const glow = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  glow.addColorStop(0, "rgba(255,255,255,1)");
+  glow.addColorStop(0.35, "rgba(255,255,255,0.45)");
+  glow.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, 256, 256);
+  const texture = new THREE.CanvasTexture(paper);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 export function createYumiScene(
   canvas: HTMLCanvasElement,
   options: YumiSceneOptions = {},

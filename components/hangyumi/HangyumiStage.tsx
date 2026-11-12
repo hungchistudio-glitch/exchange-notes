@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import useCosmicMode from "@/hooks/useCosmicMode";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import type { HangyumiStatus } from "@/lib/hangyumi/rules";
 import type { HangyumiStudio } from "@/lib/hangyumi/studio";
@@ -39,6 +40,10 @@ type Props = {
  * the page lays out the clue and the keys. Once only: a studio built again
  * finds the page already in. With no studio to wait for, the page comes in
  * at once, and with nothing moving (reduced motion) there is no sweep.
+ *
+ * In Yumi Cosmic the studio is the same set at night (Chi, 2026-11-12). A
+ * switch while the game is open builds it again where the round stands,
+ * the line already down.
  */
 export default function HangyumiStage({ misses, status, outfit, dealt, onArrived, present = null, onPresented, label }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -55,6 +60,7 @@ export default function HangyumiStage({ misses, status, outfit, dealt, onArrived
   const [live, setLive] = useState(false);
   const [failed, setFailed] = useState(false);
   const reducedMotion = useReducedMotion();
+  const cosmic = useCosmicMode();
 
   /* The page comes in once the line is at rest and the word is dealt. */
   const comeIn = useCallback(() => {
@@ -111,6 +117,8 @@ export default function HangyumiStage({ misses, status, outfit, dealt, onArrived
       studioRef.current?.dispose();
       const studio = create(canvas, {
         reducedMotion,
+        cosmic,
+        settled: arrivedRef.current,
         onArrived: lowered => {
           if (cancelled) return;
           restedRef.current ??= lowered;
@@ -161,11 +169,11 @@ export default function HangyumiStage({ misses, status, outfit, dealt, onArrived
       studioRef.current = null;
       setLive(false);
     };
-  }, [reducedMotion, comeIn, giveUp]);
+  }, [reducedMotion, cosmic, comeIn, giveUp]);
 
   const hung = status === "playing" ? misses : 3;
   return (
-    <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"} data-liquid-stage="">
+    <div className={styles.stage} role="img" aria-label={label} data-live={live ? "true" : "false"} data-game="hangyumi" data-liquid-stage="">
       <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
       {failed && (
         <svg className={styles.flat} viewBox="0 0 120 120" aria-hidden="true" focusable="false">

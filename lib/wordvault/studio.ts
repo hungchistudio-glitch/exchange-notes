@@ -4,7 +4,7 @@ import type { YumiOutfit } from "@/lib/shop/catalog";
 import { ARM_ROOT, EYE_REST, buildYumiActor } from "@/lib/yumi3d/actor";
 import { SHELL_RADIUS, TUBE_RADIUS } from "@/lib/yumi3d/anatomy";
 import { buildThumbnailObject, createOutfitRig, disposeObject } from "@/lib/yumi3d/outfit";
-import { makeStudioEnvironment } from "@/lib/yumi3d/scene";
+import { makeHaloTexture, makeNightEnvironment, makeStudioEnvironment } from "@/lib/yumi3d/scene";
 
 import type { VaultBeat } from "./presentation";
 
@@ -25,8 +25,8 @@ import type { VaultBeat } from "./presentation";
    path, squashes, bounces once and stands, with a ring of light where she
    landed (Chi, 2026-10-26: Hangyumi's line lowering in was smooth, and
    Wordvault flashed in with her late). As she touches the stone the page
-   sends the games' liquid light down the screen in the vault's gold
-   (`onLanded`; Chi, 2026-11-11). That is the first deal only; the
+   sends the games' liquid light down the screen in the vault's emerald
+   (`onLanded`; Chi, 2026-11-11, emerald since 2026-11-12). That is the first deal only; the
    words after it walk her back instead. Each place a right letter
    fills moves her one hop along the path. A wrong letter sends a copy of
    part of her, in warm gold light, at the chest: her U, then her I, then
@@ -34,6 +34,12 @@ import type { VaultBeat } from "./presentation";
    when every copy comes home to her. Won, the word's letters rise, gather
    into a brass key, the key turns in the lock and the lid opens on a
    burst of light and coins.
+
+   In Yumi Cosmic it is the same vault at night (Chi, 2026-11-12: "深夜寶庫・
+   翡翠光"): navy-black all round, the path in dark slate with its brass
+   inlays faintly lit before she reaches them, a soft emerald light under
+   the chest, as the liquid light is, and a brass rim down her side so her
+   black C keeps its edge.
 
    Built from lib/yumi3d/actor.ts like Hangyumi's, so she cannot drift from
    herself. Renders only while something moves, and not at all while the
@@ -76,6 +82,12 @@ export type WordvaultStudio = {
 };
 
 const BACKDROP = 0xf3efe6;
+/** The vault at night: navy-black. */
+const NIGHT = 0x0a0f1a;
+/** Its light under the chest, the liquid light's jade. */
+const EMERALD = 0x2fa37c;
+/** How bright an unlit inlay is: dark by day, a faint brass at night. */
+const INLAY_REST_NIGHT = 0.14;
 const SCALE = 0.56;
 /** The set's turn: its path runs along its own x, into the room. */
 const SET_TURN = 0.52;
@@ -107,6 +119,8 @@ export function createWordvaultStudio(
     onArrived?: () => void;
     /** She has dropped onto the stone, in the animated arrival only. */
     onLanded?: () => void;
+    /** The vault at night, for Yumi Cosmic. */
+    cosmic?: boolean;
   } = {},
 ): WordvaultStudio | null {
   let renderer: THREE.WebGLRenderer;
@@ -116,6 +130,9 @@ export function createWordvaultStudio(
     return null;
   }
   const reduced = options.reducedMotion ?? false;
+  const cosmic = options.cosmic ?? false;
+  const backdrop = cosmic ? NIGHT : BACKDROP;
+  const inlayRest = cosmic ? INLAY_REST_NIGHT : 0;
 
   /*
    * Shaders compiled in the background, and what must wait for them.
@@ -138,7 +155,7 @@ export function createWordvaultStudio(
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.02;
+  renderer.toneMappingExposure = cosmic ? 1.08 : 1.02;
   renderer.shadowMap.enabled = true;
   /* three 0.186 has no PCFSoftShadowMap (it falls back with a warning). Its
      PCF filter now samples a Vogel disk scaled by the light's
@@ -148,9 +165,11 @@ export function createWordvaultStudio(
   renderer.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(BACKDROP);
-  scene.fog = new THREE.Fog(BACKDROP, 24, 44);
-  const environment = makeStudioEnvironment(renderer);
+  scene.background = new THREE.Color(backdrop);
+  scene.fog = new THREE.Fog(backdrop, cosmic ? 20 : 24, cosmic ? 38 : 44);
+  const environment = cosmic
+    ? makeNightEnvironment(renderer, { top: "#2a3550", middle: "#0f1626", bottom: "#04060b", lamp: "rgba(240,222,176,0.9)" })
+    : makeStudioEnvironment(renderer);
   scene.environment = environment;
 
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
@@ -160,8 +179,9 @@ export function createWordvaultStudio(
   scene.add(set);
 
   // ------------------------------------------------------------- light
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b2a6, 0.55));
-  const key = new THREE.DirectionalLight(0xfff8ee, 3.2);
+  scene.add(new THREE.HemisphereLight(cosmic ? 0xcfd8ff : 0xffffff, cosmic ? 0x0d1220 : 0xb8b2a6, cosmic ? 0.5 : 0.55));
+  /* At night a cool lamp, weaker, so the brass and the emerald lead. */
+  const key = new THREE.DirectionalLight(cosmic ? 0xdfe6f5 : 0xfff8ee, cosmic ? 2.5 : 3.2);
   key.position.set(7.5, 11, 6);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
@@ -170,10 +190,11 @@ export function createWordvaultStudio(
   key.shadow.normalBias = 0.02;
   key.shadow.radius = 3;
   scene.add(key);
-  const rim = new THREE.DirectionalLight(0xffffff, 1);
+  /* At night a brass rim, so her black C keeps its edge on navy. */
+  const rim = new THREE.DirectionalLight(cosmic ? 0xffe2a8 : 0xffffff, cosmic ? 1.7 : 1);
   rim.position.set(6, 3, -4);
   scene.add(rim);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.3);
+  const fill = new THREE.DirectionalLight(0xffffff, cosmic ? 0.2 : 0.3);
   fill.position.set(-6, 2, 4);
   scene.add(fill);
   /* The chest's own glow, lit only as it opens. */
@@ -182,8 +203,9 @@ export function createWordvaultStudio(
   set.add(treasureLight);
 
   // ------------------------------------------------------- materials
-  const floorMaterial = new THREE.MeshStandardMaterial({ color: BACKDROP, roughness: 1, metalness: 0 });
-  const stone = new THREE.MeshStandardMaterial({ color: 0xdcd5c6, metalness: 0.04, roughness: 0.6 });
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: backdrop, roughness: cosmic ? 0.78 : 1, metalness: cosmic ? 0.12 : 0 });
+  /* Pale stone by day; dark slate at night, so the brass reads on it. */
+  const stone = new THREE.MeshStandardMaterial({ color: cosmic ? 0x2a3142 : 0xdcd5c6, metalness: 0.04, roughness: 0.6 });
   const brass = new THREE.MeshStandardMaterial({ color: 0xc9a55a, metalness: 0.85, roughness: 0.28, envMapIntensity: 1 });
   /* The shop's signboard navy, lacquered. */
   const lacquer = new THREE.MeshPhysicalMaterial({
@@ -218,7 +240,7 @@ export function createWordvaultStudio(
   for (let i = 0; i < INLAYS; i++) {
     const material = brass.clone();
     material.emissive = new THREE.Color(0xffb347);
-    material.emissiveIntensity = 0;
+    material.emissiveIntensity = inlayRest;
     inlays.push(material);
     const inlay = new THREE.Mesh(inlayGeometry, material);
     inlay.receiveShadow = true;
@@ -229,6 +251,33 @@ export function createWordvaultStudio(
   // ------------------------------------------------------------ chest
   const plinth = solid(new THREE.Mesh(new THREE.CylinderGeometry(1.55, 1.65, 0.24, 64), stone), set);
   plinth.position.set(CHEST_X, 0.12, 0);
+  /* Textures only the night needs, let go with the studio. */
+  const nightTextures: THREE.Texture[] = [];
+  if (cosmic) {
+    /* At night: a soft emerald light round the plinth, from a lamp low
+       behind the chest, and the same green laid on the floor. */
+    const emeraldLight = new THREE.PointLight(EMERALD, 4, 6.5, 1.5);
+    emeraldLight.position.set(CHEST_X, 0.6, -0.9);
+    set.add(emeraldLight);
+    const haloMap = makeHaloTexture();
+    nightTextures.push(haloMap);
+    const halo = new THREE.Mesh(
+      new THREE.PlaneGeometry(5.6, 5.6),
+      new THREE.MeshBasicMaterial({
+        map: haloMap, color: EMERALD, transparent: true, opacity: 0.45,
+        depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+      }),
+    );
+    halo.rotation.x = -Math.PI / 2;
+    halo.position.set(CHEST_X, 0.01, 0);
+    set.add(halo);
+    /* And a warm lamp over the vault, so the path and the chest's lacquer
+       have something to catch. No shadows: the key casts those. */
+    const lamp = new THREE.SpotLight(0xffe7b8, 34, 20, 0.55, 0.85, 1.5);
+    lamp.position.set(0.2, 9.5, 2.2);
+    lamp.target.position.set(0.8, 0, 0);
+    set.add(lamp, lamp.target);
+  }
   const chest = new THREE.Group();
   chest.position.set(CHEST_X, 0.24, 0);
   /* Turned a little back toward her, as she comes up the path. */
@@ -546,7 +595,7 @@ export function createWordvaultStudio(
   function light(progressAt: number) {
     inlays.forEach((material, i) => {
       const here = (i + 1) / (INLAYS + 1);
-      material.emissiveIntensity = progressAt + 1e-6 >= here ? 0.55 : 0;
+      material.emissiveIntensity = progressAt + 1e-6 >= here ? 0.55 : inlayRest;
     });
   }
 
@@ -1124,6 +1173,7 @@ export function createWordvaultStudio(
         });
         geometries.forEach(geometry => geometry.dispose());
         materials.forEach(material => material.dispose());
+        nightTextures.forEach(texture => texture.dispose());
         environment.dispose();
         renderer.dispose();
       });

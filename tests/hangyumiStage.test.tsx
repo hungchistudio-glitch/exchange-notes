@@ -162,3 +162,34 @@ describe("a piece lowered on the line", () => {
   });
 });
 
+
+/* Yumi Cosmic, the app's dark mode, puts every game's studio at night
+   (Chi, 2026-11-12: Hangyumi's workshop under a honey lamp). A switch while
+   the game is open builds the studio again where the round stands, its
+   line already down, and the page is not told it arrived a second time. */
+describe("the studio at night", () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.interfaceMode;
+  });
+
+  it("follows Yumi Cosmic, and a switch mid-round finds the line already down", async () => {
+    document.documentElement.dataset.interfaceMode = "yumi-cosmic";
+    const arrived = vi.fn();
+    const { container } = render(<HangyumiStage misses={1} status="playing" outfit={null} dealt onArrived={arrived} label="studio" />);
+    const stage = container.querySelector("[role=img]")!;
+    await waitFor(() => expect(stage).toHaveAttribute("data-live", "true"));
+    expect(studio.create.mock.calls[0][1]).toMatchObject({ cosmic: true, settled: false });
+    act(() => { studio.built[0].rest(true); });
+    expect(arrived).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      document.documentElement.dataset.interfaceMode = "standard";
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(studio.create).toHaveBeenCalledTimes(2));
+    expect(studio.built[0].dispose).toHaveBeenCalled();
+    expect(studio.create.mock.calls[1][1]).toMatchObject({ cosmic: false, settled: true });
+    expect(studio.built[1].set).toHaveBeenLastCalledWith({ misses: 1, status: "playing", outfit: null });
+    expect(arrived).toHaveBeenCalledTimes(1);
+  });
+});

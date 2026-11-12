@@ -3,6 +3,7 @@
 import { SkipForward } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import useCosmicMode from "@/hooks/useCosmicMode";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import type { HangyumiRound } from "@/lib/hangyumi/rules";
 import type { YumiOutfit } from "@/lib/shop/catalog";
@@ -47,11 +48,12 @@ const sceneOf = (round: HangyumiRound): VaultScene => ({
  * canvas fades in, so it comes in empty and whole; when the wallet says
  * what she wears and the first word is dealt, she is dressed out of sight
  * and drops in, and the page lays the clue and the keys out as she lands,
- * under the games' liquid light swept down the screen in the vault's gold
- * (Chi, 2026-11-11: each game comes in on it, as Starweaver does).
+ * under the games' liquid light swept down the screen in the vault's
+ * emerald (Chi, 2026-11-11: each game comes in on it, as Starweaver does).
  * A wallet that has not answered in WALLET_WAIT_MS no longer holds her up:
  * she comes as she is and dresses when it does. A studio built again (the
- * GPU took the canvas back) finds her already there.
+ * GPU took the canvas back, or Yumi Cosmic switched on or off: the vault
+ * at night, Chi, 2026-11-12) finds her already there.
  *
  * The stage reads the show off the round itself: the round before a guess
  * and the round after it say how many steps she takes and which copy
@@ -82,6 +84,7 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
   const [busy, setBusy] = useState(false);
   const [walletLate, setWalletLate] = useState(false);
   const reducedMotion = useReducedMotion();
+  const cosmic = useCosmicMode();
 
   /* Sends for her once everything she arrives with is here. */
   const arriveRef = useRef(() => {});
@@ -155,6 +158,7 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
       readyRef.current = false;
       const studio = create(canvas, {
         reducedMotion,
+        cosmic,
         onBusy: next => { if (!cancelled) setBusy(next); },
         onArrived: () => { if (!cancelled) latestRef.current.onArrived(); },
         onLanded: () => { if (!cancelled) sweepLiquid("wordvault"); },
@@ -208,7 +212,7 @@ export default function WordvaultStage({ round, outfit, dressed, dealt, onArrive
       studioRef.current = null;
       setLive(false);
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, cosmic]);
 
   const along = round ? progress(round).fraction : 0;
   const thrown = round && round.status === "playing" ? round.misses : 0;
