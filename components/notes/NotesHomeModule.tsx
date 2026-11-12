@@ -136,7 +136,7 @@ export default function NotesHomeModule() {
         </button>
       ) : notes.length ? (
         <div className={styles.list}>
-          {notes.map((note) => <NoteCard key={note.id} note={note} />)}
+          {notes.map((note) => <NoteCard key={note.id} note={note} className={styles.note} />)}
         </div>
       ) : (
         <p className={styles.empty}>

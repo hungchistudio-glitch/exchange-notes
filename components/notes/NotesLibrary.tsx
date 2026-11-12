@@ -131,7 +131,7 @@ export default function NotesLibrary() {
         ) : null}
 
         {loading ? (
-          <div className="mt-5 grid gap-3">
+          <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-3">
             {[0, 1, 2].map((item) => <div key={item} className="h-32 animate-pulse rounded-[24px] bg-black/[0.04]" />)}
           </div>
         ) : error ? (
@@ -139,7 +139,7 @@ export default function NotesLibrary() {
             {copy.loadError} · {copy.retry}
           </button>
         ) : visible.length ? (
-          <div className="mt-5 grid gap-3">
+          <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-3">
             {visible.map((note) => <NoteCard key={note.id} note={note} />)}
           </div>
         ) : (

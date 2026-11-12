@@ -11,7 +11,14 @@ import type { Note } from "@/lib/notes/repository";
 const subscribeNever = () => () => {};
 const serverDate = () => "";
 
-export default function NoteCard({ note }: { note: Note }) {
+export default function NoteCard({
+  note,
+  className = "",
+}: {
+  note: Note;
+  /** A surface that draws the card in its own proportions (the Cosmic home's notes panel). */
+  className?: string;
+}) {
   const { t, language: interfaceLanguage, locale } = useTranslation();
   // Dates follow the display language and the reader's time zone. The server
   // cannot know the time zone; defer this small label until hydration instead
@@ -29,7 +36,7 @@ export default function NoteCard({ note }: { note: Note }) {
   return (
     <Link
       href={`/notes/${note.id}`}
-      className="cosmic-note-card block rounded-[24px] border border-black/[0.06] bg-white p-4 shadow-sm transition-transform active:scale-[0.99]"
+      className={`cosmic-note-card block min-w-0 rounded-[24px] border border-black/[0.06] bg-white p-4 shadow-sm transition-transform active:scale-[0.99] ${className}`}
     >
       <div className="flex items-center justify-between gap-3">
         <span className="inline-flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
@@ -42,12 +49,19 @@ export default function NoteCard({ note }: { note: Note }) {
         </span>
       </div>
 
-      <p className="tactile-serif mt-3 line-clamp-3 whitespace-pre-wrap break-words text-[0.9375rem] font-semibold leading-6 text-ink-strong">
+      {/*
+        `anywhere`, not `break-word`: a long link in the note (often past
+        the three lines shown) must not set the card's narrowest width.
+        break-word wraps it on screen but still counts it whole when a grid
+        or flex row sizes the card, which pushed the home's card past its
+        panel (Chi, 2026-11-12).
+      */}
+      <p className="tactile-serif mt-3 line-clamp-3 whitespace-pre-wrap text-[0.9375rem] font-semibold leading-6 text-ink-strong [overflow-wrap:anywhere]">
         {note.originalText}
       </p>
 
       {note.personalMeaning ? (
-        <p className="mt-2 line-clamp-2 text-xs leading-5 text-ink-soft">{note.personalMeaning}</p>
+        <p className="mt-2 line-clamp-2 text-xs leading-5 text-ink-soft [overflow-wrap:anywhere]">{note.personalMeaning}</p>
       ) : null}
 
       {note.tags.length ? (
