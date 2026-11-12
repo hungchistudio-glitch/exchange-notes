@@ -2921,6 +2921,7 @@ const traditionalChinese: TranslationDictionary = {
   },
   hangyumi: {
     title: "Hangyumi",
+    subtitle: "夜鱗之繩",
     open: "玩 Hangyumi",
     back: "返回",
     sound: "音效",
@@ -3130,16 +3131,17 @@ const traditionalChinese: TranslationDictionary = {
     today: "今天 {earned} / {cap} 塊餅乾",
     shared: "三個遊戲共用每天的 333 塊。",
     hangyumi: {
-      tagline: "猜出單字，救出 Yumi",
-      detail: "猜錯會依序吊上她的 O、I、U。",
+      howTo: "猜出單字，錯 3 次 O、I、U 就被吊起。",
+      reward: "每贏 3 個字，解開一件夜鱗飾品。",
     },
     wordvault: {
-      tagline: "猜出單字，打開寶箱",
-      detail: "每個字母都是一步，整個單字就是鑰匙。",
+      howTo: "猜出單字，每對一個字母就向寶箱走一步。",
+      reward: "連贏 4 字開中等寶箱，連贏 7 字開高級寶箱。",
+      streak: "連勝 {count} / {total}",
     },
     starweaver: {
-      tagline: "猜出單字，打開星門",
-      detail: "每個字母都在織星圖，每第 7 個字帶回一件遺物。",
+      howTo: "猜出單字，每對一個字母就織起一段星圖。",
+      reward: "每第 7 個字，帶回一件織星遺物。",
     },
   },
   hello: {

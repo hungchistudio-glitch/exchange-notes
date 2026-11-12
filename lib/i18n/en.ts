@@ -2965,6 +2965,7 @@ const english: TranslationDictionary = {
   },
   hangyumi: {
     title: "Hangyumi",
+    subtitle: "A rope of night scales",
     open: "Play Hangyumi",
     back: "Back",
     sound: "Sound effects",
@@ -3174,16 +3175,17 @@ const english: TranslationDictionary = {
     today: "{earned} / {cap} cookies today",
     shared: "All three games share today's 333.",
     hangyumi: {
-      tagline: "Guess the word, free Yumi",
-      detail: "A wrong letter hangs her O, I, U.",
+      howTo: "Guess the word; three misses hang her O, I, U.",
+      reward: "Every third word won unlocks a Nightscale piece.",
     },
     wordvault: {
-      tagline: "Guess the word, open the chest",
-      detail: "Each letter is a step; the word becomes the key.",
+      howTo: "Guess the word; each right letter is a step to the chest.",
+      reward: "Win four in a row for a medium chest, seven for a premium one.",
+      streak: "Streak {count} / {total}",
     },
     starweaver: {
-      tagline: "Guess the word, open the star gate",
-      detail: "Each letter weaves the chart; every seventh word brings back a relic.",
+      howTo: "Guess the word; each right letter weaves the star chart.",
+      reward: "Every seventh word brings back a Starwoven Relic.",
     },
   },
   hello: {

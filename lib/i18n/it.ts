@@ -2767,6 +2767,7 @@ const italian: TranslationDictionary = {
   },
   hangyumi: {
     title: "Hangyumi",
+    subtitle: "Una corda di squame di notte",
     open: "Gioca a Hangyumi",
     back: "Indietro",
     sound: "Effetti sonori",
@@ -2976,16 +2977,17 @@ const italian: TranslationDictionary = {
     today: "{earned} / {cap} biscotti oggi",
     shared: "I tre giochi condividono i 333 di oggi.",
     hangyumi: {
-      tagline: "Indovina la parola, libera Yumi",
-      detail: "Ogni errore appende la sua O, I, U.",
+      howTo: "Indovina la parola; tre errori appendono la sua O, I, U.",
+      reward: "Ogni terza parola vinta sblocca un pezzo Squame di notte.",
     },
     wordvault: {
-      tagline: "Indovina la parola, apri lo scrigno",
-      detail: "Ogni lettera è un passo; la parola è la chiave.",
+      howTo: "Indovina la parola; ogni lettera giusta è un passo verso lo scrigno.",
+      reward: "Quattro di fila aprono uno scrigno medio; sette, uno premium.",
+      streak: "Serie {count} / {total}",
     },
     starweaver: {
-      tagline: "Indovina la parola, apri il portale stellare",
-      detail: "Ogni lettera tesse la mappa; ogni settima parola riporta una reliquia.",
+      howTo: "Indovina la parola; ogni lettera giusta tesse la mappa stellare.",
+      reward: "Ogni settima parola riporta una Reliquia tessuta di stelle.",
     },
   },
   hello: {

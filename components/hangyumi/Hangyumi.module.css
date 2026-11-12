@@ -871,8 +871,8 @@
 }
 
 .liquidGlow[data-game="wordvault"] {
-  --glow-a: #d6a5485c;
-  --glow-b: #c9774a21;
+  --glow-a: #2fa37c5c;
+  --glow-b: #d9c27a21;
 }
 
 .liquidGlow[data-kind="word"] {

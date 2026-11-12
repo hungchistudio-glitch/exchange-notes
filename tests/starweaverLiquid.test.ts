@@ -84,4 +84,14 @@ describe("Starweaver liquid", () => {
     expect(r).toBeGreaterThan(g * 2);
     expect(r).toBeGreaterThan(b * 2);
   });
+
+  it("gives Wordvault an emerald of its own, apart from Hangyumi's honey (Chi, 2026-11-12)", () => {
+    const [r, g, b] = PALETTES.wordvault.body;
+    expect(g).toBeGreaterThan(r * 1.5);
+    expect(g).toBeGreaterThan(b);
+    const [hr, hg] = PALETTES.hangyumi.body;
+    expect(hr).toBeGreaterThan(hg);
+    /* Nothing like a miss either. */
+    expect(PALETTES.wordvault.deep[0]).toBeLessThan(PALETTES.wordvault.deep[1]);
+  });
 });

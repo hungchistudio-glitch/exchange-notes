@@ -2767,6 +2767,7 @@ const french: TranslationDictionary = {
   },
   hangyumi: {
     title: "Hangyumi",
+    subtitle: "Une corde d’écailles de nuit",
     open: "Jouer à Hangyumi",
     back: "Retour",
     sound: "Effets sonores",
@@ -2976,16 +2977,17 @@ const french: TranslationDictionary = {
     today: "{earned} / {cap} biscuits aujourd’hui",
     shared: "Les trois jeux partagent les 333 du jour.",
     hangyumi: {
-      tagline: "Devinez le mot, libérez Yumi",
-      detail: "Chaque erreur suspend son O, son I, son U.",
+      howTo: "Devinez le mot ; trois erreurs suspendent son O, I, U.",
+      reward: "Chaque troisième mot gagné débloque une pièce Écailles de nuit.",
     },
     wordvault: {
-      tagline: "Devinez le mot, ouvrez le coffre",
-      detail: "Chaque lettre est un pas ; le mot est la clé.",
+      howTo: "Devinez le mot ; chaque bonne lettre est un pas vers le coffre.",
+      reward: "Quatre d’affilée ouvrent un coffre moyen ; sept, un coffre premium.",
+      streak: "Série {count} / {total}",
     },
     starweaver: {
-      tagline: "Devinez le mot, ouvrez le portail stellaire",
-      detail: "Chaque lettre tisse la carte ; chaque septième mot rapporte une relique.",
+      howTo: "Devinez le mot ; chaque bonne lettre tisse la carte du ciel.",
+      reward: "Chaque septième mot rapporte une Relique tissée d’étoiles.",
     },
   },
   hello: {

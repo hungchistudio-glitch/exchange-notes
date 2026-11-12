@@ -2831,6 +2831,8 @@ export type TranslationDictionary = {
    */
   hangyumi: {
     title: string;
+    /** Its name in the reader's language, under the title on the games hub (Chi, 2026-11-12: "夜鱗之繩"). */
+    subtitle: string;
     open: string;
     back: string;
     /** The rules sheet's switch for the game's sound effects. */
@@ -3047,9 +3049,16 @@ export type TranslationDictionary = {
     /** Today's cookies from either game: {earned} of {cap}. */
     today: string;
     shared: string;
-    hangyumi: { tagline: string; detail: string };
-    wordvault: { tagline: string; detail: string };
-    starweaver: { tagline: string; detail: string };
+    /** One line on how a game is played, one on what it gives, the same
+        shape on every card (Chi, 2026-11-12). */
+    hangyumi: { howTo: string; reward: string };
+    wordvault: {
+      howTo: string;
+      reward: string;
+      /** The progress row: {count} words won in a row of {total}. */
+      streak: string;
+    };
+    starweaver: { howTo: string; reward: string };
   };
 
   /**
