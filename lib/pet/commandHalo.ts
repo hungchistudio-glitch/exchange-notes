@@ -129,7 +129,7 @@ const RANKING: Record<HaloSurface, HaloCapabilityKey[]> = {
   vocabulary: ["review", "add", "camera", "speak", "collect"],
 };
 
-const CATEGORY: Record<HaloCapabilityKey, HaloCategory> = {
+export const CATEGORY: Record<HaloCapabilityKey, HaloCategory> = {
   review: "practice",
   add: "create",
   camera: "active",
@@ -148,6 +148,27 @@ const LOOK: Record<HaloCapabilityKey, YumiLookTarget> = {
   collect: "collect",
 };
 
+/*
+ * The ignition (Chi, 2026-11-12: 軌道點火).
+ *
+ * Two sparks leave 12 o'clock together and run down either flank of the
+ * primary orbit, and each capability lights as a spark reaches its station.
+ * The sweep is linear so a station's moment is simply its angle: what the
+ * stylesheet's sparks show and when a node lights are the same number.
+ */
+export const IGNITION_START_MS = 40;
+export const IGNITION_SWEEP_MS = 300;
+/** How far round each flank a spark runs. */
+export const IGNITION_ARC_DEG = 150;
+/** A node's own light-up, from its moment to settled. */
+export const IGNITION_NODE_MS = 300;
+
+/** When the spark reaches a station at this angle (degrees from 12 o'clock). */
+export function ignitionDelay(angle: number) {
+  const reach = Math.min(Math.abs(angle), IGNITION_ARC_DEG) / IGNITION_ARC_DEG;
+  return Math.round(IGNITION_START_MS + reach * IGNITION_SWEEP_MS);
+}
+
 export type HaloPlacement = {
   key: HaloCapabilityKey;
   category: HaloCategory;
@@ -164,6 +185,8 @@ export type HaloPlacement = {
   y: number;
   /** Which orbit this tier rides, in multiples of R. */
   orbit: number;
+  /** When it lights, in ms after the halo starts opening. */
+  ignition: number;
 };
 
 /**
@@ -200,6 +223,7 @@ export function placeCapabilities(surface: HaloSurface): HaloPlacement[] {
       // Negative, because 0° is straight up and screen Y grows downward.
       y: Number((-Math.cos(radians)).toFixed(4)),
       orbit: tier === "primary" ? PRIMARY_ORBIT : UTILITY_ORBIT,
+      ignition: ignitionDelay(angle),
     };
   });
 }

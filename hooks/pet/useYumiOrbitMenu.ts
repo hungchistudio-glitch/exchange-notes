@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  IGNITION_NODE_MS,
+  placeCapabilities,
+  type HaloSurface,
+} from "@/lib/pet/commandHalo";
+
 export type YumiOrbitPhase =
   | "closed"
   | "opening"
@@ -17,15 +23,35 @@ export type YumiLookTarget =
   | "collect"
   | "food";
 
-/*
- * Long enough to cover the halo's own arrival — the last capability node
- * lands at 470ms (see YumiOrbitMenu.module.css) — so the phase does not flip
- * to "open" while the ring is still assembling.
- */
-const OPEN_COMPLETE_MS = 540;
 const CLOSE_COMPLETE_MS = 260;
+/* Two stations lit at the same moment (one on each flank) are looked at
+   one after the other, this far apart. */
+const LOOK_APART_MS = 60;
 
-export default function useYumiOrbitMenu() {
+/*
+ * Where Yumi looks while the halo lights, and when: each station a moment
+ * after the spark reaches it (lib/pet/commandHalo.ts, ignitionDelay), then
+ * back to the reader. The phase turns "open" once the last node has
+ * settled, so it never reads open while the ring is still assembling.
+ */
+function ignitionPlan(surface: HaloSurface) {
+  const lit = placeCapabilities(surface)
+    .map((capability) => ({ look: capability.look, at: capability.ignition }))
+    .sort((a, b) => a.at - b.at);
+  const looks: Array<{ look: YumiLookTarget; at: number }> = [];
+  for (const { look, at } of lit) {
+    const previous = looks[looks.length - 1];
+    looks.push({ look, at: Math.max(at + 10, previous ? previous.at + LOOK_APART_MS : 0) });
+  }
+  const last = lit.length ? lit[lit.length - 1].at : 0;
+  return {
+    looks,
+    backToViewer: Math.max(last + 160, (looks[looks.length - 1]?.at ?? 0) + 120),
+    openAt: last + IGNITION_NODE_MS + 20,
+  };
+}
+
+export default function useYumiOrbitMenu(surface: HaloSurface = "vocabulary") {
   const [phase, setPhase] = useState<YumiOrbitPhase>("closed");
   const [lookTarget, setLookTarget] =
     useState<YumiLookTarget>("viewer");
@@ -51,29 +77,27 @@ export default function useYumiOrbitMenu() {
     setLookTarget("viewer");
 
     /*
-     * Yumi watches its own capabilities arrive.
+     * Yumi watches its own capabilities light.
      *
-     * The delays match the halo's stagger (120ms, then 45ms apart), so the eye
-     * reaches each station as that node appears rather than sweeping on an
-     * unrelated clock — which is what turns "Yumi looked around" into "Yumi
-     * brought these out".
+     * The eye reaches each station as the spark lights it rather than
+     * sweeping on an unrelated clock, which is what turns "Yumi looked
+     * around" into "Yumi brought these out".
      *
      * There is no first-run tooltip flash any more, and no localStorage key
      * behind it: every node now carries its name and a line saying what it
      * does, permanently. A hint that has to be remembered per device only
      * existed because the labels were hidden.
      */
-    schedule(() => setLookTarget("review"), 130);
-    schedule(() => setLookTarget("add"), 175);
-    schedule(() => setLookTarget("camera"), 220);
-    schedule(() => setLookTarget("speak"), 265);
-    schedule(() => setLookTarget("collect"), 310);
-    schedule(() => setLookTarget("viewer"), 440);
+    const plan = ignitionPlan(surface);
+    for (const { look, at } of plan.looks) {
+      schedule(() => setLookTarget(look), at);
+    }
+    schedule(() => setLookTarget("viewer"), plan.backToViewer);
     schedule(() => {
       phaseRef.current = "open";
       setPhase("open");
-    }, OPEN_COMPLETE_MS);
-  }, [clearTimers, schedule]);
+    }, plan.openAt);
+  }, [clearTimers, schedule, surface]);
 
   const close = useCallback(() => {
     if (phaseRef.current === "closed" || phaseRef.current === "closing") return;

@@ -56,6 +56,7 @@ import {
 import { speak as speakText } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
+import FeatureMark from "@/components/features/FeatureMark";
 
 type IdentificationResult = ObjectIdentificationResult;
 
@@ -1070,7 +1071,11 @@ function CaptureContent() {
               {capture.camera.cancel}
             </button>
 
-            <h1 className="text-sm font-semibold tracking-tight">
+            <h1 className="inline-flex items-center gap-1.5 text-sm font-semibold tracking-tight">
+              {/* Scan's mark. Coming from Yumi's halo the camera is already
+                  up and this header hidden: the key flies into the
+                  viewfinder instead (lib/motion/featureFlight.ts). */}
+              <FeatureMark feature="camera" size="sm" />
               {capture.title}
             </h1>
 

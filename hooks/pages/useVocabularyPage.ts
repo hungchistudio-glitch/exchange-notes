@@ -36,6 +36,14 @@ import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import type { VocabularyEditValues } from "@/components/vocabulary/detail/VocabularyEditModal";
 
+/** Where Yumi's features lead from this page, and Daily Focus's review. */
+export const FEATURE_PAGES = {
+  review: "/review?from=vocabulary",
+  camera: "/capture?source=camera&from=vocabulary",
+  pronunciation: "/pronunciation?from=vocabulary",
+  collections: "/vocabulary/collections",
+} as const;
+
 type UseVocabularyPageOptions = {
   openAddWord?: boolean;
   addWordRequestId?: string;
@@ -340,7 +348,7 @@ export default function useVocabularyPage({
 
   /* One destination, two doors: the search toolbar's folder button and the
      Command Halo's Collect node. Shared so they can never drift apart. */
-  const openCollections = () => router.push("/vocabulary/collections");
+  const openCollections = () => router.push(FEATURE_PAGES.collections);
 
   const yumiProps = {
     items,
@@ -348,18 +356,22 @@ export default function useVocabularyPage({
     dailyProgress,
     searchHasNoResults,
     cardGlancePulse,
-    onStartReview: () => router.push("/review?from=vocabulary"),
+    onStartReview: () => router.push(FEATURE_PAGES.review),
     onAddWord: () => openLexiconSearch(""),
-    onOpenCamera: () => router.push("/capture?source=camera&from=vocabulary"),
+    onOpenCamera: () => router.push(FEATURE_PAGES.camera),
     /*
      * The Pronunciation Lab's only other entry point is on the standard home
      * screen (see PronunciationHub), so before the Command Halo carried it,
      * switching to Cosmic Mode hid a whole room. Same destination, second
      * door — not a second lab.
      */
-    onOpenPronunciation: () =>
-      router.push("/pronunciation?from=vocabulary"),
+    onOpenPronunciation: () => router.push(FEATURE_PAGES.pronunciation),
     onOpenCollections: openCollections,
+    /* The halo is open: fetch its pages now, so the one chosen lands while
+       its key is in the air (lib/motion/featureFlight.ts). */
+    onPrefetchFeatures: () => {
+      for (const href of Object.values(FEATURE_PAGES)) router.prefetch(href);
+    },
   };
 
   const searchProps = buildVocabularySearchProps({

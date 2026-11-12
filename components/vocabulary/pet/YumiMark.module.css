@@ -36,23 +36,30 @@
   z-index: -1;
   pointer-events: none;
   border-radius: 50%;
+  /* Soft by its own stops. A blur filter here made the GPU draw it again
+     at every step of the scale below (2026-11-12: about 145ms of raster in
+     the halo's first quarter second). */
   background: radial-gradient(
     circle,
-    rgba(255, 255, 255, 0.86) 0%,
-    rgba(224, 205, 155, 0.2) 38%,
-    rgba(201, 150, 46, 0) 70%
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(224, 205, 155, 0.2) 40%,
+    rgba(201, 150, 46, 0) 72%
   );
-  filter: blur(2px);
   opacity: 0;
   animation: menuAuraIn 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* The ripples grow by scale, at their full size from the start. They used
+   to grow by `inset`, which is layout: three rings re-laid out the page and
+   repainted on every frame for as long as the halo stayed open, and it ran
+   at 30fps. */
 .menuAura span {
   position: absolute;
-  inset: 50%;
+  inset: -8%;
   border: 1px solid rgba(201, 150, 46, 0.22);
   border-radius: 50%;
   opacity: 0;
+  transform: scale(0);
   animation: menuAuraWave 1.25s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 
@@ -73,8 +80,8 @@
 }
 
 @keyframes menuAuraWave {
-  0% { inset: 50%; opacity: 0.68; }
-  100% { inset: -8%; opacity: 0; }
+  0% { transform: scale(0); opacity: 0.68; }
+  100% { transform: scale(1); opacity: 0; }
 }
 
 .logo {
@@ -473,24 +480,34 @@
     scale(1.12);
 }
 
+/*
+ * Her hop as the halo opens, its hover while it is out, her dip as it
+ * goes: movement and tilt, never scale (2026-11-12).
+ *
+ * Scaling her past 1 made Chrome redraw the whole mark at the larger size
+ * the moment the halo opened, and in Cosmic the mark is a masked nebula
+ * under SVG blur filters: measured on a production build, switching the
+ * squash and stretch off took the halo's first-frame stall from about
+ * 83ms to 33ms. A hop still reads as a hop without it.
+ */
 @keyframes markMenuOpen {
-  0% { transform: translateY(0) scale(1) rotate(0); }
-  18% { transform: translateY(5px) scale(0.92, 1.06) rotate(-1deg); }
-  48% { transform: translateY(-12px) scale(1.08, 0.95) rotate(2.2deg); }
-  72% { transform: translateY(2px) scale(0.985, 1.02) rotate(-0.8deg); }
-  88% { transform: translateY(-3px) scale(1.018) rotate(0.4deg); }
-  100% { transform: translateY(0) scale(1) rotate(0); }
+  0% { transform: translateY(0) rotate(0); }
+  18% { transform: translateY(5px) rotate(-1deg); }
+  48% { transform: translateY(-12px) rotate(2.2deg); }
+  72% { transform: translateY(2px) rotate(-0.8deg); }
+  88% { transform: translateY(-3px) rotate(0.4deg); }
+  100% { transform: translateY(0) rotate(0); }
 }
 
 @keyframes markMenuHold {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-5px) scale(1.018); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 @keyframes markMenuClose {
-  0% { transform: translateY(0) scale(1); }
-  45% { transform: translateY(3px) scale(0.94, 1.045); }
-  100% { transform: translateY(0) scale(1); }
+  0% { transform: translateY(0); }
+  45% { transform: translateY(3px); }
+  100% { transform: translateY(0); }
 }
 
 /* ---------- Feeding sequence ---------- */
@@ -974,6 +991,13 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+/* The Command Halo draws its own orbits; two sets at once read as clutter
+   (Chi, 2026-11-12). Hers fade while it is out and come back as it goes. */
+.stage[data-menu="out"] .orbits {
+  opacity: 0;
 }
 
 /*

@@ -301,7 +301,7 @@ export default function YumiFace({
         <path
           d="M 300,70 Q 110,70 100,180"
           fill="none"
-          stroke="#1c1a16"
+          className={styles.ink}
           strokeWidth="52"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -311,7 +311,7 @@ export default function YumiFace({
         <path
           d="M 100,180 Q 110,320 300,320"
           fill="none"
-          stroke="#1c1a16"
+          className={styles.ink}
           strokeWidth="52"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -335,10 +335,9 @@ export default function YumiFace({
           y1={TONGUE_PIVOT.y}
           x2={tip.x}
           y2={tip.y}
-          stroke="#1c1a16"
           strokeWidth="58"
           strokeLinecap="round"
-          className={`${styles.tongueBar} ${trilling && !reducedMotion ? styles.tongueTrill : ""}`}
+          className={`${styles.ink} ${styles.tongueBar} ${trilling && !reducedMotion ? styles.tongueTrill : ""}`}
           style={stageSpeedMs ? ({ "--tongue-speed": `${stageSpeedMs}ms` } as CSSProperties) : undefined}
         />
 

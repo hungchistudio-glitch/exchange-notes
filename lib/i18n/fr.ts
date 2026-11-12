@@ -1063,6 +1063,8 @@ const french: TranslationDictionary = {
       accuracy: "Précision",
       continueReview: "Continuer la révision",
       exploreVocabulary: "Explorer le vocabulaire",
+      /* Daily Focus's cells, for a screen reader. */
+      progressLabel: "{done} sur {total} révisés aujourd’hui",
     },
     todayWord: {
       eyebrow: "Le vocabulaire d'abord",

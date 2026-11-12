@@ -17,6 +17,7 @@ const history: ReviewAnalytics = {
   retention: 37,
   mastered: 4,
   weak: 9,
+  clearedToday: 0,
 };
 
 /*

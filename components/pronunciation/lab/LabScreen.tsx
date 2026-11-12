@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
+import FeatureMark from "@/components/features/FeatureMark";
 import Screen from "@/components/foundation/layout/Screen";
 
 type LabScreenProps = {
@@ -14,6 +15,8 @@ type LabScreenProps = {
   backLabel: string;
   /** Sits to the right of the title — a count, a control, a language chip. */
   action?: ReactNode;
+  /** The Lab's landing wears Speak's mark, where Yumi's key lands. */
+  featureMark?: boolean;
   children: ReactNode;
 };
 
@@ -36,6 +39,7 @@ export default function LabScreen({
   backHref,
   backLabel,
   action,
+  featureMark = false,
   children,
 }: LabScreenProps) {
   return (
@@ -60,8 +64,9 @@ export default function LabScreen({
               </p>
             ) : null}
 
-            <h1 className="mt-1 text-[1.625rem] font-bold leading-tight tracking-[-0.025em] sm:text-[1.875rem]">
-              {title}
+            <h1 className="mt-1 flex items-center gap-2.5 text-[1.625rem] font-bold leading-tight tracking-[-0.025em] sm:text-[1.875rem]">
+              {featureMark ? <FeatureMark feature="speak" /> : null}
+              <span className="min-w-0">{title}</span>
             </h1>
 
             {subtitle ? (

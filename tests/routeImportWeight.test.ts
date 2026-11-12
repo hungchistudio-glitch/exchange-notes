@@ -198,9 +198,15 @@ describe("what the heaviest tabs drag in with them", () => {
    * keeps the home's orbit of six and the star core's rail from both being
    * open), and the notes panel's own stylesheet in place of its utility
    * classes. hooks/useInView.ts left the graph with the old deck's stars.
+   * Raised vocabulary 166 → 170 (2026-11-12): the way into Yumi's features
+   * (Chi: Yumi 領航, and Daily Focus as 任務 HUD). lib/motion/
+   * featureFlight.ts, which flies the key that was tapped to its page's
+   * title, imports nothing; components/features/FeatureMark and its
+   * stylesheet are the mark it lands on (the halo now takes its glyphs
+   * from there); Daily Focus's own stylesheet replaces its utility classes.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 166],
+    ["vocabulary", TABS.vocabulary, 170],
     ["home", TABS.home, 186],
   ] as const)(
     "keeps %s's static graph inside its ceiling",

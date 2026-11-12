@@ -1094,6 +1094,8 @@ const traditionalChinese: TranslationDictionary = {
       accuracy: "答題準確率",
       continueReview: "繼續複習",
       exploreVocabulary: "探索單字",
+      /* Daily Focus's cells, for a screen reader. */
+      progressLabel: "今天已複習 {done} / {total}",
     },
 
     todayWord: {

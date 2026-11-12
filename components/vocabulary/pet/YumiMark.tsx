@@ -204,6 +204,8 @@ export default function YumiMark({
        */
       data-in-view={inView ? "true" : "false"}
       data-cosmic={cosmic ? "true" : "false"}
+      /* The halo has its own orbits; hers step back while it is out. */
+      data-menu={orbitPhase === "closed" ? "closed" : "out"}
       data-attract={attracted ? "true" : "false"}
       data-feeding={resolvedFeedingPhase}
     >

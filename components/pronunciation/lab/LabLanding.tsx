@@ -103,6 +103,7 @@ export default function LabLanding() {
       <LabScreen
         title={t.pronunciation.title}
         subtitle={t.pronunciation.subtitle}
+        featureMark
         backHref={exitHref}
         backLabel={cameFromVocabulary ? t.pronunciation.backToVocabulary : t.pronunciation.backHome}
       >
@@ -117,6 +118,7 @@ export default function LabLanding() {
     <LabScreen
       title={t.pronunciation.title}
       subtitle={t.pronunciation.subtitle}
+      featureMark
       backHref={exitHref}
       backLabel={
         cameFromVocabulary ? t.pronunciation.backToVocabulary : t.pronunciation.backHome

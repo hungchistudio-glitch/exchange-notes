@@ -1063,6 +1063,8 @@ const italian: TranslationDictionary = {
       accuracy: "Precisione",
       continueReview: "Continua il ripasso",
       exploreVocabulary: "Esplora il vocabolario",
+      /* Daily Focus's cells, for a screen reader. */
+      progressLabel: "{done} su {total} ripassate oggi",
     },
     todayWord: {
       eyebrow: "Prima il vocabolario",

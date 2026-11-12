@@ -1108,6 +1108,8 @@ const spanish: TranslationDictionary = {
       accuracy: "Acierto",
       continueReview: "Seguir repasando",
       exploreVocabulary: "Explorar el vocabulario",
+      /* Daily Focus's cells, for a screen reader. */
+      progressLabel: "{done} de {total} repasadas hoy",
     },
 
     todayWord: {
