@@ -283,11 +283,14 @@ export default function LexiconSearchSheet({
                     : "border-black/[0.09] bg-surface"
                 }`}
               >
+                {/* Create's key from Yumi's halo lands on this glass
+                    (lib/motion/featureFlight.ts). */}
                 <Search
                   size={17}
                   strokeWidth={2}
                   className="shrink-0 text-ink-soft"
                   aria-hidden="true"
+                  data-feature-mark="add"
                 />
 
                 <input

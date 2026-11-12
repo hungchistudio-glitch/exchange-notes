@@ -1,0 +1,70 @@
+/*
+ * The halo's key, small, beside a title. Standard is the halo's neutral
+ * glass disc; Cosmic is its deep disc in the feature's own colour
+ * (components/vocabulary/pet/YumiOrbitMenu.module.css), so the key that
+ * flew here and the mark it lands on are the same object.
+ */
+.mark {
+  --mark-size: 34px;
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: var(--mark-size);
+  height: var(--mark-size);
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--color-black) 10%, transparent);
+  color: color-mix(in oklab, var(--color-black) 82%, transparent);
+  background: linear-gradient(
+    145deg,
+    color-mix(in oklab, var(--color-white) 92%, transparent),
+    rgba(229, 226, 218, 0.7)
+  );
+  box-shadow:
+    0 6px 14px rgba(17, 17, 19, 0.1),
+    inset 0 1px 0 color-mix(in oklab, var(--color-white) 88%, transparent);
+  vertical-align: middle;
+}
+
+.mark[data-size="sm"] {
+  --mark-size: 22px;
+  box-shadow: none;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .mark[data-category="practice"] {
+  --mark-tone: var(--cosmic-violet);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .mark[data-category="create"] {
+  --mark-tone: var(--cosmic-amber);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .mark[data-category="active"] {
+  --mark-tone: var(--cosmic-cyan);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .mark[data-category="assist"] {
+  --mark-tone: var(--cosmic-blue);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .mark[data-category="memory"] {
+  --mark-tone: var(--cosmic-teal);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .mark {
+  border-color: color-mix(in oklab, var(--mark-tone) 34%, transparent);
+  color: var(--mark-tone);
+  background:
+    radial-gradient(
+      circle at 24% 8%,
+      color-mix(in oklab, var(--mark-tone) 34%, transparent) 0%,
+      transparent 74%
+    ),
+    #17171c;
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 color-mix(in oklab, var(--mark-tone) 16%, transparent);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .mark[data-size="sm"] {
+  box-shadow: none;
+}

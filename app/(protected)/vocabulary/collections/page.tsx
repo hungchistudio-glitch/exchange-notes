@@ -16,6 +16,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
 import type { VocabularyCollection } from "@/lib/types/app";
+import FeatureMark from "@/components/features/FeatureMark";
 
 export default function VocabularyCollectionsPage() {
   const { t, locale } = useTranslation();
@@ -106,8 +107,10 @@ export default function VocabularyCollectionsPage() {
 
         <div className="mt-3 flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-[1.625rem] font-bold tracking-[-0.02em]">
-              {copy.title}
+            <h1 className="flex items-center gap-2.5 text-[1.625rem] font-bold tracking-[-0.02em]">
+              {/* Collect's key lands here from Yumi's halo (Chi, 2026-11-12). */}
+              <FeatureMark feature="collect" />
+              <span className="min-w-0">{copy.title}</span>
             </h1>
             <p className="mt-1 text-ink-soft">{copy.description}</p>
           </div>

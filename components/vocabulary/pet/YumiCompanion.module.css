@@ -16,7 +16,16 @@
   z-index: 0;
   isolation: isolate;
   overflow: visible;
-  padding: 18px 21px 14px;
+  /*
+   * The page's one rhythm (Chi, 2026-11-12: "介面ui 與 ui之間的間距應該統一"):
+   * every block sits 21px in from the screen's edges and 1.25rem from the
+   * next one (VocabularyMainContent's mt-5: rem, so the gap follows the
+   * reader's text size like the rest). In Standard the cookie band below
+   * Yumi has no edge and 14px of padding of its own, so this adds what is
+   * left of 1.25rem; in Cosmic, where Yumi has a panel, the 1.25rem is the
+   * space under it.
+   */
+  padding: 18px 21px max(0px, calc(1.25rem - 14px));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -161,7 +170,9 @@
 .section[data-cosmic="true"] {
   --yumi-size: clamp(208px, 58vw, 264px);
   margin-top: 12px;
-  padding: 24px 21px 18px;
+  margin-bottom: 1.25rem;
+  /* 21px of page gutter to the panel, then 7px inside it, as before. */
+  padding: 24px 28px 18px;
   /*
    * The one thing the orbital system needs from its container.
    *
@@ -193,7 +204,8 @@
 .section[data-cosmic="true"]::before {
   display: block;
   z-index: -1;
-  inset: 0 14px;
+  /* The same 21px gutter as every card below it. */
+  inset: 0 21px;
   width: auto;
   height: auto;
   border: 1px solid color-mix(in oklab, var(--color-black) 9%, transparent);

@@ -11,6 +11,7 @@ import {
   type VocabularyError,
 } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { FEATURE_PAGES } from "@/hooks/pages/useVocabularyPage";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 
 type VocabularyMainContentProps = {
@@ -60,6 +61,8 @@ export default function VocabularyMainContent({
       */}
       <DailyFocusCard
         due={itemsLoading ? 0 : reviewStats.due}
+        clearedToday={itemsLoading ? 0 : reviewStats.clearedToday}
+        reviewHref={FEATURE_PAGES.review}
         retention={reviewStats.retention}
         accuracy={reviewStats.accuracy}
         reviewed={reviewStats.reviewed}

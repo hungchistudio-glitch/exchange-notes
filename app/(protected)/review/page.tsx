@@ -20,6 +20,7 @@ import { speak } from "@/lib/speech";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
+import FeatureMark from "@/components/features/FeatureMark";
 import { insertValues } from "@/lib/utils";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { plural } from "@/lib/i18n/format";
@@ -625,8 +626,10 @@ export default function ReviewPage() {
         <p className="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {copy.eyebrow}
         </p>
-        <h1 className="mt-1 text-[1.75rem] font-bold tracking-[-0.02em]">
-          {copy.title}
+        <h1 className="mt-1 flex items-center gap-2.5 text-[1.75rem] font-bold tracking-[-0.02em]">
+          {/* Practice's key lands here from Yumi's halo (Chi, 2026-11-12). */}
+          <FeatureMark feature="review" />
+          <span className="min-w-0">{copy.title}</span>
         </h1>
         <p className="mt-1 text-ink-soft">{copy.subtitle}</p>
 

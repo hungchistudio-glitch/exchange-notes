@@ -1109,6 +1109,8 @@ const english: TranslationDictionary = {
       accuracy: "Accuracy",
       continueReview: "Continue review",
       exploreVocabulary: "Explore vocabulary",
+      /* Daily Focus's cells, for a screen reader. */
+      progressLabel: "{done} of {total} reviewed today",
     },
 
     todayWord: {

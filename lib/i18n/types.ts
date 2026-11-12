@@ -1123,6 +1123,7 @@ export type TranslationDictionary = {
       accuracy: string;
       continueReview: string;
       exploreVocabulary: string;
+      progressLabel: string;
     };
 
     todayWord: {

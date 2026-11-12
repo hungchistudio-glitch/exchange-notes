@@ -58,6 +58,8 @@ type YumiCompanionProps = {
   onOpenCamera: () => void;
   onOpenPronunciation: () => void;
   onOpenCollections: () => void;
+  /** Called as the halo opens, so its pages can be fetched ahead. */
+  onPrefetchFeatures?: () => void;
 };
 
 const REACTION_DURATION_MS = 3900;
@@ -113,6 +115,7 @@ export default function YumiCompanion({
   onOpenCamera,
   onOpenPronunciation,
   onOpenCollections,
+  onPrefetchFeatures,
 }: YumiCompanionProps) {
   const { t, locale } = useTranslation();
   const { isCosmic } = useInterfaceMode();
@@ -133,6 +136,14 @@ export default function YumiCompanion({
   const [reactionMood, setReactionMood] = useState<YumiMood | null>(null);
   const [isTrackingFood, setIsTrackingFood] = useState(false);
   const orbit = useYumiOrbitMenu();
+
+  const prefetchRef = useRef(onPrefetchFeatures);
+  useEffect(() => {
+    prefetchRef.current = onPrefetchFeatures;
+  });
+  useEffect(() => {
+    if (orbit.isOpen) prefetchRef.current?.();
+  }, [orbit.isOpen]);
 
   const yumiZoneRef = useRef<HTMLDivElement>(null);
   const feedTargetRef = useRef<HTMLSpanElement>(null);

@@ -1,9 +1,11 @@
 "use client";
 
-import { AudioLines, Brain, FolderHeart, ScanLine, Sparkles, X } from "lucide-react";
-import { useState, type ComponentType, type CSSProperties } from "react";
+import { X } from "lucide-react";
+import { useState, type CSSProperties } from "react";
 
+import { FEATURE_ICONS } from "@/components/features/FeatureMark";
 import type { TranslationDictionary } from "@/lib/i18n/types";
+import { flyIntoFeature } from "@/lib/motion/featureFlight";
 import {
   placeCapabilities,
   type HaloCapabilityKey,
@@ -33,18 +35,20 @@ type YumiOrbitMenuProps = {
   onCollect: () => void;
 };
 
-const ICONS: Record<
-  HaloCapabilityKey,
-  ComponentType<{ size?: number; strokeWidth?: number }>
-> = {
-  review: Brain,
-  add: Sparkles,
-  camera: ScanLine,
-  speak: AudioLines,
-  // The same glyph the vocabulary toolbar already uses for collections, so
-  // the halo is a second door onto a room rather than a second room.
-  collect: FolderHeart,
+/* Every feature leaves for a page of its own except Create, which opens
+   the search sheet over this one: its key lands on the sheet's field, not
+   on a page's title. */
+const OPENS_A_PAGE: Record<HaloCapabilityKey, boolean> = {
+  review: true,
+  add: false,
+  camera: true,
+  speak: true,
+  collect: true,
 };
+
+const SPARK_TRAIL = [0, 1, 2] as const;
+
+const ICONS = FEATURE_ICONS;
 
 /*
  * The Yumi Cosmic Command Halo.
@@ -158,6 +162,28 @@ export default function YumiOrbitMenu({
         <span className={styles.ringOuter} aria-hidden="true" />
 
         {/*
+          The ignition: a spark down each flank of the ring, each with a
+          two-dot tail, lighting the stations as it passes them. Only while
+          opening; an open halo has nothing left to light.
+        */}
+        {phase === "opening"
+          ? (["left", "right"] as const).flatMap((side) =>
+              SPARK_TRAIL.map((trail) => (
+                <span
+                  key={`spark-${side}-${trail}`}
+                  className={styles.spark}
+                  data-side={side}
+                  data-trail={trail}
+                  style={{ "--trail": trail } as CSSProperties}
+                  aria-hidden="true"
+                >
+                  <i />
+                </span>
+              )),
+            )
+          : null}
+
+        {/*
           One connector per capability, all anchored at Yumi's centre and
           rotated to their station. Invisible until focused — the line is the
           answer to "which of these am I touching", not decoration.
@@ -174,7 +200,7 @@ export default function YumiOrbitMenu({
           />
         ))}
 
-        {capabilities.map((capability, index) => {
+        {capabilities.map((capability) => {
           const Icon = ICONS[capability.key];
           const isFocused = focused === capability.key;
 
@@ -189,9 +215,9 @@ export default function YumiOrbitMenu({
                 {
                   "--halo-x": capability.x,
                   "--halo-y": capability.y,
-                  // Nodes arrive in ranked order, so the eye lands on the most
-                  // relevant capability first.
-                  "--halo-delay": `${120 + index * 45}ms`,
+                  // The moment the spark reaches this station
+                  // (lib/pet/commandHalo.ts, ignitionDelay).
+                  "--halo-delay": `${capability.ignition}ms`,
                 } as CSSProperties
               }
             >
@@ -202,9 +228,18 @@ export default function YumiOrbitMenu({
                 onPointerLeave={blur}
                 onFocus={() => focus(capability.key, capability.look)}
                 onBlur={blur}
-                onClick={() => {
+                onClick={(event) => {
+                  /* This key leads the way: it flies to the feature's page
+                     and lands on its title (lib/motion/featureFlight.ts),
+                     while the halo folds away beneath it. */
+                  const source = event.currentTarget;
+                  flyIntoFeature({
+                    source,
+                    feature: capability.key,
+                    go: handlers[capability.key],
+                    into: OPENS_A_PAGE[capability.key] ? "page" : "sheet",
+                  });
                   onClose();
-                  handlers[capability.key]();
                 }}
                 aria-label={labels[capability.key]}
               >

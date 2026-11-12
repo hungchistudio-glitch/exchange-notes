@@ -1,0 +1,236 @@
+/*
+ * Daily Focus as a mission readout (Chi, 2026-11-12: 任務 HUD).
+ *
+ * Standard: a dark card on the pearl page, cells lit honey.
+ * Cosmic: obsidian glass with the bridge's tokens (components/cosmic/
+ * CommandDeck.module.css), cells lit ice. The colours are written out here
+ * rather than taken from --color-black/--color-white, which Cosmic swaps:
+ * that swap is what made this the cream card on a dark page.
+ *
+ * Motion, all of it transform and opacity, all of it once except one cell:
+ * the cells boot left to right as the card arrives, a scan passes along the
+ * track, and the next word to clear breathes until it is cleared. That one
+ * pauses when the card is scrolled away.
+ */
+
+.hud {
+  --focus-bg: #121214;
+  --focus-line: rgba(245, 243, 237, 0.08);
+  --focus-ink: #f5f3ed;
+  --focus-ink-2: rgba(245, 243, 237, 0.56);
+  --focus-lit: #f3d998;
+  --focus-cell: rgba(245, 243, 237, 0.1);
+  --focus-go-bg: #f5f3ed;
+  --focus-go-ink: #121214;
+  --focus-go-line: transparent;
+
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid var(--focus-line);
+  background: var(--focus-bg);
+  color: var(--focus-ink);
+  padding: 16px 18px 18px;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--focus-ink-2);
+}
+
+.tally {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  color: var(--focus-ink-2);
+  white-space: nowrap;
+}
+
+.done {
+  color: var(--focus-lit);
+}
+
+.slash {
+  margin: 0 0.3em;
+  opacity: 0.5;
+}
+
+/* ---------- The track: today's queue, one cell a word ---------- */
+
+.track {
+  position: relative;
+  display: flex;
+  gap: 3px;
+  height: 12px;
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.cell {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 2.5px;
+  background: var(--focus-cell);
+  animation: focusCellBoot 260ms cubic-bezier(0.22, 1, 0.36, 1)
+    calc(var(--i, 0) * 14ms) backwards;
+}
+
+.cell[data-lit="true"] {
+  background: var(--focus-lit);
+}
+
+/* The next word to clear: half lit, breathing. */
+.cell[data-next="true"] {
+  background: color-mix(in oklab, var(--focus-lit) 55%, transparent);
+  animation:
+    focusCellBoot 260ms cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i, 0) * 14ms) backwards,
+    focusCellNext 2.4s ease-in-out 700ms infinite;
+}
+
+.hud[data-in-view="false"] .cell {
+  animation-play-state: paused;
+}
+
+/* One pass of light along the track as the card arrives. */
+.track::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 34%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--focus-lit) 42%, transparent),
+    transparent
+  );
+  translate: -110% 0;
+  animation: focusScan 900ms cubic-bezier(0.45, 0, 0.25, 1) 260ms forwards;
+}
+
+.hud[data-state="loading"] .track::after {
+  animation: none;
+}
+
+/* ---------- The line to act on ---------- */
+
+.bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.title {
+  min-width: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.go {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--focus-go-line);
+  background: var(--focus-go-bg);
+  color: var(--focus-go-ink);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: scale 120ms ease;
+}
+
+.go:active {
+  scale: 0.96;
+}
+
+.go:focus-visible {
+  outline: 2px solid var(--focus-lit);
+  outline-offset: 3px;
+}
+
+/* The two rates, once there is anything to rate. */
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--focus-line);
+  font-size: 0.75rem;
+  color: var(--focus-ink-2);
+}
+
+.readout b {
+  margin-left: 0.35em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--focus-ink);
+}
+
+@keyframes focusCellBoot {
+  from {
+    opacity: 0;
+    scale: 1 0.3;
+  }
+}
+
+@keyframes focusCellNext {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes focusScan {
+  to {
+    translate: 320% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell,
+  .cell[data-next="true"],
+  .track::after {
+    animation: none;
+  }
+}
+
+/* ---------- Yumi Cosmic: obsidian glass ---------- */
+
+:global(html[data-interface-mode="yumi-cosmic"]) .hud {
+  --focus-bg: #101820;
+  --focus-line: #34444e;
+  --focus-ink: #e4ecee;
+  --focus-ink-2: #a9bac2;
+  --focus-lit: #b8e8e5;
+  --focus-cell: #1c2830;
+  --focus-go-bg: color-mix(in oklab, #b8e8e5 9%, transparent);
+  --focus-go-ink: #b8e8e5;
+  --focus-go-line: color-mix(in oklab, #b8e8e5 55%, transparent);
+}

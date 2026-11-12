@@ -5,8 +5,27 @@
   transform-origin: 48% 55%;
 }
 
+/*
+ * Yumi's ink: her arms, her tongue and her mouth. Near-black on the
+ * Standard page; pearl in Yumi Cosmic, where near-black on the Lab's dark
+ * card left only her eye (Chi, 2026-11-12). Pearl is the colour Cosmic
+ * already gives the brand mark (--yumi-mark). The eye keeps its dark ring
+ * and pupil, which is what draws it on a pale body.
+ */
+.stage {
+  --yumi-face-ink: #1c1a16;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .stage {
+  --yumi-face-ink: #f5f2f0;
+}
+
+.ink {
+  stroke: var(--yumi-face-ink);
+}
+
 .mouth {
-  fill: #1c1a16;
+  fill: var(--yumi-face-ink);
   /* --mouth-speed is set inline per-sound (see YumiFace.tsx MOUTH_SPEED_MS)
      — a stop consonant's burst snaps shut/open quickly, a vowel eases in
      more steadily, instead of every sound sharing one flat duration. */

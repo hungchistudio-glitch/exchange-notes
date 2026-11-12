@@ -19,6 +19,7 @@ import {
   holdsFixed,
   inView,
 } from "@/lib/motion/pageArrival";
+import { announceRouteArrival } from "@/lib/motion/featureFlight";
 
 /**
  * The stage every protected route is played on.
@@ -82,6 +83,7 @@ function reducedMotion() {
 
 /** Plays the page's arrival in layers; a page with none fades as one. */
 function arrive(stage: HTMLElement) {
+  announceRouteArrival();
   if (stage.querySelector(OWN_WHOLE_ARRIVAL)) return;
   if (stage.querySelector(OWN_ARRIVAL)) {
     stage.animate([{ opacity: 0.6 }, { opacity: 1 }], { duration: 150, easing: ARRIVAL_EASING });
@@ -92,8 +94,11 @@ function arrive(stage: HTMLElement) {
     stage.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 220, easing: ARRIVAL_EASING });
     return;
   }
+  // A feature's key is flying to this page's title (lib/motion/
+  // featureFlight.ts): nothing may move under it, so the layers only fade.
+  const landing = document.documentElement.hasAttribute("data-feature-flight");
   layers.forEach((layer, index) => {
-    const rise = !holdsFixed(layer);
+    const rise = !landing && !holdsFixed(layer);
     layer.animate(
       rise
         ? [{ opacity: 0, translate: `0 ${ARRIVAL_RISE_PX}px` }, { opacity: 1, translate: "0 0" }]

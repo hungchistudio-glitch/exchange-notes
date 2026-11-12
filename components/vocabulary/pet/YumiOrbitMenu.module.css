@@ -20,21 +20,19 @@
   z-index: 70;
   border: 0;
   background:
-    radial-gradient(circle at 50% 24%, rgba(223, 203, 151, 0.09), transparent 38%),
-    rgba(247, 245, 239, 0.5);
-  backdrop-filter: blur(3px) saturate(0.82);
+    radial-gradient(circle at 50% 24%, rgba(223, 203, 151, 0.12), transparent 40%),
+    rgba(247, 245, 239, 0.86);
   opacity: 0;
-  animation: haloBackdropIn 260ms ease-out forwards;
+  animation: haloBackdropIn 220ms ease-out forwards;
   /*
-   * The only backdrop blur left in the halo, and it is the only one that was
-   * doing visible work.
+   * A plain dim, no blur (2026-11-12).
    *
-   * There were eight: this one, the five capability discs, the dismiss key and
-   * the focused readout card. Each one forces the compositor to re-blur
-   * everything behind it, and they were stacked — every disc was re-blurring a
-   * surface that this layer had already blurred, on every frame of the arrival
-   * and of any focus change. The discs lost almost nothing by dropping theirs,
-   * because what is behind them is this, and this is already soft.
+   * There were eight backdrop blurs once; this was the last. Measured on a
+   * production build, it was still most of why the halo's first frame came
+   * 100–150ms late (the GPU blurring the whole screen while the layer faded
+   * in) and why an open halo dropped to 30fps. A denser dim does the same
+   * job: the page underneath recedes, and the halo is the brightest thing
+   * on the screen.
    */
 }
 
@@ -128,8 +126,8 @@
   border-radius: 50%;
   translate: -50% -50%;
   pointer-events: none;
-  /* Masked and scaled at the same time on arrival, which is the one case a
-     ring genuinely needs its own layer for. */
+  /* Masked and faded in on arrival, which is the one case a ring genuinely
+     needs its own layer for. */
   will-change: transform, opacity;
   -webkit-mask-image: conic-gradient(
     from 0deg,
@@ -143,7 +141,7 @@
     transparent 135deg 225deg,
     #000 225deg 360deg
   );
-  animation: haloRingIn 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation: haloRingIn 220ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 /* Diameter = 2 x orbit x R, and R is half of --yumi-size, so the diameter is
@@ -161,8 +159,86 @@
   width: calc(var(--yumi-size, 216px) * var(--halo-orbit-utility));
   height: calc(var(--yumi-size, 216px) * var(--halo-orbit-utility));
   border: 1px dashed color-mix(in oklab, var(--color-black) 9%, transparent);
-  animation-delay: 80ms;
+  animation-delay: 60ms;
 }
+
+/* ---------------------------------------------------------------
+   The ignition (Chi, 2026-11-12: 軌道點火)
+   --------------------------------------------------------------- */
+
+/*
+ * Two sparks leave 12 o'clock and run down the flanks of the primary orbit;
+ * each capability lights as one reaches it. A spark is a wrapper at Yumi's
+ * centre that turns, holding a dot out on the orbit: turning is compositor
+ * work, so the sweep costs nothing on the main thread. Two fainter dots
+ * follow each one a few degrees behind, as its tail.
+ *
+ * The timing is lib/pet/commandHalo.ts's: start 40ms, 300ms for 150°,
+ * linear, so a station lights exactly when its spark is there.
+ */
+.spark {
+  --spark-tone: var(--accent-amber);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  animation: 300ms linear calc(40ms + var(--trail, 0) * 18ms) forwards;
+}
+
+.spark[data-side="right"] {
+  animation-name: haloSweepRight;
+}
+
+.spark[data-side="left"] {
+  animation-name: haloSweepLeft;
+}
+
+.spark i {
+  position: absolute;
+  left: -3px;
+  top: calc(-3px - var(--halo-r) * var(--halo-orbit-primary));
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--spark-tone);
+  box-shadow: 0 0 10px 2px color-mix(in oklab, var(--spark-tone) 60%, transparent);
+}
+
+.spark[data-trail="1"] i {
+  scale: 0.7;
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+.spark[data-trail="2"] i {
+  scale: 0.5;
+  opacity: 0.3;
+  box-shadow: none;
+}
+
+@keyframes haloSweepRight {
+  0% { opacity: 0; rotate: 0deg; }
+  10% { opacity: 1; }
+  82% { opacity: 1; }
+  100% { opacity: 0; rotate: 150deg; }
+}
+
+@keyframes haloSweepLeft {
+  0% { opacity: 0; rotate: 0deg; }
+  10% { opacity: 1; }
+  82% { opacity: 1; }
+  100% { opacity: 0; rotate: -150deg; }
+}
+
+/*
+ * No flash ring as a node lights (2026-11-12). There was one, a hairline
+ * leaving each disc: five more layers growing to 1.75x while the halo
+ * assembled, and on a production build it roughly doubled the frame time
+ * the opening lost. The spark passing and the node's own pop carry it.
+ */
 
 /* ---------------------------------------------------------------
    Connectors
@@ -245,6 +321,9 @@
   place-items: center;
   transition: opacity 200ms ease;
   /*
+   * Lit by the spark: from nothing, a little past full size, then settled
+   * (300ms, IGNITION_NODE_MS). `--halo-delay` is the station's moment.
+   *
    * `backwards`, not `forwards`, and the difference is the whole focus
    * behaviour rather than a detail.
    *
@@ -255,7 +334,7 @@
    * frame during the stagger delay, which is all the entrance actually needs,
    * and hands the element back to these declarations the moment it lands.
    */
-  animation: haloNodeIn 260ms cubic-bezier(0.16, 1, 0.3, 1) var(--halo-delay)
+  animation: haloNodeIgnite 300ms cubic-bezier(0.2, 0.9, 0.3, 1) var(--halo-delay)
     backwards;
 }
 
@@ -351,6 +430,8 @@
   gap: 1px;
   text-align: center;
   pointer-events: none;
+  /* The words come up just after their node has lit. */
+  animation: haloLabelIn 220ms ease-out calc(var(--halo-delay) + 110ms) backwards;
 }
 
 .name {
@@ -453,7 +534,7 @@
   border: 1px solid color-mix(in oklab, var(--color-black) 12%, transparent);
   background: color-mix(in oklab, var(--color-white) 74%, transparent);
   color: color-mix(in oklab, var(--color-black) 55%, transparent);
-  animation: haloNodeIn 240ms cubic-bezier(0.16, 1, 0.3, 1) 255ms backwards;
+  animation: haloNodeIn 240ms cubic-bezier(0.16, 1, 0.3, 1) 340ms backwards;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -468,24 +549,44 @@
 /*
  * The nodes do not travel.
  *
- * They fade and settle a few percent in scale, at their final positions —
- * because the story is that they were already orbiting Yumi and have simply
- * become visible. Icons that fly out of the character's body say the opposite:
- * that they were stored inside it, which is a game's skill wheel rather than a
- * system coming online. It is a small difference in code and the whole
- * difference in what the state reads as.
+ * They light at their final positions — because the story is that they were
+ * already orbiting Yumi and the spark has simply brought them online. Icons
+ * that fly out of the character's body say the opposite: that they were
+ * stored inside it, which is a game's skill wheel rather than a system
+ * coming online.
  *
- * The ring opens first, then the nodes arrive at 45ms intervals in ranked
- * order. Last one lands at 210ms + 260ms = 470ms, inside the brief's 350–500.
+ * The ring is there almost at once (it is the track the sparks run on), and
+ * the last node settles at 304ms + 300ms, about 0.6s after the tap.
  */
 @keyframes haloRingIn {
   from {
     opacity: 0;
-    scale: 0.62;
+    scale: 0.94;
   }
   to {
     opacity: 1;
     scale: 1;
+  }
+}
+
+@keyframes haloNodeIgnite {
+  0% {
+    opacity: 0;
+    scale: 0.6;
+  }
+  55% {
+    opacity: 1;
+    scale: 1.06;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes haloLabelIn {
+  from {
+    opacity: 0;
   }
 }
 
@@ -570,6 +671,7 @@
   .ring,
   .ringOuter,
   .node,
+  .label,
   .dismiss,
   .halo[data-phase="closing"] .ring,
   .halo[data-phase="closing"] .ringOuter,
@@ -583,6 +685,11 @@
   .link,
   .node {
     transition: none;
+  }
+
+  /* The ignition is motion and nothing else: the halo simply arrives. */
+  .spark {
+    display: none;
   }
 }
 
@@ -606,9 +713,15 @@
       color-mix(in oklab, var(--cosmic-violet) 12%, transparent),
       transparent 46%
     ),
-    rgba(8, 9, 11, 0.86);
-  backdrop-filter: blur(6px);
+    rgba(8, 9, 11, 0.92);
 }
+
+/* In Cosmic the sparks are ice. */
+:global(html[data-interface-mode="yumi-cosmic"]) .spark {
+  --spark-tone: #b8e8e5;
+}
+
+
 
 :global(html[data-interface-mode="yumi-cosmic"]) .ring {
   border-color: color-mix(in oklab, var(--cosmic-cyan) 22%, transparent);
