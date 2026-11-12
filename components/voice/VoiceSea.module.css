@@ -1,0 +1,58 @@
+/* The sea that listens (VoiceSea.tsx, lib/voice/sea.ts): over the bottom
+   half of the screen, above the page and its bars, taking no taps. Its
+   height is set from the window as it draws. */
+.sea {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 72;
+  display: block;
+  width: 100%;
+  height: 50vh;
+  pointer-events: none;
+}
+
+.sea[data-on="false"] {
+  visibility: hidden;
+}
+
+/* Where the sea cannot move (reduced motion) or cannot be drawn (no
+   WebGL): a still glow at the bottom, in the same colours, that fades in
+   while listening and dims while the words are understood. Only the canvas
+   or this shows, never both: the glow is for when the canvas is off. */
+.glow {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 72;
+  height: 34vh;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  background:
+    radial-gradient(120% 70% at 50% 100%, #e2a94a4d, transparent 70%),
+    linear-gradient(to top, #f4ddae66, #fffaf000 85%);
+  transition: opacity 420ms ease, visibility 0s linear 420ms;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .glow {
+  background:
+    radial-gradient(120% 70% at 50% 100%, #8e7cf059, transparent 70%),
+    linear-gradient(to top, #5ee6d640, #5ee6d600 85%);
+}
+
+.sea[data-on="false"] + .glow[data-on="listening"],
+.sea[data-on="false"] + .glow[data-on="understanding"] {
+  visibility: visible;
+  transition: opacity 420ms ease, visibility 0s;
+}
+
+.sea[data-on="false"] + .glow[data-on="listening"] {
+  opacity: 1;
+}
+
+.sea[data-on="false"] + .glow[data-on="understanding"] {
+  opacity: 0.55;
+}

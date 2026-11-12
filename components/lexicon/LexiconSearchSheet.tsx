@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   useEffect,
   useRef,
@@ -38,6 +39,10 @@ import { getLanguage, getLanguageName } from "@/lib/languages";
 import { transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
+
+/* The listening sea is its own chunk: none of it is needed until a
+   microphone opens (tests/routeImportWeight.test.ts). */
+const VoiceSea = dynamic(() => import("@/components/voice/VoiceSea"), { ssr: false });
 
 /* =========================================================
    The Universal Search, as a sheet
@@ -397,6 +402,8 @@ export default function LexiconSearchSheet({
             />
           </div>
 
+          {/* While it listens, the sea at the bottom of the screen moves with the voice. */}
+          <VoiceSea phase={voice.phase} />
           <VoiceCaptureStatus
             phase={voice.phase}
             listening={voice.listening}

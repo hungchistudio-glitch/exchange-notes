@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { useReloadHold } from "@/lib/pwa/reloadHolds";
+import { meterStream } from "@/lib/voice/signal";
 
 import {
   INITIAL_RECORDER_STATE,
@@ -25,6 +26,23 @@ import {
    leak, so the teardown below covers every exit — unmount, stop, discard,
    error, and the timeout that ends an attempt nobody ended themselves.
    ========================================================= */
+
+/* The meter the liquid sea follows while the learner speaks (Chi,
+   2026-11-12): its own AudioContext, made inside the tap because iOS will
+   not start one any later, and closed with the stream. */
+function audioContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  const scope = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext };
+  const Context = scope.AudioContext ?? scope.webkitAudioContext;
+  if (!Context) return null;
+  try {
+    const context = new Context();
+    void context.resume?.().catch(() => undefined);
+    return context;
+  } catch {
+    return null;
+  }
+}
 
 export type RecorderControls = {
   state: RecorderState;
@@ -53,9 +71,13 @@ export default function useRecorder(): RecorderControls {
   /** False once the component is gone, so late callbacks stop touching state. */
   const mountedRef = useRef(true);
   const generationRef = useRef(0);
+  const meterRef = useRef<{ context: AudioContext | null; stop: (() => void) | null }>({ context: null, stop: null });
 
   const releaseStream = useCallback(() => {
     generationRef.current += 1;
+    meterRef.current.stop?.();
+    void meterRef.current.context?.close().catch(() => undefined);
+    meterRef.current = { context: null, stop: null };
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -138,12 +160,15 @@ export default function useRecorder(): RecorderControls {
     revokeClip();
     dispatch({ type: "request" });
     const generation = generationRef.current;
+    const meterContext = audioContext();
+    meterRef.current.context = meterContext;
 
     let stream: MediaStream;
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (error) {
+      void meterContext?.close().catch(() => undefined);
       if (!mountedRef.current || generation !== generationRef.current) return false;
 
       const name = error instanceof DOMException ? error.name : "";
@@ -162,11 +187,15 @@ export default function useRecorder(): RecorderControls {
      */
     if (!mountedRef.current || generation !== generationRef.current) {
       stream.getTracks().forEach((track) => track.stop());
+      void meterContext?.close().catch(() => undefined);
       return false;
     }
 
     streamRef.current = stream;
     chunksRef.current = [];
+    if (meterContext && meterRef.current.context === meterContext) {
+      meterRef.current.stop = meterStream(meterContext, stream);
+    }
 
     let recorder: MediaRecorder;
 

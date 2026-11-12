@@ -185,10 +185,16 @@ describe("what the heaviest tabs drag in with them", () => {
    * HomeHangyumiKey and components/hangyumi/HangyumiGlyph, an SVG with no
    * imports; the key shares the shop key's stylesheet and scroll tuck. The
    * game, its 3D studio and the word service stay on /hangyumi.
+   * Raised home 183 → 184 and vocabulary 165 → 166 (2026-11-12): the sea
+   * that listens (Chi: "非常液態，並隨著收音改變液態波動"). The microphone's
+   * meter, which both tabs' search can open, writes the voice's level and
+   * its low and high bands each frame into lib/voice/signal.ts, a file with
+   * no imports. The sea itself, its shader and its Cosmic read load behind
+   * import() from each surface.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 165],
-    ["home", TABS.home, 183],
+    ["vocabulary", TABS.vocabulary, 166],
+    ["home", TABS.home, 184],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

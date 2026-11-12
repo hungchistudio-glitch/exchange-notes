@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   ArrowRight,
   ChevronDown,
@@ -29,6 +30,10 @@ import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import useVoiceInput from "@/hooks/useVoiceInput";
 import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
+
+/* The listening sea is its own chunk: none of it is needed until a
+   microphone opens (tests/routeImportWeight.test.ts). */
+const VoiceSea = dynamic(() => import("@/components/voice/VoiceSea"), { ssr: false });
 
 type QuickFilter = {
   value: "all" | VocabularyStatus;
@@ -137,6 +142,8 @@ export default function VocabularySearch({
 
   return (
     <section className="mt-4">
+      {/* While it listens, the sea at the bottom of the screen moves with the voice. */}
+      <VoiceSea phase={listening ? "listening" : "idle"} />
       <form
         className="flex items-center"
         onSubmit={(event) => {

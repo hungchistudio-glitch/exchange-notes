@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Mic, Square } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -18,6 +19,10 @@ import {
 import type { AudioSource, PlaybackSpeed } from "@/lib/pronunciation/lab/audio";
 import type { ScoreDimension, TrainingItemOutcome } from "@/lib/pronunciation/lab/types";
 import type { YumiAnimationState } from "@/lib/pronunciation/yumiRig";
+
+/* The listening sea is its own chunk: none of it is needed until a
+   microphone opens (tests/routeImportWeight.test.ts). */
+const VoiceSea = dynamic(() => import("@/components/voice/VoiceSea"), { ssr: false });
 
 export type SpeakTrainerProps = {
   language: LanguageCode;
@@ -219,6 +224,9 @@ export default function SpeakTrainer({
 
   return (
     <div className="space-y-4">
+      {/* While the learner speaks, the sea at the bottom of the screen moves
+          with the voice; it settles while the take is analysed. */}
+      <VoiceSea phase={recording ? "listening" : analyzing ? "understanding" : "idle"} />
       <section className="rounded-3xl border border-black/[0.06] bg-white p-5">
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
           {copy.listenFirst}
