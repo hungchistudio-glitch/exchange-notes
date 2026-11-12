@@ -8,18 +8,38 @@ import { parkYumiScene, relayedOptions, takeParkedYumiScene, type YumiSceneRelay
 import YumiLoading from "@/components/yumi3d/YumiLoading";
 import styles from "./CosmicHomeYumi.module.css";
 
+/** How far she draws in while the orbit of six is open around her. */
+const SHRUNK = 0.92;
+
+/*
+ * Where she stands in her canvas, and how big.
+ * - "square": the old deck's square core; her shell fills 44% of it.
+ * - "stage": the obsidian bridge's whole stage (Chi, 2026-11-12). Her shell
+ *   is about half the stage's width, a little above its middle, and never
+ *   so tall that a hat above her or a charm below leaves the frame.
+ */
+function anchorFor(fit: "square" | "stage", width: number, height: number) {
+  if (fit === "square") return { x: width / 2, y: height / 2, r: Math.min(width, height) * 0.44 };
+  return { x: width / 2, y: height * 0.47, r: Math.min(width * 0.25, height * 0.29) };
+}
+
 /**
  * Both homes borrow the same scene. Until it draws, and for good on a device
  * without WebGL, the shared loader holds her place; no flat Yumi stands in.
  */
-export default function CosmicHomeYumi({ paused }: { paused: boolean }) {
+export default function CosmicHomeYumi({ paused, fit = "square", shrink = false }: {
+  paused: boolean;
+  fit?: "square" | "stage";
+  /** Draw in a little, for the orbit of six around her. */
+  shrink?: boolean;
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mode = useOptionalInterfaceMode();
   const outfit = useWornOutfit();
-  const stateRef = useRef({ paused, mode, outfit });
+  const stateRef = useRef({ paused, mode, outfit, shrink, fit });
   const [live, setLive] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
-  useEffect(() => { stateRef.current = { paused, mode, outfit }; }, [paused, mode, outfit]);
+  useEffect(() => { stateRef.current = { paused, mode, outfit, shrink, fit }; }, [paused, mode, outfit, shrink, fit]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -69,11 +89,21 @@ export default function CosmicHomeYumi({ paused }: { paused: boolean }) {
     canvas.addEventListener("pointerup", finish);
     canvas.addEventListener("pointercancel", finish);
     canvas.addEventListener("lostpointercapture", finish);
+    /* Measured on resize only, never in the frame: the frame eases the
+       scale toward the orbit's and places her from the last measure. */
+    let box = { width: 0, height: 0 };
+    let scale = stateRef.current.shrink ? SHRUNK : 1;
+    const place = () => {
+      if (!handle || !box.width) return;
+      const anchor = anchorFor(stateRef.current.fit, box.width, box.height);
+      handle.setScreenAnchor(anchor.x, anchor.y, anchor.r * scale);
+    };
     const resize = () => {
       if (!handle) return;
       handle.resize();
       const { width, height } = canvas.getBoundingClientRect();
-      handle.setScreenAnchor(width / 2, height / 2, Math.min(width, height) * .44);
+      box = { width, height };
+      place();
     };
     const sizeObserver = new ResizeObserver(resize);
     sizeObserver.observe(host);
@@ -106,6 +136,12 @@ export default function CosmicHomeYumi({ paused }: { paused: boolean }) {
         }
         // Lit for the deck from her first frame here, not eased into it.
         handle.setCosmicLevel?.(1, first);
+        /* Drawn in for the orbit, or out again, over about a fifth of a second. */
+        const wanted = stateRef.current.shrink ? SHRUNK : 1;
+        if (scale !== wanted) {
+          scale = reduced || Math.abs(wanted - scale) < 0.002 ? wanted : scale + (wanted - scale) * 0.2;
+          place();
+        }
         first = false;
         handle.setRotationPaused?.(stateRef.current.paused || !!document.querySelector('[aria-modal="true"]'));
         handle.setGaze?.(0, 0);
@@ -145,7 +181,7 @@ export default function CosmicHomeYumi({ paused }: { paused: boolean }) {
     if (live && waiting) markHomeModeReady?.("yumi-cosmic", "scene");
   }, [live, waiting, markHomeModeReady]);
 
-  return <div className={styles.figure} data-cosmic-yumi-live={live ? "true" : "false"}>
+  return <div className={styles.figure} data-fit={fit} data-cosmic-yumi-live={live ? "true" : "false"}>
     <YumiLoading state={live ? "done" : unavailable ? "unavailable" : "loading"} />
     <div ref={hostRef} className={styles.host} />
   </div>;

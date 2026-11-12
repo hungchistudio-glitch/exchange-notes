@@ -208,15 +208,15 @@ export default function OmniLexiconConsole({
     >
       <span className={styles.beam} aria-hidden="true" />
 
-      <div className={styles.head}>
-        <p className="hud-label">{copy.label}</p>
-
-        {(state === "listening" || state === "scanning") && (
+      {/* No title of its own on the bridge (Chi, 2026-11-12): only what it
+          is doing, while it is doing something. */}
+      {(state === "listening" || state === "scanning") && (
+        <div className={styles.head}>
           <p className="hud-label" role="status">
             {state === "listening" ? copy.listening : copy.scanning}
           </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {listening ? (
         /*
@@ -226,11 +226,13 @@ export default function OmniLexiconConsole({
          * on, so the console commits to one sense at a time.
          */
         <div ref={voiceLevelRef} className={styles.waveform} aria-hidden="true">
+          {/* Each bar a fixed share of the real level, highest in the
+              middle: it moves only when the voice does, never on its own. */}
           {Array.from({ length: WAVE_BARS }, (_, index) => (
             <span
               key={index}
               className={styles.waveBar}
-              style={{ "--bar-delay": `${index * 78}ms` } as CSSProperties}
+              style={{ "--bar-shape": (0.45 + 0.55 * Math.sin((Math.PI * (index + 0.5)) / WAVE_BARS)).toFixed(3) } as CSSProperties}
             />
           ))}
         </div>
@@ -239,7 +241,7 @@ export default function OmniLexiconConsole({
           <Radar
             size={17}
             strokeWidth={1.8}
-            className="shrink-0 text-[var(--cosmic-cyan)]"
+            className="shrink-0 text-[#b8e8e5]"
             aria-hidden="true"
           />
 

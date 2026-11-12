@@ -1,0 +1,37 @@
+/* Home's outline in either shell: the server knows the mode from the
+   cookie it set on <html>, so the right one shows from the first paint
+   with no script (RouteSkeleton's rule). The Cosmic one has the obsidian
+   bridge's own heights (Chi, 2026-11-12), so the home settles into it
+   instead of jumping. */
+.cosmic {
+  display: none;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .standard {
+  display: none;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .cosmic {
+  display: grid;
+  row-gap: 0.75rem;
+}
+
+.bar {
+  height: 46px;
+}
+
+.status {
+  height: 55px;
+}
+
+.stage {
+  height: clamp(260px, 38svh, 330px);
+}
+
+.search {
+  height: 112px;
+}
+
+.notes {
+  height: 92px;
+}

@@ -199,6 +199,9 @@ const POINT = {
   item: ['[data-coach-target="shop-item"]'],
   modeSwitch: ["[data-home-mode-portal] > span", "[data-home-mode-portal]"],
   omni: ['[data-coach-target="cosmic-omni"]'],
+  /* The Cosmic home's orbit key, where its six features fold away (Chi,
+     2026-11-12); the search under Yumi if the key is not there. */
+  orbit: ['[data-coach-target="cosmic-orbit-key"]', '[data-coach-target="cosmic-omni"]'],
 } as const;
 
 const STANDARD: InterfaceMode = "standard";
@@ -308,14 +311,15 @@ export const COACH_STEPS: readonly Step[] = [
    * worth remembering from this chapter (Chi, 2026-10-09: "在首頁教").
    */
   { key: "modeSwitch", chapter: "cosmic", route: "/home", point: POINT.modeSwitch },
-  /* The whole deck in one card, lighting the search it shares with Standard. */
+  /* The whole deck in one card, lighting the orbit key the six features
+     fold into, which is the one thing on it not to be guessed. */
   {
     key: "deck",
     chapter: "cosmic",
     route: "/home",
     mode: COSMIC,
     autoGo: true,
-    point: POINT.omni,
+    point: POINT.orbit,
   },
   { key: "choose", chapter: "cosmic" },
 ];

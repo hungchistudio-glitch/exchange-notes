@@ -662,19 +662,6 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-card {
   box-shadow: var(--cosmic-sheen);
 }
 
-html[data-interface-mode="yumi-cosmic"] .cosmic-notes-home {
-  border-radius: var(--cosmic-card-radius);
-  border-color: var(--cosmic-hairline-cool);
-  background:
-    radial-gradient(ellipse at 100% 0%, var(--cosmic-surface-notes-glow), transparent 65%),
-    var(--cosmic-surface-notes);
-  padding: 1.15rem;
-}
-
-html[data-interface-mode="yumi-cosmic"] .cosmic-notes-home h2 {
-  font-weight: 500;
-}
-
 html[data-interface-mode="yumi-cosmic"] .cosmic-note-card {
   border-color: var(--cosmic-hairline);
   background: linear-gradient(

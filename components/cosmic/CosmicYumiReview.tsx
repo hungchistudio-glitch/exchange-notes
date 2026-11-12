@@ -3,11 +3,15 @@
 import { useEffect } from "react";
 
 import CommandDeck from "@/components/cosmic/CommandDeck";
+import HomeHangyumiKey from "@/components/home/HomeHangyumiKey";
+import HomeModePortal from "@/components/home/HomeModePortal";
+import HomeShopKey from "@/components/home/HomeShopKey";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
 import { VocabularyProvider } from "@/contexts/VocabularyContext";
 import type { InterfaceMode } from "@/lib/appPreferences";
+import { setLaunching } from "@/lib/launchState";
 
 /**
  * The Command Deck, signed out, for looking at Yumi.
@@ -37,6 +41,10 @@ export default function CosmicYumiReview({
 }: {
   storedMode: InterfaceMode;
 }) {
+  /* No opening plays here: say so, as SplashGate does in the app when it
+     skips one, so the deck's wake starts as it would there. */
+  useEffect(() => setLaunching(false), []);
+
   useEffect(() => {
     const root = document.documentElement;
     const previous = root.getAttribute("data-interface-mode");
@@ -57,6 +65,11 @@ export default function CosmicYumiReview({
       >
         <VocabularyProvider>
           <LexiconSearchProvider>
+            {/* Home's corner keys, as the real home has them over the
+                deck's bar (Chi, 2026-11-12: the obsidian bridge). */}
+            <HomeHangyumiKey />
+            <HomeShopKey />
+            <HomeModePortal />
             <CommandDeck />
           </LexiconSearchProvider>
         </VocabularyProvider>

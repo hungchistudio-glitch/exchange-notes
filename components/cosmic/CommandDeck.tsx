@@ -1,6 +1,14 @@
 "use client";
 
-import { useState, type ComponentType, type CSSProperties } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ComponentType,
+} from "react";
 import Link from "next/link";
 
 import BookIcon from "@/components/foundation/icons/BookIcon";
@@ -15,6 +23,7 @@ import OmniLexiconConsole, {
 } from "@/components/cosmic/OmniLexiconConsole";
 import CosmicHomeYumi from "./CosmicHomeYumi";
 import NotesHomeModule from "@/components/notes/NotesHomeModule";
+import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { getLanguage, getLanguageName } from "@/lib/languages";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -22,8 +31,16 @@ import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { useVocabulary } from "@/contexts/VocabularyContext";
+import { announceOpened, closeWhenOtherOpens } from "@/lib/cosmic/disclosure";
+import {
+  HOME_RETURN_MS,
+  HOME_WAKE_MS,
+  arrivalOnMount,
+  spendFirstArrival,
+  type HomeArrival,
+} from "@/lib/cosmic/homeArrival";
+import { isLaunching, subscribeToLaunching } from "@/lib/launchState";
 
-import useInView from "@/hooks/useInView";
 import styles from "./CommandDeck.module.css";
 
 type RoomKey = keyof TranslationDictionary["cosmic"]["rooms"];
@@ -38,359 +55,389 @@ type Room = {
  * Every room opens a page this app already has. The deck is a different way
  * into the same features, not a second set of them, so nothing here routes
  * anywhere that did not exist in Standard Mode.
+ *
+ * In reading order: down the left of the orbit, then down the right.
  */
 const ROOMS: Room[] = [
   { key: "lexicon", href: "/vocabulary", Icon: NavVocabularyIcon },
   { key: "mission", href: "/review", Icon: BookIcon },
-  /*
-   * Straight into the Menu Translator, with no bay in between.
-   *
-   * The room used to be a landing page offering a choice between reading a
-   * menu and photographing an object — but the deck's own console already
-   * has camera and image inputs two taps away, so the choice was a screen
-   * asking a question the deck had already answered.
-   */
+  /* Straight into the Menu Translator, with no bay in between. */
   { key: "scanner", href: "/scanner/menu", Icon: MenuScanIcon },
   { key: "comms", href: "/messages", Icon: NavMessagesIcon },
   { key: "earth", href: "/discover", Icon: NavDiscoverIcon },
   { key: "memory", href: "/profile", Icon: NavSettingsIcon },
 ];
 
-// Twelve hand-placed points rather than a generated field. See the .stars note
-// in CommandDeck.module.css for why the count is fixed.
-const STARS: Array<[left: string, top: string, delay: string]> = [
-  ["12%", "18%", "0s"],
-  ["78%", "12%", "1.4s"],
-  ["31%", "8%", "2.9s"],
-  ["88%", "34%", "0.7s"],
-  ["6%", "47%", "3.6s"],
-  ["94%", "62%", "2.1s"],
-  ["21%", "76%", "1.1s"],
-  ["69%", "88%", "3.1s"],
-  ["45%", "94%", "0.4s"],
-  ["84%", "79%", "2.5s"],
-  ["9%", "88%", "1.8s"],
-  ["57%", "5%", "4.2s"],
-];
+/** The orbit key's one-time word, once per device (Chi chose "提示一次"). */
+const HINT_KEY = "exchange-notes:cosmic-orbit-hint";
+const HINT_AFTER_MS = 1100;
+const HINT_FOR_MS = 4500;
+/** How long taking hold of Yumi keeps the sheen bright. */
+const PULSE_MS = 1600;
+/** The longest the wake waits for the opening to hand over: past the
+    opening's own length and SplashGate's grace, a failsafe only. */
+const LAUNCH_WAIT_MS = 8000;
+
+function reducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 /*
- * Signal traffic on the field.
- *
- * Three points of light, each riding its own radius. The two periods per
- * signal are deliberately unrelated to each other: a point that takes 14s to
- * go round but is only visible for a fifth of every 17s comes back at a
- * different place on the ring every time, and the pair does not return to its
- * starting arrangement for nearly four minutes. That is the whole trick behind
- * the brief's "no repetition inside a short cycle" — nothing here is random,
- * and nothing here loops anywhere the eye can follow.
- *
- * Negative delays so the field already has traffic on it when the deck opens,
- * rather than three dots waiting to set off together.
- *
- * The angle is where each one starts, and it is the reason reduced motion can
- * simply stop the rotation: three signals frozen at 34°, 158° and 262° are
- * scattered around the field, where three frozen at 0° would be stacked in a
- * line directly above Yumi and read as a fault.
+ * Whether the opening is on the screen now. Not isLaunching(), which reads
+ * "launching" until SplashGate has decided, and SplashGate decides after
+ * this deck has hydrated: trusting it hid a page the server had already
+ * painted, then played it again. The opening's own overlay is decided as
+ * the HTML is parsed (a script hides it when it was seen recently), so
+ * whether it is drawn is already the answer.
  */
-const SIGNALS: Array<{
-  orbit: string;
-  cycle: string;
-  radius: number;
-  angle: string;
-  delay: string;
-}> = [
-  { orbit: "14s", cycle: "17s", radius: 0.31, angle: "34deg", delay: "-3.4s" },
-  { orbit: "23s", cycle: "13s", radius: 0.25, angle: "158deg", delay: "-9.1s" },
-  { orbit: "19s", cycle: "21s", radius: 0.4, angle: "262deg", delay: "-15.6s" },
-];
+function openingOnScreen() {
+  const overlay = document.querySelector("[data-launch-id]");
+  return !!overlay && overlay.getClientRects().length > 0;
+}
+
+/* The orbit key's mark: a fine ring with three nodes on it. Not Yumi's
+   mark, which is the star core's at the foot of the screen. */
+function OrbitGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true" focusable="false">
+      <ellipse cx="12" cy="12" rx="9" ry="6.2" transform="rotate(-14 12 12)" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="4.2" cy="14.2" r="1.7" fill="currentColor" />
+      <circle cx="16.6" cy="6.2" r="1.7" fill="currentColor" />
+      <circle cx="18.4" cy="15.6" r="1.7" fill="currentColor" />
+    </svg>
+  );
+}
 
 /**
- * The Yumi Command Deck — the home of Yumi Cosmic Mode.
+ * The Cosmic home: the obsidian bridge (Chi, 2026-11-12).
  *
- * Yumi sits at the centre with the app's six main systems on a ring around
- * it. Every number shown on a node is one the app genuinely knows: words
- * actually saved, reviews actually due, messages actually unread. Nothing
- * here invents a reading to look technical.
+ * One quiet instrument with Yumi at its centre. Top to bottom on a phone:
+ * the bar the corner keys sit on, one line of real readings, Yumi's stage,
+ * the search, and the reader's notes. The six features fold into an orbit
+ * key on the stage and open around her on a fine, tilted orbit; the star
+ * core at the foot of the screen stays as it is, and only one of the two
+ * is ever open (lib/cosmic/disclosure.ts).
+ *
+ * Every number on it is one the app genuinely holds: words saved, reviews
+ * due, messages unread. Nothing invents a reading, and nothing says "every
+ * system online" over a page that is still loading.
+ *
+ * It owns its own arrival (lib/cosmic/homeArrival.ts): the full wake once
+ * per app runtime, a short fade on the way back from another page, nothing
+ * under the mode switch's own sequence or under reduced motion. RouteStage
+ * leaves it alone (`data-own-arrival="whole"`). The arrival is an attribute
+ * set on the root rather than React state, so it never re-renders the deck
+ * and a hydrated page keeps what the server painted.
  */
 export default function CommandDeck() {
-  // Which language is being learned, not which one the interface is in — the
-  // two stay separate here as everywhere else.
+  // Which language is being learned, not which one the interface is in.
   const { learningLanguage } = useLearningLanguageContext();
 
-  /*
-   * The app-wide library, not a second fetch of it.
-   *
-   * The deck used to read the vocabulary table itself, in parallel with the
-   * home screen doing the same and the Vocabulary page doing it a third time.
-   * A word saved in the OmniLexicon console left the readouts above it
-   * unchanged until the next reload, because they were looking at a different
-   * copy of the same rows.
-   */
+  /* The app-wide library, not a second fetch of it. */
   const { items, loading: itemsLoading } = useVocabulary();
   const { reviewStats } = useVocabularyStats(items);
   const { unreadCount } = useUnreadMessageCount();
-  const [lockedRoom, setLockedRoom] = useState<RoomKey | null>(null);
-  /*
-   * What the console is doing, so Yumi can react to it. This is the whole of
-   * the brief's "OmniLexicon and Yumi must interact": the eye looks up at the
-   * console while it is being used and turns to the user while it listens.
-   */
+  const { modeTransition } = useInterfaceMode();
+  const launching = useSyncExternalStore(subscribeToLaunching, isLaunching, () => true);
+
+  /* What the console is doing, so Yumi can react to it. */
   const [omniState, setOmniState] = useState<OmniLexiconState>("idle");
+  const [open, setOpen] = useState(false);
+  const [hint, setHint] = useState(false);
 
-  /* The active dictionary is primed before a language preference is published. */
-  const { t, language: interfaceLanguage } = useTranslation();
+  const { t, language: interfaceLanguage, locale } = useTranslation();
   const copy = t.cosmic;
+  const roomsId = useId();
 
-  /*
-   * The lock, and the direction the room will open from.
-   *
-   * On pointer down rather than on click, which is what makes it read as a
-   * targeting system instead of a page transition: the ring closes under the
-   * finger while it is still down, and the deck's departing snapshot is taken
-   * with the lock already on it. No artificial delay is inserted before the
-   * navigation — the whole beat happens inside the press the user is already
-   * making.
-   *
-   * A pointer down that never becomes a tap leaves the lock showing until the
-   * pointer is released, which is the correct read: the system stays targeted
-   * for exactly as long as the finger is on it.
-   */
-  function lockRoom(key: RoomKey) {
-    setLockedRoom(key);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLSpanElement>(null);
+  const pulseTimer = useRef(0);
+  const keyRef = useRef<HTMLButtonElement>(null);
+  const roomsRef = useRef<HTMLElement>(null);
+  /* Read once, as the deck first renders: the server paints "full", and so
+     does the first client render of a fresh runtime. */
+  const [initialArrival] = useState<HomeArrival>(() => arrivalOnMount());
+  const modeTransitionRef = useRef(modeTransition);
+
+  /* The arrival, decided once as the deck mounts, before the first paint. */
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const first = initialArrival === "full";
+    spendFirstArrival();
+    if (reducedMotion() || modeTransitionRef.current) root.dataset.arrival = "none";
+    else if (first && openingOnScreen()) root.dataset.arrival = "waiting";
+  }, [initialArrival]);
+
+  /* Waiting for the opening to hand over, then the wake; and never longer
+     than LAUNCH_WAIT_MS, whatever the opening does (a page with no opening
+     at all, an opening that never says it is done). */
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || root.dataset.arrival !== "waiting") return;
+    if (!launching) {
+      root.dataset.arrival = "full";
+      return;
+    }
+    const giveUp = window.setTimeout(() => {
+      if (root.dataset.arrival === "waiting") root.dataset.arrival = "full";
+    }, LAUNCH_WAIT_MS);
+    return () => window.clearTimeout(giveUp);
+  }, [launching]);
+
+  /* Done: the arrival's rules come off, so nothing of it can linger. */
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    let timer = 0;
+    const settle = () => {
+      const arrival = root.dataset.arrival;
+      if (arrival !== "full" && arrival !== "return") return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        root.dataset.arrival = "none";
+      }, arrival === "full" ? HOME_WAKE_MS : HOME_RETURN_MS);
+    };
+    settle();
+    const watch = new MutationObserver(settle);
+    watch.observe(root, { attributes: true, attributeFilter: ["data-arrival"] });
+    return () => {
+      watch.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  /* A touch, a key or a focus during the arrival finishes it at once: never
+     a field that can be typed in but not yet seen. */
+  function arriveNow() {
+    const root = rootRef.current;
+    if (root && root.dataset.arrival !== "none") root.dataset.arrival = "none";
   }
 
-  function statusFor(key: RoomKey) {
-    if (key === "lexicon") {
-      return itemsLoading
-        ? copy.status.loading
-        : copy.status.wordsSaved.replace("{count}", String(items.length));
+  /* Taking hold of Yumi brightens the sheen for a moment, as the search
+     and the orbit do for as long as they are in use. */
+  function pulse() {
+    const backdrop = backdropRef.current;
+    if (!backdrop) return;
+    backdrop.dataset.pulse = "";
+    window.clearTimeout(pulseTimer.current);
+    pulseTimer.current = window.setTimeout(() => {
+      delete backdrop.dataset.pulse;
+    }, PULSE_MS);
+  }
+  useEffect(() => () => window.clearTimeout(pulseTimer.current), []);
+
+  /* The other set of six opening closes this one. */
+  useEffect(() => closeWhenOtherOpens("home-orbit", () => setOpen(false)), []);
+
+  /* Closing: a tap anywhere else (not a drag of Yumi), or Escape. */
+  useEffect(() => {
+    if (!open) return;
+    let downAt: { x: number; y: number } | null = null;
+    const down = (event: PointerEvent) => { downAt = { x: event.clientX, y: event.clientY }; };
+    const click = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (target && (roomsRef.current?.contains(target) || keyRef.current?.contains(target))) return;
+      const moved = downAt ? Math.hypot(event.clientX - downAt.x, event.clientY - downAt.y) : 0;
+      if (moved > 8) return;
+      setOpen(false);
+    };
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      keyRef.current?.focus({ preventScroll: true });
+    };
+    document.addEventListener("pointerdown", down, true);
+    document.addEventListener("click", click, true);
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("pointerdown", down, true);
+      document.removeEventListener("click", click, true);
+      document.removeEventListener("keydown", key);
+    };
+  }, [open]);
+
+  /* The one-time word beside the key, once the wake is over. */
+  useEffect(() => {
+    let seen = true;
+    try {
+      seen = window.localStorage.getItem(HINT_KEY) !== null;
+    } catch {
+      /* No storage: never shown, rather than shown on every visit. */
     }
+    if (seen) return;
+    const show = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(HINT_KEY, `${Date.now()}`);
+      } catch {
+        /* Shown once this visit regardless. */
+      }
+      setHint(true);
+    }, HINT_AFTER_MS);
+    const hide = window.setTimeout(() => setHint(false), HINT_AFTER_MS + HINT_FOR_MS);
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(hide);
+    };
+  }, []);
 
-    if (key === "mission") {
-      if (itemsLoading) return copy.status.loading;
-
-      return reviewStats.due === 0
-        ? copy.status.nothingDue
-        : copy.status.dueNow.replace("{count}", String(reviewStats.due));
-    }
-
-    if (key === "comms" && unreadCount > 0) {
-      return copy.status.unreadMessages.replace("{count}", String(unreadCount));
-    }
-
-    return null;
+  function toggle() {
+    setHint(false);
+    if (!open) announceOpened("home-orbit");
+    setOpen(!open);
   }
 
-  const { ref: coreRef, inView: coreInView } =
-    useInView<HTMLDivElement>();
+  function consoleState(state: OmniLexiconState) {
+    setOmniState(state);
+    /* Searching, listening or reading a picture: the orbit steps aside. */
+    if (state !== "idle") setOpen(false);
+  }
+
+  const count = (value: number) => (itemsLoading ? "—" : value.toLocaleString(locale));
 
   return (
     <Screen contentClassName={styles.content}>
       <div
-        className={styles.header}
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.25rem)" }}
+        ref={rootRef}
+        className={styles.bridge}
+        data-arrival={initialArrival}
+        data-own-arrival="whole"
+        onPointerDownCapture={arriveNow}
+        onKeyDownCapture={arriveNow}
+        onFocusCapture={arriveNow}
       >
-        <p className={styles.eyebrow}>
-          <span aria-hidden="true" className={styles.statusDot} />
-          {copy.deck.eyebrow}
-          <span className={styles.edition}>{copy.deck.edition}</span>
-        </p>
-        <h1 className={styles.title}>
-          {copy.deck.title}
-        </h1>
-        <p className={styles.subtitle}>{copy.deck.subtitle}</p>
+        {/* The obsidian's sheen (Chi, 2026-11-12: "黑曜石流光", over the
+            whole home, very faint): one band of ice light gliding across
+            it every fourteen seconds, and brighter, with one quick pass,
+            while the search, the voice, a picture, the orbit or Yumi is in
+            use. Drawn once; only its position moves. */}
+        <span
+          ref={backdropRef}
+          className={styles.backdrop}
+          aria-hidden="true"
+          data-active={omniState !== "idle" || open ? "" : undefined}
+        >
+          <span className={styles.sheen} />
+          <span className={styles.sheenQuick} />
+        </span>
+        <header
+          className={styles.toolbar}
+          style={{ paddingTop: "calc(env(safe-area-inset-top) + 18px)" }}
+        >
+          <p className={styles.identity} data-arrive="text">
+            <span aria-hidden="true" className={styles.identityDot} />
+            <span className={styles.identityName}>{copy.deck.eyebrow}</span>
+          </p>
+          <h1 className="sr-only">{copy.deck.title}</h1>
+        </header>
 
-        {/*
-          The bridge readout, as one instrument rather than three cards.
-
-          Two counts the app actually holds flank a dial naming the language
-          being learned — the arrangement a cluster falls into when the thing
-          in the middle is a mode and the things either side are numbers.
-          Nothing here is bearing, bandwidth or range.
-
-          The language sits in the dial as its badge — the same "En" / "中" /
-          "Es" the settings pickers and the landing page already use — with
-          the full name below the ring rather than inside it. A language is
-          "Traditional Chinese" in one interface and "Chino tradicional" in
-          another, and neither goes in a circle.
-        */}
-        <dl className={styles.cluster}>
-          <div className={`${styles.gauge} ${styles.lexicon}`}>
-            <dt className={styles.gaugeLabel}>{copy.deck.readoutLexicon}</dt>
-            <dd className={styles.gaugeValue}>
-              {itemsLoading ? "—" : String(items.length)}
-            </dd>
+        {/* One line of what the app actually holds: no gauge, no dial. A
+            dash while it loads, never a 0 that is not true yet. */}
+        <dl className={styles.status} data-arrive="text">
+          <div className={styles.reading}>
+            <dt>{copy.deck.readoutLexicon}</dt>
+            <dd>{count(items.length)}</dd>
           </div>
-
-          <div className={styles.dialCell}>
-            <dt className={styles.dialLabel}>{copy.deck.readoutLearning}</dt>
-            <dd className={styles.dialValue}>
-              {/*
-                Hidden from assistive technology: the full name follows
-                immediately, and "En English" is the same fact read twice.
-              */}
-              <span className={styles.dialBadge} aria-hidden="true">
+          <div className={styles.reading}>
+            <dt>{copy.deck.readoutLearning}</dt>
+            <dd>
+              <span className={styles.badge} aria-hidden="true">
                 {getLanguage(learningLanguage).badge}
               </span>
-              <span className={styles.dialName}>
+              <span className={styles.language}>
                 {getLanguageName(learningLanguage, interfaceLanguage)}
               </span>
             </dd>
           </div>
-
-          <div className={`${styles.gauge} ${styles.due}`}>
-            <dt className={styles.gaugeLabel}>{copy.deck.readoutDue}</dt>
-            <dd className={styles.gaugeValue}>
-              {itemsLoading ? "—" : String(reviewStats.due)}
-            </dd>
+          <div className={styles.reading}>
+            <dt>{copy.deck.readoutDue}</dt>
+            <dd>{count(reviewStats.due)}</dd>
           </div>
         </dl>
-      </div>
 
-      {/*
-        The deck answers three questions, top to bottom: "what is this thing I
-        just saw?", "where do I want to go?", and — in the dock — "take me
-        there, I already know". The console is the first of those and sits
-        above the orbit because identifying something unknown is the action
-        people arrive with, while the six systems are where they go once they
-        already know what they want.
-      */}
-      <div className={styles.consoleSlot}>
-        <OmniLexiconConsole onStateChange={setOmniState} />
-      </div>
+        <section
+          className={styles.stage}
+          aria-label={copy.deck.coreLabel}
+          data-orbit={open ? "open" : "closed"}
+          data-omni={omniState}
+          onPointerDown={pulse}
+        >
+          <span className={styles.pool} aria-hidden="true" />
+          <span className={styles.orbit} aria-hidden="true">
+            <span className={styles.orbitLine} />
+            <span className={styles.sweep} />
+          </span>
 
-      <nav
-        className={styles.deck}
-        aria-label={copy.deck.roomsLabel}
-        data-omni={omniState}
-      >
-        <div className={styles.stars} aria-hidden="true">
-          {STARS.map(([left, top, delay]) => (
-            <span
-              key={`${left}-${top}`}
-              className={styles.star}
-              style={{ left, top, animationDelay: delay }}
-            />
-          ))}
-        </div>
-
-        <div className={styles.deckHeading}>
-          <span>{copy.deck.coreLabel}</span>
-          <span className={styles.deckHeadingDots} aria-hidden="true">••••</span>
-        </div>
-        <div className={styles.stage}>
-          <span className={styles.dialTicks} aria-hidden="true" />
-          <span className={styles.field} aria-hidden="true" />
-          <span className={styles.fieldInner} aria-hidden="true" />
-
-          {SIGNALS.map((signal) => (
-            <span
-              key={signal.orbit}
-              className={styles.signal}
-              aria-hidden="true"
-              style={
-                {
-                  "--signal-orbit": signal.orbit,
-                  "--signal-cycle": signal.cycle,
-                  "--signal-radius": signal.radius,
-                  "--signal-angle": signal.angle,
-                  "--signal-delay": signal.delay,
-                } as CSSProperties
-              }
-            >
-              <span className={styles.signalDot} />
-            </span>
-          ))}
-
-          <div
-            ref={coreRef}
-            /* Twenty-one infinite animations live on this one widget, and it
-               is the top of a page that scrolls. See [data-in-view] in
-               globals.css. */
-            data-in-view={coreInView ? "true" : "false"}
-            className={styles.core}
-            data-omni={omniState}
-            // The acknowledgement in §9 of the brief. It has a real trigger
-            // already: the same press that locks a system — so Yumi answers
-            // the press with a ripple.
-            data-lock={lockedRoom ? "true" : "false"}
-          >
-            <span className={styles.coreAura} aria-hidden="true" />
-            <span className={styles.coreGlow} aria-hidden="true" />
-            <span className={styles.coreHalo} aria-hidden="true" />
-            <span className={styles.coreHaloInner} aria-hidden="true" />
-            <span className={styles.coreArc} aria-hidden="true" />
-            <span className={styles.coreRipple} aria-hidden="true" />
-
-            {/*
-              Only the 3D Yumi is drawn on the deck. The flat mark that used
-              to be its stand-in, while the scene loaded and on a device
-              without WebGL, was the old Yumi; the shared loader holds her
-              place now (Chi, 2026-10-15).
-            */}
-            <CosmicHomeYumi paused={omniState !== "idle"} />
-            <span className="sr-only">{copy.deck.coreLabel}</span>
+          <div className={styles.yumi} data-arrive="yumi">
+            <CosmicHomeYumi paused={omniState !== "idle"} fit="stage" shrink={open} />
           </div>
 
-          {ROOMS.map((room, index) => {
-            const roomCopy = copy.rooms[room.key];
-            const status = statusFor(room.key);
+          <nav
+            ref={roomsRef}
+            id={roomsId}
+            className={styles.rooms}
+            aria-label={copy.deck.roomsLabel}
+            aria-hidden={!open}
+            inert={!open}
+          >
+            <ul className={styles.roomList}>
+              {ROOMS.map((room) => {
+                const roomCopy = copy.rooms[room.key];
+                /* One clear name each (Chi chose the familiar ones); the
+                   Menu Translator's own name is the familiar one. */
+                const label = room.key === "scanner" ? roomCopy.name : roomCopy.familiar;
+                const unread = room.key === "comms" && unreadCount > 0 ? unreadCount : 0;
+                return (
+                  <li key={room.key} className={styles.room} data-room={room.key}>
+                    <Link
+                      href={room.href}
+                      className={styles.roomLink}
+                      onClick={() => setOpen(false)}
+                      aria-label={
+                        unread
+                          ? `${label} — ${copy.status.unreadMessages.replace("{count}", String(unread))}`
+                          : label
+                      }
+                    >
+                      <span className={styles.roomDisc} aria-hidden="true">
+                        <room.Icon className={styles.roomIcon} />
+                        {unread ? <span className={styles.roomBadge}>{unread > 99 ? "99+" : unread}</span> : null}
+                      </span>
+                      <span className={styles.roomName} aria-hidden="true">{label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
 
-            return (
-              <div
-                key={room.key}
-                className={styles.node}
-                style={
-                  {
-                    "--angle": `${(360 / ROOMS.length) * index}deg`,
-                    // Each instrument on its own radar cycle. Negative, so
-                    // they are already mid-cycle on arrival rather than all
-                    // waiting to start together.
-                    "--node-radar-delay": `${-index * 0.93}s`,
-                  } as CSSProperties
-                }
-              >
-                <div className={styles.nodeInner}>
-                  <Link
-                    href={room.href}
-                    onPointerDown={() => lockRoom(room.key)}
-                    onFocus={() => lockRoom(room.key)}
-                    onBlur={() => setLockedRoom(null)}
-                    onPointerUp={() => setLockedRoom(null)}
-                    onPointerCancel={() => setLockedRoom(null)}
-                    className={[
-                      styles.nodeLink,
-                      lockedRoom === room.key ? styles.nodeLocked : "",
-                      lockedRoom && lockedRoom !== room.key
-                        ? styles.nodeDimmed
-                        : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    // The description lives here rather than in a second
-                    // visible list of the same six rooms. The ring is the
-                    // deck; repeating it underneath cost more space than
-                    // the hero it was explaining.
-                    aria-label={`${roomCopy.name} — ${roomCopy.familiar}. ${roomCopy.description}`}
-                    title={roomCopy.description}
-                  >
-                    <span className={styles.nodeDisc}>
-                      <room.Icon className="h-5 w-5" />
-                    </span>
+          <button
+            ref={keyRef}
+            type="button"
+            className={styles.orbitKey}
+            aria-expanded={open}
+            aria-controls={roomsId}
+            aria-label={open ? copy.deck.orbitClose : copy.deck.orbitOpen}
+            title={open ? copy.deck.orbitClose : copy.deck.orbitOpen}
+            data-coach-target="cosmic-orbit-key"
+            onClick={toggle}
+          >
+            <OrbitGlyph />
+          </button>
+          {hint ? (
+            <p className={styles.hint} role="status">
+              {copy.deck.orbitHint}
+            </p>
+          ) : null}
+        </section>
 
-                    <span className={styles.nodeName}>{roomCopy.name}</span>
-                    <span className={styles.nodeFamiliar}>
-                      {status ?? roomCopy.familiar}
-                    </span>
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
+        <div className={styles.search} data-arrive="text">
+          <OmniLexiconConsole onStateChange={consoleState} />
         </div>
-      </nav>
-      <div className={styles.notesSlot}>
-        <NotesHomeModule />
+
+        <div className={styles.notes} data-arrive="text">
+          <NotesHomeModule />
+        </div>
       </div>
     </Screen>
   );

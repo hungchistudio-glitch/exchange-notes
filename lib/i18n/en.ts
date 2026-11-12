@@ -537,7 +537,7 @@ const english: TranslationDictionary = {
         },
         deck: {
           body:
-            "This is {cosmic}: six systems around me, {omni} at the top, {scanner} for menus and signs, the dock below.",
+            "This is {cosmic}: I'm at the centre, my six features fold into this orbit key beside me, {omni} is just below, {scanner} reads menus and signs, and the dock is at the foot.",
         },
         choose: {
           body:
@@ -707,6 +707,9 @@ const english: TranslationDictionary = {
       readoutLearning: "Learning",
       languageEnglish: "English",
       languageChinese: "Chinese",
+      orbitOpen: "Open home features",
+      orbitClose: "Close home features",
+      orbitHint: "Your six features are in here",
     },
     rooms: {
       lexicon: {

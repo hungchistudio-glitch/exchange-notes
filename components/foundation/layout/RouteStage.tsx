@@ -69,6 +69,12 @@ const OUTLINE_WAIT_MS = 10_000;
 const SKELETON = "[data-route-skeleton]";
 /** A page that plays its own arrival (the games, the shop) is left to it. */
 const OWN_ARRIVAL = "[data-own-arrival]";
+/**
+ * A page that owns all of its arrival, the fade included (the Cosmic home,
+ * lib/cosmic/homeArrival.ts): the stage plays nothing at all over it, or
+ * the two would run at once.
+ */
+const OWN_WHOLE_ARRIVAL = '[data-own-arrival="whole"]';
 
 function reducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -76,6 +82,7 @@ function reducedMotion() {
 
 /** Plays the page's arrival in layers; a page with none fades as one. */
 function arrive(stage: HTMLElement) {
+  if (stage.querySelector(OWN_WHOLE_ARRIVAL)) return;
   if (stage.querySelector(OWN_ARRIVAL)) {
     stage.animate([{ opacity: 0.6 }, { opacity: 1 }], { duration: 150, easing: ARRIVAL_EASING });
     return;

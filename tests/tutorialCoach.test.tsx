@@ -415,8 +415,10 @@ describe("chapter four: the other look", () => {
 
     coach("/home", "yumi-cosmic");
 
+    /* The obsidian bridge (2026-11-12): the six fold into the orbit key,
+       and the search sits just under Yumi. */
     expect(
-      screen.getByText(/Yumi OmniLexicon at the top, Menu Translator for menus and signs/),
+      screen.getByText(/orbit key beside me, Yumi OmniLexicon is just below, Menu Translator reads menus and signs/),
     ).toBeInTheDocument();
   });
 

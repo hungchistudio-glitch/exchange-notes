@@ -738,6 +738,11 @@ export type TranslationDictionary = {
       readoutLearning: string;
       languageEnglish: string;
       languageChinese: string;
+      /** The home's orbit key, which folds the six features away (Chi, 2026-11-12). */
+      orbitOpen: string;
+      orbitClose: string;
+      /** Shown once beside the key, the first time a reader meets it. */
+      orbitHint: string;
     };
     rooms: {
       lexicon: { name: string; familiar: string; description: string };

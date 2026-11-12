@@ -536,7 +536,7 @@ const italian: TranslationDictionary = {
         },
         deck: {
           body:
-            "Questo è {cosmic}: sei sistemi intorno a me, {omni} in alto, {scanner} per menù e cartelli, e la barra in basso.",
+            "Questo è {cosmic}: sono al centro, le mie sei funzioni stanno in questo tasto d’orbita accanto a me, {omni} subito sotto, {scanner} per menù e cartelli, e la barra in fondo.",
         },
         choose: {
           body:
@@ -700,6 +700,9 @@ const italian: TranslationDictionary = {
       readoutLearning: "Studio",
       languageEnglish: "Inglese",
       languageChinese: "Cinese",
+      orbitOpen: "Apri le funzioni della home",
+      orbitClose: "Chiudi le funzioni della home",
+      orbitHint: "Le tue sei funzioni sono qui",
     },
     rooms: {
       lexicon: {

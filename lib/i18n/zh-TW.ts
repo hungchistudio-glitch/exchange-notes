@@ -534,7 +534,7 @@ const traditionalChinese: TranslationDictionary = {
         },
         deck: {
           body:
-            "這是{cosmic}：六個系統圍著我，上方是{omni}，{scanner}拍菜單和招牌，底部是導覽列。",
+            "這是{cosmic}：我在正中間，六個功能收在我旁邊這顆軌道鍵裡，正下方是{omni}，{scanner}拍菜單和招牌，最底部是導覽列。",
         },
         choose: {
           body:
@@ -701,6 +701,9 @@ const traditionalChinese: TranslationDictionary = {
       readoutLearning: "學習中",
       languageEnglish: "英文",
       languageChinese: "中文",
+      orbitOpen: "展開首頁功能",
+      orbitClose: "收起首頁功能",
+      orbitHint: "六個功能收在這裡",
     },
     rooms: {
       lexicon: {

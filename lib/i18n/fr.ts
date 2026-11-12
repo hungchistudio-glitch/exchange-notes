@@ -536,7 +536,7 @@ const french: TranslationDictionary = {
         },
         deck: {
           body:
-            "Voici {cosmic} : six systèmes autour de moi, {omni} en haut, {scanner} pour les cartes et les panneaux, et la barre en bas.",
+            "Voici {cosmic} : je suis au centre, mes six fonctions se rangent dans cette touche d’orbite à côté de moi, {omni} juste en dessous, {scanner} pour les cartes et les panneaux, et la barre en bas.",
         },
         choose: {
           body:
@@ -700,6 +700,9 @@ const french: TranslationDictionary = {
       readoutLearning: "Apprentissage",
       languageEnglish: "Anglais",
       languageChinese: "Chinois",
+      orbitOpen: "Ouvrir les fonctions de l’accueil",
+      orbitClose: "Fermer les fonctions de l’accueil",
+      orbitHint: "Vos six fonctions sont ici",
     },
     rooms: {
       lexicon: {

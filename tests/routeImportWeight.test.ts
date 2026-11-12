@@ -191,10 +191,17 @@ describe("what the heaviest tabs drag in with them", () => {
    * its low and high bands each frame into lib/voice/signal.ts, a file with
    * no imports. The sea itself, its shader and its Cosmic read load behind
    * import() from each surface.
+   * Raised home 184 → 186 (2026-11-12): the Cosmic home as the obsidian
+   * bridge (Chi). Two files with no imports, lib/cosmic/homeArrival.ts (the
+   * one flag that tells the first home of a runtime, which wakes in full,
+   * from the ones after it) and lib/cosmic/disclosure.ts (the signal that
+   * keeps the home's orbit of six and the star core's rail from both being
+   * open), and the notes panel's own stylesheet in place of its utility
+   * classes. hooks/useInView.ts left the graph with the old deck's stars.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 166],
-    ["home", TABS.home, 184],
+    ["home", TABS.home, 186],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {
