@@ -5,7 +5,7 @@ import type { YumiOutfit } from "@/lib/shop/catalog";
 import { EYE_RADIUS, SHELL_RADIUS, TUBE_RADIUS } from "./anatomy";
 import { ARM_ROOT, EYE_REST, buildYumiActor } from "./actor";
 import { createOutfitRig } from "./outfit";
-import { createYumiRotation } from "./rotation";
+import { ROTATION_CRUISE_SPEED, createYumiRotation } from "./rotation";
 
 /* =========================================================
    Yumi, in three dimensions
@@ -102,6 +102,14 @@ export type YumiSceneOptions = {
 /** The stand's set views. */
 export type YumiView = "front" | "three-quarter" | "side" | "back";
 
+/** The set views, as turns of the whole of her. */
+const VIEW_EULER: Record<YumiView, THREE.Euler> = {
+  front: new THREE.Euler(0, 0, 0),
+  "three-quarter": new THREE.Euler(0.12, -0.42, 0, "YXZ"),
+  side: new THREE.Euler(0, -Math.PI / 2, 0),
+  back: new THREE.Euler(0, Math.PI, 0),
+};
+
 /** Where one of Yumi's two halves is, relative to where it sits in her. */
 export type YumiPartPose = {
   /** World units, in the plane of the shell. */
@@ -190,6 +198,18 @@ export type YumiSceneHandle = {
   setParts?(parts: YumiParts | null): void;
   /** Turn to a set view: eased, or at once. */
   setView?(view: YumiView, immediate?: boolean): void;
+  /**
+   * A still stand that comes back to a view (the Cosmic home, Chi,
+   * 2026-11-12: "停止操作後緩慢歸正"). No cruise between drags; once a
+   * release has settled and nothing has touched her for `afterMs`, she
+   * turns the shortest way back to `view` over `seconds`. A touch cancels a
+   * return under way. null gives the cruise back, for the Standard home
+   * that shares this scene.
+   */
+  setRest?(rest: { view: YumiView; afterMs: number; seconds: number } | null): void;
+  /** While held, no return starts and one under way stops where it is
+      (the orbit of six is open, the search has the focus). */
+  holdRest?(held: boolean): void;
   /** Turn her as a drag of that many pixels would, for the arrow keys. */
   rotateBy?(dxPx: number, dyPx: number): void;
 
@@ -398,6 +418,12 @@ export function createYumiScene(
       : null;
   /* A set view the stand is easing toward; any touch lets go of it. */
   let viewTarget: THREE.Quaternion | null = null;
+  /* The still stand's way back (setRest): where to, from where, since when. */
+  let rest: { to: THREE.Quaternion; afterMs: number; seconds: number } | null = null;
+  let restFrom: THREE.Quaternion | null = null;
+  let restStartedAt = 0;
+  let restHeld = false;
+  let lastTouchedAt = performance.now();
 
   /* Where she is asked to be, and where she actually is. The gap between
      them is the flight out to the middle and back. */
@@ -642,6 +668,30 @@ export function createYumiScene(
     return (anchorNow.r * upp) / SHELL_OUTER;
   }
 
+  /* The still stand: start the way back once she has been left alone long
+     enough, and ease along it, slow at both ends. */
+  function stepRest(nowMs: number) {
+    if (!rest || !rotation) return;
+    if (restHeld || dragging || orbiting || lungePhase || rotation.isMoving()) {
+      restFrom = null;
+      lastTouchedAt = nowMs;
+      return;
+    }
+    if (!restFrom) {
+      if (nowMs - lastTouchedAt < rest.afterMs || model.quaternion.angleTo(rest.to) < 0.004) return;
+      restFrom = model.quaternion.clone();
+      restStartedAt = nowMs;
+    }
+    const t = options.reducedMotion ? 1 : Math.min(1, (nowMs - restStartedAt) / (rest.seconds * 1000));
+    const eased = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+    model.quaternion.slerpQuaternions(restFrom, rest.to, eased);
+    if (t >= 1) {
+      model.quaternion.copy(rest.to);
+      restFrom = null;
+      lastTouchedAt = nowMs;
+    }
+  }
+
   let renderedWidth = 0;
   let renderedHeight = 0;
   function resize() {
@@ -739,6 +789,7 @@ export function createYumiScene(
           }
         } else if (rotation) {
           rotation.step(dt, rotationPaused || !!lungePhase || focusLevel > 0);
+          if (rest) stepRest(nowMs);
         } else if (!dragging && !orbiting && nowMs - idleSince > 3200) {
           /* Drifts back to facing you, so a reader who spun her and left
              does not come back to the inside of the shell. */
@@ -848,13 +899,21 @@ export function createYumiScene(
     outfitReady() {
       return Promise.all([...compiles.values()]).then(() => undefined);
     },
+    setRest(next) {
+      restFrom = null;
+      lastTouchedAt = performance.now();
+      rotation?.setCruise(next ? 0 : ROTATION_CRUISE_SPEED);
+      rest = next
+        ? { to: new THREE.Quaternion().setFromEuler(VIEW_EULER[next.view]), afterMs: next.afterMs, seconds: next.seconds }
+        : null;
+    },
+    holdRest(held) {
+      restHeld = held;
+      if (held) restFrom = null;
+      lastTouchedAt = performance.now();
+    },
     setView(view, immediate = false) {
-      const euler = {
-        front: new THREE.Euler(0, 0, 0),
-        "three-quarter": new THREE.Euler(0.12, -0.42, 0, "YXZ"),
-        side: new THREE.Euler(0, -Math.PI / 2, 0),
-        back: new THREE.Euler(0, Math.PI, 0),
-      }[view];
+      const euler = VIEW_EULER[view];
       rotation?.stop();
       const target = new THREE.Quaternion().setFromEuler(euler);
       if (immediate || options.reducedMotion) {
@@ -895,6 +954,9 @@ export function createYumiScene(
       if (film || parts) return;
       measureCanvas();
       idleSince = performance.now();
+      /* A touch lets go of a return under way, where it is. */
+      restFrom = null;
+      lastTouchedAt = idleSince;
       moved = 0;
       viewTarget = null;
       rotation?.begin(performance.now());

@@ -294,6 +294,18 @@
   transform: rotate(38deg);
 }
 
+/* The voice, while she listens: the orbit lights with the level the
+   microphone's own meter reads (--voice-level, written by CosmicHomeYumi
+   from lib/voice/signal.ts). Dark without it; opacity is all that moves. */
+.voiceRing {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid rgba(184, 232, 229, 0.75);
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgba(184, 232, 229, 0.35), inset 0 0 10px rgba(184, 232, 229, 0.25);
+  opacity: calc(var(--voice-level, 0) * 0.85);
+}
+
 .stage[data-orbit="open"] .orbitLine {
   border-color: rgba(184, 232, 229, 0.42);
 }

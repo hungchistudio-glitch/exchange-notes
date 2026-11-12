@@ -98,6 +98,26 @@ describe("Yumi's continuous home rotation", () => {
     expect(target.pose.angleTo(released)).toBeLessThan(0.1);
   });
 
+  it("can hold still between drags, for the Cosmic home's stand, and say when it is moving", () => {
+    const target = fixture();
+    target.orbit.setCruise(0);
+    flick(target);
+    expect(target.orbit.isMoving()).toBe(true);
+    advance(target, 6);
+    expect(target.orbit.isMoving()).toBe(false);
+    const settled = target.pose.clone();
+    advance(target, 2);
+    expect(target.pose.angleTo(settled)).toBeLessThan(0.0005);
+
+    /* Given its cruise back, the next release settles into the slow orbit. */
+    target.orbit.setCruise(ROTATION_CRUISE_SPEED);
+    flick(target);
+    advance(target, 10);
+    const cruising = target.pose.clone();
+    advance(target, 1);
+    expect(target.pose.angleTo(cruising)).toBeCloseTo(ROTATION_CRUISE_SPEED, 5);
+  });
+
   it("respects reduced motion while still allowing direct manipulation", () => {
     const target = fixture(true); flick(target, 40, 60);
     expect(target.pose.angleTo(new Quaternion())).toBeGreaterThan(0.5);

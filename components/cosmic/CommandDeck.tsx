@@ -21,7 +21,7 @@ import Screen from "@/components/foundation/layout/Screen";
 import OmniLexiconConsole, {
   type OmniLexiconState,
 } from "@/components/cosmic/OmniLexiconConsole";
-import CosmicHomeYumi from "./CosmicHomeYumi";
+import CosmicHomeYumi, { type YumiAttention } from "./CosmicHomeYumi";
 import NotesHomeModule from "@/components/notes/NotesHomeModule";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
@@ -144,6 +144,8 @@ export default function CommandDeck() {
   const [omniState, setOmniState] = useState<OmniLexiconState>("idle");
   const [open, setOpen] = useState(false);
   const [hint, setHint] = useState(false);
+  /* The search field's real focus, not a query left in it: what she looks at. */
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const { t, language: interfaceLanguage, locale } = useTranslation();
   const copy = t.cosmic;
@@ -151,6 +153,7 @@ export default function CommandDeck() {
 
   const rootRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLSpanElement>(null);
+  const stageRef = useRef<HTMLElement>(null);
   const pulseTimer = useRef(0);
   const keyRef = useRef<HTMLButtonElement>(null);
   const roomsRef = useRef<HTMLElement>(null);
@@ -295,6 +298,13 @@ export default function CommandDeck() {
 
   const count = (value: number) => (itemsLoading ? "—" : value.toLocaleString(locale));
 
+  /* Stage two (Chi, 2026-11-12): what Yumi attends to, by precedence. */
+  const attention: YumiAttention =
+    omniState === "listening" ? "listening"
+      : omniState === "scanning" ? "scanning"
+        : searchFocused ? "search"
+          : "idle";
+
   return (
     <Screen contentClassName={styles.content}>
       <div
@@ -356,6 +366,7 @@ export default function CommandDeck() {
         </dl>
 
         <section
+          ref={stageRef}
           className={styles.stage}
           aria-label={copy.deck.coreLabel}
           data-orbit={open ? "open" : "closed"}
@@ -365,11 +376,19 @@ export default function CommandDeck() {
           <span className={styles.pool} aria-hidden="true" />
           <span className={styles.orbit} aria-hidden="true">
             <span className={styles.orbitLine} />
+            <span className={styles.voiceRing} />
             <span className={styles.sweep} />
           </span>
 
           <div className={styles.yumi} data-arrive="yumi">
-            <CosmicHomeYumi paused={omniState !== "idle"} fit="stage" shrink={open} />
+            <CosmicHomeYumi
+              paused={omniState !== "idle"}
+              fit="stage"
+              shrink={open}
+              attention={attention}
+              holdRest={open || searchFocused}
+              glowRef={stageRef}
+            />
           </div>
 
           <nav
@@ -431,7 +450,16 @@ export default function CommandDeck() {
           ) : null}
         </section>
 
-        <div className={styles.search} data-arrive="text">
+        <div
+          className={styles.search}
+          data-arrive="text"
+          onFocusCapture={(event) => {
+            if ((event.target as HTMLElement).tagName === "INPUT") setSearchFocused(true);
+          }}
+          onBlurCapture={(event) => {
+            if ((event.target as HTMLElement).tagName === "INPUT") setSearchFocused(false);
+          }}
+        >
           <OmniLexiconConsole onStateChange={consoleState} />
         </div>
 
