@@ -19,6 +19,7 @@ import { track } from "@/lib/analytics/track";
 
 import NoteCard from "./NoteCard";
 import NoteComposerSheet from "./NoteComposerSheet";
+import styles from "./NotesHomeModule.module.css";
 
 export default function NotesHomeModule() {
   const { t } = useTranslation();
@@ -98,55 +99,50 @@ export default function NotesHomeModule() {
     return note;
   }
 
+  /*
+   * A quiet panel on the obsidian bridge (Chi, 2026-11-12), the home's own
+   * materials rather than a tinted card: the title with its two ways in,
+   * then the notes. With none, one short line says so, not a large empty
+   * box; the new-note key above is the way to start.
+   */
   return (
-    <section className="cosmic-notes-home rounded-[28px] border border-black/[0.06] bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">{copy.eyebrow}</p>
-          <h2 className="mt-0.5 text-xl font-bold tracking-[-0.03em]">{copy.spaceTitle}</h2>
-        </div>
+    <section className={styles.panel} aria-labelledby="home-notes-title">
+      <div className={styles.head}>
+        <h2 id="home-notes-title" className={styles.title}>{copy.spaceTitle}</h2>
+        <Link href="/notes" className={styles.all}>
+          {copy.viewAll}
+          <ArrowRight size={13} aria-hidden="true" />
+        </Link>
         <button
           type="button"
           onClick={() => {
             setComposerOpen(true);
             track("notes.composer_opened", { source: "home" });
           }}
-          className="inline-flex h-10 items-center gap-1.5 rounded-full bg-black px-4 text-xs font-semibold text-white transition-transform active:scale-95"
+          className={styles.add}
         >
-          <Plus size={15} />
+          <Plus size={15} aria-hidden="true" />
           {copy.newNote}
         </button>
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <p className="text-xs font-semibold text-ink-soft">{copy.recentTitle}</p>
-        <Link href="/notes" className="inline-flex items-center gap-1 text-xs font-semibold text-ink-soft">
-          {copy.viewAll}
-          <ArrowRight size={13} />
-        </Link>
-      </div>
-
       {loading ? (
-        <div className="mt-3 grid gap-2" aria-label={t.common.loading}>
-          {[0, 1].map((item) => <div key={item} className="h-24 animate-pulse rounded-[22px] bg-black/[0.04]" />)}
+        <div className={styles.list} aria-label={t.common.loading}>
+          {[0, 1].map((item) => <div key={item} className={styles.placeholder} />)}
         </div>
       ) : error ? (
-        <button type="button" onClick={() => void load()} className="mt-3 w-full rounded-2xl border border-line px-4 py-5 text-sm font-semibold">
+        <button type="button" onClick={() => void load()} className={styles.retry}>
           {copy.loadError} · {copy.retry}
         </button>
       ) : notes.length ? (
-        <div className="mt-3 grid gap-2">
+        <div className={styles.list}>
           {notes.map((note) => <NoteCard key={note.id} note={note} />)}
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => setComposerOpen(true)}
-          className="mt-3 w-full rounded-[22px] border border-dashed border-black/[0.12] px-4 py-7 text-center"
-        >
-          <span className="block text-sm font-semibold">{copy.emptyTitle}</span>
-          <span className="mt-1 block text-xs leading-5 text-ink-soft">{copy.emptyDescription}</span>
-        </button>
+        <p className={styles.empty}>
+          <span className={styles.emptyTitle}>{copy.emptyTitle}</span>
+          <span className={styles.emptyText}>{copy.emptyDescription}</span>
+        </p>
       )}
 
       <NoteComposerSheet open={composerOpen} onClose={() => setComposerOpen(false)} onSave={save} />

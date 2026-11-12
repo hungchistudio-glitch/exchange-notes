@@ -19,8 +19,12 @@ export type YumiRotationOptions = {
 export function createYumiRotation(
   orientation: Quaternion,
   reducedMotion = false,
-  { cruise = ROTATION_CRUISE_SPEED, damping: releaseDamping = 2.4 }: YumiRotationOptions = {},
+  { cruise: initialCruise = ROTATION_CRUISE_SPEED, damping: releaseDamping = 2.4 }: YumiRotationOptions = {},
 ) {
+  /* The speed a release settles into. Changeable: the Cosmic home holds her
+     still between drags (scene.ts setRest), the Standard home keeps her
+     turning, and the two share one scene. */
+  let cruise = initialCruise;
   const axis = new Vector3(0, 1, 0);
   const previousAxis = axis.clone();
   const velocity = new Vector3();
@@ -95,6 +99,14 @@ export function createYumiRotation(
       active = previouslyActive;
       axis.copy(previousAxis);
       speed = 0;
+    },
+    /** The speed a release now settles into: 0 for a still stand. */
+    setCruise(value: number) {
+      cruise = value;
+    },
+    /** Held, or still turning from a flick or a cruise. */
+    isMoving() {
+      return held || (active && !reducedMotion && Math.abs(speed) > 0.002);
     },
     step(seconds: number, paused = false) {
       if (held || !active || reducedMotion) return;

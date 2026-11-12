@@ -17,6 +17,7 @@ import s from "./CosmicCoreNavigation.module.css";
 import useCosmicCoreGesture from "./useCosmicCoreGesture";
 import useCosmicCoreScrollFade from "./useCosmicCoreScrollFade";
 import useRailScrub from "./useRailScrub";
+import { announceOpened, closeWhenOtherOpens } from "@/lib/cosmic/disclosure";
 
 /* =========================================================
    Cosmic mode's navigation: one core, six keys
@@ -94,6 +95,10 @@ export default function CosmicCoreNavigation({ items, label, routeKey, design = 
     setShowLabel(false);
     setScrubbing(false);
   }
+
+  /* The Cosmic home's orbit of six opening closes the rail: only one set
+     of six is ever open (lib/cosmic/disclosure.ts). */
+  useEffect(() => closeWhenOtherOpens("core-rail", () => setOpen(false)), []);
 
   const root = useRef<HTMLDivElement>(null);
   const core = useRef<HTMLButtonElement>(null);
@@ -190,6 +195,7 @@ export default function CosmicCoreNavigation({ items, label, routeKey, design = 
       setShowLabel(false);
       setHovered(null);
       setOpen(true);
+      announceOpened("core-rail");
       setDragging(true);
     },
     onHover: index => {
@@ -327,7 +333,8 @@ export default function CosmicCoreNavigation({ items, label, routeKey, design = 
           if (consumeClick(event.detail)) return;
           setSelected(null);
           setHovered(null);
-          setOpen(value => !value);
+          if (!open) announceOpened("core-rail");
+          setOpen(!open);
         }}
         onContextMenu={event => event.preventDefault()}
         {...pointerHandlers}

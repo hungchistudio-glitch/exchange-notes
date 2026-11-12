@@ -1,0 +1,114 @@
+/* The reader's notes on the Cosmic home's obsidian bridge (Chi,
+   2026-11-12): a quiet panel in the home's own materials. The bridge's
+   tokens are inherited, with the same values as fallbacks. */
+
+.panel {
+  padding: 0.75rem 0.85rem 0.85rem;
+  border: 1px solid var(--ob-line, #34444e);
+  border-radius: 16px;
+  background: var(--ob-panel, #101820);
+  color: var(--ob-ink, #e4ecee);
+}
+
+/* The title and its two ways in; at a large text size they wrap rather
+   than run into each other. */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 0.5rem;
+}
+
+.title {
+  flex: 1 0 auto;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 44px;
+  padding: 0 0.35rem;
+  color: var(--ob-ink-2, #a9bac2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  border: 1px solid color-mix(in oklab, var(--ob-ice, #b8e8e5) 55%, transparent);
+  border-radius: 999px;
+  color: var(--ob-ice, #b8e8e5);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.add:active {
+  transform: scale(0.95);
+}
+
+.add:focus-visible,
+.all:focus-visible,
+.retry:focus-visible {
+  outline: 2px solid var(--ob-ice, #b8e8e5);
+  outline-offset: 2px;
+}
+
+.list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.placeholder {
+  height: 3.5rem;
+  border-radius: 12px;
+  background: rgba(228, 236, 238, 0.05);
+}
+
+.retry {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--ob-line, #34444e);
+  border-radius: 12px;
+  color: var(--ob-ink, #e4ecee);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* None yet: one short line, not a large empty box. */
+.empty {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.4rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.emptyTitle {
+  font-weight: 600;
+}
+
+.emptyText {
+  color: var(--ob-ink-2, #a9bac2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .add {
+    transition: none;
+  }
+}

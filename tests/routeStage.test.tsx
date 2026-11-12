@@ -125,6 +125,41 @@ describe("the stage every protected route is played on", () => {
     expect(screen.getByText("a screen")).toBeInTheDocument();
   });
 
+  it("leaves a page that owns its whole arrival alone, and still fades the others in", () => {
+    /* The Cosmic home plays its own wake and return (2026-11-12): the
+       stage's fade on top of it would be two arrivals at once. A page that
+       only plays its own content (the games, the shop) still gets the
+       stage's short fade. */
+    const view = render(
+      <RouteStage>
+        <p>a screen</p>
+      </RouteStage>,
+    );
+
+    route.pathname = "/home";
+    view.rerender(
+      <RouteStage>
+        <div data-own-arrival="whole">the home</div>
+      </RouteStage>,
+    );
+    route.pathname = "/vocabulary";
+    view.rerender(
+      <RouteStage>
+        <div data-own-arrival="whole">the home</div>
+      </RouteStage>,
+    );
+    expect(stageAnimations()).toHaveLength(0);
+
+    route.pathname = "/hangyumi";
+    view.rerender(
+      <RouteStage>
+        <div data-own-arrival="">a game</div>
+      </RouteStage>,
+    );
+    expect(stageAnimations()).toHaveLength(1);
+    expect(stageAnimations()[0]).toMatchObject({ duration: 150 });
+  });
+
   it("does not animate underneath the opening", () => {
     // Reported as the home screen flashing before the opening appeared.
     setLaunching(true);

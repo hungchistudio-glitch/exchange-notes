@@ -39,6 +39,20 @@ describe("the disclosure", () => {
     expect(core()).toHaveFocus();
   });
 
+  it("is never open beside the Cosmic home's orbit of six, and says when it opens", async () => {
+    const { act } = await import("@testing-library/react");
+    const { announceOpened, closeWhenOtherOpens } = await import("@/lib/cosmic/disclosure");
+    const orbitClosed = vi.fn();
+    const stop = closeWhenOtherOpens("home-orbit", orbitClosed);
+    render(<CosmicCoreNavigation items={items} label="Controls" />);
+    fireEvent.click(core());
+    expect(core()).toHaveAttribute("aria-expanded", "true");
+    expect(orbitClosed).toHaveBeenCalledTimes(1);
+    act(() => announceOpened("home-orbit"));
+    expect(core()).toHaveAttribute("aria-expanded", "false");
+    stop();
+  });
+
   it("closes on a tap outside, and keeps real links and their badges", () => {
     render(<CosmicCoreNavigation items={items} label="Controls" />);
     fireEvent.click(core());
