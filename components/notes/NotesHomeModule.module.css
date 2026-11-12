@@ -66,10 +66,32 @@
   outline-offset: 2px;
 }
 
+/* One column exactly the panel's width. A grid's implicit column is as
+   wide as its widest unbreakable content, so a note holding a long link
+   used to push its card past the panel (Chi, 2026-11-12). */
 .list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.5rem;
   margin-top: 0.5rem;
+}
+
+/* A note inside the panel, in the panel's own proportions: the smaller
+   radius, tighter padding and hairline of the obsidian bridge, rather
+   than the Notes page's large card set inside a smaller frame. Three
+   selectors deep to outrank the Cosmic note card's own colours
+   (app/cosmic.css). */
+.panel .list .note {
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--ob-ice, #b8e8e5) 12%, transparent);
+  background: color-mix(in oklab, var(--ob-ink, #e4ecee) 3%, transparent);
+  box-shadow: none;
+}
+
+.panel .list .note:focus-visible {
+  outline: 2px solid var(--ob-ice, #b8e8e5);
+  outline-offset: 2px;
 }
 
 .placeholder {

@@ -10,6 +10,7 @@ import AppHeader from "@/components/foundation/layout/AppHeader";
 import Screen from "@/components/foundation/layout/Screen";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import NoteCard from "@/components/notes/NoteCard";
+import homeNotesStyles from "@/components/notes/NotesHomeModule.module.css";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import type { InterfaceMode } from "@/lib/appPreferences";
 import type { LanguageCode } from "@/lib/languages";
@@ -141,6 +142,26 @@ export default function CosmicSurfacesReview({ storedMode }: { storedMode: Inter
               <TextArea rows={2} disabled defaultValue="Preview unavailable state · 預覽停用狀態" />
             </label>
           </Card>
+
+          {/* The Cosmic home's notes panel, with a note whose long link sits
+              past its third line: it used to push the card out of the panel
+              (Chi, 2026-11-12). */}
+          <section className={homeNotesStyles.panel} data-review-home-notes="">
+            <h2 className={homeNotesStyles.title}>Home notes panel</h2>
+            <div className={homeNotesStyles.list}>
+              <NoteCard
+                className={homeNotesStyles.note}
+                note={{
+                  ...PREVIEW_NOTES[0].note,
+                  id: "preview-only-long-link",
+                  originalText:
+                    "📰 Nato head: Britain must show ‘credible path’ of annual defence budget increases\n...\nhttps://www.theguardian.com/politics/2026/sep/22/nato-head-britain-credible-path-annual-defence-budget-increases",
+                  personalMeaning: "北約秘書長：英國必須為國防預算年度增長提供「可行路徑」，以在2035年前達到估計目標。",
+                }}
+              />
+              <NoteCard note={PREVIEW_NOTES[1].note} className={homeNotesStyles.note} />
+            </div>
+          </section>
 
           <section className="space-y-4" aria-labelledby="preview-notes-title">
             <div>

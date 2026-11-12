@@ -734,3 +734,132 @@
     transition-duration: 1ms !important;
   }
 }
+
+/* =========================================================
+   Yumi Cosmic: obsidian (Chi, 2026-11-12)
+
+   The deck kept its paper frame in Cosmic, a cream panel that was the
+   brightest thing on a dark page, as Daily Focus was. Same layout, same
+   motion; only the material changes, to the obsidian bridge's tokens
+   (components/cosmic/CommandDeck.module.css): panel #101820, hairline
+   #34444e, ink #e4ecee, ice #b8e8e5. The three card tones stay three, as
+   obsidian, deep obsidian and steel, so the deck still reads as a stack.
+   ========================================================= */
+
+:global(html[data-interface-mode="yumi-cosmic"]) .deckSurface {
+  --deck-accent: 184 232 229;
+  border-color: #34444e;
+  background:
+    radial-gradient(circle at 50% 34%, rgb(var(--deck-accent) / 0.1), transparent 36%),
+    radial-gradient(circle at 18% 68%, rgb(var(--deck-accent) / 0.05), transparent 30%),
+    linear-gradient(155deg, #121c24 0%, #0c1218 52%, #101820 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(228, 236, 238, 0.06),
+    0 24px 55px rgba(0, 0, 0, 0.34);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .deckSurface::before {
+  background:
+    conic-gradient(
+      from 122deg at 50% 50%,
+      transparent 0deg,
+      rgb(var(--deck-accent) / 0.05) 42deg,
+      transparent 100deg,
+      rgb(var(--deck-accent) / 0.08) 168deg,
+      transparent 236deg,
+      rgb(var(--deck-accent) / 0.05) 310deg,
+      transparent 360deg
+    );
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .deckSurface::after {
+  background:
+    linear-gradient(112deg, rgba(184, 232, 229, 0.06), transparent 24%, transparent 75%, rgba(184, 232, 229, 0.03)),
+    repeating-linear-gradient(96deg, rgba(228, 236, 238, 0.012) 0 1px, transparent 1px 5px);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .card {
+  --card-bg: #142029;
+  --card-fg: #e4ecee;
+  --card-muted: rgba(228, 236, 238, 0.62);
+  --card-line: rgba(184, 232, 229, 0.14);
+  --card-panel: rgba(228, 236, 238, 0.05);
+  --card-control: rgba(228, 236, 238, 0.08);
+  /* The selected reading: deep ice glass, not a solid block of ice. */
+  --card-control-strong: color-mix(in oklab, #b8e8e5 24%, #101820);
+  --card-control-strong-fg: #e4ecee;
+  border-color: rgba(184, 232, 229, 0.16);
+  background:
+    radial-gradient(circle at 76% 14%, rgba(184, 232, 229, 0.1), transparent 30%),
+    linear-gradient(148deg, #1a2833 0%, #101820 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(228, 236, 238, 0.08),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 20px 36px rgba(0, 0, 0, 0.32);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .card[data-tone="ink"] {
+  border-color: rgba(184, 232, 229, 0.12);
+  background:
+    radial-gradient(circle at 73% 12%, rgba(184, 232, 229, 0.08), transparent 28%),
+    radial-gradient(circle at 24% 78%, rgb(var(--deck-accent) / 0.1), transparent 30%),
+    linear-gradient(148deg, #182129 0%, #0b1015 58%, #06090c 100%);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .card[data-tone="silver"] {
+  --card-bg: #1f2a31;
+  --card-muted: rgba(228, 236, 238, 0.66);
+  background:
+    linear-gradient(112deg, rgba(184, 232, 229, 0.1), transparent 31%, rgba(184, 232, 229, 0.04) 62%, transparent),
+    linear-gradient(148deg, #27333b 0%, #172028 47%, #212c34 100%);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .navButton {
+  border-color: #34444e;
+  color: #a9bac2;
+  background: rgba(16, 24, 32, 0.8);
+  box-shadow: none;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .counter {
+  color: #a9bac2;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .loading,
+:global(html[data-interface-mode="yumi-cosmic"]) .empty {
+  border-color: #34444e;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(184, 232, 229, 0.08), transparent 30%),
+    #101820;
+  box-shadow: none;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .skeletonLine,
+:global(html[data-interface-mode="yumi-cosmic"]) .skeletonTitle,
+:global(html[data-interface-mode="yumi-cosmic"]) .skeletonPanel {
+  background: linear-gradient(90deg, rgba(228, 236, 238, 0.05), rgba(184, 232, 229, 0.12), rgba(228, 236, 238, 0.05));
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .emptyEyebrow {
+  color: #a9bac2;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .emptyTitle {
+  color: #e4ecee;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .emptyDescription {
+  color: rgba(228, 236, 238, 0.7);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .emptyPrimary {
+  color: #0b1116;
+  background: #b8e8e5;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .emptySecondary {
+  border-color: #34444e;
+  color: #e4ecee;
+  background: rgba(228, 236, 238, 0.05);
+}

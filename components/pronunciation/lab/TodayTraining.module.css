@@ -1,0 +1,36 @@
+/*
+ * Today's training, in Yumi Cosmic: obsidian (Chi, 2026-11-12).
+ *
+ * The card is drawn `bg-black text-white`, and Cosmic swaps those two
+ * tokens, so on a dark page it came out as a cream card. Same layout; the
+ * obsidian bridge's material instead (panel #101820, hairline #34444e,
+ * ink #e4ecee, ice #b8e8e5), as Daily Focus has.
+ *
+ * Its text uses `text-ink-invert-*`, which Cosmic draws dark (on the
+ * cream it used to be). The utilities compile straight to --ink-invert-*
+ * (the theme maps them inline), so the card sets those; the --color-*
+ * names too, in case the mapping ever stops being inline. Standard Mode
+ * is untouched.
+ */
+:global(html[data-interface-mode="yumi-cosmic"]) .training {
+  --ink-invert-faint: #a9bac2;
+  --ink-invert-soft: #c4d2d6;
+  --color-ink-invert-faint: #a9bac2;
+  --color-ink-invert-soft: #c4d2d6;
+  border-color: #34444e;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(184, 232, 229, 0.07), transparent 42%),
+    #101820;
+  color: #e4ecee;
+}
+
+/* The one action, as Daily Focus's: an ice hairline pill. */
+:global(html[data-interface-mode="yumi-cosmic"]) .start {
+  border: 1px solid color-mix(in oklab, #b8e8e5 55%, transparent);
+  background: color-mix(in oklab, #b8e8e5 9%, transparent);
+  color: #b8e8e5;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .start:focus-visible {
+  outline-color: #b8e8e5;
+}
