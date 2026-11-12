@@ -17,3 +17,8 @@
 "intent.parameter.text" = "文字";
 "intent.parameter.language" = "語言";
 "intent.parameter.direction" = "方向";
+
+// Pocket lookup shortcuts
+"intent.pocket.title" = "Yumi 隨行查字";
+"intent.pocket.description" = "開啟 Exchange Notes 查字。";
+"intent.pocket.voice" = "語音查字";

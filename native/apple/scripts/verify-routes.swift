@@ -57,6 +57,11 @@ enum VerifyExchangeNotesRoutes {
             expectedPath: "/pronunciation"
         )
 
+        verify(deepLink: "exchangenotes://lookup?input=voice", expectedPath: "/lookup", expectedQueryItems: [URLQueryItem(name: "input", value: "voice")])
+        verify(deepLink: "exchangenotes://lookup?input=bogus&query=private&redirect=https://example.com", expectedPath: "/lookup", expectedQueryItems: [URLQueryItem(name: "input", value: "text")])
+        let lookup = ExchangeNotesRoute.webURL(for: URL(string: "exchangenotes://lookup?query=private&token=secret&widgetNonce=injected")!)
+        let keys = URLComponents(url: lookup, resolvingAgainstBaseURL: false)?.queryItems?.map(\.name) ?? []
+        guard keys.sorted() == ["input", "widgetNonce"] else { fail("Lookup must discard untrusted payloads") }
         print("Native deep-link route verification passed.")
     }
 

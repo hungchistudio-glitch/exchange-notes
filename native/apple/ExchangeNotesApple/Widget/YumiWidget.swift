@@ -3290,5 +3290,6 @@ private struct ExactYumiMark: View {
 struct YumiWidgetBundle: WidgetBundle {
     var body: some Widget {
         YumiDailyWidget()
+        PocketLookupWidget()
     }
 }

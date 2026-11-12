@@ -14,6 +14,31 @@ export type TranslationLanguage = InterfaceLanguage;
 export type StoryAct = { name: string; title: string; text: string };
 
 export type TranslationDictionary = {
+  pocket: {
+    shareTitle: string;
+    shareNote: string;
+    title: string;
+    home: string;
+    search: string;
+    placeholder: string;
+    voice: string;
+    source: string;
+    target: string;
+    swap: string;
+    speak: string;
+    searching: string;
+    failed: string;
+    result: string;
+    save: string;
+    saved: string;
+    saving: string;
+    empty: string;
+    voiceReady: string;
+    voiceStart: string;
+    voiceUnavailable: string;
+    preview: string;
+    saveFailed: string;
+  };
   info: InfoCopy;
   /**
    * What the app says when there is no network.

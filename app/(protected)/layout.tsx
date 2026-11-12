@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth/currentUser";
 import NativePushRegister from "@/app/components/NativePushRegister";
 import ServiceWorkerRegister from "@/app/components/ServiceWorkerRegister";
 import AccountPreferencesSync from "@/components/foundation/AccountPreferencesSync";
+import PocketPreferencesSync from "@/components/pocket/PocketPreferencesSync";
 import AppUpdateWatcher from "@/components/foundation/AppUpdateWatcher";
 import DeviceTimeZoneSync from "@/components/foundation/DeviceTimeZoneSync";
 import RouteStage from "@/components/foundation/layout/RouteStage";
@@ -157,6 +158,7 @@ export default async function ProtectedLayout({
           stored={preferencesUnread ? undefined : (preferencesRow?.app_preferences ?? null)}
         />
 
+        <PocketPreferencesSync />
         <DeviceTimeZoneSync userId={user.id} />
 
         {/*

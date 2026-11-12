@@ -7,6 +7,31 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
  * lib/i18n/types.ts still enforces completeness at build time.
  */
 const italian: TranslationDictionary = {
+  pocket: {
+    shareTitle: "Cerca il testo condiviso",
+    shareNote: "Solo dizionario integrato. Questa vista non salva parole; salvale nell’app.",
+    title: "Yumi · Ricerca rapida",
+    home: "Torna alla home",
+    search: "Cerca",
+    placeholder: "Cerca una nuova parola…",
+    voice: "Ricerca vocale",
+    source: "Lingua di studio",
+    target: "Lingua della traduzione",
+    swap: "Scambia le lingue",
+    speak: "Ascolta la pronuncia",
+    searching: "Ricerca in corso…",
+    failed: "Nessuna risposta. Controlla la lingua o riprova.",
+    result: "Risultato bilingue",
+    save: "Salva parola",
+    saved: "Salvata",
+    saving: "Salvataggio…",
+    empty: "Una parola incontrata. Un piccolo mondo da conservare.",
+    voiceReady: "Di’ la parola che hai appena sentito.",
+    voiceStart: "Inizia a parlare",
+    voiceUnavailable: "La voce non è disponibile qui. Puoi scrivere.",
+    preview: "Anteprima locale · dizionario integrato. Account e premi restano invariati.",
+    saveFailed: "Impossibile salvare. Riprova."
+  },
   info,
   offline: {
     title: "Sei offline",

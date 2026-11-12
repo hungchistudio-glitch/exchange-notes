@@ -15,6 +15,8 @@ struct ExchangeNotesWebView: UIViewRepresentable {
         let configuration =
             WKWebViewConfiguration()
 
+        configuration.userContentController.add(context.coordinator, name: "yumiPocketPreferences")
+
         configuration.websiteDataStore =
             .default()
 
@@ -91,6 +93,7 @@ struct ExchangeNotesWebView: UIViewRepresentable {
             )
 #endif
 
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "yumiPocketPreferences")
         webView.navigationDelegate = nil
     }
 
@@ -175,6 +178,13 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                 sourceWebView === expectedWebView,
                 isTrusted(sourceWebView.url)
             else {
+                return
+            }
+
+            if message.name == "yumiPocketPreferences" {
+                if let body = message.body as? [String: Any], let preferences = PocketPreferences(payload: body), preferences.saveIfChanged() {
+                    WidgetCenter.shared.reloadTimelines(ofKind: "YumiPocketLookup")
+                }
                 return
             }
 

@@ -275,6 +275,10 @@ export default function ProtectedNav() {
    * ring. "pending" still hides it: the dock must not flash in during the
    * second the scene is starting. See lib/home/yumiRing.
    */
+  // Yumi Pocket Lookup is one task on its own screen, opened from the
+  // iPhone widget: no dock (Chi, 2026-11-12).
+  if (pathname === "/lookup") return null;
+
   if (!isCosmic && pathname === "/home" && ringState !== "failed") {
     return null;
   }

@@ -2,6 +2,31 @@ import info from "@/lib/i18n/info/es";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const spanish: TranslationDictionary = {
+  pocket: {
+    shareTitle: "Consultar texto compartido",
+    shareNote: "Solo diccionario integrado. Esta vista no guarda palabras; guárdalas en la app.",
+    title: "Yumi · Consulta rápida",
+    home: "Volver al inicio",
+    search: "Consultar",
+    placeholder: "Busca una palabra…",
+    voice: "Consulta por voz",
+    source: "Idioma de aprendizaje",
+    target: "Idioma de traducción",
+    swap: "Intercambiar idiomas",
+    speak: "Reproducir pronunciación",
+    searching: "Buscando…",
+    failed: "Aún no hay respuesta. Comprueba el idioma o inténtalo de nuevo.",
+    result: "Resultado bilingüe",
+    save: "Guardar palabra",
+    saved: "Guardada",
+    saving: "Guardando…",
+    empty: "Una palabra que encuentras. Un pequeño mundo que conservar.",
+    voiceReady: "Di la palabra que acabas de oír.",
+    voiceStart: "Empezar a hablar",
+    voiceUnavailable: "La voz no está disponible aquí. Puedes escribir.",
+    preview: "Vista previa local · diccionario integrado. No cambia la cuenta ni las recompensas.",
+    saveFailed: "No se pudo guardar. Inténtalo de nuevo."
+  },
   info,
   offline: {
     title: "Estás sin conexión",

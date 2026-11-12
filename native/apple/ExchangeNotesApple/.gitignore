@@ -5,3 +5,6 @@ build/
 xcuserdata/
 App/Info.plist
 Widget/Info.plist
+
+Share/Info.plist
+Share/Resources/pocket-lexicon.json

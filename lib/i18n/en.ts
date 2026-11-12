@@ -2,6 +2,31 @@ import info from "@/lib/i18n/info/en";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const english: TranslationDictionary = {
+  pocket: {
+    shareTitle: "Share selected text",
+    shareNote: "Built-in dictionary only. This share preview does not save words; use the app to save.",
+    title: "Yumi Pocket Lookup",
+    home: "Back to home",
+    search: "Look up",
+    placeholder: "Look up a new word…",
+    voice: "Voice lookup",
+    source: "Learning language",
+    target: "Translation language",
+    swap: "Swap languages",
+    speak: "Play pronunciation",
+    searching: "Looking up…",
+    failed: "No answer yet. Check the language or try again.",
+    result: "Bilingual result",
+    save: "Save word",
+    saved: "Saved",
+    saving: "Saving…",
+    empty: "A word you meet. A little world to keep.",
+    voiceReady: "Say the word you just heard.",
+    voiceStart: "Start speaking",
+    voiceUnavailable: "Voice input is unavailable here. You can type instead.",
+    preview: "Local preview · built-in dictionary. No account or rewards are changed.",
+    saveFailed: "Could not save. Please try again."
+  },
   info,
   offline: {
     title: "You are offline",

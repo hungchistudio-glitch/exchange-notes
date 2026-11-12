@@ -185,3 +185,32 @@ export function useLearningLanguageContext() {
 
   return context;
 }
+
+/**
+ * A pair for one screen only: Yumi Pocket Lookup lets a lookup use another
+ * pair without changing what the account studies (Chi, 2026-11-12).
+ * Everything under it that reads the learning language reads this pair;
+ * `apply` changes it here and writes nothing.
+ */
+export function LocalLearningLanguageProvider({
+  children,
+  pair,
+  onPair,
+}: {
+  children: ReactNode;
+  pair: readonly [LanguageCode, LanguageCode];
+  onPair: (learning: LanguageCode, native: LanguageCode) => void;
+}) {
+  const value = useMemo(
+    () => ({
+      learningLanguage: pair[0],
+      nativeLanguage: pair[1],
+      languagePair: pair,
+      apply: onPair,
+      loading: false,
+      refresh: async () => {},
+    }),
+    [pair, onPair],
+  );
+  return <LearningLanguageContext.Provider value={value}>{children}</LearningLanguageContext.Provider>;
+}

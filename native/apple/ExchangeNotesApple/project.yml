@@ -76,6 +76,7 @@ targets:
 
     dependencies:
       - target: YumiWidgetExtension
+      - target: PocketShareExtension
 
   YumiWidgetExtension:
     type: app-extension
@@ -114,12 +115,75 @@ targets:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
+  PocketShareExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Share
+        excludes:
+          - Resources
+          - PocketShare.entitlements
+      - path: Share/Resources
+        buildPhase: resources
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: art.hungchi.exchangenotes.pocketshare
+        PRODUCT_NAME: PocketShareExtension
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: Share/PocketShare.entitlements
+        REGISTER_APP_GROUPS: YES
+      configs:
+        Personal:
+          DEVELOPMENT_TEAM: 249MSJ3P8Z
+    info:
+      path: Share/Info.plist
+      properties:
+        CFBundleDisplayName: Exchange Notes
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).ShareViewController"
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
+
+  PocketReview:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Preview
+      - path: Shared
+      - path: Share
+        excludes:
+          - Resources
+          - Info.plist
+          - PocketShare.entitlements
+      - path: Share/Resources
+        buildPhase: resources
+      - path: Widget/PocketLookupWidget.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: art.hungchi.exchangenotes.pocketreview
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGNING_ALLOWED: NO
+        SKIP_INSTALL: YES
+
+
 schemes:
   ExchangeNotes:
     build:
       targets:
         ExchangeNotes: all
         YumiWidgetExtension: all
+        PocketShareExtension: all
     run:
       config: Debug
     archive:
@@ -130,7 +194,15 @@ schemes:
       targets:
         ExchangeNotes: all
         YumiWidgetExtension: all
+        PocketShareExtension: all
     run:
       config: Personal
     archive:
       config: Personal
+
+  PocketReview:
+    build:
+      targets:
+        PocketReview: all
+    run:
+      config: Debug

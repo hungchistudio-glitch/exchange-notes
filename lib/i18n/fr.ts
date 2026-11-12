@@ -7,6 +7,31 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
  * lib/i18n/types.ts still enforces completeness at build time.
  */
 const french: TranslationDictionary = {
+  pocket: {
+    shareTitle: "Rechercher le texte partagé",
+    shareNote: "Dictionnaire intégré uniquement. Cette vue ne conserve pas les mots ; enregistrez-les dans l’app.",
+    title: "Yumi · Recherche express",
+    home: "Retour à l’accueil",
+    search: "Rechercher",
+    placeholder: "Chercher un nouveau mot…",
+    voice: "Recherche vocale",
+    source: "Langue d’apprentissage",
+    target: "Langue de traduction",
+    swap: "Inverser les langues",
+    speak: "Écouter la prononciation",
+    searching: "Recherche en cours…",
+    failed: "Aucune réponse pour le moment. Vérifiez la langue ou réessayez.",
+    result: "Résultat bilingue",
+    save: "Enregistrer le mot",
+    saved: "Enregistré",
+    saving: "Enregistrement…",
+    empty: "Un mot rencontré. Un petit monde à garder.",
+    voiceReady: "Dites le mot que vous venez d’entendre.",
+    voiceStart: "Commencer à parler",
+    voiceUnavailable: "La saisie vocale est indisponible ici. Vous pouvez écrire.",
+    preview: "Aperçu local · dictionnaire intégré. Aucun compte ni récompense modifiés.",
+    saveFailed: "Échec de l’enregistrement. Réessayez."
+  },
   info,
   offline: {
     title: "Vous êtes hors ligne",

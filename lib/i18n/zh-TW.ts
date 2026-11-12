@@ -2,6 +2,31 @@ import info from "@/lib/i18n/info/zh-TW";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const traditionalChinese: TranslationDictionary = {
+  pocket: {
+    shareTitle: "分享文字查字",
+    shareNote: "使用內建離線字典。分享試閱不會收藏單字；收藏請在 App 完成。",
+    title: "Yumi 隨行查字",
+    home: "回到主頁",
+    search: "查字",
+    placeholder: "查一個新單字…",
+    voice: "語音查字",
+    source: "學習語言",
+    target: "翻譯語言",
+    swap: "交換語言",
+    speak: "播放發音",
+    searching: "查詢中…",
+    failed: "尚未找到解釋，請確認語言或重試。",
+    result: "雙語解釋",
+    save: "收藏單字",
+    saved: "已收藏",
+    saving: "收藏中…",
+    empty: "讓剛遇見的單字，留下來。",
+    voiceReady: "說出你剛聽到的字。",
+    voiceStart: "開始說話",
+    voiceUnavailable: "此環境無法使用語音，請改用輸入查字。",
+    preview: "本機試閱・內建字典，不會修改帳號或獎勵。",
+    saveFailed: "無法收藏，請再試一次。"
+  },
   info,
   offline: {
     title: "目前離線",
