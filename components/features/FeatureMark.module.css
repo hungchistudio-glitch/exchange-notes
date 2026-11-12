@@ -59,7 +59,7 @@
       color-mix(in oklab, var(--mark-tone) 34%, transparent) 0%,
       transparent 74%
     ),
-    #17171c;
+    #101820;
   box-shadow:
     0 6px 16px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 color-mix(in oklab, var(--mark-tone) 16%, transparent);

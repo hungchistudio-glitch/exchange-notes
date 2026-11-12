@@ -36,7 +36,7 @@ export default function NoteCard({
   return (
     <Link
       href={`/notes/${note.id}`}
-      className={`cosmic-note-card block min-w-0 rounded-[24px] border border-black/[0.06] bg-white p-4 shadow-sm transition-transform active:scale-[0.99] ${className}`}
+      className={`cosmic-note-card ob-edge block min-w-0 rounded-[24px] border border-black/[0.06] bg-white p-4 shadow-sm transition-transform active:scale-[0.99] ${className}`}
     >
       <div className="flex items-center justify-between gap-3">
         <span className="inline-flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">

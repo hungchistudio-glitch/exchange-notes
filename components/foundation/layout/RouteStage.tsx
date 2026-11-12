@@ -20,6 +20,7 @@ import {
   inView,
 } from "@/lib/motion/pageArrival";
 import { announceRouteArrival } from "@/lib/motion/featureFlight";
+import { playLiquidArrival } from "@/lib/motion/liquidArrival";
 
 /**
  * The stage every protected route is played on.
@@ -97,6 +98,12 @@ function arrive(stage: HTMLElement) {
   // A feature's key is flying to this page's title (lib/motion/
   // featureFlight.ts): nothing may move under it, so the layers only fade.
   const landing = document.documentElement.hasAttribute("data-feature-flight");
+  // Yumi Cosmic: the page comes up under a rising liquid (lib/motion/
+  // liquidArrival.ts; Chi, 2026-11-12). Standard keeps the float-up below.
+  if (!landing && document.documentElement.dataset.interfaceMode === "yumi-cosmic") {
+    playLiquidArrival(layers, holdsFixed);
+    return;
+  }
   layers.forEach((layer, index) => {
     const rise = !landing && !holdsFixed(layer);
     layer.animate(

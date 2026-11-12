@@ -85,7 +85,8 @@ export default function ConversationRow({
       href={href}
       onClick={onOpen}
       aria-label={insertValues(copy.hub.openConversation, { name })}
-      className="flex min-h-[76px] items-center gap-3.5 rounded-[20px] border px-4 py-3.5 transition-colors sm:min-h-[88px] sm:gap-4 sm:px-5"
+      data-liquid-option=""
+      className="ob-edge flex min-h-[76px] items-center gap-3.5 rounded-[20px] border px-4 py-3.5 transition-colors sm:min-h-[88px] sm:gap-4 sm:px-5"
       style={{
         background: hasUnread
           ? "var(--msg-accent-soft)"

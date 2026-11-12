@@ -29,8 +29,8 @@
   animation: launchVeil 700ms cubic-bezier(0.4, 0, 0.2, 1) both;
   background: radial-gradient(
     circle at 50% 44%,
-    color-mix(in oklab, var(--cosmic-violet, #e5add2) 14%, #17171c) 0%,
-    rgba(8, 9, 11, 0.92) 70%
+    color-mix(in oklab, var(--cosmic-violet, #e5add2) 14%, #101820) 0%,
+    rgba(8, 11, 16, 0.92) 70%
   );
 }
 

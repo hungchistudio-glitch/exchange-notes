@@ -43,7 +43,7 @@ export default function SettingsSection({
       {bare ? (
         children
       ) : (
-        <div className="settings-panel divide-y divide-black/[0.05] overflow-hidden rounded-[18px] border border-black/[0.06] bg-white">
+        <div className="settings-panel ob-edge divide-y divide-black/[0.05] overflow-hidden rounded-[18px] border border-black/[0.06] bg-white">
           {children}
         </div>
       )}

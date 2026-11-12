@@ -1,33 +1,40 @@
 /* Yumi Cosmic — obsidian, soft light, precise instruments.
  * Keep every public token: all routes share the same data and components.
  * The mode attribute scopes both the palette and the surface treatments.
+ *
+ * The palette is the obsidian bridge's (Chi, 2026-11-12: every Cosmic page
+ * in one material): blue-black panels (#101820), a slate hairline
+ * (#34444e), cool ink (#e4ecee) and ice (#b8e8e5). It used to be a violet
+ * grey, and only the home, Daily Focus and the Lab cards were obsidian.
+ * The feature hues (violet, blue, amber, teal) stay: they name kinds of
+ * things, not the material.
  */
 html[data-interface-mode="yumi-cosmic"] {
-  --color-white: #17171c;
-  --color-black: #f5f2f0;
-  --background: #08090b;
-  --foreground: #f5f2f0;
-  --surface: #202026;
-  --line: #38363e;
+  --color-white: #101820;
+  --color-black: #e4ecee;
+  --background: #080b10;
+  --foreground: #e4ecee;
+  --surface: #16212a;
+  --line: #34444e;
   --font-sans: var(--font-geist-sans), var(--font-cjk), Arial, sans-serif;
 
   /* Vocabulary still consumes the legacy card contract. Keep its surfaces
      opaque and its hover state in this palette as well. */
   --en-surface: var(--cosmic-surface-card);
   --en-surface-secondary: var(--cosmic-surface-instrument);
-  --en-page-elevated: #302b36;
-  --en-surface-hover: #302b36;
-  --en-border: #3d3643;
-  --en-border-strong: #756678;
-  --en-text-primary: #f5f2f0;
+  --en-page-elevated: #1c2a34;
+  --en-surface-hover: #1c2a34;
+  --en-border: #34444e;
+  --en-border-strong: #71858d;
+  --en-text-primary: #e4ecee;
   --yumi-canvas: var(--yumi-canvas-dark);
   --yumi-mark: var(--yumi-mark-dark);
 
-  --cosmic-cyan: #bce7d7;
-  --cosmic-cyan-dim: rgba(188, 231, 215, 0.35);
-  --cosmic-ring: rgba(229, 221, 231, 0.17);
-  --cosmic-glow: rgba(188, 231, 215, 0.1);
-  --cosmic-star: rgba(245, 242, 240, 0.6);
+  --cosmic-cyan: #b8e8e5;
+  --cosmic-cyan-dim: rgba(184, 232, 229, 0.35);
+  --cosmic-ring: rgba(184, 214, 222, 0.17);
+  --cosmic-glow: rgba(184, 232, 229, 0.1);
+  --cosmic-star: rgba(228, 236, 238, 0.6);
   --cosmic-violet: #e5add2;
   --cosmic-violet-dim: rgba(229, 173, 210, 0.3);
   --cosmic-blue: #809cf4;
@@ -41,81 +48,81 @@ html[data-interface-mode="yumi-cosmic"] {
    * clipped row of graduations, and #bce7d7 at that size on obsidian is a
    * grey smudge. Same hue, carried at the weight its new job asks for.
    */
-  --cosmic-cyan-lit: #7fd7bb;
+  --cosmic-cyan-lit: #86d8d2;
   --cosmic-violet-lit: #e79ac9;
   --cosmic-blue-lit: #8aa6ff;
   --cosmic-amber-lit: #e9c57e;
   --cosmic-teal: #9bd5ba;
   --cosmic-card-radius: 1.875rem;
-  --cosmic-ink: #f5f2f0;
-  --cosmic-muted: #bdb9c1;
-  --cosmic-ink-dim: #c5bbc7;
+  --cosmic-ink: #e4ecee;
+  --cosmic-muted: #a9bac2;
+  --cosmic-ink-dim: #b9c7cc;
   /* Ink for a control filled with mint, where pale text would disappear. */
-  --cosmic-on-mint: #172b23;
+  --cosmic-on-mint: #0b1a1c;
 
   /*
    * Surfaces, sunken to raised. Every panel in this mode takes one of these,
    * so the palette moves from one place. A raw hex in a rule below means a
    * surface nobody named — add it here instead.
    */
-  --cosmic-surface-card: #1c1a21;
-  --cosmic-surface-sheet: #1b191f;
-  --cosmic-surface-panel: #1e1d24;
-  --cosmic-surface-control: #24282a;
-  --cosmic-surface-chip: #242129;
-  --cosmic-surface-instrument: #26232c;
-  --cosmic-surface-note-lit: #27242e;
-  --cosmic-surface-note-shade: #1a191f;
-  --cosmic-surface-notes: #1c1d28;
-  --cosmic-surface-notes-glow: #30354e;
+  --cosmic-surface-card: #101820;
+  --cosmic-surface-sheet: #0e161d;
+  --cosmic-surface-panel: #121c24;
+  --cosmic-surface-control: #18242c;
+  --cosmic-surface-chip: #16222a;
+  --cosmic-surface-instrument: #15212a;
+  --cosmic-surface-note-lit: #172530;
+  --cosmic-surface-note-shade: #0e161c;
+  --cosmic-surface-notes: #101a22;
+  --cosmic-surface-notes-glow: #1d3340;
 
-  /* Hairlines, in the same pale violet as --cosmic-ring. */
-  --cosmic-hairline: rgba(229, 221, 231, 0.12);
-  --cosmic-hairline-soft: rgba(229, 221, 231, 0.09);
-  --cosmic-hairline-cool: rgba(164, 182, 239, 0.16);
-  --cosmic-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  /* Hairlines, in the same cool slate as --cosmic-ring. */
+  --cosmic-hairline: rgba(160, 196, 208, 0.16);
+  --cosmic-hairline-soft: rgba(160, 196, 208, 0.11);
+  --cosmic-hairline-cool: rgba(184, 232, 229, 0.16);
+  --cosmic-sheen: inset 0 1px 0 rgba(228, 236, 238, 0.05);
 
   --accent-amber: #e8ce8c;
   --accent-amber-ink: #242016;
   --accent-amber-deep: #f1deb4;
   --accent-amber-soft: #4a3c25;
-  --accent-amber-wash: #26222b;
+  --accent-amber-wash: #14202a;
   --accent-cool: #b9cafa;
   --success: #9bd5ba;
-  --success-soft: #19392d;
-  --yumi-wash-top: #282330;
-  --yumi-wash-bottom: #111115;
+  --success-soft: #12302c;
+  --yumi-wash-top: #15232d;
+  --yumi-wash-bottom: #0b1218;
 
-  --modal-scrim: #030305;
+  --modal-scrim: #020406;
   --modal-surface: var(--cosmic-surface-sheet);
-  --modal-ink: #f5f2f0;
+  --modal-ink: #e4ecee;
   --modal-accent: var(--cosmic-cyan);
-  --modal-muted: #b9afb9;
-  --modal-line: #403940;
-  --control-surface: #28252d;
-  --control-ink: #f5f2f0;
+  --modal-muted: #a9bac2;
+  --modal-line: #34444e;
+  --control-surface: #18242c;
+  --control-ink: #e4ecee;
 
-  --dock-surface: #17171c;
-  --dock-line: #36323b;
+  --dock-surface: #0e161d;
+  --dock-line: #2c3c46;
   --dock-shadow: 0 12px 38px rgba(0, 0, 0, 0.4);
-  --dock-indicator: #ece9e6;
-  --dock-indicator-border: #ece9e6;
+  --dock-indicator: #e4ecee;
+  --dock-indicator-border: #e4ecee;
   --dock-indicator-halo: transparent;
-  --dock-active-ink: #17171c;
+  --dock-active-ink: #0e161d;
 
   --ink-invert-soft: color-mix(in oklab, var(--color-white) 78%, transparent);
   --ink-invert-faint: color-mix(in oklab, var(--color-white) 68%, transparent);
 
-  --discover-page: #08090b;
-  --discover-card: #17171c;
-  --discover-text: #f5f2f0;
-  --discover-text-secondary: #b8b2bc;
-  --discover-divider: #38363e;
-  --discover-divider-soft: rgba(229, 221, 231, 0.1);
+  --discover-page: #080b10;
+  --discover-card: #101820;
+  --discover-text: #e4ecee;
+  --discover-text-secondary: #a9bac2;
+  --discover-divider: #34444e;
+  --discover-divider-soft: rgba(160, 196, 208, 0.12);
   --discover-accent: var(--cosmic-cyan);
-  --discover-accent-soft: #24332d;
-  --discover-selected: #29262e;
-  --discover-on-accent: #13241e;
+  --discover-accent-soft: #15292b;
+  --discover-selected: #18262f;
+  --discover-on-accent: #0b1a1c;
   --discover-category-business: #ecb79f;
   --discover-category-technology: #aabcf6;
   --discover-category-science: #d0b9eb;
@@ -124,29 +131,29 @@ html[data-interface-mode="yumi-cosmic"] {
   --discover-category-environment: #c3d59f;
   --discover-category-politics: #cac3bd;
 
-  --msg-page: #08090b;
-  --msg-surface: #17171c;
+  --msg-page: #080b10;
+  --msg-surface: #101820;
   --msg-surface-soft: var(--cosmic-surface-chip);
-  --msg-line: rgba(229, 221, 231, 0.13);
-  --msg-ink: #f5f2f0;
-  --msg-ink-soft: #bfb5bf;
-  --msg-ink-faint: #a69da8;
+  --msg-line: rgba(160, 196, 208, 0.16);
+  --msg-ink: #e4ecee;
+  --msg-ink-soft: #b3c2c8;
+  --msg-ink-faint: #93a5ad;
   --msg-accent: var(--cosmic-cyan);
-  --msg-accent-soft: rgba(188, 231, 215, 0.1);
-  --msg-accent-ink: #13241e;
-  --msg-bubble-in: linear-gradient(150deg, #302a34, #242129);
-  --msg-bubble-in-ink: #f5f2f0;
-  --msg-bubble-in-line: rgba(229, 221, 231, 0.12);
-  --msg-bubble-out: linear-gradient(135deg, #5d405e, #353c68);
-  --msg-bubble-out-ink: #fff9fd;
-  --msg-bubble-out-meta: #eee3ed;
+  --msg-accent-soft: rgba(184, 232, 229, 0.1);
+  --msg-accent-ink: #0b1a1c;
+  --msg-bubble-in: linear-gradient(150deg, #1a2731, #131e26);
+  --msg-bubble-in-ink: #e4ecee;
+  --msg-bubble-in-line: rgba(160, 196, 208, 0.14);
+  --msg-bubble-out: linear-gradient(135deg, #22525a, #1c3254);
+  --msg-bubble-out-ink: #f0f7f8;
+  --msg-bubble-out-meta: #cfe3e6;
   --msg-presence: #9bd5ba;
-  --msg-glow: 0 0 24px rgba(229, 173, 210, 0.1);
-  --msg-header: #08090b;
+  --msg-glow: 0 0 24px rgba(184, 232, 229, 0.08);
+  --msg-header: #080b10;
   --msg-mark-surface: #efeeea;
   --msg-mark-highlight: #ffffff;
 
-  --radar-core-bg: #0c0b10;
+  --radar-core-bg: #0a1016;
   --radar-cyan-primary: var(--cosmic-cyan);
   --radar-blue-secondary: var(--cosmic-blue);
   --radar-violet-accent: var(--cosmic-violet);
@@ -161,9 +168,9 @@ html[data-interface-mode="yumi-cosmic"] {
   --core-tone-due-lift: #f0d4e5;
   --core-tone-mastered: var(--cosmic-amber);
   --core-tone-mastered-lift: #f6e8bf;
-  --core-chassis-lit: #57505d;
-  --core-chassis-seam: #2e2933;
-  --core-chamber: #0c0b10;
+  --core-chassis-lit: #4a5c66;
+  --core-chassis-seam: #24313a;
+  --core-chamber: #0a1016;
 }
 
 /* The quiet canvas lets the card-local light carry the hierarchy. No moving
@@ -693,5 +700,108 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-sheet-scrim {
 @media (prefers-reduced-motion: reduce) {
   html[data-interface-mode="yumi-cosmic"] .cosmic-note-card:active {
     transform: none;
+  }
+}
+
+/* =========================================================
+   Liquid metal and droplets (Chi, 2026-11-12)
+
+   Two pieces of the obsidian material's "alien" side, Cosmic only.
+
+   A1 — the liquid-metal edge. A bead of mercury light runs along the top
+   edge of an obsidian panel as the panel moves through the screen: a
+   scroll-driven animation, so it costs nothing while nothing scrolls, and
+   it is a transform on a pseudo-element, so it is the compositor's. It
+   runs only along the straight part of the edge, inside the corners.
+   Browsers without scroll-driven animation draw no bead at all.
+
+   C1 — options as droplets. A list of choices appears as droplets that
+   stretch into their pills, one after another (the page's own rows are
+   played by RouteStage the same way as the page arrives).
+   ========================================================= */
+
+html[data-interface-mode="yumi-cosmic"] .ob-edge {
+  position: relative;
+}
+
+html[data-interface-mode="yumi-cosmic"] .ob-edge::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  /* Just inside the edge: most panels clip what lies on their border. */
+  top: 0;
+  left: 18px;
+  width: calc((100% - 36px) * 0.32);
+  height: 1px;
+  pointer-events: none;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, #b8e8e5 90%, white) 50%,
+    transparent
+  );
+  box-shadow: 0 0 8px rgba(184, 232, 229, 0.45);
+  opacity: 0;
+}
+
+@supports (animation-timeline: view()) {
+  html[data-interface-mode="yumi-cosmic"] .ob-edge::after {
+    animation: obMercury linear both;
+    animation-timeline: view();
+  }
+}
+
+@keyframes obMercury {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  18%,
+  82% {
+    opacity: 0.85;
+  }
+  100% {
+    /* From the left corner to the right one: (1 - 0.32) / 0.32 of its own width. */
+    transform: translateX(212%);
+    opacity: 0;
+  }
+}
+
+html[data-interface-mode="yumi-cosmic"] .settings-choice {
+  animation: obDroplet 460ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(110ms + var(--droplet-i, 0) * 55ms);
+}
+
+html[data-interface-mode="yumi-cosmic"] .settings-choice:nth-child(2) { --droplet-i: 1; }
+html[data-interface-mode="yumi-cosmic"] .settings-choice:nth-child(3) { --droplet-i: 2; }
+html[data-interface-mode="yumi-cosmic"] .settings-choice:nth-child(4) { --droplet-i: 3; }
+html[data-interface-mode="yumi-cosmic"] .settings-choice:nth-child(5) { --droplet-i: 4; }
+html[data-interface-mode="yumi-cosmic"] .settings-choice:nth-child(6) { --droplet-i: 5; }
+html[data-interface-mode="yumi-cosmic"] .settings-choice:nth-child(n + 7) { --droplet-i: 6; }
+
+@keyframes obDroplet {
+  0% {
+    opacity: 0;
+    transform: scale(0.18, 0.5);
+    border-radius: 999px;
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.03, 1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-interface-mode="yumi-cosmic"] .ob-edge::after {
+    display: none;
+  }
+
+  html[data-interface-mode="yumi-cosmic"] .settings-choice {
+    animation: none;
   }
 }

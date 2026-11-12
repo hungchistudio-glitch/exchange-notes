@@ -113,7 +113,7 @@ export default function DailyFocusCard({
   return (
     <article
       ref={ref}
-      className={styles.hud}
+      className={`${styles.hud} ob-edge`}
       data-state={loading ? "loading" : hasReviews ? "due" : "clear"}
       data-in-view={inView ? "true" : "false"}
     >

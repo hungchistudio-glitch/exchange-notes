@@ -106,7 +106,7 @@ export default function NotesHomeModule() {
    * box; the new-note key above is the way to start.
    */
   return (
-    <section className={styles.panel} aria-labelledby="home-notes-title">
+    <section className={`${styles.panel} ob-edge`} aria-labelledby="home-notes-title">
       <div className={styles.head}>
         <h2 id="home-notes-title" className={styles.title}>{copy.spaceTitle}</h2>
         <Link href="/notes" className={styles.all}>

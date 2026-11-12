@@ -37,6 +37,7 @@ export default function CompactStoryRow({
     <button
       type="button"
       onClick={onOpen}
+      data-liquid-option=""
       className="block w-full py-[18px] text-left transition active:opacity-70"
       style={
         isLast

@@ -23,7 +23,7 @@ export default function TodayTrainingCard({
   copy: LabCopy;
 }) {
   return (
-    <section className={`overflow-hidden rounded-[26px] border border-black/[0.06] bg-black text-white ${trainingStyles.training}`}>
+    <section className={`ob-edge overflow-hidden rounded-[26px] border border-black/[0.06] bg-black text-white ${trainingStyles.training}`}>
       <div className="p-5">
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
           {copy.today.eyebrow}

@@ -213,12 +213,12 @@
   transform: none;
   background:
     radial-gradient(ellipse 76% 50% at 50% 40%,
-      color-mix(in oklab, var(--cosmic-violet) 28%, transparent),
+      color-mix(in oklab, var(--cosmic-violet) 16%, transparent),
       transparent 76%),
     radial-gradient(ellipse 65% 42% at 6% 4%,
-      color-mix(in oklab, var(--cosmic-cyan) 14%, transparent),
+      color-mix(in oklab, var(--cosmic-cyan) 12%, transparent),
       transparent 80%),
-    #17171c;
+    #101820;
 }
 
 /* The remaining Standard Mode ellipse has no role in the Cosmic panel. */
