@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   ArrowRight,
   ChevronDown,
@@ -23,13 +24,16 @@ import { DEFAULT_SORT_MODE } from "@/components/vocabulary/SortBottomSheet";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import type { VocabularyStatus } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import VoiceSea from "@/components/voice/VoiceSea";
 import { plural } from "@/lib/i18n/format";
 import useLexiconImageLookup from "@/hooks/lexicon/useLexiconImageLookup";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import useVoiceInput from "@/hooks/useVoiceInput";
 import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
+
+/* The listening sea is its own chunk: none of it is needed until a
+   microphone opens (tests/routeImportWeight.test.ts). */
+const VoiceSea = dynamic(() => import("@/components/voice/VoiceSea"), { ssr: false });
 
 type QuickFilter = {
   value: "all" | VocabularyStatus;

@@ -1,12 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Mic, Square } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import AudioButton, { AudioGlyph } from "@/components/pronunciation/lab/AudioButton";
 import ScoreBreakdown from "@/components/pronunciation/lab/ScoreBreakdown";
 import StatusMessage from "@/components/foundation/feedback/StatusMessage";
-import VoiceSea from "@/components/voice/VoiceSea";
 import usePronunciationPlayback from "@/hooks/pronunciation/usePronunciationPlayback";
 import useRecorder from "@/hooks/pronunciation/useRecorder";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -19,6 +19,10 @@ import {
 import type { AudioSource, PlaybackSpeed } from "@/lib/pronunciation/lab/audio";
 import type { ScoreDimension, TrainingItemOutcome } from "@/lib/pronunciation/lab/types";
 import type { YumiAnimationState } from "@/lib/pronunciation/yumiRig";
+
+/* The listening sea is its own chunk: none of it is needed until a
+   microphone opens (tests/routeImportWeight.test.ts). */
+const VoiceSea = dynamic(() => import("@/components/voice/VoiceSea"), { ssr: false });
 
 export type SpeakTrainerProps = {
   language: LanguageCode;

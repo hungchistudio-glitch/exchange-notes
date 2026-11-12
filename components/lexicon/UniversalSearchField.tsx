@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { ArrowRight, LoaderCircle, Search } from "lucide-react";
 import { useCallback, useEffect, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +15,6 @@ import {
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import VoiceSea from "@/components/voice/VoiceSea";
 import useLexiconOnboarding from "@/hooks/lexicon/useLexiconOnboarding";
 import useLexiconImageLookup from "@/hooks/lexicon/useLexiconImageLookup";
 import useLexiconSave from "@/hooks/lexicon/useLexiconSave";
@@ -29,6 +29,10 @@ import { transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 import { stopSpeech } from "@/lib/speech";
+
+/* The listening sea is its own chunk: none of it is needed until a
+   microphone opens (tests/routeImportWeight.test.ts). */
+const VoiceSea = dynamic(() => import("@/components/voice/VoiceSea"), { ssr: false });
 
 /* =========================================================
    The home search is the search

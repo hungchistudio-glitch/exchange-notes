@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   useCallback,
   useEffect,
@@ -14,7 +15,6 @@ import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
 import { VoiceCaptureStatus } from "@/components/lexicon/VoiceCapture";
-import VoiceSea from "@/components/voice/VoiceSea";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -35,6 +35,10 @@ import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 
 import styles from "./OmniLexiconConsole.module.css";
+
+/* The listening sea is its own chunk: none of it is needed until a
+   microphone opens (tests/routeImportWeight.test.ts). */
+const VoiceSea = dynamic(() => import("@/components/voice/VoiceSea"), { ssr: false });
 
 /** What the console is doing, which is also what Yumi reacts to. */
 export type OmniLexiconState = "idle" | "typing" | "listening" | "scanning";

@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   useEffect,
   useRef,
@@ -19,7 +20,6 @@ import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
-import VoiceSea from "@/components/voice/VoiceSea";
 import {
   VoiceCaptureStatus,
   VoiceMicButton,
@@ -39,6 +39,10 @@ import { getLanguage, getLanguageName } from "@/lib/languages";
 import { transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
+
+/* The listening sea is its own chunk: none of it is needed until a
+   microphone opens (tests/routeImportWeight.test.ts). */
+const VoiceSea = dynamic(() => import("@/components/voice/VoiceSea"), { ssr: false });
 
 /* =========================================================
    The Universal Search, as a sheet
