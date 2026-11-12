@@ -80,9 +80,9 @@
   clip-path: var(--facet);
   background: linear-gradient(
     150deg,
-    color-mix(in oklab, var(--tone-lift) 40%, #202026),
-    #202026 52%,
-    #08090b
+    color-mix(in oklab, var(--tone-lift) 40%, #16212a),
+    #16212a 52%,
+    #080b10
   );
 }
 

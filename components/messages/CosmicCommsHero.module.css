@@ -232,10 +232,10 @@
      */
     radial-gradient(
       circle at 50% 50%,
-      #08090b 0%,
-      #08090b 49.2%,
-      color-mix(in oklab, var(--msg-accent) 14%, #08090b) 49.85%,
-      color-mix(in oklab, var(--msg-accent) 30%, #08090b) 50%
+      #080b10 0%,
+      #080b10 49.2%,
+      color-mix(in oklab, var(--msg-accent) 14%, #080b10) 49.85%,
+      color-mix(in oklab, var(--msg-accent) 30%, #080b10) 50%
     );
 }
 

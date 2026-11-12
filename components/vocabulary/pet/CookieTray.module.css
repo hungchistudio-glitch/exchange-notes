@@ -280,7 +280,7 @@
   height: 52px;
   border-radius: 18px;
   border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 18%, transparent);
-  background: #202026;
+  background: var(--cosmic-surface-control, #18242c);
   display: flex;
   align-items: center;
   justify-content: center;

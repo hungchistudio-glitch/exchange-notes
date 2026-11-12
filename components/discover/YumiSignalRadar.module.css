@@ -151,7 +151,7 @@
 }
 
 :global(html[data-interface-mode="yumi-cosmic"]) .radar {
-  --radar-orb-highlight: #202026;
+  --radar-orb-highlight: #16212a;
 }
 
 /* ---------------------------------------------------------------

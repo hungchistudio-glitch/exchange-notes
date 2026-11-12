@@ -80,7 +80,7 @@ export default function FeaturedStoryCard({
 
   return (
     <article
-      className="relative overflow-hidden rounded-[26px]"
+      className="ob-edge relative overflow-hidden rounded-[26px]"
       style={{
         backgroundColor: DISCOVER_COLORS.card,
         boxShadow: "0 1px 2px rgba(18,18,18,0.04)",

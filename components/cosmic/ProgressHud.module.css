@@ -1,11 +1,14 @@
-/* Dark cast-metal housings, glass readouts, and silver instrument indices. */
+/* Dark cast-metal housings, glass readouts, and silver instrument indices.
+   The metal is obsidian since 2026-11-12 (Chi: every Cosmic page in one
+   material): each neutral grey keeps its lightness on the obsidian hue,
+   so the housings still read as machined, in blue-black with an ice sheen. */
 .hud {
-  --instrument-ink: #f1f3f1;
-  --instrument-muted: #a6aeae;
+  --instrument-ink: #f0f4f4;
+  --instrument-muted: #9bb4b9;
   /* Overridden per card by the four tone classes. Named here so a card that
      somehow arrives without one still mixes to a legible silver rather than
      dropping the whole background or box-shadow it is mixed into. */
-  --card-accent: #dce7e3;
+  --card-accent: #dce5e7;
   color: var(--instrument-ink);
   container-type: inline-size;
 }
@@ -54,12 +57,12 @@
   isolation: isolate;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #101415;
+  border: 1px solid #0d1218;
   border-radius: 1.35rem;
   padding: 1.05rem;
   background:
     radial-gradient(ellipse at 20% 0%, rgb(255 255 255 / 5%), transparent 70%),
-    linear-gradient(145deg, #282e2f, #202526 65%, #1d2223);
+    linear-gradient(145deg, #1e2b39, #18232e 65%, #16202a);
   box-shadow:
     inset 0 1px 1px rgb(255 255 255 / 18%),
     inset 1px 0 1px rgb(255 255 255 / 4%),
@@ -76,12 +79,12 @@
   bottom: 0.8rem;
   width: 0.4rem;
   height: 0.4rem;
-  border: 1px solid #121617;
+  border: 1px solid #0e141b;
   border-radius: 50%;
   background:
-    linear-gradient(45deg, transparent 43%, #101415 44% 55%, transparent 56%),
-    linear-gradient(135deg, #90999a, #303637);
-  box-shadow: 0 1px 1px rgb(255 255 255 / 12%), 0 -1px 2px #101313;
+    linear-gradient(45deg, transparent 43%, #0d1218 44% 55%, transparent 56%),
+    linear-gradient(135deg, #8898a2, #233344);
+  box-shadow: 0 1px 1px rgb(255 255 255 / 12%), 0 -1px 2px #0c1117;
   pointer-events: none;
 }
 
@@ -91,13 +94,13 @@
 .cardLabel {
   position: relative;
   z-index: 1;
-  color: #c9cece;
+  color: #c2d2d5;
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.45;
   letter-spacing: 0.015em;
   overflow-wrap: anywhere;
-  text-shadow: 0 1px 1px #111516;
+  text-shadow: 0 1px 1px #0d131a;
 }
 
 .goal {
@@ -109,7 +112,7 @@
   padding: 1.1rem 1.3rem 1.4rem;
   background:
     radial-gradient(ellipse at 50% 47%, rgb(125 139 138 / 10%), transparent 58%),
-    linear-gradient(140deg, #292f30, #202627 55%, #1c2223);
+    linear-gradient(140deg, #1e2c3b, #18232f 55%, #151f2a);
 }
 
 .goal .cardLabel {
@@ -129,16 +132,16 @@
 .dialBezel {
   position: absolute;
   inset: 16%;
-  border: 1px solid #161b1c;
+  border: 1px solid #111921;
   border-radius: 50%;
   background:
     radial-gradient(ellipse at 36% 12%, rgb(255 255 255 / 9%), transparent 48%),
-    linear-gradient(145deg, #2a3031, #1d2324 62%, #171d1e);
+    linear-gradient(145deg, #1f2d3c, #16202b 62%, #121a23);
   box-shadow:
     inset 0 1px 2px rgb(255 255 255 / 16%),
     inset 0 -2px 3px rgb(0 0 0 / 70%),
-    0 0 0 2px #333c3d,
-    0 0 0 4px #131819,
+    0 0 0 2px #26384a,
+    0 0 0 4px #0f161d,
     0 0 0 5px rgb(160 174 174 / 13%),
     0 7px 12px rgb(0 0 0 / 50%),
     -3px -4px 9px rgb(255 255 255 / 4%);
@@ -162,18 +165,18 @@
 }
 
 .dialTick {
-  stroke: #768182;
+  stroke: #6d7f8b;
   stroke-width: 0.5;
   opacity: 0.64;
 }
 
 .dialTickMajor {
-  stroke: #cad3d2;
+  stroke: #c6d4d7;
   stroke-width: 0.8;
 }
 
 .track {
-  stroke: #111617;
+  stroke: #0e141a;
   filter: drop-shadow(0 0.5px 0 rgb(190 207 206 / 19%));
 }
 
@@ -196,7 +199,7 @@
 .dialReading {
   position: relative;
   max-width: 66%;
-  color: #f2f5f2;
+  color: #f1f5f6;
   font-size: clamp(1.75rem, 7.5vw, 2.35rem);
   letter-spacing: -0.075em;
   text-align: center;
@@ -206,7 +209,7 @@
 .dialTarget {
   display: inline-block;
   margin-left: 0.2rem;
-  color: #aab5b4;
+  color: #a1b9be;
   font-size: 0.42em;
   letter-spacing: -0.04em;
 }
@@ -243,11 +246,11 @@
 .scale {
   margin-top: 0.8rem;
   padding: 0.5rem 0.65rem 0.35rem;
-  border: 1px solid #101516;
+  border: 1px solid #0d1319;
   border-radius: 0.55rem;
   background:
     linear-gradient(165deg, rgb(205 225 224 / 8%), transparent 45%),
-    #161c1d;
+    #111922;
   box-shadow:
     inset 0 2px 4px rgb(0 0 0 / 75%),
     inset 0 -1px 1px rgb(255 255 255 / 4%),
@@ -273,7 +276,7 @@
 }
 
 .rulerTrack {
-  color: #687172;
+  color: #60707a;
   opacity: 0.7;
 }
 
@@ -305,16 +308,16 @@
   bottom: 0;
   left: -0.25rem;
   width: 0.5rem;
-  border: 1px solid color-mix(in oklab, var(--card-accent) 45%, #bac4c3);
+  border: 1px solid color-mix(in oklab, var(--card-accent) 45%, #b3c7cb);
   border-radius: 0.17rem;
   background:
     repeating-linear-gradient(0deg, transparent 0 3px, rgb(18 30 29 / 28%) 3px 4px, rgb(255 255 255 / 55%) 4px 5px) center / 55% 70% no-repeat,
     linear-gradient(
       90deg,
-      color-mix(in oklab, var(--card-accent) 18%, #eef3f0),
-      color-mix(in oklab, var(--card-accent) 42%, #bbc5c2) 38%,
+      color-mix(in oklab, var(--card-accent) 18%, #eef2f3),
+      color-mix(in oklab, var(--card-accent) 42%, #b5c8cb) 38%,
       color-mix(in oklab, var(--card-accent) 12%, #f6faf7) 70%,
-      color-mix(in oklab, var(--card-accent) 46%, #8b9593)
+      color-mix(in oklab, var(--card-accent) 46%, #83939d)
     );
   box-shadow:
     0 2px 3px #080d0e,
@@ -325,7 +328,7 @@
   display: flex;
   justify-content: space-between;
   margin-top: 0.25rem;
-  color: #a1acab;
+  color: #97b1b6;
   font-family: var(--font-geist-mono), "SFMono-Regular", Consolas, monospace;
   font-size: 0.6875rem;
   font-variant-numeric: tabular-nums;
@@ -356,20 +359,20 @@
       transparent 62%
     ),
     radial-gradient(ellipse at 20% 0%, rgb(255 255 255 / 5%), transparent 70%),
-    linear-gradient(145deg, #282e2f, #202526 65%, #1d2223);
+    linear-gradient(145deg, #1e2b39, #18232e 65%, #16202a);
 }
 
 /* Counts have no invented maximum: a simple recessed counter has no scale. */
 .tileValue {
   position: relative;
   margin-top: auto;
-  border: 1px solid #101516;
+  border: 1px solid #0d1319;
   border-radius: 0.45rem;
   padding: 0.45rem 0.6rem;
   background:
     linear-gradient(180deg, rgb(0 0 0 / 20%), transparent 50%, rgb(255 255 255 / 3%) 51%, transparent),
-    #171d1e;
-  color: #e7eeea;
+    #121a23;
+  color: #e7edee;
   font-size: 1.7rem;
   letter-spacing: 0.025em;
   box-shadow: inset 0 2px 5px rgb(0 0 0 / 45%), 0 1px 0 rgb(255 255 255 / 9%);
