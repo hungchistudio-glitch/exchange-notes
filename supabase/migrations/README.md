@@ -224,7 +224,17 @@ from this file:
 | --- | --- |
 | `20261111225945_games_progress` | `20261111235459` |
 
-**Twenty-three renames across sixteen occasions now. `apply_migration` always stamps its
+On 2026-11-12 Yumi Pocket Lookup's share-extension keys, applied before the
+merge (Chi: "Apply the table"). It only adds `pocket_keys`, a server-only
+table (RLS on, no policies, no client grants) that nothing live reads yet.
+Afterwards the grants, RLS and the security advisors were read back: only
+`service_role` holds privileges, and the advisors add only the expected INFO.
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261112230000_pocket_keys` | `20261112223629` |
+
+**Twenty-four renames across seventeen occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
 
