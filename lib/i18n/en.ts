@@ -2656,6 +2656,38 @@ const english: TranslationDictionary = {
         "The token could not be copied. Select and copy it manually.",
     },
 
+    pocketKeys: {
+
+      rowTitle: "Sharing to Yumi Pocket Lookup",
+
+      rowDescription: "Keys for looking up and saving words shared from other apps",
+
+      none: "None",
+
+      count: "{count} active",
+
+      sheetTitle: "Share keys",
+
+      intro: "When you share text from another app on your iPhone, Exchange Notes looks it up and saves it with a key of its own. A key can only look up and save words; it never signs you in anywhere.",
+
+      created: "Added {date}",
+
+      lastUsed: "Last used {date}",
+
+      neverUsed: "Not used yet",
+
+      revoke: "Revoke",
+
+      revoking: "Revoking…",
+
+      failed: "Couldn’t load your keys. Try again.",
+
+      empty: "No share keys. Open Exchange Notes on your iPhone and one is added for sharing.",
+
+      revokeNote: "After revoking, that iPhone opens the app once before sharing can save words again.",
+
+    },
+
     iphoneWidget: {
       rowTitle: "Yumi iPhone Widget",
       rowDescription: "Native Exchange Notes widget with automatic sync",

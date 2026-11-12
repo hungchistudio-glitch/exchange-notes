@@ -33,10 +33,19 @@ Install on a personal iPhone:
   language pair the app last handed over (`PocketPreferences.swift`, from
   `components/pocket/PocketPreferencesSync.tsx`); iOS may tint it.
 - **The share extension** (`Share/`): text selected in another app, then
-  Share, then Exchange Notes. Stage one looks words up in the built-in
-  dictionary (`Share/PocketDictionary.swift`, exported from
-  `lib/vocabulary/coreLexiconData.ts` by `scripts/export-pocket-lexicon.mjs`)
-  and saves nothing.
+  Share, then Exchange Notes.
+  - With the extension's own key it uses the app's AI lookup and saves
+    only when 收藏 is pressed (`Share/PocketShareModel.swift`). The key
+    is issued by `/api/pocket/key` the first time the signed-in app opens
+    (`lib/pocket/device.ts`). It is kept in the Keychain under the App
+    Group's access group (`Shared/PocketKeyStore.swift`), so no extra
+    entitlement is needed.
+  - It is good for `/api/classify-text` and `/api/pocket/save` only, and
+    is revoked from Settings → Devices or by signing out.
+  - Without a key, or offline, it falls back to the built-in dictionary
+    (`Share/PocketDictionary.swift`, exported from
+    `lib/vocabulary/coreLexiconData.ts` by
+    `scripts/export-pocket-lexicon.mjs`).
 - **Shortcuts** (iOS 18+): `Shared/OpenPocketLookupIntent.swift`.
 - `npm run test:native-personal` builds all three targets and checks the
   dictionary, the preferences and the deep links.

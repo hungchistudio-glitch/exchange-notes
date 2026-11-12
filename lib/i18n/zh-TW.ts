@@ -2614,6 +2614,38 @@ const traditionalChinese: TranslationDictionary = {
         "無法自動複製權杖，請手動選取並複製。",
     },
 
+    pocketKeys: {
+
+      rowTitle: "Yumi 隨行查字・分享",
+
+      rowDescription: "從其他 App 分享時查字與收藏用的專屬鑰匙",
+
+      none: "無",
+
+      count: "{count} 把使用中",
+
+      sheetTitle: "分享鑰匙",
+
+      intro: "在 iPhone 上從其他 App 分享文字時，Exchange Notes 用一把專屬鑰匙幫你查字和收藏。這把鑰匙只能查字和收藏，不能登入或做其他事。",
+
+      created: "{date} 加入",
+
+      lastUsed: "上次使用：{date}",
+
+      neverUsed: "尚未使用",
+
+      revoke: "撤銷",
+
+      revoking: "撤銷中…",
+
+      failed: "無法載入鑰匙，請再試一次。",
+
+      empty: "目前沒有分享鑰匙。在 iPhone 上打開 Exchange Notes，就會自動加入一把。",
+
+      revokeNote: "撤銷後，那支 iPhone 要先打開 App 一次，分享才能再收藏單字。",
+
+    },
+
     iphoneWidget: {
       rowTitle: "Yumi iPhone 小工具",
       rowDescription: "Exchange Notes 原生支援並自動同步",

@@ -2599,6 +2599,38 @@ export type TranslationDictionary = {
       copyError: string;
     };
 
+    pocketKeys: {
+
+      rowTitle: string;
+
+      rowDescription: string;
+
+      none: string;
+
+      count: string;
+
+      sheetTitle: string;
+
+      intro: string;
+
+      created: string;
+
+      lastUsed: string;
+
+      neverUsed: string;
+
+      revoke: string;
+
+      revoking: string;
+
+      failed: string;
+
+      empty: string;
+
+      revokeNote: string;
+
+    };
+
     iphoneWidget: {
       rowTitle: string;
       rowDescription: string;

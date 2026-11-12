@@ -12,7 +12,9 @@ enum ExchangeNotesRoute: String {
     private static let productionURL =
         URL(string: "https://exchange-notes-app.vercel.app")!
 
-    private static var rootURL: URL {
+    /// The site the app loads, which is also where the share extension's
+    /// lookup and save go (Share/PocketShareModel).
+    static var rootURL: URL {
 #if DEBUG
         if
             let value = ProcessInfo.processInfo

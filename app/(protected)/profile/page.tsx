@@ -30,6 +30,7 @@ import EditProfileSheet from "@/components/settings/EditProfileSheet";
 import ProfileSummaryCard from "@/components/settings/ProfileSummaryCard";
 import SettingsAnchor from "@/components/settings/SettingsAnchor";
 import SettingsSearch from "@/components/settings/SettingsSearch";
+import PocketKeysSettingsButton from "@/components/settings/PocketKeysSettingsButton";
 import SettingsSection from "@/components/settings/SettingsSection";
 import ProfileLanguageSettingsButton from "@/components/settings/ProfileLanguageSettingsButton";
 import DailyGoalSettingsButton from "@/components/settings/DailyGoalSettingsButton";
@@ -43,6 +44,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import usePwaInstall from "@/hooks/pwa/usePwaInstall";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { forgetPocketKey } from "@/lib/pocket/device";
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
 import {
@@ -340,6 +342,10 @@ export default function ProfilePage() {
       console.error("Could not unregister this device for push.", error);
     }
 
+    // Yumi Pocket Lookup's share-extension key on this phone: revoked
+    // while the session can still say whose it is, then forgotten.
+    await forgetPocketKey().catch(() => undefined);
+
     try {
       const supabase = createClient();
 
@@ -553,6 +559,7 @@ export default function ProfilePage() {
           </SettingsSection>
 
           <SettingsSection label={sections.devices}>
+            <PocketKeysSettingsButton />
             <SettingsRow
               href="/profile/devices"
               title={devicesCopy.rowTitle}

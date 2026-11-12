@@ -2652,6 +2652,38 @@ const spanish: TranslationDictionary = {
         "No se ha podido copiar el token. Selecciónalo y cópialo a mano.",
     },
 
+    pocketKeys: {
+
+      rowTitle: "Compartir con Yumi · Consulta rápida",
+
+      rowDescription: "Claves para consultar y guardar palabras compartidas desde otras apps",
+
+      none: "Ninguna",
+
+      count: "{count} activas",
+
+      sheetTitle: "Claves para compartir",
+
+      intro: "Cuando compartes texto desde otra app en tu iPhone, Exchange Notes lo consulta y lo guarda con una clave propia. Una clave solo puede consultar y guardar palabras; nunca inicia sesión en ningún sitio.",
+
+      created: "Añadida el {date}",
+
+      lastUsed: "Último uso: {date}",
+
+      neverUsed: "Aún sin usar",
+
+      revoke: "Revocar",
+
+      revoking: "Revocando…",
+
+      failed: "No se pudieron cargar tus claves. Inténtalo de nuevo.",
+
+      empty: "No hay claves. Abre Exchange Notes en tu iPhone y se añadirá una para compartir.",
+
+      revokeNote: "Tras revocarla, ese iPhone abre la app una vez antes de que compartir pueda volver a guardar palabras.",
+
+    },
+
     iphoneWidget: {
       rowTitle: "Widget de Yumi para iPhone",
       rowDescription: "Widget nativo de Exchange Notes con sincronización automática",

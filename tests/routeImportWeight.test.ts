@@ -204,10 +204,15 @@ describe("what the heaviest tabs drag in with them", () => {
    * title, imports nothing; components/features/FeatureMark and its
    * stylesheet are the mark it lands on (the halo now takes its glyphs
    * from there); Daily Focus's own stylesheet replaces its utility classes.
+   * Raised vocabulary 170 → 171 and home 186 → 187 (2026-11-12): Yumi
+   * Pocket Lookup's share extension saves words on the server, and the row
+   * a new word becomes is now built in one place for both doors
+   * (lib/vocabulary/entryRow.ts, imported by createEntry.ts, which both tabs
+   * already load). Types only, and the function moved out of createEntry.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 170],
-    ["home", TABS.home, 186],
+    ["vocabulary", TABS.vocabulary, 171],
+    ["home", TABS.home, 187],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {
