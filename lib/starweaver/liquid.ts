@@ -66,8 +66,11 @@ const hex = (value: number): Rgb => [((value >> 16) & 255) / 255, ((value >> 8) 
 export const PALETTES: Record<HangyumiGame | "miss", LiquidPalette> = {
   /* Honey held up to the light: amber in its depth, rose gold where it thins. */
   hangyumi: { deep: hex(0xb8741f), body: hex(0xe9b65c), tint: hex(0xeea08a), crest: hex(0xfff1d2) },
-  /* The vault's: old gold, bronze in its depth, copper where it thins. */
-  wordvault: { deep: hex(0x8a5a22), body: hex(0xd6a548), tint: hex(0xc9774a), crest: hex(0xffeab8) },
+  /* The vault's emerald (Chi, 2026-11-12: its old gold read as Hangyumi's
+     honey): deep green in its depth, jade in its body, pale gold where it
+     thins, the chest's brass catching the light, and a mint-white crest.
+     Never red, which is a wrong guess's in every game. */
+  wordvault: { deep: hex(0x0f5a46), body: hex(0x2fa37c), tint: hex(0xd9c27a), crest: hex(0xe6fff4) },
   /* Ice cyan, deepening to aqua and turning lavender where the liquid thins. */
   starweaver: { deep: hex(0x4fa8c2), body: hex(0x7cc4d1), tint: hex(0xad9efa), crest: hex(0xdbf2f7) },
   /* A wrong guess, in any game: dark red, amber where it thins. */
