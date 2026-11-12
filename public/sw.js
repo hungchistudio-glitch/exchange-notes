@@ -54,6 +54,7 @@ const APP_PAGE_ROOTS = [
   "/hangyumi",
   "/home",
   "/invitations",
+  "/lookup",
   "/messages",
   "/notes",
   "/profile",
