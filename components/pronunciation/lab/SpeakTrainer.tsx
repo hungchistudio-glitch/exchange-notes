@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AudioButton, { AudioGlyph } from "@/components/pronunciation/lab/AudioButton";
 import ScoreBreakdown from "@/components/pronunciation/lab/ScoreBreakdown";
 import StatusMessage from "@/components/foundation/feedback/StatusMessage";
+import VoiceSea from "@/components/voice/VoiceSea";
 import usePronunciationPlayback from "@/hooks/pronunciation/usePronunciationPlayback";
 import useRecorder from "@/hooks/pronunciation/useRecorder";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -219,6 +220,9 @@ export default function SpeakTrainer({
 
   return (
     <div className="space-y-4">
+      {/* While the learner speaks, the sea at the bottom of the screen moves
+          with the voice; it settles while the take is analysed. */}
+      <VoiceSea phase={recording ? "listening" : analyzing ? "understanding" : "idle"} />
       <section className="rounded-3xl border border-black/[0.06] bg-white p-5">
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
           {copy.listenFirst}

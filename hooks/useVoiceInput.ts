@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { tidyChinese } from "@/lib/chinese/tidyChinese";
 import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import { stopSpeech } from "@/lib/speech";
+import { createBandReader, levelFromRms, resetVoiceSignal } from "@/lib/voice/signal";
 
 import {
   getRecognitionConstructor,
@@ -150,7 +151,9 @@ export type VoiceAudioOutcome = "handled" | "unheard" | "unavailable" | "limit";
  * `bindLevel` is a ref callback. Bound elements get `--voice-level` (0–1)
  * written straight onto their style each frame, outside React: a ring that
  * re-rendered its component sixty times a second would be the least smooth
- * thing on the screen.
+ * thing on the screen. The same frame writes the level and the voice's low
+ * and high bands to lib/voice/signal.ts, which the liquid sea at the bottom
+ * of the screen follows (Chi, 2026-11-12).
  */
 export default function useVoiceInput({
   lang,
@@ -240,6 +243,7 @@ export default function useVoiceInput({
       session.audioContext = null;
     }
     writeLevel(0);
+    resetVoiceSignal();
   }, [writeLevel]);
 
   const cancel = useCallback(() => {
@@ -368,6 +372,7 @@ export default function useVoiceInput({
 
     session.heardSpeech = false;
     const samples = new Float32Array(analyser.fftSize);
+    const bands = createBandReader(analyser);
     const startedAt = performance.now();
     /*
      * A meter that never reads anything is a broken meter, not a silent
@@ -409,17 +414,16 @@ export default function useVoiceInput({
       }
 
       // Decibels onto 0–1, quick to rise and slow to fall, like a VU needle.
-      const db = 20 * Math.log10(Math.max(rms, 1e-5));
-      const target = Math.min(1, Math.max(0, (db + 58) / 40));
-      level = target > level ? level + (target - level) * 0.55 : level * 0.9 + target * 0.1;
+      level = levelFromRms(rms, level);
       writeLevel(level);
+      bands.read(level);
 
       if (session.heardSpeech && now - lastSpeechAt > SILENCE_END_MS) { stopRef.current(); return; }
       if (!session.heardSpeech && now - startedAt > NO_SPEECH_MS) {
         // A muted track really is recording nothing: say so now rather
         // than after a minute of silence.
         const muted = stream.getAudioTracks().some(track => track.muted);
-        if (!sawSignal && !muted) { session.heardSpeech = null; writeLevel(0); return; }
+        if (!sawSignal && !muted) { session.heardSpeech = null; writeLevel(0); resetVoiceSignal(); return; }
         stopRef.current();
         return;
       }

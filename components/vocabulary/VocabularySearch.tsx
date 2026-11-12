@@ -23,6 +23,7 @@ import { DEFAULT_SORT_MODE } from "@/components/vocabulary/SortBottomSheet";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import type { VocabularyStatus } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import VoiceSea from "@/components/voice/VoiceSea";
 import { plural } from "@/lib/i18n/format";
 import useLexiconImageLookup from "@/hooks/lexicon/useLexiconImageLookup";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
@@ -137,6 +138,8 @@ export default function VocabularySearch({
 
   return (
     <section className="mt-4">
+      {/* While it listens, the sea at the bottom of the screen moves with the voice. */}
+      <VoiceSea phase={listening ? "listening" : "idle"} />
       <form
         className="flex items-center"
         onSubmit={(event) => {

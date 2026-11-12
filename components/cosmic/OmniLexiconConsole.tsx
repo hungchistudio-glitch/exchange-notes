@@ -14,6 +14,7 @@ import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
 import { VoiceCaptureStatus } from "@/components/lexicon/VoiceCapture";
+import VoiceSea from "@/components/voice/VoiceSea";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -303,6 +304,8 @@ export default function OmniLexiconConsole({
         />
       </div>
 
+      {/* While it listens, the aurora sea at the bottom of the screen moves with the voice. */}
+      <VoiceSea phase={voicePhase} />
       <VoiceCaptureStatus
         phase={voicePhase}
         listening={listening}

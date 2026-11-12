@@ -19,6 +19,7 @@ import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
+import VoiceSea from "@/components/voice/VoiceSea";
 import {
   VoiceCaptureStatus,
   VoiceMicButton,
@@ -397,6 +398,8 @@ export default function LexiconSearchSheet({
             />
           </div>
 
+          {/* While it listens, the sea at the bottom of the screen moves with the voice. */}
+          <VoiceSea phase={voice.phase} />
           <VoiceCaptureStatus
             phase={voice.phase}
             listening={voice.listening}

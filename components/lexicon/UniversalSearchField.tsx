@@ -14,6 +14,7 @@ import {
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import VoiceSea from "@/components/voice/VoiceSea";
 import useLexiconOnboarding from "@/hooks/lexicon/useLexiconOnboarding";
 import useLexiconImageLookup from "@/hooks/lexicon/useLexiconImageLookup";
 import useLexiconSave from "@/hooks/lexicon/useLexiconSave";
@@ -275,6 +276,8 @@ export default function UniversalSearchField({
         </div>
       </form>
 
+      {/* While it listens, the sea at the bottom of the screen moves with the voice. */}
+      <VoiceSea phase={voice.phase} />
       <VoiceCaptureStatus
             phase={voice.phase}
             listening={voice.listening}
