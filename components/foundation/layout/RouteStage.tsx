@@ -13,14 +13,14 @@ import {
 import {
   ARRIVAL_EASING,
   ARRIVAL_MS,
-  ARRIVAL_RISE_PX,
   arrivalDelay,
   arrivalLayers,
   holdsFixed,
   inView,
+  playLampArrival,
 } from "@/lib/motion/pageArrival";
 import { announceRouteArrival } from "@/lib/motion/featureFlight";
-import { playLiquidArrival } from "@/lib/motion/liquidArrival";
+import { LIQUID_OPTIONS, playLiquidArrival } from "@/lib/motion/liquidArrival";
 
 /**
  * The stage every protected route is played on.
@@ -33,9 +33,10 @@ import { playLiquidArrival } from "@/lib/motion/liquidArrival";
  *    the click and the new page replaces it whenever it is ready.
  * 2. **The outline.** A route with a loading file shows its skeleton first;
  *    the stage brightens back to full as it goes up.
- * 3. **The page.** When the real page is in, it arrives in layers: its
- *    blocks float up one after another, the first at once, all inside about
- *    0.35s (lib/motion/pageArrival). A page behind a skeleton is played as
+ * 3. **The page.** When the real page is in, it arrives in layers, each
+ *    look in its own way: in Standard its blocks settle under a passing
+ *    lamp (lib/motion/pageArrival), in Yumi Cosmic they float up under a
+ *    rising liquid (lib/motion/liquidArrival). A page behind a skeleton is played as
  *    the skeleton leaves, which is the moment that used to jump: the
  *    outline swapped for the page in one frame.
  *
@@ -96,20 +97,23 @@ function arrive(stage: HTMLElement) {
     return;
   }
   // A feature's key is flying to this page's title (lib/motion/
-  // featureFlight.ts): nothing may move under it, so the layers only fade.
+  // featureFlight.ts): nothing may move under it, so the layers only fade,
+  // in turn, below.
   const landing = document.documentElement.hasAttribute("data-feature-flight");
-  // Yumi Cosmic: the page comes up under a rising liquid (lib/motion/
-  // liquidArrival.ts; Chi, 2026-11-12). Standard keeps the float-up below.
-  if (!landing && document.documentElement.dataset.interfaceMode === "yumi-cosmic") {
-    playLiquidArrival(layers, holdsFixed);
+  if (!landing) {
+    // Yumi Cosmic: the page comes up under a rising liquid (lib/motion/
+    // liquidArrival.ts; Chi, 2026-11-12). Standard: it settles under a
+    // passing lamp, its pair (lib/motion/pageArrival.ts; Chi, 2026-11-13).
+    if (document.documentElement.dataset.interfaceMode === "yumi-cosmic") {
+      playLiquidArrival(layers, holdsFixed);
+    } else {
+      playLampArrival(layers, LIQUID_OPTIONS);
+    }
     return;
   }
   layers.forEach((layer, index) => {
-    const rise = !landing && !holdsFixed(layer);
     layer.animate(
-      rise
-        ? [{ opacity: 0, translate: `0 ${ARRIVAL_RISE_PX}px` }, { opacity: 1, translate: "0 0" }]
-        : [{ opacity: 0 }, { opacity: 1 }],
+      [{ opacity: 0 }, { opacity: 1 }],
       {
         duration: ARRIVAL_MS,
         delay: arrivalDelay(index, layers.length),
