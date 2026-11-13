@@ -21,7 +21,9 @@ import { CORE_MAX_ATTEMPTS, firstAnswer } from "@/lib/ai/hedge";
 import { dailyQuotaResetAt, healthyModels } from "@/lib/ai/modelHealth";
 import { rememberIpa } from "@/lib/pronunciation/ipaSource";
 
+import { pocketKeyFrom, userForPocketKey } from "@/lib/pocket/keys";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { LanguageRoles } from "@/lib/lexicon/languageRouting";
 import type { LexiconEntry, LexiconQueryKind } from "@/lib/lexicon/types";
 import { isLexiconEntry, readInsight } from "@/lib/lexicon/types";
@@ -860,12 +862,27 @@ export function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    /*
+     * The reader's sign-in, or Yumi Pocket Lookup's share-extension key
+     * (lib/pocket/keys.ts; Chi, 2026-11-12). The key opens this lookup and
+     * the pocket save, nothing else; it reaches the same engine and the
+     * same daily quota as the app, under the key holder's account.
+     */
+    const pocketKey = pocketKeyFrom(request);
+    let supabase;
+    let userId: string | null;
+    if (pocketKey) {
+      supabase = createServiceClient();
+      userId = await userForPocketKey(supabase, pocketKey);
+    } else {
+      supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
+    }
 
-    if (!user) {
+    if (!userId) {
       return NextResponse.json(
         { error: "Please sign in before looking up a word.", code: "sign-in" },
         { status: 401 },
@@ -896,7 +913,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const roles = await readLanguageRoles(supabase, user.id);
+    const roles = await readLanguageRoles(supabase, userId);
 
     /*
      * Detected here as well as on the device, and for a different reason.
@@ -923,7 +940,7 @@ export async function POST(request: Request) {
         : null;
 
     const resolved = await lookupVocabulary({
-      userId: user.id,
+      userId,
       query,
       roles,
       chosenHead,

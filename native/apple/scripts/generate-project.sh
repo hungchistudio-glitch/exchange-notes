@@ -10,6 +10,8 @@ project_file="${project_dir}/ExchangeNotesApple.xcodeproj/project.pbxproj"
 command -v xcodegen >/dev/null
 command -v jq >/dev/null
 
+node "${script_dir}/export-pocket-lexicon.mjs"
+
 xcodegen generate \
   --spec "${project_dir}/project.yml" \
   --project "${project_dir}"

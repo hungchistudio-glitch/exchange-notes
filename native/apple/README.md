@@ -18,10 +18,37 @@ Install on a personal iPhone:
 
 1. Open `ExchangeNotesApple/ExchangeNotesApple.xcodeproj` in Xcode.
 2. Select the `ExchangeNotesPersonal` scheme.
-3. Select the same Personal Team for the `ExchangeNotes` and
-   `YumiWidgetExtension` targets.
+3. Select the same Personal Team for the `ExchangeNotes`,
+   `YumiWidgetExtension` and `PocketShareExtension` targets.
 4. Connect the iPhone, enable Developer Mode, and press Run.
-5. Add the Yumi widget from the iOS Home Screen widget gallery.
+5. Add the Yumi widget, or Yumi Pocket Lookup (small or medium), from the
+   iOS Home Screen widget gallery.
+
+### Yumi Pocket Lookup (Chi, 2026-11-12)
+
+- **The widget** (`Widget/PocketLookupWidget.swift`): the medium size offers
+  typing and voice, the small one typing. Each opens `/lookup` in the app
+  (`ExchangeNotesRoute.lookup`), which is on production: the app always
+  loads `https://exchange-notes-app.vercel.app`. It wears the mode and the
+  language pair the app last handed over (`PocketPreferences.swift`, from
+  `components/pocket/PocketPreferencesSync.tsx`); iOS may tint it.
+- **The share extension** (`Share/`): text selected in another app, then
+  Share, then Exchange Notes.
+  - With the extension's own key it uses the app's AI lookup and saves
+    only when 收藏 is pressed (`Share/PocketShareModel.swift`). The key
+    is issued by `/api/pocket/key` the first time the signed-in app opens
+    (`lib/pocket/device.ts`). It is kept in the Keychain under the App
+    Group's access group (`Shared/PocketKeyStore.swift`), so no extra
+    entitlement is needed.
+  - It is good for `/api/classify-text` and `/api/pocket/save` only, and
+    is revoked from Settings → Devices or by signing out.
+  - Without a key, or offline, it falls back to the built-in dictionary
+    (`Share/PocketDictionary.swift`, exported from
+    `lib/vocabulary/coreLexiconData.ts` by
+    `scripts/export-pocket-lexicon.mjs`).
+- **Shortcuts** (iOS 18+): `Shared/OpenPocketLookupIntent.swift`.
+- `npm run test:native-personal` builds all three targets and checks the
+  dictionary, the preferences and the deep links.
 
 The free provisioning profile expires after seven days. Re-run the Personal
 scheme from Xcode to renew the installation.

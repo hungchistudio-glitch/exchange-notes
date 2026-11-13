@@ -1,0 +1,283 @@
+/*
+ * Yumi Pocket Lookup (Chi, 2026-11-12): warm white by day, obsidian and
+ * ice in Yumi Cosmic, as the handoff asked. The Cosmic values are the
+ * obsidian bridge's tokens (app/cosmic.css), written out because this
+ * screen also renders in the review route outside the mode attribute.
+ */
+
+.page {
+  --p-bg: #f5f1e8;
+  --p-surface: #fffcf6;
+  --p-ink: #272c26;
+  --p-muted: #64695e;
+  --p-accent: #4d604a;
+  --p-line: #dcd5c6;
+  --p-on: #fffdf7;
+  min-height: 100dvh;
+  padding: max(env(safe-area-inset-top), 1rem) 1.25rem max(env(safe-area-inset-bottom), 2rem);
+  background: var(--p-bg);
+  color: var(--p-ink);
+}
+
+.page[data-cosmic="true"] {
+  --p-bg: #080b10;
+  --p-surface: #101820;
+  --p-ink: #e4ecee;
+  --p-muted: #a9bac2;
+  --p-accent: #b8e8e5;
+  --p-line: #34444e;
+  --p-on: #0b1a1c;
+}
+
+.inner {
+  max-width: 32rem;
+  margin: auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 3.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+/* A small lit point at the header's end: the app is listening for a word. */
+.header span:last-child {
+  width: 5px;
+  height: 5px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--p-accent);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--p-line);
+  border-radius: 50%;
+  background: var(--p-bg);
+  color: var(--p-accent);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem 0.4rem 1rem;
+  border: 1px solid var(--p-line);
+  border-radius: 2rem;
+  background: var(--p-surface);
+}
+
+.search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  background: transparent;
+  font-size: 1rem;
+  outline: none;
+}
+
+.search:focus-within {
+  outline: 2px solid var(--p-accent);
+  outline-offset: 3px;
+}
+
+.langs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.langs select {
+  min-width: 0;
+  max-width: 42%;
+  min-height: 44px;
+  background: transparent;
+  color: var(--p-ink);
+  font-size: 0.875rem;
+}
+
+.langs option {
+  background: var(--p-surface);
+}
+
+.card {
+  padding: 1.5rem;
+  border: 1px solid var(--p-line);
+  border-radius: 1.6rem;
+  background: var(--p-surface);
+  animation: arrive 180ms ease-out;
+}
+
+.word {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.word h2 {
+  margin: 0.5rem 0;
+  font-family: Georgia, serif;
+  font-size: 2.5rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.word h3 {
+  margin: 0.6rem 0;
+  font-size: 1.8rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--p-muted);
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.rule {
+  height: 1px;
+  margin: 1.4rem 0;
+  background: var(--p-line);
+}
+
+.label {
+  color: var(--p-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+}
+
+.example {
+  margin-top: 1.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--p-accent);
+  line-height: 1.7;
+}
+
+.example p + p {
+  color: var(--p-muted);
+  font-size: 0.85rem;
+}
+
+.save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 50px;
+  margin-top: 1.2rem;
+  border-radius: 2rem;
+  background: var(--p-accent);
+  color: var(--p-on);
+}
+
+.save:disabled {
+  opacity: 0.6;
+}
+
+.notice {
+  margin: 1rem 0;
+  color: var(--p-muted);
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.empty {
+  padding: 3rem 0.5rem;
+  color: var(--p-muted);
+  text-align: center;
+}
+
+.voice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 0;
+}
+
+.voice h2 {
+  font-size: 1.4rem;
+}
+
+/* The review route's own controls, and its stand-in for the widget. */
+.review {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  max-width: 52rem;
+  margin: auto;
+  padding: 1rem;
+  font-size: 0.75rem;
+}
+
+.review button,
+.review select {
+  min-height: 44px;
+  padding: 0.6rem;
+  border: 1px solid #999;
+  border-radius: 1rem;
+}
+
+.widgetCard {
+  margin-top: 3rem;
+}
+
+.widgetSearch {
+  margin-top: 1rem;
+}
+
+.widgetOpen {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  text-align: left;
+}
+
+.widgetPair {
+  margin-top: 1rem;
+}
+
+.page button:active {
+  transform: scale(0.98);
+}
+
+.page button:focus-visible,
+.page select:focus-visible {
+  outline: 2px solid var(--p-accent);
+  outline-offset: 3px;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+
+  .page button:active {
+    transform: none;
+  }
+}

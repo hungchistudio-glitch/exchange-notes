@@ -17,3 +17,8 @@
 "intent.parameter.text" = "Texto";
 "intent.parameter.language" = "Idioma";
 "intent.parameter.direction" = "Dirección";
+
+// Pocket lookup shortcuts
+"intent.pocket.title" = "Yumi · Consulta rápida";
+"intent.pocket.description" = "Abre una consulta en Exchange Notes.";
+"intent.pocket.voice" = "Consulta por voz";

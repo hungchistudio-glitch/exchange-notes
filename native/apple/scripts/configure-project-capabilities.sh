@@ -12,7 +12,7 @@ root_object="$(
   plutil -extract rootObject raw "${project_file}"
 )"
 
-for target_name in ExchangeNotes YumiWidgetExtension; do
+for target_name in ExchangeNotes YumiWidgetExtension PocketShareExtension; do
   target_id="$(
     plutil -convert json -o - "${project_file}" \
       | jq -er \

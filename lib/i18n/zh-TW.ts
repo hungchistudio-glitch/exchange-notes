@@ -2,6 +2,31 @@ import info from "@/lib/i18n/info/zh-TW";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const traditionalChinese: TranslationDictionary = {
+  pocket: {
+    shareTitle: "分享文字查字",
+    shareNote: "使用內建離線字典。分享試閱不會收藏單字；收藏請在 App 完成。",
+    title: "Yumi 隨行查字",
+    home: "回到主頁",
+    search: "查字",
+    placeholder: "查一個新單字…",
+    voice: "語音查字",
+    source: "學習語言",
+    target: "翻譯語言",
+    swap: "交換語言",
+    speak: "播放發音",
+    searching: "查詢中…",
+    failed: "尚未找到解釋，請確認語言或重試。",
+    result: "雙語解釋",
+    save: "收藏單字",
+    saved: "已收藏",
+    saving: "收藏中…",
+    empty: "讓剛遇見的單字，留下來。",
+    voiceReady: "說出你剛聽到的字。",
+    voiceStart: "開始說話",
+    voiceUnavailable: "此環境無法使用語音，請改用輸入查字。",
+    preview: "本機試閱・內建字典，不會修改帳號或獎勵。",
+    saveFailed: "無法收藏，請再試一次。"
+  },
   info,
   offline: {
     title: "目前離線",
@@ -2587,6 +2612,38 @@ const traditionalChinese: TranslationDictionary = {
         "無法更新小工具連線，請再試一次。",
       copyError:
         "無法自動複製權杖，請手動選取並複製。",
+    },
+
+    pocketKeys: {
+
+      rowTitle: "Yumi 隨行查字・分享",
+
+      rowDescription: "從其他 App 分享時查字與收藏用的專屬鑰匙",
+
+      none: "無",
+
+      count: "{count} 把使用中",
+
+      sheetTitle: "分享鑰匙",
+
+      intro: "在 iPhone 上從其他 App 分享文字時，Exchange Notes 用一把專屬鑰匙幫你查字和收藏。這把鑰匙只能查字和收藏，不能登入或做其他事。",
+
+      created: "{date} 加入",
+
+      lastUsed: "上次使用：{date}",
+
+      neverUsed: "尚未使用",
+
+      revoke: "撤銷",
+
+      revoking: "撤銷中…",
+
+      failed: "無法載入鑰匙，請再試一次。",
+
+      empty: "目前沒有分享鑰匙。在 iPhone 上打開 Exchange Notes，就會自動加入一把。",
+
+      revokeNote: "撤銷後，那支 iPhone 要先打開 App 一次，分享才能再收藏單字。",
+
     },
 
     iphoneWidget: {

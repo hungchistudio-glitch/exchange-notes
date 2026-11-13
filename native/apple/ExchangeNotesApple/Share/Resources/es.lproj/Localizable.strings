@@ -1,0 +1,5 @@
+
+// Pocket lookup shortcuts
+"intent.pocket.title" = "Yumi · Consulta rápida";
+"intent.pocket.description" = "Abre una consulta en Exchange Notes.";
+"intent.pocket.voice" = "Consulta por voz";

@@ -15,6 +15,21 @@ struct ExchangeNotesWebView: UIViewRepresentable {
         let configuration =
             WKWebViewConfiguration()
 
+        configuration.userContentController.add(context.coordinator, name: "yumiPocketPreferences")
+        configuration.userContentController.add(context.coordinator, name: "yumiPocketKey")
+        // Whether the share extension already holds a key, told to the page
+        // before it runs (components/pocket/PocketKeySync.tsx): present, and
+        // which one, so signing out can revoke it. Never the key itself.
+        let held = PocketKeyStore.load()
+        let state = held.map { "{present:true,id:\"\($0.id)\"}" } ?? "{present:false,id:null}"
+        configuration.userContentController.addUserScript(
+            WKUserScript(
+                source: "window.__yumiPocketKey = \(state);",
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: true
+            )
+        )
+
         configuration.websiteDataStore =
             .default()
 
@@ -91,6 +106,8 @@ struct ExchangeNotesWebView: UIViewRepresentable {
             )
 #endif
 
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "yumiPocketPreferences")
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "yumiPocketKey")
         webView.navigationDelegate = nil
     }
 
@@ -175,6 +192,26 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                 sourceWebView === expectedWebView,
                 isTrusted(sourceWebView.url)
             else {
+                return
+            }
+
+            // The share extension's key (Shared/PocketKeyStore.swift), from the
+            // signed-in page: kept, or cleared on signing out.
+            if message.name == "yumiPocketKey" {
+                guard let body = message.body as? [String: Any], body["version"] as? Int == 1 else { return }
+                if body["clear"] as? Bool == true {
+                    PocketKeyStore.clear()
+                } else if let key = body["key"] as? String, let id = body["id"] as? String,
+                          id.range(of: "^[0-9a-fA-F-]{36}$", options: .regularExpression) != nil {
+                    PocketKeyStore.save(.init(key: key, id: id))
+                }
+                return
+            }
+
+            if message.name == "yumiPocketPreferences" {
+                if let body = message.body as? [String: Any], let preferences = PocketPreferences(payload: body), preferences.saveIfChanged() {
+                    WidgetCenter.shared.reloadTimelines(ofKind: "YumiPocketLookup")
+                }
                 return
             }
 

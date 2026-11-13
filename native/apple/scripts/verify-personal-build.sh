@@ -25,6 +25,13 @@ swiftc \
 
 "${route_binary}"
 
+swiftc -module-cache-path "${route_module_cache}" \
+  "${project_dir}/Shared/PocketPreferences.swift" \
+  "${project_dir}/Share/PocketDictionary.swift" \
+  "${script_dir}/verify-pocket.swift" \
+  -o "${route_binary}-pocket"
+"${route_binary}-pocket" "${project_dir}/Share/Resources/pocket-lexicon.json"
+
 xcodebuild \
   -quiet \
   -project "${project_dir}/ExchangeNotesApple.xcodeproj" \
@@ -40,6 +47,8 @@ widget_path="${app_path}/PlugIns/YumiWidgetExtension.appex"
 
 test -d "${app_path}"
 test -d "${widget_path}"
+test -d "${app_path}/PlugIns/PocketShareExtension.appex"
+test -f "${app_path}/PlugIns/PocketShareExtension.appex/pocket-lexicon.json"
 
 scheme_count="$(
   /usr/libexec/PlistBuddy \
@@ -57,4 +66,4 @@ background_audio_mode="$(
 
 test "${background_audio_mode}" = "audio"
 
-echo "Personal Team app, widget, and deep-link verification passed."
+echo "App, widget, share extension, pocket dictionary and deep-link simulator verification passed."

@@ -1,6 +1,7 @@
 import Foundation
 
 enum ExchangeNotesRoute: String {
+    case lookup
     case home
     case vocabulary
     case review
@@ -11,7 +12,9 @@ enum ExchangeNotesRoute: String {
     private static let productionURL =
         URL(string: "https://exchange-notes-app.vercel.app")!
 
-    private static var rootURL: URL {
+    /// The site the app loads, which is also where the share extension's
+    /// lookup and save go (Share/PocketShareModel).
+    static var rootURL: URL {
 #if DEBUG
         if
             let value = ProcessInfo.processInfo
@@ -29,6 +32,8 @@ enum ExchangeNotesRoute: String {
 
     var webURL: URL {
         switch self {
+        case .lookup:
+            return Self.rootURL.appendingPathComponent("lookup")
         case .home:
             return Self.rootURL
         case .vocabulary:
@@ -75,6 +80,11 @@ enum ExchangeNotesRoute: String {
             )?
             .queryItems
             ?? []
+
+        if route == .lookup {
+            let input = queryItems.first(where: { $0.name == "input" })?.value
+            queryItems = [URLQueryItem(name: "input", value: input == "voice" ? "voice" : "text")]
+        }
 
         queryItems.append(
             URLQueryItem(

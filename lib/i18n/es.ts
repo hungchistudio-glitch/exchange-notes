@@ -2,6 +2,31 @@ import info from "@/lib/i18n/info/es";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const spanish: TranslationDictionary = {
+  pocket: {
+    shareTitle: "Consultar texto compartido",
+    shareNote: "Solo diccionario integrado. Esta vista no guarda palabras; guárdalas en la app.",
+    title: "Yumi · Consulta rápida",
+    home: "Volver al inicio",
+    search: "Consultar",
+    placeholder: "Busca una palabra…",
+    voice: "Consulta por voz",
+    source: "Idioma de aprendizaje",
+    target: "Idioma de traducción",
+    swap: "Intercambiar idiomas",
+    speak: "Reproducir pronunciación",
+    searching: "Buscando…",
+    failed: "Aún no hay respuesta. Comprueba el idioma o inténtalo de nuevo.",
+    result: "Resultado bilingüe",
+    save: "Guardar palabra",
+    saved: "Guardada",
+    saving: "Guardando…",
+    empty: "Una palabra que encuentras. Un pequeño mundo que conservar.",
+    voiceReady: "Di la palabra que acabas de oír.",
+    voiceStart: "Empezar a hablar",
+    voiceUnavailable: "La voz no está disponible aquí. Puedes escribir.",
+    preview: "Vista previa local · diccionario integrado. No cambia la cuenta ni las recompensas.",
+    saveFailed: "No se pudo guardar. Inténtalo de nuevo."
+  },
   info,
   offline: {
     title: "Estás sin conexión",
@@ -2625,6 +2650,38 @@ const spanish: TranslationDictionary = {
         "No se ha podido actualizar la conexión del widget. Inténtalo de nuevo.",
       copyError:
         "No se ha podido copiar el token. Selecciónalo y cópialo a mano.",
+    },
+
+    pocketKeys: {
+
+      rowTitle: "Compartir con Yumi · Consulta rápida",
+
+      rowDescription: "Claves para consultar y guardar palabras compartidas desde otras apps",
+
+      none: "Ninguna",
+
+      count: "{count} activas",
+
+      sheetTitle: "Claves para compartir",
+
+      intro: "Cuando compartes texto desde otra app en tu iPhone, Exchange Notes lo consulta y lo guarda con una clave propia. Una clave solo puede consultar y guardar palabras; nunca inicia sesión en ningún sitio.",
+
+      created: "Añadida el {date}",
+
+      lastUsed: "Último uso: {date}",
+
+      neverUsed: "Aún sin usar",
+
+      revoke: "Revocar",
+
+      revoking: "Revocando…",
+
+      failed: "No se pudieron cargar tus claves. Inténtalo de nuevo.",
+
+      empty: "No hay claves. Abre Exchange Notes en tu iPhone y se añadirá una para compartir.",
+
+      revokeNote: "Tras revocarla, ese iPhone abre la app una vez antes de que compartir pueda volver a guardar palabras.",
+
     },
 
     iphoneWidget: {

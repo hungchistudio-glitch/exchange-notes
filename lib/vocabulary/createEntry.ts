@@ -1,6 +1,5 @@
 "use client";
 
-import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyMedia } from "@/lib/media/record";
 import { findDuplicate } from "@/lib/lexicon/personal";
 import { applyPending, readMirror, readOutbox } from "@/lib/offline/vocabulary";
@@ -10,6 +9,7 @@ import {
   type LanguageIdentityRequest,
   type VocabularyLanguageIdentity,
 } from "@/lib/vocabulary/languageIdentity";
+import { buildVocabularyRow } from "@/lib/vocabulary/entryRow";
 import { insertVocabulary } from "@/lib/vocabulary/repository";
 import { announceWordSaved } from "@/lib/vocabulary/savedWords";
 
@@ -135,19 +135,6 @@ async function readKnownItems(userId: string): Promise<VocabularyItem[]> {
   }
 }
 
-function byLanguage(
-  entries: ReadonlyArray<readonly [LanguageCode, string | null | undefined]>,
-): Partial<Record<LanguageCode, string>> {
-  const out: Partial<Record<LanguageCode, string>> = {};
-
-  for (const [code, value] of entries) {
-    const text = value?.trim();
-    if (text) out[code] = text;
-  }
-
-  return out;
-}
-
 /**
  * Saves a word, having first worked out what language it is in.
  *
@@ -185,48 +172,9 @@ export async function createVocabularyEntry(
     if (existing) throw new DuplicateVocabularyError(existing);
   }
 
-  const termExample = input.termExample?.trim() || null;
-  const translationExample = input.translationExample?.trim() || null;
-
-  const inserted = await insertVocabulary({
-    user_id: input.userId,
-    word: term,
-    translation,
-
-    word_language: identity.termLanguage,
-    translation_language: identity.translationLanguage,
-    language_source: identity.source,
-    language_confidence: identity.confidence,
-    language_pair_at_creation: identity.pairAtCreation,
-    needs_language_review: identity.needsReview,
-
-    /*
-     * The map is written at birth rather than backfilled later.
-     *
-     * A row is one concept known in N languages; starting it with the two it
-     * was born knowing means every reader of `texts` — search, the language
-     * fill, the pronunciation lab — sees the same shape for a word saved
-     * today as for one migrated last week.
-     */
-    texts: byLanguage([
-      [identity.termLanguage, term],
-      [identity.translationLanguage, translation],
-    ]),
-    examples: byLanguage([
-      [identity.termLanguage, termExample],
-      [identity.translationLanguage, translationExample],
-    ]),
-
-    part_of_speech: input.partOfSpeech?.trim() || null,
-    example_sentence: termExample,
-    translated_example: translationExample,
-    image_url: input.imageUrl ?? null,
-    media: input.media ?? null,
-    confidence: input.confidence ?? "medium",
-    category: input.category ?? "other",
-    status: input.status ?? "new",
-    next_review_at: new Date().toISOString(),
-  });
+  const inserted = await insertVocabulary(
+    buildVocabularyRow({ ...input, term, translation }, identity),
+  );
 
   const item = inserted as VocabularyItem;
 
