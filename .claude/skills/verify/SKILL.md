@@ -37,9 +37,13 @@ npx vitest run      # ~2.5–3 min, ~250 files, ~2,000 tests
 npx next build      # ~20s with a warm cache, longer cold
 ```
 
-- **Why `next build` matters even though CI skips it:** `tsconfig.json`
-  includes `tests/**`, and vitest does not type-check. A type error in a
-  *test* passes every CI check and then fails the Vercel deployment.
+- **Why `next build` matters even though CI skips it:** CI's `tsc --noEmit`
+  type-checks `tests/**` too (vitest does not), but it runs on a fresh
+  checkout with no `.next/types`. Only the build generates and checks
+  `.next/types/validator.ts`, which holds every page, layout and route
+  handler to the exports Next expects. A wrong export there passes every CI
+  check and then fails the Vercel deployment. The build also compiles the
+  server/client boundary for real.
 - `next build` rewrites `next-env.d.ts`. Run `git checkout next-env.d.ts`
   rather than committing that churn.
 - `npm run build` also copies MediaPipe's wasm first. `npx next build` is fine

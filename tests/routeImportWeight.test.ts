@@ -209,9 +209,14 @@ describe("what the heaviest tabs drag in with them", () => {
    * a new word becomes is now built in one place for both doors
    * (lib/vocabulary/entryRow.ts, imported by createEntry.ts, which both tabs
    * already load). Types only, and the function moved out of createEntry.
+   * Raised vocabulary 171 → 173 (2026-11-12): the library's dictation
+   * answers the voice (Chi: 發聲時收音動畫並沒反應). Its key is now the
+   * home field's microphone, components/lexicon/VoiceCapture and its
+   * stylesheet, whose ring swells with the voice; it imports only React,
+   * the icons and the translation hook the tab already loads.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 171],
+    ["vocabulary", TABS.vocabulary, 173],
     ["home", TABS.home, 187],
   ] as const)(
     "keeps %s's static graph inside its ceiling",

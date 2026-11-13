@@ -45,6 +45,7 @@ export type SpeechRecognitionLike = {
   onerror: ((event: SpeechRecognitionErrorLike) => void) | null;
   onend: (() => void) | null;
   onspeechend?: (() => void) | null;
+  onspeechstart?: (() => void) | null;
 };
 
 export type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
