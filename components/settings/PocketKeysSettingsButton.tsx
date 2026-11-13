@@ -1,11 +1,12 @@
 "use client";
 
 import { KeyRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { insideIphoneApp } from "@/lib/pocket/device";
 
 type PocketKey = {
   id: string;
@@ -13,6 +14,8 @@ type PocketKey = {
   created_at: string;
   last_used_at: string | null;
 };
+
+const subscribeNever = () => () => {};
 
 async function fetchKeys(): Promise<PocketKey[]> {
   const response = await fetch("/api/pocket/key", { cache: "no-store" });
@@ -26,6 +29,10 @@ async function fetchKeys(): Promise<PocketKey[]> {
  * 專用小鑰匙, revocable in Settings). Each iPhone the app is opened on gets
  * one (lib/pocket/device.ts); this lists those in force and revokes any of
  * them, which stops it at once (/api/pocket/key).
+ *
+ * Shown inside the iPhone app, and anywhere once a key exists (so a lost
+ * phone's key can be revoked from the laptop); a reader who has never
+ * opened the app on an iPhone is not shown a row about it.
  */
 export default function PocketKeysSettingsButton() {
   const { t, locale } = useTranslation();
@@ -34,6 +41,7 @@ export default function PocketKeysSettingsButton() {
   const [keys, setKeys] = useState<PocketKey[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const inApp = useSyncExternalStore(subscribeNever, insideIphoneApp, () => false);
 
   function load() {
     return fetchKeys().then(
@@ -77,6 +85,8 @@ export default function PocketKeysSettingsButton() {
     new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric" }).format(new Date(value));
 
   const count = keys?.length ?? 0;
+
+  if (!inApp && count === 0) return null;
 
   return (
     <>

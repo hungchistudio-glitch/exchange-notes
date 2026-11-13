@@ -23,6 +23,11 @@ function nativeBridge() {
   return handler ? { handler, state: target.__yumiPocketKey ?? null } : null;
 }
 
+/** Whether this page is running inside the iPhone app, which has the bridge. */
+export function insideIphoneApp() {
+  return nativeBridge() !== null;
+}
+
 /** One request per page load, whatever happens to it. */
 let asked = false;
 
