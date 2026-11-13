@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
+import ThemeWords from "@/components/lexicon/ThemeWords";
 import {
   VoiceCaptureStatus,
   VoiceMicButton,
@@ -304,6 +305,21 @@ export default function UniversalSearchField({
         <p role="alert" className="mt-2.5 px-1 text-[0.75rem] text-red-600">
           {imageLookup.error}
         </p>
+      ) : null}
+
+      {/* Somewhere to start, for a reader with no word in mind yet
+          (lib/lexicon/themeWords.ts). Gone once anything is asked. */}
+      {!hasAnswer &&
+      !search.query.trim() &&
+      voice.phase === "idle" &&
+      !imageLookup.reading ? (
+        <ThemeWords
+          className="mt-3"
+          onPick={(word) => {
+            onboarding.dismiss();
+            search.submit(word, "type");
+          }}
+        />
       ) : null}
 
       {onboarding.visible && !hasAnswer ? (

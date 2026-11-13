@@ -218,10 +218,19 @@ describe("what the heaviest tabs drag in with them", () => {
    * 重新更新實際教學介紹) says the iPhone's widget and share sheet only
    * inside the iPhone app, and asks lib/pocket/device.ts, which imports
    * nothing, whether it is there.
+   * Raised home 188 → 192 (2026-11-13): a first reader's feedback (Chi chose
+   * each fix). lib/spokenWords.ts lights the word being said and says a
+   * sentence one word at a time — it imports only lib/speech.ts, which home
+   * already loads. lib/lexicon/themeWords.ts, today's theme under the empty
+   * search (ten themes of eight words in five languages, about 6 KB, built
+   * in so they cost no AI and show with no signal), imports a type; and
+   * components/lexicon/ThemeWords draws them on home's first paint, from
+   * hooks and contexts the field already uses. hooks/home/useRiseClearOfCoach
+   * lifts Yumi clear of the tour's card at the foot; it imports React only.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 173],
-    ["home", TABS.home, 188],
+    ["home", TABS.home, 192],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

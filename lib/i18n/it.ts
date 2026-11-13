@@ -496,11 +496,16 @@ const italian: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Sono Yumi, e anche il menù. Toccami per aprire la ghiera, girala verso un posto e tocca quel tasto per entrare.",
+            "Sono Yumi, e anche il menù. Tre mosse e sei dentro:",
+          tasks: {
+            open: "Toccami per aprire la ghiera",
+            turn: "Gira la ghiera verso un altro posto",
+            enter: "Gira fino a «Cerca» e toccalo per entrare",
+          },
         },
         ask: {
           body:
-            "Gira fino a «Cerca», toccalo e cerca una parola: scrivila, dilla o fotografala.",
+            "Ora cerca una parola: scrivila, dilla o fotografala.",
         },
         keep: {
           body:
@@ -659,6 +664,14 @@ const italian: TranslationDictionary = {
     openWord: "Apri",
     reviewWord: "Ripassa",
     listen: "Ascolta",
+    play: "Riproduci",
+    stop: "Ferma",
+    wordByWord: "Parola per parola",
+    lookingUp: "Sto cercando «{term}»…",
+    stillLooking: "Sto ancora cercando, ci siamo quasi.",
+    takingLong: "Questa ci mette più del solito. Ci sto ancora lavorando, non si è rotto niente.",
+    viewMyWords: "Vedi le mie parole",
+    themeWords: "Provane una · {theme}",
 
     save: "Salva nel vocabolario",
     saving: "Salvataggio…",
@@ -1047,6 +1060,8 @@ const italian: TranslationDictionary = {
      * used once. Review needs no line here — its key is on screen.
      */
     yumiHint: "Tocca Yumi per aprire il menu",
+    yumiHover: "Cliccami",
+    yumiHoverHome: "Cliccami per tornare alla Home",
     panelTitle: "Tutte le funzioni",
     panelLearning: "Studio",
     panelDiscover: "Scopri",
@@ -2154,6 +2169,9 @@ const italian: TranslationDictionary = {
     subtitle: "Rafforza le parole pronte per oggi.",
     today: "Oggi",
     cardsReady: "Schede pronte",
+    cardReady: "Scheda pronta",
+    dueWordsLabel: "Parole da ripassare oggi",
+    moreWords: "+{count} altre",
     introLineOne: "Ripassa prima le schede in scadenza.",
     startReview: "Inizia il ripasso",
     freePractice: "Esercizio libero",

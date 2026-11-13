@@ -4,6 +4,7 @@
 @import "./standard-settings.css";
 @import "./tactile.css";
 @import "./yumi-motion.css";
+@import "./pointer-hover.css";
 
 :root {
   --background: #ffffff;

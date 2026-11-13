@@ -27,6 +27,40 @@
 }
 
 /*
+  While a tour is on, its card stands at the foot of this screen
+  (TutorialCoach.module.css, .foot; Chi, 2026-11-13), so the room she is
+  centred in ends above it: she rises by half this padding. How much is
+  measured, not guessed — the card and the column under her both grow with
+  the reader's text size — by hooks/home/useRiseClearOfCoach.ts, which writes
+  --coach-rise; 10rem is where it starts. The greeting over her steps aside
+  while a tour is on (YumiRingOverlay), so the room above is free. The frame
+  loop reads her place from this stage every frame, so she glides with it.
+*/
+.surface {
+  transition: padding-bottom 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.surface:has(.centre[data-coach="on"]) {
+  padding-bottom: var(--coach-rise, 10rem);
+}
+
+/*
+  Today's theme words under the field step aside while a tour is on: on a
+  667px phone they sit exactly where the card at the foot stands, and the
+  tour's own way to a lookup is the dial's Search, whose sheet offers the
+  same words.
+*/
+.centre[data-coach="on"] :global([data-theme-words]) {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface {
+    transition: none;
+  }
+}
+
+/*
   Tactile Worlds (Chi, 2026-10-11): the drafting grid gives way to a warm
   paper ground with one light from above and a darker edge where the room ends, so the
   beads around her read as objects sitting in a room rather than marks on a

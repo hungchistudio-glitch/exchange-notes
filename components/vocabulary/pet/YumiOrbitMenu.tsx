@@ -141,6 +141,7 @@ export default function YumiOrbitMenu({
       <button
         type="button"
         className={styles.backdrop}
+        data-no-hover=""
         data-phase={phase}
         onClick={onClose}
         aria-label={copy.closeActionsAriaLabel}

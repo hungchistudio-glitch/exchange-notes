@@ -448,3 +448,73 @@
 .crossing .below { transition: none; }
 .modeArrival.live .inkGlyph,
 .modeArrival.live .when { animation: none; }
+
+/*
+  Under a mouse: a warm glow round her and a small tag beside her (Chi,
+  2026-11-13: a first reader on a computer did not take her for something
+  to press). Both sit in the ring's box, which the frame loop keeps on her
+  eye, so they follow her; `screen` makes the glow lighten her rather than
+  veil her. Written by onCanvasHover, only for a mouse, and never while the
+  ring is out.
+*/
+.hoverGlow,
+.hoverTag {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.hoverGlow {
+  left: 0;
+  top: 0;
+  width: 190px;
+  height: 190px;
+  margin: -95px 0 0 -95px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 226 150 / 0.3) 0%, rgb(255 226 150 / 0.14) 45%, rgb(255 226 150 / 0) 70%);
+  mix-blend-mode: screen;
+  transform: scale(0.92);
+}
+
+.hoverTag {
+  left: 64px;
+  top: -76px;
+  padding: 0.3125rem 0.75rem;
+  border-radius: 999px;
+  background: #171717;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.16);
+  transform: translateY(4px);
+}
+
+.answering .hoverGlow {
+  width: 128px;
+  height: 128px;
+  margin: -64px 0 0 -64px;
+}
+
+.answering .hoverTag {
+  left: 46px;
+  top: -52px;
+}
+
+.root[data-yumi-hover="true"]:not(.open) .hoverGlow {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.root[data-yumi-hover="true"]:not(.open) .hoverTag {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hoverGlow,
+  .hoverTag {
+    transition: none;
+  }
+}

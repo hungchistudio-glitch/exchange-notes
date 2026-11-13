@@ -548,8 +548,11 @@ export type TranslationDictionary = {
       useStandard: string;
       useCosmic: string;
       steps: {
-        /** Opening the dial and turning it; only a tap on a key goes in. */
-        meet: { body: string };
+        /**
+         * Opening the dial, turning it, and going in by a tap on a key, as a
+         * checklist ticked as each happens. `tasks` are its three lines.
+         */
+        meet: { body: string; tasks: { open: string; turn: string; enter: string } };
         ask: { body: string };
         /**
          * Saving, and the two things a new word earns: a cookie on Home to
@@ -685,6 +688,22 @@ export type TranslationDictionary = {
     openWord: string;
     reviewWord: string;
     listen: string;
+    /** The play key's two states: ▶ before, ■ while it plays. */
+    play: string;
+    stop: string;
+    /** The example block's switch: each sentence said one word at a time. */
+    wordByWord: string;
+    /**
+     * Yumi, right under the field while a lookup runs: at once ({term} is
+     * the word asked), after four seconds, and after ten.
+     */
+    lookingUp: string;
+    stillLooking: string;
+    takingLong: string;
+    /** Under Save once a word is kept: the way to the vocabulary page. */
+    viewMyWords: string;
+    /** Over today's theme words under the empty search. {theme} is the theme's name. */
+    themeWords: string;
 
     save: string;
     saving: string;
@@ -1096,6 +1115,9 @@ export type TranslationDictionary = {
     };
     /** The tap that opens the ring, shown until it has been used once. */
     yumiHint: string;
+    /** The tag beside Yumi while a mouse is over her: at rest, and while she is answering (a click takes the reader home). */
+    yumiHover: string;
+    yumiHoverHome: string;
     panelTitle: string;
     panelLearning: string;
     panelDiscover: string;
@@ -2219,6 +2241,11 @@ export type TranslationDictionary = {
     subtitle: string;
     today: string;
     cardsReady: string;
+    /** The same label when exactly one card is ready. */
+    cardReady: string;
+    /** The due words named on the slab: their list's name, and "+{count} more" after the first few. */
+    dueWordsLabel: string;
+    moreWords: string;
     introLineOne: string;
     startReview: string;
     freePractice: string;

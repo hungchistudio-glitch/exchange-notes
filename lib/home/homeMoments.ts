@@ -37,7 +37,9 @@ export type HomeMoment =
   /** A piece was put on her in the shop. */
   | "shop-tried"
   /** The dial turned to a different key, by hand, wheel or arrow key. */
-  | "dial-turned";
+  | "dial-turned"
+  /** A key on the dial was tapped, and the reader went where it leads. */
+  | "dial-chosen";
 
 type Listener = (moment: HomeMoment) => void;
 

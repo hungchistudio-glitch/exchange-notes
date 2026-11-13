@@ -496,11 +496,16 @@ const french: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Je suis Yumi, et aussi le menu. Touche-moi pour ouvrir le cadran, tourne-le vers un endroit, puis touche cette touche pour entrer.",
+            "Je suis Yumi, et aussi le menu. Trois gestes et tu y es :",
+          tasks: {
+            open: "Touche-moi pour ouvrir le cadran",
+            turn: "Tourne le cadran vers un autre endroit",
+            enter: "Tourne jusqu'à « Rechercher » et touche-le pour entrer",
+          },
         },
         ask: {
           body:
-            "Tourne jusqu'à « Rechercher », touche-le et cherche un mot : écris-le, dis-le ou photographie-le.",
+            "Maintenant, cherche un mot : écris-le, dis-le ou photographie-le.",
         },
         keep: {
           body:
@@ -659,6 +664,14 @@ const french: TranslationDictionary = {
     openWord: "Ouvrir",
     reviewWord: "Réviser",
     listen: "Écouter",
+    play: "Lire",
+    stop: "Arrêter",
+    wordByWord: "Mot à mot",
+    lookingUp: "Je cherche « {term} »…",
+    stillLooking: "Je cherche encore, c'est presque prêt.",
+    takingLong: "Celui-ci prend plus de temps que d'habitude. Je continue, rien n'a planté.",
+    viewMyWords: "Voir mes mots",
+    themeWords: "Essaie un mot · {theme}",
 
     save: "Ajouter au vocabulaire",
     saving: "Enregistrement…",
@@ -1047,6 +1060,8 @@ const french: TranslationDictionary = {
      * used once. Review needs no line here — its key is on screen.
      */
     yumiHint: "Touche Yumi pour ouvrir le menu",
+    yumiHover: "Clique sur moi",
+    yumiHoverHome: "Clique sur moi pour revenir",
     panelTitle: "Toutes les fonctions",
     panelLearning: "Apprendre",
     panelDiscover: "Découvrir",
@@ -2154,6 +2169,9 @@ const french: TranslationDictionary = {
     subtitle: "Renforcez les mots qui sont prêts aujourd'hui.",
     today: "Aujourd'hui",
     cardsReady: "Fiches prêtes",
+    cardReady: "Fiche prête",
+    dueWordsLabel: "Mots à revoir aujourd'hui",
+    moreWords: "+{count} autres",
     introLineOne: "Révisez d'abord les fiches dues.",
     startReview: "Commencer la révision",
     freePractice: "Entraînement libre",

@@ -497,11 +497,16 @@ const english: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "I'm Yumi — and the menu. Tap me to open the dial, turn it to a place, then tap that key to go in.",
+            "I'm Yumi — and the menu. Three moves, and you're in:",
+          tasks: {
+            open: "Tap me to open the dial",
+            turn: "Turn the dial to another place",
+            enter: "Turn to Search and tap it to go in",
+          },
         },
         ask: {
           body:
-            "Turn to Search, tap it, and look a word up — type it, say it or photograph it.",
+            "Now look a word up for me: type it, say it or photograph it.",
         },
         keep: {
           body:
@@ -664,6 +669,14 @@ const english: TranslationDictionary = {
     openWord: "Open",
     reviewWord: "Review",
     listen: "Listen",
+    play: "Play",
+    stop: "Stop",
+    wordByWord: "Word by word",
+    lookingUp: "I'm looking up “{term}”…",
+    stillLooking: "Still looking — almost there.",
+    takingLong: "This one is taking longer than usual. I'm still on it — nothing has gone wrong.",
+    viewMyWords: "See my words",
+    themeWords: "Try one · {theme}",
 
     save: "Save to vocabulary",
     saving: "Saving…",
@@ -1088,6 +1101,8 @@ const english: TranslationDictionary = {
      * used once. Review needs no line here — its key is on screen.
      */
     yumiHint: "Tap Yumi for the menu",
+    yumiHover: "Click me",
+    yumiHoverHome: "Click me to go home",
     panelTitle: "All features",
     panelLearning: "Learning",
     panelDiscover: "Discover",
@@ -2278,6 +2293,9 @@ const english: TranslationDictionary = {
     subtitle: "Strengthen the words that are ready today.",
     today: "Today",
     cardsReady: "Cards ready",
+    cardReady: "Card ready",
+    dueWordsLabel: "Words due today",
+    moreWords: "+{count} more",
     introLineOne: "Review due cards first.",
     startReview: "Start review",
     freePractice: "Free practice",

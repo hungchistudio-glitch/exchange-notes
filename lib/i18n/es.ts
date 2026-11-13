@@ -497,11 +497,16 @@ const spanish: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Soy Yumi, y también el menú. Tócame para abrir el dial, gíralo hasta un sitio y toca esa tecla para entrar.",
+            "Soy Yumi, y también el menú. Tres pasos y ya estás dentro:",
+          tasks: {
+            open: "Tócame para abrir el dial",
+            turn: "Gira el dial hasta otro sitio",
+            enter: "Gira hasta «Buscar» y tócalo para entrar",
+          },
         },
         ask: {
           body:
-            "Gira hasta «Buscar», tócalo y busca una palabra: escríbela, dila o fotografíala.",
+            "Ahora busca una palabra: escríbela, dila o fotografíala.",
         },
         keep: {
           body:
@@ -664,6 +669,14 @@ const spanish: TranslationDictionary = {
     openWord: "Abrir",
     reviewWord: "Repasar",
     listen: "Escuchar",
+    play: "Reproducir",
+    stop: "Detener",
+    wordByWord: "Palabra a palabra",
+    lookingUp: "Estoy buscando «{term}»…",
+    stillLooking: "Sigo buscando, ya casi está.",
+    takingLong: "Esta tarda más de lo normal. Sigo en ello; no ha fallado nada.",
+    viewMyWords: "Ver mis palabras",
+    themeWords: "Prueba una · {theme}",
 
     save: "Guardar en el vocabulario",
     saving: "Guardando…",
@@ -1087,6 +1100,8 @@ const spanish: TranslationDictionary = {
      * used once. Review needs no line here — its key is on screen.
      */
     yumiHint: "Toca a Yumi para abrir el menú",
+    yumiHover: "Haz clic en mí",
+    yumiHoverHome: "Haz clic en mí para volver",
     panelTitle: "Todas las funciones",
     panelLearning: "Aprender",
     panelDiscover: "Descubrir",
@@ -2274,6 +2289,9 @@ const spanish: TranslationDictionary = {
     subtitle: "Refuerza las palabras que tocan hoy.",
     today: "Hoy",
     cardsReady: "Tarjetas listas",
+    cardReady: "Tarjeta lista",
+    dueWordsLabel: "Palabras para hoy",
+    moreWords: "+{count} más",
     introLineOne: "Repasa primero las tarjetas pendientes.",
     startReview: "Empezar el repaso",
     freePractice: "Práctica libre",
