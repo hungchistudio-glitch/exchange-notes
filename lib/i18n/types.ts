@@ -533,7 +533,7 @@ export type TranslationDictionary = {
        * then The other look in Cosmic. `label` takes {chapter}, {name},
        * {current} and {total}.
        */
-      chapters: { home: string; pages: string; shop: string; cosmic: string };
+      chapters: { home: string; pages: string; shop: string; games: string; cosmic: string };
       /**
        * The label on the steps shown to a reader who finished an earlier
        * edition of the tour: only what is new. Takes {current} and {total}.
@@ -559,24 +559,33 @@ export type TranslationDictionary = {
         keep: { body: string; tag: string };
         /** tag: the few words on the light over a cookie card's "Feed Yumi". */
         feed: { body: string; tag: string };
+        /** Saying a word into the same field, and the sea that hears it. */
+        voice: { body: string };
         /*
          * The page steps. `action` labels the door that takes the reader
          * there when they are not on that page yet; the body is what is said
          * once they are.
          */
+        /** The library, and what each cell of its Daily Focus is. */
         library: { body: string; action: string };
+        /** Yumi's halo on the library page: a key for each feature. */
+        halo: { body: string };
         review: { body: string; action: string };
         pronunciation: { body: string; action: string };
         share: { body: string; action: string };
         notes: { body: string; action: string };
         discover: { body: string; action: string };
         settings: { body: string; action: string };
+        /** Inside the iPhone app only: the widget and the share sheet. */
+        pocket: { body: string };
         /* The shop: what cookies are for (on Home, at the shop key), then
            trying a piece on and how buying works, together. */
         cookies: { body: string };
         tryOn: { body: string; action: string };
+        /** Chapter four: the games key on Home, and what the games earn. */
+        games: { body: string };
         /*
-         * Chapter four. Bodies may name things with {standard}, {cosmic},
+         * Chapter five. Bodies may name things with {standard}, {cosmic},
          * {omni}, {lexicon}, {mission}, {scanner}, {comms}, {earth} and
          * {memory}, filled from the app's own dictionary so the tour always
          * calls a thing what the screen calls it.

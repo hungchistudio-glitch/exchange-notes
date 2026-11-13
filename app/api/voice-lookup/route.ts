@@ -13,8 +13,9 @@ import { tidyChinese } from "@/lib/chinese/tidyChinese";
 import { LANGUAGE_CODES, isLanguageCode } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/server";
 
-import { generateJson } from "@/lib/ai/modelRequest";
-import { tryModels } from "@/lib/ai/tryModels";
+import { CORE_MAX_ATTEMPTS, firstAnswer } from "@/lib/ai/hedge";
+import { healthyModels } from "@/lib/ai/modelHealth";
+import { generateJson, TEXT_REQUEST_TIMEOUT_MS } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 /*
  * 45, like the word lookup: a recording can now be a minute of speech
@@ -24,6 +25,16 @@ export const maxDuration = 45;
 
 /* Room inside maxDuration for auth, the upload and the quota refund. */
 const ROUTE_BUDGET_MS = 36_000;
+
+/*
+ * When a second model is asked alongside the first (Chi, 2026-11-13: 更快換
+ * 模型). Models were asked one after another, so a model that hung kept the
+ * reader for its whole fifteen seconds before the next was asked: a voice
+ * lookup timed out at 14.1s in the week to 2026-11-12. A sentence is heard
+ * in a few seconds when all is well, so a hedge at six spends a second
+ * request only on a model that is already slow.
+ */
+const VOICE_HEDGE_AFTER_MS = 6_000;
 
 /*
  * What was said, and what language it was said in.
@@ -140,14 +151,15 @@ export async function POST(request: Request) {
     const base64 = Buffer.from(await audio.arrayBuffer()).toString("base64");
 
     /*
-     * Healthy models only, three at most, inside the route's budget
-     * — see lib/ai/tryModels.ts. A malformed answer counts as a failed
-     * attempt and moves on, as it always did.
+     * Healthy models only, three at most, inside the route's budget, and
+     * the next one asked alongside once the first is slow (lib/ai/hedge.ts).
+     * A malformed answer counts as a failed attempt and moves on, as it
+     * always did.
      */
     const modelStartedAt = Date.now();
-    const { value: parsed, model: answeredBy } = await tryModels(
-      getTextModelCandidates(),
-      async (model, timeoutMs) => {
+    const answered = await firstAnswer(
+      await healthyModels(getTextModelCandidates()),
+      async (model, timeoutMs, signal) => {
         const raw = await generateJson(client, {
           purpose: "voice-lookup",
           model,
@@ -172,6 +184,7 @@ export async function POST(request: Request) {
           ],
           schema: RESULT_SCHEMA,
           timeoutMs,
+          signal,
           /* A recording, like a photograph, is slower than a word; its
              timeout says little about the model's text lookups. */
           shareTimeouts: false,
@@ -183,8 +196,16 @@ export async function POST(request: Request) {
           confident?: boolean;
         };
       },
-      { deadline: startedAt + ROUTE_BUDGET_MS },
+      {
+        hedgeAfterMs: VOICE_HEDGE_AFTER_MS,
+        deadline: startedAt + ROUTE_BUDGET_MS,
+        minAttemptMs: 3_000,
+        maxAttemptMs: TEXT_REQUEST_TIMEOUT_MS,
+        maxAttempts: CORE_MAX_ATTEMPTS,
+      },
     );
+    if (!answered) throw new Error("No model heard the recording.");
+    const { value: parsed, model: answeredBy } = answered;
 
     /*
      * Timed, like the text lookup, so "voice is slow" can be read off the

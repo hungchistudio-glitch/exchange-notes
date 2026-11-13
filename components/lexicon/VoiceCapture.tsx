@@ -45,6 +45,7 @@ export function VoiceMicButton({
   activeClassName,
   iconSize = 17,
   labels,
+  coachTarget,
 }: VoiceView & {
   onPress: () => void;
   /** Size and shape; the colours come from the two below. */
@@ -54,6 +55,8 @@ export function VoiceMicButton({
   iconSize?: number;
   /** The field's own words for the key, where it has them (the library's search). */
   labels?: { idle: string; listening: string };
+  /** What the tour lights it by (components/tutorial/TutorialCoach.tsx). */
+  coachTarget?: string;
 }) {
   const { t } = useTranslation();
   const copy = t.lexicon;
@@ -86,6 +89,7 @@ export function VoiceMicButton({
         title={label}
         aria-pressed={phase === "listening"}
         aria-busy={phase === "understanding"}
+        data-coach-target={coachTarget}
         className={`${styles.micButton} ${className} ${
           active ? activeClassName : idleClassName
         }`}

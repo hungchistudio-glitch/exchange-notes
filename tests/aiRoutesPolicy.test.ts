@@ -98,4 +98,30 @@ describe("voice lookup", () => {
     expect(mocks.generateContent).toHaveBeenCalledTimes(CORE_MAX_ATTEMPTS);
     expect(mocks.refund).toHaveBeenCalledTimes(1);
   });
+
+  /* Chi, 2026-11-13 (更快換模型): a model that hangs no longer keeps the
+     reader for its whole timeout before the next one is asked. */
+  it("asks the next model alongside once the first is slow, and takes the first answer", async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.generateContent
+        .mockImplementationOnce(() => new Promise(() => {}))
+        .mockResolvedValueOnce({ text: JSON.stringify({ text: "buongiorno", language: "it", confident: true }) });
+
+      const form = new FormData();
+      form.append("audio", new Blob(["audio"], { type: "audio/webm" }), "speech.webm");
+      const pending = voiceLookup({ formData: async () => form } as Request);
+
+      await vi.advanceTimersByTimeAsync(5_900);
+      expect(mocks.generateContent).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(200);
+
+      const response = await pending;
+      await expect(response.json()).resolves.toEqual({ heard: true, text: "buongiorno", language: "it" });
+      expect(mocks.generateContent).toHaveBeenCalledTimes(2);
+      expect(mocks.refund).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

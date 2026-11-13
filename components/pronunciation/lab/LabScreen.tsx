@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
 import FeatureMark from "@/components/features/FeatureMark";
+import PageTitle from "@/components/foundation/layout/PageTitle";
 import Screen from "@/components/foundation/layout/Screen";
 
 type LabScreenProps = {
@@ -44,41 +43,14 @@ export default function LabScreen({
 }: LabScreenProps) {
   return (
     <Screen>
-      <header
-        className="px-4 sm:px-6"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.25rem)" }}
-      >
-        <Link
-          href={backHref}
-          aria-label={backLabel}
-          className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-black/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
-        >
-          <ArrowLeft size={20} strokeWidth={1.9} aria-hidden="true" />
-        </Link>
-
-        <div className="mt-2 flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            {eyebrow ? (
-              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
-                {eyebrow}
-              </p>
-            ) : null}
-
-            <h1 className="mt-1 flex items-center gap-2.5 text-[1.625rem] font-bold leading-tight tracking-[-0.025em] sm:text-[1.875rem]">
-              {featureMark ? <FeatureMark feature="speak" /> : null}
-              <span className="min-w-0">{title}</span>
-            </h1>
-
-            {subtitle ? (
-              <p className="mt-1.5 text-[0.9375rem] leading-6 text-ink-soft">
-                {subtitle}
-              </p>
-            ) : null}
-          </div>
-
-          {action ? <div className="shrink-0 pt-1">{action}</div> : null}
-        </div>
-      </header>
+      <PageTitle
+        title={title}
+        eyebrow={eyebrow}
+        subtitle={subtitle}
+        back={{ href: backHref, label: backLabel }}
+        action={action}
+        mark={featureMark ? <FeatureMark feature="speak" /> : null}
+      />
 
       <div className="mt-6 px-4 sm:px-6">{children}</div>
     </Screen>

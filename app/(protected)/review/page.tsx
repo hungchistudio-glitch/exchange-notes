@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 import MissionCompleteStage from "@/components/cosmic/MissionCompleteStage";
 import MissionLaunchStage from "@/components/cosmic/MissionLaunchStage";
+import PageTitle from "@/components/foundation/layout/PageTitle";
 import Screen from "@/components/foundation/layout/Screen";
 import ReviewCelebration, { riseClassName } from "@/components/review/ReviewCelebration";
 import useCardMotion, { NEXT_CARD, TURN_OVER } from "@/components/review/useCardMotion";
@@ -611,27 +612,18 @@ export default function ReviewPage() {
 
   return (
     <Screen>
-      <div
-        className="px-4"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)" }}
-      >
-        <Link
-          href={exitHref}
-          aria-label={cameFromVocabulary ? copy.backToVocabulary : copy.backToHome}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
-        >
-          <BackIcon />
-        </Link>
-
-        <p className="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-          {copy.eyebrow}
-        </p>
-        <h1 className="mt-1 flex items-center gap-2.5 text-[1.75rem] font-bold tracking-[-0.02em]">
-          {/* Practice's key lands here from Yumi's halo (Chi, 2026-11-12). */}
-          <FeatureMark feature="review" />
-          <span className="min-w-0">{copy.title}</span>
-        </h1>
-        <p className="mt-1 text-ink-soft">{copy.subtitle}</p>
+      <PageTitle
+        back={{
+          href: exitHref,
+          label: cameFromVocabulary ? copy.backToVocabulary : copy.backToHome,
+        }}
+        eyebrow={copy.eyebrow}
+        title={copy.title}
+        subtitle={copy.subtitle}
+        /* Practice's key lands here from Yumi's halo (Chi, 2026-11-12). */
+        mark={<FeatureMark feature="review" />}
+      />
+      <div className="px-4 sm:px-6">
 
         {errorMessage && (
           <p className="mt-4 text-sm font-semibold text-red-600">
@@ -706,7 +698,7 @@ export default function ReviewPage() {
           aria-busy={starting}
           onClick={() => void startSession("due")}
           disabled={loading || starting || dueInLanguage.length === 0}
-          className="mt-6 block w-full rounded-[28px] bg-black p-6 text-left text-white transition active:scale-[0.99] disabled:opacity-50"
+          className="ob-slab ob-edge mt-6 block w-full rounded-[28px] bg-black p-6 text-left text-white transition active:scale-[0.99] disabled:opacity-50"
         >
           <div className="flex items-start justify-between gap-3">
             <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-invert-faint">
@@ -745,7 +737,7 @@ export default function ReviewPage() {
             aria-busy={starting}
             onClick={() => void startSession("all")}
             disabled={loading || starting || allInLanguage.length === 0}
-            className="mt-4 flex h-14 w-full items-center justify-between rounded-2xl bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.99] disabled:opacity-50"
+            className="ob-key mt-4 flex h-14 w-full items-center justify-between rounded-2xl bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.99] disabled:opacity-50"
           >
             {copy.practiceAllWords}
             <span>{loading ? "…" : allInLanguage.length}</span>

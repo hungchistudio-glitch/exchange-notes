@@ -3,7 +3,7 @@
 import { Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import AppHeader from "@/components/foundation/layout/AppHeader";
+import PageTitle from "@/components/foundation/layout/PageTitle";
 import Screen from "@/components/foundation/layout/Screen";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useOnline from "@/hooks/useOnline";
@@ -75,16 +75,16 @@ export default function NotesLibrary() {
 
   return (
     <Screen>
-      <AppHeader
-        backHref="/home"
-        backLabel={t.common.back}
+      <PageTitle
+        back={{ href: "/home", label: t.common.back }}
         eyebrow={copy.eyebrow}
         title={copy.libraryTitle}
+        subtitle={copy.libraryDescription}
         action={
           <button
             type="button"
             onClick={() => setComposerOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-black text-white"
             aria-label={copy.newNote}
           >
             <Plus size={18} />
@@ -92,9 +92,7 @@ export default function NotesLibrary() {
         }
       />
 
-      <div className="px-4 py-5">
-        <p className="text-sm leading-6 text-ink-soft">{copy.libraryDescription}</p>
-
+      <div className="px-4 pb-5 sm:px-6">
         <label className="mt-5 flex h-13 items-center gap-3 rounded-full border border-line bg-white px-4 shadow-sm">
           <Search size={18} className="shrink-0 text-ink-faint" />
           <input

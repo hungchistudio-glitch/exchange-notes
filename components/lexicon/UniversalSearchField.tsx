@@ -253,6 +253,7 @@ export default function UniversalSearchField({
               phase={voice.phase}
               listening={voice.listening}
               levelRef={voice.bindLevel}
+              coachTarget="voice-key"
               onPress={() => {
                 onboarding.dismiss();
                 acceptsVoice.current = true;

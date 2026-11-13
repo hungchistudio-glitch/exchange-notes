@@ -482,6 +482,7 @@ const english: TranslationDictionary = {
         home: "Home",
         pages: "Around the app",
         shop: "Yumi’s shop",
+        games: "Games",
         cosmic: "The other look",
       },
       whatsNew: "What’s new · {current}/{total}",
@@ -512,10 +513,18 @@ const english: TranslationDictionary = {
             "I've brought you back home — next time you're done with a word, just tap me. Feed me one: drag a cookie onto me, or tap it and press “Feed Yumi”. It costs no energy cookies.",
           tag: "Feed me · no energy cookies spent",
         },
+        voice: {
+          body:
+            "You can also tap the microphone in the search field and say the word. While you speak, the sea at the foot of the screen moves with your voice.",
+        },
         library: {
           body:
-            "Vocabulary: every word you keep, with its sound and examples.",
+            "Vocabulary: every word you keep, with its sound and examples. Each cell in Daily focus is one word due for review today.",
           action: "Open Vocabulary",
+        },
+        halo: {
+          body:
+            "Tap me here and my halo opens: each key is a feature, and one tap flies you straight into it.",
         },
         review: {
           body:
@@ -547,6 +556,10 @@ const english: TranslationDictionary = {
             "Settings: change languages, or replay this tour from Help & About.",
           action: "Open Settings",
         },
+        pocket: {
+          body:
+            "On your iPhone's Home Screen, touch and hold, then add the Exchange Notes widget to look a word up in one tap. In another app, select some text and Share it to Exchange Notes to look it up and keep it.",
+        },
         cookies: {
           body:
             "Energy cookies are my shop's money. Saving a word for the first time earns 3 energy cookies. Tap the glowing bag at the top right to come in.",
@@ -556,13 +569,17 @@ const english: TranslationDictionary = {
             "Tap any piece and I’ll try it on for free. Like it? Buy — cookies are only spent once you confirm.",
           action: "Open the shop",
         },
+        games: {
+          body:
+            "The controller at the top opens three word games. Words you guess earn energy cookies, and streaks unlock collection pieces you can only win there. Tap it to go in.",
+        },
         modeSwitch: {
           body:
             "Tap the switch at the top right to go to {cosmic}. Your words and progress stay the same.",
         },
         deck: {
           body:
-            "This is {cosmic}: I'm at the centre, my six features fold into this orbit key beside me, {omni} is just below, {scanner} reads menus and signs, and the dock is at the foot.",
+            "This is {cosmic}: I'm at the centre, and my six features fold into this orbit key beside me. {omni} is just below: type, speak or take a photo to look a word up. Tap the core at the very foot to open the navigation.",
         },
         choose: {
           body:

@@ -25,6 +25,7 @@ import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { getVoiceForLanguage, preferPlaybackAudio, type SpeechLanguage } from "@/lib/speech";
 import { encodeNewsCardMessage } from "@/lib/messages/newsCard";
 import { listFriends, getOrCreateConversationWithFriend, type FriendProfile } from "@/lib/friends";
+import PageTitle from "@/components/foundation/layout/PageTitle";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { createNoteContent, noteLabelsFor } from "@/lib/news/noteContent";
@@ -909,58 +910,42 @@ export default function DailyNews() {
   ).items;
 
   return (
-    <section className="mt-10">
-      <div className="mb-7 flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h2
-            className="text-[2.125rem] font-bold leading-[1.08] tracking-[-0.03em]"
-            style={{ color: DISCOVER_COLORS.text }}
-          >
-            {copy.dailyNewsTitle}
-          </h2>
+    <section>
+      {/* One heading (Chi, 2026-11-13: 統一成大標題): the page used to say
+          "Discover" in a bar and "Daily News" again under it. */}
+      <div className="mb-7">
+        <PageTitle
+          flush
+          eyebrow={t.navigation.discover}
+          title={copy.dailyNewsTitle}
+          subtitle={copy.subtitle}
+          action={
+          <div className="flex items-center gap-1">
+            <YumiSignalRadar controller={radar} copy={copy} />
 
-          <p
-            className="mt-2 text-[0.9375rem] leading-[1.5]"
-            style={{ color: DISCOVER_COLORS.textSecondary }}
-          >
-            {copy.subtitle}
-          </p>
-        </div>
-
-        {/*
-          One control, every shell.
-
-          The plain refresh button is gone — not hidden behind a mode, gone.
-          Keeping a second control alive for Standard Mode would have meant two
-          things to change every time refreshing gains a state, and the radar
-          says strictly more than the button did: the button could report
-          "spinning", where this reports offline, scanning, syncing, succeeded
-          and failed. What differs between shells is six colour tokens.
-        */}
-        <div className="mt-1 flex shrink-0 items-center gap-1">
-          <YumiSignalRadar controller={radar} copy={copy} />
-
-          {/*
-            The same sheet the long press opens, reachable without a gesture.
-            A press-and-hold is undiscoverable and unavailable to anyone driving
-            the page from a keyboard or a switch, so the controls get an
-            ordinary button as well — §43's accessible alternative, not a
-            duplicate feature.
-          */}
-          <button
-            type="button"
-            onClick={() => {
-              track("radar.controls_opened");
-              setControlsOpen(true);
-            }}
-            aria-label={copy.signalControlsOpen}
-            title={copy.signalControlsOpen}
-            className="flex h-9 w-9 items-center justify-center rounded-full transition-opacity"
-            style={{ color: DISCOVER_COLORS.textSecondary }}
-          >
-            <SlidersHorizontal size={15} strokeWidth={1.9} />
-          </button>
-        </div>
+            {/*
+              The same sheet the long press opens, reachable without a gesture.
+              A press-and-hold is undiscoverable and unavailable to anyone driving
+              the page from a keyboard or a switch, so the controls get an
+              ordinary button as well — §43's accessible alternative, not a
+              duplicate feature.
+            */}
+            <button
+              type="button"
+              onClick={() => {
+                track("radar.controls_opened");
+                setControlsOpen(true);
+              }}
+              aria-label={copy.signalControlsOpen}
+              title={copy.signalControlsOpen}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition-opacity"
+              style={{ color: DISCOVER_COLORS.textSecondary }}
+            >
+              <SlidersHorizontal size={15} strokeWidth={1.9} />
+            </button>
+          </div>
+          }
+        />
       </div>
 
       {/*
