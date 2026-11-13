@@ -11,12 +11,14 @@ export type WebPushAvailabilityCode =
   | "server-rendering"
   | "needs-home-screen"
   | "unsupported"
-  | "misconfigured";
+  | "misconfigured"
+  | "no-worker";
 
 export type WebPushFailureCode =
   | "needs-home-screen"
   | "unsupported"
   | "misconfigured"
+  | "no-worker"
   | "permission-denied"
   | "permission-dismissed"
   | "authentication-required"
@@ -478,6 +480,50 @@ function environmentFailure(
       };
   }
 }
+/*
+ * How long to wait for the service worker before saying notifications are
+ * unavailable.
+ *
+ * `navigator.serviceWorker.ready` never settles while no worker is
+ * registered, so Settings sat on "Checking…" and the button on "Turning
+ * on…" for as long as the page was open (Chi, 2026-11-13: 等不到就顯示無法
+ * 使用). That is every page under `next dev`, which takes the worker away,
+ * and any device where registering it failed. A first install still being
+ * fetched may take longer than this; the hook checks again on
+ * `controllerchange`, the moment the worker takes the page.
+ */
+export const WORKER_WAIT_MS = 6_000;
+
+function workerReady(): Promise<ServiceWorkerRegistration | null> {
+  return new Promise((resolve) => {
+    const timer = window.setTimeout(() => resolve(null), WORKER_WAIT_MS);
+
+    navigator.serviceWorker.ready.then(
+      (registration) => {
+        window.clearTimeout(timer);
+        resolve(registration);
+      },
+      () => {
+        window.clearTimeout(timer);
+        resolve(null);
+      },
+    );
+  });
+}
+
+const NO_WORKER_MESSAGE =
+  "The app's background worker is not running on this device. Reload the page and try again.";
+
+async function requireWorker(): Promise<ServiceWorkerRegistration> {
+  const registration = await workerReady();
+
+  if (!registration) {
+    throw new WebPushActionError("no-worker", NO_WORKER_MESSAGE);
+  }
+
+  return registration;
+}
+
 export async function getWebPushStatus(): Promise<WebPushStatus> {
   const environment = inspectWebPushEnvironment();
 
@@ -489,8 +535,17 @@ export async function getWebPushStatus(): Promise<WebPushStatus> {
   }
 
   try {
-    const registration =
-      await navigator.serviceWorker.ready;
+    const registration = await workerReady();
+
+    if (!registration) {
+      return {
+        ...environment.availability,
+        code: "no-worker",
+        available: false,
+        permission: Notification.permission,
+        subscribed: false,
+      };
+    }
 
     const subscription =
       await registration.pushManager.getSubscription();
@@ -571,8 +626,7 @@ export async function enableWebPush(
     const applicationServerKey =
       decodeVapidPublicKey(environment.publicKey);
 
-    const registration =
-      await navigator.serviceWorker.ready;
+    const registration = await requireWorker();
 
     subscription =
       await registration.pushManager.getSubscription();
@@ -635,8 +689,7 @@ export async function disableWebPush(): Promise<DisableWebPushResult> {
   }
 
   try {
-    const registration =
-      await navigator.serviceWorker.ready;
+    const registration = await requireWorker();
 
     const subscription =
       await registration.pushManager.getSubscription();

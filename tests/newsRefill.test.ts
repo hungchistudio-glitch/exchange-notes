@@ -106,6 +106,14 @@ describe("refillPoolIfThin", () => {
     expect(state.inserted).toHaveLength(1);
   });
 
+  it("refills a night that lost one batch, not only one that lost them all", async () => {
+    // 2026-11-12: six cards, two batches lost to a refusal and then a hang.
+    const state = freshState({ recentCount: 6 });
+
+    await expect(refillPoolIfThin(fakeSupabase(state))).resolves.toBe("refilled");
+    expect(buildLearningCards).toHaveBeenCalledOnce();
+  });
+
   it("stands aside when another request has tried recently", async () => {
     const state = freshState({ lockClaimed: false });
 

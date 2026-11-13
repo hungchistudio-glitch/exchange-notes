@@ -87,7 +87,8 @@ export default function WebPushSettingsButton() {
             : status.code === "unsupported"
               ? "unsupported"
               : status.code === "misconfigured" ||
-                  status.code === "server-rendering"
+                  status.code === "server-rendering" ||
+                  status.code === "no-worker"
                 ? "unavailable"
                 : "unsubscribed";
 
@@ -189,6 +190,7 @@ export default function WebPushSettingsButton() {
         return copy.unsupportedDescription;
 
       case "misconfigured":
+      case "no-worker":
         return copy.unavailableDescription;
 
       case "permission-denied":
