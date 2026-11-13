@@ -93,6 +93,8 @@ struct PocketShareView: View {
                     Button(action: model.lookup) {
                         Label(copy("lookup"), systemImage: "magnifyingglass")
                             .frame(maxWidth: .infinity, minHeight: 44)
+                            // Dark ink on Cosmic's ice: white on it was all but unreadable.
+                            .foregroundStyle(cosmic ? Color(red: 0.04, green: 0.10, blue: 0.11) : .white)
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(!model.queryIsUsable || model.phase == .looking)
