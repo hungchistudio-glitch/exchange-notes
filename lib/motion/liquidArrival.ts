@@ -17,7 +17,8 @@
    | its rows become droplets, then  | 100ms after their block, 35ms apart |
    | rows                            | (eight at most), over 420ms each    |
 
-   Standard Mode keeps the layered float-up (lib/motion/pageArrival.ts).
+   Standard Mode settles under a passing lamp instead, its pair
+   (playLampArrival in lib/motion/pageArrival.ts; Chi, 2026-11-13).
    Every motion is transform or opacity. A block holding a fixed element
    only fades, for the reason pageArrival.ts gives.
    ========================================================= */

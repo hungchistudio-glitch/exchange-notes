@@ -1,15 +1,16 @@
 import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ARRIVAL_RISE_PX, arrivalDelay, arrivalLayers, holdsFixed } from "@/lib/motion/pageArrival";
+import { arrivalDelay, arrivalLayers, holdsFixed, LAMP_SWEEP_MS, lampDelay } from "@/lib/motion/pageArrival";
 
 /* =========================================================
    A page arrives in layers (Chi, 2026-10-30)
 
    The tap dims the page being left; an outline brightens as it goes up;
-   the real page's blocks float up one after another, all of it inside
-   about 0.35s. A block holding a fixed element only fades, and a page
-   that plays its own arrival is left to it.
+   the real page's blocks then arrive. In Standard (these tests) they settle
+   under a lamp's light passing down the screen (Chi, 2026-11-13: 暖光灑落).
+   A block holding a fixed element only fades, and a page that plays its
+   own arrival is left to it.
    ========================================================= */
 
 const route = vi.hoisted(() => ({ pathname: "/home" }));
@@ -63,6 +64,23 @@ function Page({ name, fixedInside = false }: { name: string; fixedInside?: boole
   );
 }
 
+/** The lamp's light is not a layer of the page. */
+const pageOnly = (entry: Played) => !entry.element.hasAttribute("data-lamp-light");
+
+function LampPage() {
+  return (
+    <main data-test-rendered="">
+      <h1 data-test-rendered="" data-test-top="0">Vocabulary</h1>
+      <section data-test-rendered="" data-test-top="240">search</section>
+      <section data-test-rendered="" data-test-top="480">
+        rows
+        <button data-test-rendered="" data-liquid-option="" data-test-top="500">one</button>
+        <button data-test-rendered="" data-liquid-option="" data-test-top="540">two</button>
+      </section>
+    </main>
+  );
+}
+
 function Skeleton() {
   return <div data-route-skeleton="" data-test-rendered="">outline</div>;
 }
@@ -98,14 +116,38 @@ describe("the plan", () => {
 });
 
 describe("a navigation", () => {
-  it("floats the page's layers up in turn, and leaves those out of sight alone", () => {
+  it("leaves the page's layers that are out of sight alone", () => {
     const view = render(<RouteStage><Page name="Home" /></RouteStage>);
     navigate(view, "/vocabulary", <Page name="Vocabulary" />);
     const layers = played.filter(entry => entry.element.tagName !== "DIV");
     expect(layers.map(entry => entry.element.textContent)).toEqual(["Vocabulary", "search", "rows"]);
-    expect(layers.map(entry => entry.options.delay)).toEqual([0, 40, 80]);
-    expect(layers[0].keyframes[0]).toMatchObject({ opacity: 0, translate: `0 ${ARRIVAL_RISE_PX}px` });
     expect(layers.every(entry => entry.options.fill === "backwards")).toBe(true);
+  });
+
+  it("settles each block as the lamp's light reaches it, and slides its rows in after", () => {
+    const height = window.innerHeight;
+    const view = render(<RouteStage><Page name="Home" /></RouteStage>);
+    navigate(view, "/vocabulary", <LampPage />);
+
+    const light = played.find(entry => entry.element.hasAttribute("data-lamp-light"));
+    expect(light).toBeDefined();
+    expect(light!.element.getAttribute("aria-hidden")).toBe("true");
+
+    const blocks = played.filter(entry => ["H1", "SECTION"].includes(entry.element.tagName));
+    expect(blocks.map(entry => entry.options.delay)).toEqual([
+      lampDelay(0, height),
+      lampDelay(240, height),
+      lampDelay(480, height),
+    ]);
+    expect(lampDelay(0, height)).toBe(0);
+    expect(lampDelay(height, height)).toBe(LAMP_SWEEP_MS);
+    expect(blocks[0].keyframes[0]).toMatchObject({ opacity: 0, translate: "0 -10px" });
+
+    const rows = played.filter(entry => entry.element.hasAttribute("data-liquid-option"));
+    expect(rows).toHaveLength(2);
+    expect(Number(rows[0].options.delay)).toBeGreaterThan(Number(blocks[2].options.delay));
+    expect(Number(rows[1].options.delay)).toBeGreaterThan(Number(rows[0].options.delay));
+    expect(rows[0].keyframes[0]).toMatchObject({ opacity: 0, translate: "-14px 0" });
   });
 
   it("only fades a layer that holds a fixed element", () => {
@@ -125,7 +167,7 @@ describe("a navigation", () => {
     // The mutation callback runs as a microtask: before the next paint in a
     // browser, after the render here.
     await act(async () => { view.rerender(<RouteStage><Page name="Discover" /></RouteStage>); });
-    expect(played.map(entry => entry.element.textContent)).toEqual(["Discover", "search", "rows"]);
+    expect(played.filter(pageOnly).map(entry => entry.element.textContent)).toEqual(["Discover", "search", "rows"]);
   });
 
   it("leaves a page that plays its own arrival to it", () => {
