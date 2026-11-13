@@ -21,7 +21,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import ProgressHud from "@/components/cosmic/ProgressHud";
 import HtmlMarker from "@/components/foundation/HtmlMarker";
 import LearningProgressPanel from "@/components/settings/LearningProgressPanel";
-import AppHeader from "@/components/foundation/layout/AppHeader";
+import PageTitle from "@/components/foundation/layout/PageTitle";
 import StatusMessage from "@/components/foundation/feedback/StatusMessage";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
@@ -413,7 +413,11 @@ export default function ProfilePage() {
   return (
     <main className="settings-screen cosmic-settings-page min-h-[100dvh] bg-surface text-black">
       <div className="settings-shell mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col pb-28">
-        <AppHeader title={copy.pageTitle} action={<SettingsSearch />} />
+        {/* The main pages' one heading (Chi, 2026-11-13: 統一成大標題), at
+            the settings column's own 20px. */}
+        <div className="px-5 sm:px-6">
+          <PageTitle flush title={copy.pageTitle} action={<SettingsSearch />} />
+        </div>
 
         <div className="settings-content cosmic-settings-content flex-1 space-y-8 px-5 pt-5 sm:px-6">
           {(error || message) && (

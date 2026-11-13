@@ -481,6 +481,7 @@ const french: TranslationDictionary = {
         home: "Accueil",
         pages: "Dans l'app",
         shop: "La boutique de Yumi",
+        games: "Jeux",
         cosmic: "L'autre visage",
       },
       whatsNew: "Nouveautés · {current}/{total}",
@@ -511,10 +512,18 @@ const french: TranslationDictionary = {
             "Après un mot, touche-moi pour revenir à l'accueil. Donne-m'en un : glisse un biscuit jusqu'à moi, ou touche-le et appuie sur « Nourrir Yumi ». Ça ne coûte aucun cookie d'énergie.",
           tag: "Nourris-moi · sans cookie d'énergie",
         },
+        voice: {
+          body:
+            "Tu peux aussi toucher le micro du champ de recherche et dire le mot. Pendant que tu parles, la mer en bas de l'écran suit ta voix.",
+        },
         library: {
           body:
-            "Vocabulaire : tous les mots que tu gardes, avec leur son et leurs exemples.",
+            "Vocabulaire : tous les mots que tu gardes, avec leur son et leurs exemples. Chaque case de l'Objectif du jour est un mot à réviser aujourd'hui.",
           action: "Ouvrir le Vocabulaire",
+        },
+        halo: {
+          body:
+            "Touche-moi ici et mon halo s'ouvre : chaque touche est une fonction, et un toucher t'y emmène tout droit.",
         },
         review: {
           body:
@@ -546,6 +555,10 @@ const french: TranslationDictionary = {
             "Réglages : change de langue, ou revois cette visite depuis Aide et à propos.",
           action: "Ouvrir les Réglages",
         },
+        pocket: {
+          body:
+            "Sur l'écran d'accueil de l'iPhone, maintiens le doigt appuyé, puis ajoute le widget Exchange Notes pour chercher un mot d'un toucher. Dans une autre app, sélectionne un texte et partage-le avec Exchange Notes pour le chercher et le garder.",
+        },
         cookies: {
           body:
             "Les cookies d'énergie sont la monnaie de ma boutique ; garder un mot pour la première fois t'en rapporte 3. Touche le sac qui brille en haut à droite pour entrer.",
@@ -555,13 +568,17 @@ const french: TranslationDictionary = {
             "Touche une pièce et je l'essaie gratuitement. Elle te plaît ? Achète : rien n'est dépensé avant confirmation.",
           action: "Ouvrir la boutique",
         },
+        games: {
+          body:
+            "La manette en haut ouvre trois jeux de mots. Les mots que tu devines rapportent des cookies d'énergie, et les séries débloquent des pièces de collection qu'on ne gagne que là. Touche-la pour entrer.",
+        },
         modeSwitch: {
           body:
             "Touche l'interrupteur en haut à droite pour passer à {cosmic}. Tes mots et ta progression ne changent pas.",
         },
         deck: {
           body:
-            "Voici {cosmic} : je suis au centre, mes six fonctions se rangent dans cette touche d’orbite à côté de moi, {omni} juste en dessous, {scanner} pour les cartes et les panneaux, et la barre en bas.",
+            "Voici {cosmic} : je suis au centre, et mes six fonctions se rangent dans cette touche d’orbite à côté de moi. {omni} est juste en dessous : écris, parle ou prends une photo pour chercher un mot. Touche le noyau tout en bas pour ouvrir la navigation.",
         },
         choose: {
           body:

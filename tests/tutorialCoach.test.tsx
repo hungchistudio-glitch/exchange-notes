@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /* =========================================================
-   A tour that waits for the reader — in four chapters
+   A tour that waits for the reader — in five chapters
 
    The old one advanced when a button was pressed, which meant it could be
    finished without touching the app — and the page it spent describing the
@@ -91,7 +91,7 @@ describe("chapter one: doing it on the home screen", () => {
   it("says which chapter it is, and how far into it", () => {
     coach();
 
-    expect(screen.getByText("Chapter 1 · Home · 1/4")).toBeInTheDocument();
+    expect(screen.getByText("Chapter 1 · Home · 1/5")).toBeInTheDocument();
   });
 
   it("waits for the dial to be turned, not merely opened", async () => {
@@ -230,14 +230,16 @@ describe("chapter two: around the app", () => {
 
     const { again } = coach("/vocabulary");
 
+    /* The iPhone's step is passed over in a browser, and not counted. */
     for (const [pathname, text, position] of [
-      ["/vocabulary", /Vocabulary: every word you keep/, "1/7"],
-      ["/review", /A perfect round earns 3 energy cookies/, "2/7"],
-      ["/pronunciation", /Pronunciation Lab: watch how I shape each sound/, "3/7"],
-      ["/messages", /Messages: add a friend/, "4/7"],
-      ["/notes", /Notes: for what a single word can't hold/, "5/7"],
-      ["/discover", /Discover: a few news stories a day/, "6/7"],
-      ["/profile", /Settings: change languages/, "7/7"],
+      ["/vocabulary", /Each cell in Daily focus is one word due for review today/, "1/8"],
+      ["/vocabulary", /Tap me here and my halo opens/, "2/8"],
+      ["/review", /A perfect round earns 3 energy cookies/, "3/8"],
+      ["/pronunciation", /Pronunciation Lab: watch how I shape each sound/, "4/8"],
+      ["/messages", /Messages: add a friend/, "5/8"],
+      ["/notes", /Notes: for what a single word can't hold/, "6/8"],
+      ["/discover", /Discover: a few news stories a day/, "7/8"],
+      ["/profile", /Settings: change languages/, "8/8"],
     ] as const) {
       again(pathname);
       expect(screen.getByText(text)).toBeInTheDocument();
@@ -299,7 +301,66 @@ describe("chapter three: Yumi's shop", () => {
     });
     vi.useRealTimers();
 
+    expect(getCoachStep()).toBe(stepOf("games"));
+  });
+});
+
+describe("chapter four: the games (2026-11-13)", () => {
+  it("lights the games key on Home and is done by going in, then shows the way back", async () => {
+    setCoachStep(stepOf("games"));
+
+    const { again, container } = coach("/home");
+    expect(screen.getByText("Chapter 4 · Games · 1/1")).toBeInTheDocument();
+    expect(screen.getByText(/The controller at the top opens three word games/)).toBeInTheDocument();
+    expect(container.querySelector("[data-coach-card]")).toHaveAttribute("data-coach-step", "games");
+    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+
+    vi.useFakeTimers();
+    again("/games");
+    expect(screen.getByText("Good.")).toBeInTheDocument();
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    vi.useRealTimers();
+
+    /* In the games, the next step is on Home: a door back, not silence. */
     expect(getCoachStep()).toBe(stepOf("modeSwitch"));
+    again("/games");
+    expect(screen.getByRole("link", { name: "Back to Home" })).toHaveAttribute("href", "/home");
+  });
+});
+
+describe("the iPhone's step (Yumi Pocket Lookup)", () => {
+  type BridgeWindow = Window & { webkit?: unknown };
+
+  afterEach(() => {
+    delete (window as BridgeWindow).webkit;
+  });
+
+  it("is said inside the iPhone app, after Settings", async () => {
+    (window as BridgeWindow).webkit = { messageHandlers: { yumiPocketKey: { postMessage() {} } } };
+    setCoachStep(stepOf("settings"));
+
+    coach("/profile");
+    expect(screen.getByText("Chapter 2 · Around the app · 8/9")).toBeInTheDocument();
+    await act(async () => {
+      screen.getByRole("button", { name: "Next" }).click();
+    });
+
+    expect(getCoachStep()).toBe(stepOf("pocket"));
+    expect(screen.getByText(/add the Exchange Notes widget/)).toBeInTheDocument();
+    expect(screen.getByText("Chapter 2 · Around the app · 9/9")).toBeInTheDocument();
+  });
+
+  it("is passed over in a browser", async () => {
+    setCoachStep(stepOf("settings"));
+
+    coach("/profile");
+    await act(async () => {
+      screen.getByRole("button", { name: "Next" }).click();
+    });
+
+    expect(getCoachStep()).toBe(stepOf("cookies"));
   });
 });
 
@@ -340,7 +401,7 @@ describe("chapter four: the other look", () => {
 
     const { again, container } = coach("/home");
 
-    expect(screen.getByText("Chapter 4 · The other look · 1/3")).toBeInTheDocument();
+    expect(screen.getByText("Chapter 5 · The other look · 1/3")).toBeInTheDocument();
     expect(screen.getByText(/Tap the switch at the top right to go to Yumi Cosmic Mode/)).toBeInTheDocument();
     /* The card names the step, which is what lets the switch show itself
        (HomeModePortal.module.css) while every other step keeps it hidden. */
@@ -416,9 +477,10 @@ describe("chapter four: the other look", () => {
     coach("/home", "yumi-cosmic");
 
     /* The obsidian bridge (2026-11-12): the six fold into the orbit key,
-       and the search sits just under Yumi. */
+       the search sits just under Yumi, and the core at the foot opens the
+       rail (2026-11-13: no scanner on the deck any more, no dock). */
     expect(
-      screen.getByText(/orbit key beside me, Yumi OmniLexicon is just below, Menu Translator reads menus and signs/),
+      screen.getByText(/orbit key beside me\. Yumi OmniLexicon is just below: type, speak or take a photo.*Tap the core at the very foot/),
     ).toBeInTheDocument();
   });
 
@@ -473,60 +535,58 @@ describe("what's new, for a reader who had finished the tour", () => {
     resetCoachCacheForTests();
   });
 
+  /* A device that finished a recorded edition. */
+  function finishedEdition(edition: number) {
+    window.localStorage.clear();
+    window.localStorage.setItem("yumi-coach-step", String(COACH_FINISHED));
+    window.localStorage.setItem("yumi-coach-edition", String(edition));
+    resetCoachCacheForTests();
+  }
+
+  const next = () =>
+    act(async () => {
+      screen.getByRole("button", { name: "Next" }).click();
+    });
+
   it("is only the steps this edition added, in tour order", () => {
     expect(REFRESH_STEPS.map((step) => step.key)).toEqual([
-      "meet",
-      "keep",
-      "pronunciation",
-      "cookies",
+      "voice",
+      "library",
+      "halo",
+      "pocket",
+      "games",
     ]);
   });
 
   it("shows them, labelled as new, and then is done for good", async () => {
-    finishedLastEdition();
+    finishedEdition(2);
 
     const { again, container } = coach("/home");
 
     expect(getCoachTrack()).toBe("refresh");
     expect(screen.getByText("What’s new · 1/4")).toBeInTheDocument();
+    expect(screen.getByText(/tap the microphone in the search field/)).toBeInTheDocument();
+    await next();
 
-    vi.useFakeTimers();
-    await act(async () => {
-      announceHomeMoment("dial-turned");
-    });
-    await act(async () => {
-      vi.advanceTimersByTime(1_000);
-    });
-    vi.useRealTimers();
-
-    /* What a kept word earns, told rather than waited for: a returning
-       reader has no answer up to keep from. */
+    /* The library is somewhere else: a door, then the steps on arrival. */
+    expect(screen.getByRole("link", { name: "Open Vocabulary" })).toHaveAttribute("href", "/vocabulary");
+    again("/vocabulary");
     expect(screen.getByText("What’s new · 2/4")).toBeInTheDocument();
-    expect(screen.getByText(/you get two things/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Skip this step" })).toBeNull();
-    await act(async () => {
-      screen.getByRole("button", { name: "Next" }).click();
-    });
-
-    /* The lab is somewhere else: a door, then the step on arrival. */
-    expect(screen.getByRole("link", { name: "Open the Pronunciation Lab" })).toHaveAttribute(
-      "href",
-      "/pronunciation",
-    );
-    again("/pronunciation");
+    expect(screen.getByText(/Each cell in Daily focus/)).toBeInTheDocument();
+    await next();
     expect(screen.getByText("What’s new · 3/4")).toBeInTheDocument();
-    await act(async () => {
-      screen.getByRole("button", { name: "Next" }).click();
-    });
+    expect(screen.getByText(/my halo opens/)).toBeInTheDocument();
+    await next();
 
+    /* The iPhone's step is passed over in a browser; the games are on Home. */
     expect(screen.getByRole("link", { name: "Back to Home" })).toHaveAttribute("href", "/home");
     again("/home");
     expect(screen.getByText("What’s new · 4/4")).toBeInTheDocument();
-    expect(screen.getByText(/Energy cookies are my shop's money/)).toBeInTheDocument();
+    expect(screen.getByText(/three word games/)).toBeInTheDocument();
 
     /* The last of them is done by going in. */
     vi.useFakeTimers();
-    again("/shop");
+    again("/games");
     await act(async () => {
       vi.advanceTimersByTime(1_000);
     });
@@ -540,6 +600,29 @@ describe("what's new, for a reader who had finished the tour", () => {
     resetCoachCacheForTests();
     expect(getCoachStep()).toBe(COACH_FINISHED);
     expect(getCoachTrack()).toBe("full");
+  });
+
+  it("shows a reader two editions behind what both of them added", () => {
+    finishedLastEdition();
+
+    coach("/home");
+
+    /* meet, keep, voice, library, halo, pronunciation, cookies, games. */
+    expect(getCoachTrack()).toBe("refresh");
+    expect(screen.getByText("What’s new · 1/8")).toBeInTheDocument();
+    expect(screen.getByText(/Tap me to open the dial/)).toBeInTheDocument();
+  });
+
+  it("remembers on a later visit which edition the reader had finished", () => {
+    finishedEdition(2);
+    coach("/home").unmount();
+
+    /* The next visit reads the device afresh. */
+    resetCoachCacheForTests();
+    coach("/home");
+
+    expect(getCoachTrack()).toBe("refresh");
+    expect(screen.getByText("What’s new · 1/4")).toBeInTheDocument();
   });
 
   it("does not come back after being skipped", async () => {
@@ -583,6 +666,6 @@ describe("what's new, for a reader who had finished the tour", () => {
     coach("/home");
 
     expect(getCoachTrack()).toBe("full");
-    expect(screen.getByText("Chapter 1 · Home · 1/4")).toBeInTheDocument();
+    expect(screen.getByText("Chapter 1 · Home · 1/5")).toBeInTheDocument();
   });
 });

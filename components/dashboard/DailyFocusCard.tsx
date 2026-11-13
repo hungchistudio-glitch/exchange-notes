@@ -114,6 +114,7 @@ export default function DailyFocusCard({
     <article
       ref={ref}
       className={`${styles.hud} ob-edge`}
+      data-coach-target="daily-focus"
       data-state={loading ? "loading" : hasReviews ? "due" : "clear"}
       data-in-view={inView ? "true" : "false"}
     >

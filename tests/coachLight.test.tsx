@@ -119,10 +119,10 @@ describe("when the tour shows it", () => {
   });
 
   it("is not up on a step that only shows", () => {
-    setCoachStep(stepOf("library"));
-    coach("/vocabulary");
+    setCoachStep(stepOf("review"));
+    coach("/review");
 
-    expect(screen.getByText(/Vocabulary: every word you keep/)).toBeInTheDocument();
+    expect(screen.getByText(/A perfect round earns 3 energy cookies/)).toBeInTheDocument();
     expect(light()).toBeNull();
   });
 
@@ -166,8 +166,12 @@ describe("when the tour shows it", () => {
       "ask",
       "keep",
       "feed",
+      "voice",
+      "library",
+      "halo",
       "cookies",
       "tryOn",
+      "games",
       "modeSwitch",
       "deck",
     ]);

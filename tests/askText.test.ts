@@ -12,7 +12,8 @@ const healthyModels = vi.fn();
 const dailyQuotaResetAt = vi.fn();
 const backgroundAllowed = vi.fn();
 
-vi.mock("@/lib/ai/modelRequest", () => ({
+vi.mock("@/lib/ai/modelRequest", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/ai/modelRequest")>()),
   generateJson: (...args: unknown[]) => generateJson(...args),
   TEXT_REQUEST_TIMEOUT_MS: 15_000,
 }));
@@ -105,8 +106,34 @@ describe("askText in the background", () => {
     expect(generateJson).not.toHaveBeenCalled();
   });
 
-  it("asks one model and no more", async () => {
+  /*
+   * Chi, 2026-11-13 (更快換模型): a refusal brings no answer and costs no
+   * time, so a busy model no longer loses the whole news batch. Two at most,
+   * and never after a hang.
+   */
+  it("asks the next model once when the first refused", async () => {
+    generateJson.mockImplementation(async (_client, { model }) => {
+      if (model === DEFAULT_ALIAS_LITE_MODEL) throw Object.assign(new Error("high demand"), { status: 503 });
+      return "cards";
+    });
+
+    const result = await askText(client, { purpose: "daily-news", input: "hi", budgetMs: 10_000, background: true });
+
+    expect(result).toEqual({ text: "cards", model: DEFAULT_STRONG_MODEL });
+    expect(generateJson).toHaveBeenCalledTimes(2);
+  });
+
+  it("asks two models at most", async () => {
     generateJson.mockRejectedValue(Object.assign(new Error("busy"), { status: 503 }));
+
+    const result = await askText(client, { purpose: "daily-news", input: "hi", budgetMs: 10_000, background: true });
+
+    expect(result.text).toBeNull();
+    expect(generateJson).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not ask again after a model hung", async () => {
+    generateJson.mockRejectedValue(Object.assign(new Error("Deadline expired"), { status: 504 }));
 
     await askText(client, { purpose: "daily-news", input: "hi", budgetMs: 10_000, background: true });
 

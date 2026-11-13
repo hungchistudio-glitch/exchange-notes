@@ -482,6 +482,7 @@ const spanish: TranslationDictionary = {
         home: "Inicio",
         pages: "Por la app",
         shop: "La tienda de Yumi",
+        games: "Juegos",
         cosmic: "El otro aspecto",
       },
       whatsNew: "Novedades · {current}/{total}",
@@ -512,10 +513,18 @@ const spanish: TranslationDictionary = {
             "Después de una palabra, tócame para volver a Inicio. Dame una: arrastra una galleta hasta mí, o tócala y pulsa «Alimentar a Yumi». No gasta galletas de energía.",
           tag: "Aliméntame · sin gastar galletas de energía",
         },
+        voice: {
+          body:
+            "También puedes tocar el micrófono del buscador y decir la palabra. Mientras hablas, el mar del pie de la pantalla se mueve con tu voz.",
+        },
         library: {
           body:
-            "Vocabulario: todas las palabras que guardas, con su sonido y ejemplos.",
+            "Vocabulario: todas las palabras que guardas, con su sonido y ejemplos. Cada casilla de Foco del día es una palabra que toca repasar hoy.",
           action: "Abrir Vocabulario",
+        },
+        halo: {
+          body:
+            "Tócame aquí y se abre mi halo: cada tecla es una función, y un toque te lleva volando directo a ella.",
         },
         review: {
           body:
@@ -547,6 +556,10 @@ const spanish: TranslationDictionary = {
             "Ajustes: cambia los idiomas o repite este recorrido desde Ayuda e información.",
           action: "Abrir Ajustes",
         },
+        pocket: {
+          body:
+            "En la pantalla de inicio del iPhone, mantén pulsado y añade el widget de Exchange Notes para buscar una palabra con un toque. En otra app, selecciona un texto y compártelo con Exchange Notes para buscarlo y guardarlo.",
+        },
         cookies: {
           body:
             "Las galletas de energía son el dinero de mi tienda; guardar una palabra por primera vez te da 3. Toca la bolsa que brilla arriba a la derecha para entrar.",
@@ -556,13 +569,17 @@ const spanish: TranslationDictionary = {
             "Toca cualquier pieza y me la pruebo gratis. ¿Te gusta? Compra: solo se gasta al confirmar.",
           action: "Abrir la tienda",
         },
+        games: {
+          body:
+            "El mando de arriba abre tres juegos de palabras. Las palabras que aciertas dan galletas de energía, y las rachas desbloquean piezas de colección que solo se ganan allí. Tócalo para entrar.",
+        },
         modeSwitch: {
           body:
             "Toca el interruptor de arriba a la derecha para ir a {cosmic}. Tus palabras y tu progreso no cambian.",
         },
         deck: {
           body:
-            "Esto es {cosmic}: estoy en el centro, mis seis funciones se guardan en esta tecla de órbita a mi lado, {omni} justo debajo, {scanner} para cartas y carteles, y la barra al pie.",
+            "Esto es {cosmic}: estoy en el centro, y mis seis funciones se guardan en esta tecla de órbita a mi lado. {omni} está justo debajo: escribe, habla o haz una foto para buscar una palabra. Toca el núcleo de abajo del todo para abrir la navegación.",
         },
         choose: {
           body:

@@ -720,6 +720,39 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-sheet-scrim {
    played by RouteStage the same way as the page arrives).
    ========================================================= */
 
+/*
+ * A Standard slab in obsidian (Chi, 2026-11-13: 介面一致性). A card drawn
+ * `bg-black text-white` in Standard (Review's "Today", say) is turned pale
+ * by the swapped tokens above: a cream slab on the dark page, the thing the
+ * word deck and Today's training were rid of on 2026-11-12. `.ob-slab`
+ * swaps the two back inside it, so the slab is obsidian and its words ice,
+ * with the hairline every other panel has. `.ob-key` is its one action, an
+ * ice hairline pill, as Daily Focus's and Today's training's are.
+ */
+html[data-interface-mode="yumi-cosmic"] .ob-slab {
+  --color-white: #e4ecee;
+  --color-black: #101820;
+  --ink-invert-faint: #a9bac2;
+  --ink-invert-soft: #c4d2d6;
+  --color-ink-invert-faint: #a9bac2;
+  --color-ink-invert-soft: #c4d2d6;
+  border: 1px solid #34444e;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(184, 232, 229, 0.07), transparent 42%),
+    #101820;
+  color: #e4ecee;
+}
+
+html[data-interface-mode="yumi-cosmic"] .ob-key {
+  border: 1px solid color-mix(in oklab, #b8e8e5 55%, transparent);
+  background: color-mix(in oklab, #b8e8e5 9%, transparent);
+  color: #b8e8e5;
+}
+
+html[data-interface-mode="yumi-cosmic"] .ob-key:focus-visible {
+  outline-color: #b8e8e5;
+}
+
 html[data-interface-mode="yumi-cosmic"] .ob-edge {
   position: relative;
 }

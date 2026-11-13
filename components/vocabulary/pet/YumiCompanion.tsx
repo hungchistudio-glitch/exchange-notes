@@ -467,6 +467,7 @@ export default function YumiCompanion({
         <button
           type="button"
           className={styles.yumiButton}
+          data-coach-target="vocabulary-yumi"
           onClick={handleYumiActivate}
           onPointerDown={handleYumiPointerDown}
           aria-label={

@@ -29,6 +29,7 @@ import {
 } from "@/components/messages/CosmicCommsHero";
 import YumiCommsMark from "@/components/messages/YumiCommsMark";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import { PAGE_TITLE_CLASS } from "@/components/foundation/layout/PageTitle";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { fill } from "@/lib/i18n/format";
 import {
@@ -664,7 +665,7 @@ export default function MessagesHub() {
               >
                 {copy.hub.eyebrow}
               </p>
-              <h1 className="mt-1.5 text-[1.625rem] font-bold leading-[1.1] tracking-[-0.02em] sm:text-[2.125rem]">
+              <h1 className={`mt-1.5 ${PAGE_TITLE_CLASS}`}>
                 {copy.title}
               </h1>
               <p

@@ -481,6 +481,7 @@ const italian: TranslationDictionary = {
         home: "Home",
         pages: "Nell'app",
         shop: "Il negozio di Yumi",
+        games: "Giochi",
         cosmic: "L'altro aspetto",
       },
       whatsNew: "Novità · {current}/{total}",
@@ -511,10 +512,18 @@ const italian: TranslationDictionary = {
             "Dopo una parola, toccami per tornare alla Home. Dammene uno: trascina un biscotto su di me, oppure toccalo e premi «Nutri Yumi». Non costa biscotti energia.",
           tag: "Nutrimi · senza biscotti energia",
         },
+        voice: {
+          body:
+            "Puoi anche toccare il microfono nel campo di ricerca e dire la parola. Mentre parli, il mare in fondo allo schermo segue la tua voce.",
+        },
         library: {
           body:
-            "Vocabolario: tutte le parole che tieni, con il loro suono e gli esempi.",
+            "Vocabolario: tutte le parole che tieni, con il loro suono e gli esempi. Ogni casella dell'Obiettivo del giorno è una parola da ripassare oggi.",
           action: "Apri il Vocabolario",
+        },
+        halo: {
+          body:
+            "Toccami qui e si apre il mio alone: ogni tasto è una funzione, e un tocco ti ci porta in volo.",
         },
         review: {
           body:
@@ -546,6 +555,10 @@ const italian: TranslationDictionary = {
             "Impostazioni: cambia le lingue o rivedi questo tour da Aiuto e informazioni.",
           action: "Apri le Impostazioni",
         },
+        pocket: {
+          body:
+            "Nella schermata Home dell'iPhone, tieni premuto e aggiungi il widget di Exchange Notes per cercare una parola con un tocco. In un'altra app, seleziona un testo e condividilo con Exchange Notes per cercarlo e tenerlo.",
+        },
         cookies: {
           body:
             "I biscotti energia sono la moneta del mio negozio; salvare una parola per la prima volta te ne fa guadagnare 3. Tocca la borsa che brilla in alto a destra per entrare.",
@@ -555,13 +568,17 @@ const italian: TranslationDictionary = {
             "Tocca un pezzo e lo provo gratis. Ti piace? Acquista: si spende solo alla conferma.",
           action: "Apri il negozio",
         },
+        games: {
+          body:
+            "Il controller in alto apre tre giochi di parole. Le parole che indovini fanno guadagnare biscotti energia, e le serie sbloccano pezzi da collezione che si vincono solo lì. Toccalo per entrare.",
+        },
         modeSwitch: {
           body:
             "Tocca l'interruttore in alto a destra per passare a {cosmic}. Le tue parole e i tuoi progressi non cambiano.",
         },
         deck: {
           body:
-            "Questo è {cosmic}: sono al centro, le mie sei funzioni stanno in questo tasto d’orbita accanto a me, {omni} subito sotto, {scanner} per menù e cartelli, e la barra in fondo.",
+            "Questo è {cosmic}: sono al centro, e le mie sei funzioni stanno in questo tasto d’orbita accanto a me. {omni} è subito sotto: scrivi, parla o scatta una foto per cercare una parola. Tocca il nucleo in fondo in fondo per aprire la navigazione.",
         },
         choose: {
           body:

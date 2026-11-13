@@ -7,6 +7,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -22,9 +23,12 @@ import {
   type HomeMoment,
 } from "@/lib/home/homeMoments";
 import {
+  COACH_EDITION,
   COACH_FINISHED,
+  getCoachSeenEdition,
   getCoachStep,
   getCoachTrack,
+  getServerCoachSeenEdition,
   getServerCoachStep,
   getServerCoachTrack,
   setCoachStep,
@@ -32,6 +36,7 @@ import {
 } from "@/lib/home/tutorialCoach";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
+import { insideIphoneApp } from "@/lib/pocket/device";
 
 import type { CoachTarget } from "./CoachLight";
 import styles from "./TutorialCoach.module.css";
@@ -114,22 +119,26 @@ const CoachLight = lazy(() => import("./CoachLight"));
    waking up, is in the way of the very thing it wants the reader to see.
    ========================================================= */
 
-type Chapter = "home" | "pages" | "shop" | "cosmic";
+type Chapter = "home" | "pages" | "shop" | "games" | "cosmic";
 
 type StepKey =
   | "meet"
   | "ask"
   | "keep"
   | "feed"
+  | "voice"
   | "library"
+  | "halo"
   | "review"
   | "pronunciation"
   | "share"
   | "notes"
   | "discover"
   | "settings"
+  | "pocket"
   | "cookies"
   | "tryOn"
+  | "games"
   | "modeSwitch"
   | "deck"
   | "choose";
@@ -151,8 +160,14 @@ type Step = {
    * it.
    */
   enters?: string;
-  /** New in this edition: shown to readers who finished the last one. */
-  refresh?: boolean;
+  /**
+   * The edition this step is new in, or was rewritten in (1 when absent). A
+   * reader who finished an earlier edition is shown the steps newer than it,
+   * and only those (lib/home/tutorialCoach.ts).
+   */
+  since?: number;
+  /** Only inside the iPhone app: it is about the phone's own Home Screen. */
+  iphoneApp?: boolean;
   /**
    * The key the LED glow rings (CoachLight), as selectors in
    * order of preference: the first with a visible element wins. Absent on
@@ -199,6 +214,13 @@ const POINT = {
   item: ['[data-coach-target="shop-item"]'],
   modeSwitch: ["[data-home-mode-portal] > span", "[data-home-mode-portal]"],
   omni: ['[data-coach-target="cosmic-omni"]'],
+  /* The home field's microphone; the field itself if it has none here. */
+  voice: ['[data-coach-target="voice-key"]', '[data-coach-target="search-field"]'],
+  focus: ['[data-coach-target="daily-focus"]'],
+  /* The library's Yumi, whose tap opens her halo. */
+  halo: ['[data-coach-target="vocabulary-yumi"]'],
+  /* The games key beside the shop's, by what it draws, as the bag's is. */
+  gamesKey: ["[data-home-hangyumi-key] > svg", "[data-home-hangyumi-key]"],
   /* The Cosmic home's orbit key, where its six features fold away (Chi,
      2026-11-12); the search under Yumi if the key is not there. */
   orbit: ['[data-coach-target="cosmic-orbit-key"]', '[data-coach-target="cosmic-omni"]'],
@@ -208,7 +230,9 @@ const STANDARD: InterfaceMode = "standard";
 const COSMIC: InterfaceMode = "yumi-cosmic";
 
 /*
- * Sixteen steps, one point each (Chi, 2026-10-18: "更簡潔重點帶過"). What
+ * One point each (Chi, 2026-10-18: "更簡潔重點帶過"): sixteen steps then,
+ * twenty since the third edition (2026-11-13), the iPhone's one only in the
+ * iPhone app. What
  * used to be separate steps is said together where it happens together:
  * opening the dial and turning it; saving a word and what it earns; trying
  * a piece on, buying, and the balance; the whole of the deck in one card.
@@ -226,7 +250,7 @@ export const COACH_STEPS: readonly Step[] = [
     route: "/home",
     mode: STANDARD,
     awaits: ["dial-turned"],
-    refresh: true,
+    since: 2,
     point: POINT.dial,
   },
   /*
@@ -249,7 +273,7 @@ export const COACH_STEPS: readonly Step[] = [
     route: "/home",
     mode: STANDARD,
     awaits: ["word-saved"],
-    refresh: true,
+    since: 2,
     point: POINT.save,
   },
   {
@@ -260,8 +284,39 @@ export const COACH_STEPS: readonly Step[] = [
     awaits: ["word-fed"],
     point: POINT.cookie,
   },
+  /*
+   * Saying a word instead (Chi, 2026-11-13): the microphone in the same
+   * field, and the sea that rises with the voice while it listens. Shown,
+   * not waited for: nobody should have to speak to their phone to go on.
+   */
+  {
+    key: "voice",
+    chapter: "home",
+    route: "/home",
+    mode: STANDARD,
+    since: 3,
+    point: POINT.voice,
+  },
 
-  { key: "library", chapter: "pages", route: "/vocabulary", mode: STANDARD },
+  /* The library, lighting its Daily Focus: a cell for each word due today. */
+  {
+    key: "library",
+    chapter: "pages",
+    route: "/vocabulary",
+    mode: STANDARD,
+    since: 3,
+    point: POINT.focus,
+  },
+  /* Her halo there: a key for each feature, which flies into the page it
+     opens (Chi, 2026-11-12: Yumi 領航). */
+  {
+    key: "halo",
+    chapter: "pages",
+    route: "/vocabulary",
+    mode: STANDARD,
+    since: 3,
+    point: POINT.halo,
+  },
   { key: "review", chapter: "pages", route: "/review", mode: STANDARD },
   /* On the dial since it replaced the ring, and never once in the tour. */
   {
@@ -269,12 +324,15 @@ export const COACH_STEPS: readonly Step[] = [
     chapter: "pages",
     route: "/pronunciation",
     mode: STANDARD,
-    refresh: true,
+    since: 2,
   },
   { key: "share", chapter: "pages", route: "/messages", mode: STANDARD },
   { key: "notes", chapter: "pages", route: "/notes", mode: STANDARD },
   { key: "discover", chapter: "pages", route: "/discover", mode: STANDARD },
   { key: "settings", chapter: "pages", route: "/profile", mode: STANDARD },
+  /* The phone's own Home Screen and share sheet (Yumi Pocket Lookup,
+     2026-11-12): said only inside the iPhone app, where both exist. */
+  { key: "pocket", chapter: "pages", since: 3, iphoneApp: true },
 
   /*
    * The shop, before the other look (Chi, 2026-10-12: "在最後的模式切換教學前
@@ -292,7 +350,7 @@ export const COACH_STEPS: readonly Step[] = [
     chapter: "shop",
     route: "/home",
     mode: STANDARD,
-    refresh: true,
+    since: 2,
     point: POINT.shopKey,
     enters: "/shop",
   },
@@ -303,6 +361,21 @@ export const COACH_STEPS: readonly Step[] = [
     mode: STANDARD,
     awaits: ["shop-tried"],
     point: POINT.item,
+  },
+
+  /*
+   * The games (Chi, 2026-11-13), behind the key beside the shop's: three
+   * word games that pay the shop's cookies and unlock pieces no cookie
+   * buys. Going in is the step, as it is for the shop.
+   */
+  {
+    key: "games",
+    chapter: "games",
+    route: "/home",
+    mode: STANDARD,
+    since: 3,
+    point: POINT.gamesKey,
+    enters: "/games",
   },
 
   /*
@@ -324,15 +397,45 @@ export const COACH_STEPS: readonly Step[] = [
   { key: "choose", chapter: "cosmic" },
 ];
 
-const CHAPTER_NUMBER: Record<Chapter, number> = { home: 1, pages: 2, shop: 3, cosmic: 4 };
+const CHAPTER_NUMBER: Record<Chapter, number> = { home: 1, pages: 2, shop: 3, games: 4, cosmic: 5 };
+
+/**
+ * The steps a reader walks: the whole tour, or on the refresh track (`seen`,
+ * the edition they had finished) only the steps newer than that.
+ *
+ * The iPhone's step stays in the list everywhere, so a stored step number
+ * means the same step in the app and in a browser; outside the app it is
+ * passed over on the way (`nextStep`) and left out of the count (`counted`).
+ */
+export function coachStepsFor(seen: number | null): readonly Step[] {
+  return seen === null ? COACH_STEPS : COACH_STEPS.filter((step) => (step.since ?? 1) > seen);
+}
 
 /** What a reader who finished the last edition is shown, in tour order. */
-export const REFRESH_STEPS: readonly Step[] = COACH_STEPS.filter((step) => step.refresh);
+export const REFRESH_STEPS: readonly Step[] = coachStepsFor(COACH_EDITION - 1);
 
-/** The screens the coach speaks on. Everything else, it steps aside. */
+/** The step after `index`, past the iPhone's step anywhere but the iPhone app. */
+function nextStep(steps: readonly Step[], index: number) {
+  let next = index + 1;
+  while (steps[next]?.iphoneApp && !insideIphoneApp()) next += 1;
+  return next >= steps.length ? COACH_FINISHED : next;
+}
+
+/** The steps a reader is shown a count of, here. */
+function counted(steps: readonly Step[], iphoneApp: boolean) {
+  return iphoneApp ? steps : steps.filter((step) => !step.iphoneApp);
+}
+
+/**
+ * The screens the coach speaks on. Everything else, it steps aside. A step
+ * done by going somewhere counts its destination, so the next step can show
+ * the way back from it.
+ */
 const MAIN_SCREENS = new Set(
-  COACH_STEPS.map((step) => step.route).filter(Boolean) as string[],
+  COACH_STEPS.flatMap((step) => [step.route, step.enters]).filter(Boolean) as string[],
 );
+
+const subscribeNothing = () => () => {};
 
 /** Long enough to read one word, short enough not to be a wait. */
 const DONE_BEAT_MS = 900;
@@ -397,7 +500,13 @@ export default function TutorialCoach({
     getServerCoachTrack,
   );
   const refreshing = track === "refresh";
-  const steps = refreshing ? REFRESH_STEPS : COACH_STEPS;
+  const seen = useSyncExternalStore(
+    subscribeToCoach,
+    getCoachSeenEdition,
+    getServerCoachSeenEdition,
+  );
+  const iphoneApp = useSyncExternalStore(subscribeNothing, insideIphoneApp, () => false);
+  const steps = useMemo(() => coachStepsFor(refreshing ? seen : null), [refreshing, seen]);
 
   const index = stored >= 0 && stored < steps.length ? stored : COACH_FINISHED;
   const current = index === COACH_FINISHED ? undefined : steps[index];
@@ -435,8 +544,7 @@ export default function TutorialCoach({
 
   const advance = useCallback(() => {
     setSatisfied(false);
-    const next = index + 1;
-    setCoachStep(next >= steps.length ? COACH_FINISHED : next);
+    setCoachStep(nextStep(steps, index));
   }, [index, steps]);
 
   /*
@@ -567,9 +675,10 @@ export default function TutorialCoach({
 
   const stepCopy = copy.steps[current.key];
 
-  const chapterSteps = refreshing
-    ? REFRESH_STEPS
-    : COACH_STEPS.filter((step) => step.chapter === current.chapter);
+  const chapterSteps = counted(
+    refreshing ? steps : steps.filter((step) => step.chapter === current.chapter),
+    iphoneApp,
+  );
   const position = chapterSteps.indexOf(current) + 1;
 
   const label = (refreshing ? copy.whatsNew : copy.label)
@@ -617,9 +726,9 @@ export default function TutorialCoach({
 
   /* Home keeps the strip at the top, above Yumi; everywhere else it sits
      above the dock, clear of each screen's own header and back button. The
-     switch and cookie steps go to the foot of Home, because the top corner
-     they would cover on a phone holds the switch and the shop key they point
-     at. The shop keeps it at the top too: its own bar stands where the dock
+     switch, cookie and games steps go to the foot of Home, because the top
+     corner they would cover on a phone holds the switch and the two keys
+     they point at. The shop keeps it at the top too: its own bar stands where the dock
      would. The dial's two steps go to the foot as well: they have to stay
      readable with the dial out. */
   const placement =
@@ -629,7 +738,7 @@ export default function TutorialCoach({
         ? ` ${styles.docked}`
         : current.key === "meet" || current.key === "ask"
           ? ` ${styles.dialStep}`
-          : current.key === "modeSwitch" || current.key === "cookies"
+          : current.key === "modeSwitch" || current.key === "cookies" || current.key === "games"
             ? ` ${styles.switchStep}`
             : "";
 

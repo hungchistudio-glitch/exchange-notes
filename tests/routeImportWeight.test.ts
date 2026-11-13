@@ -214,10 +214,14 @@ describe("what the heaviest tabs drag in with them", () => {
    * home field's microphone, components/lexicon/VoiceCapture and its
    * stylesheet, whose ring swells with the voice; it imports only React,
    * the icons and the translation hook the tab already loads.
+   * Raised home 187 → 188 (2026-11-13): the tour's third edition (Chi:
+   * 重新更新實際教學介紹) says the iPhone's widget and share sheet only
+   * inside the iPhone app, and asks lib/pocket/device.ts, which imports
+   * nothing, whether it is there.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 173],
-    ["home", TABS.home, 187],
+    ["home", TABS.home, 188],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

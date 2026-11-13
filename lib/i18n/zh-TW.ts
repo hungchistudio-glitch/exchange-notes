@@ -479,6 +479,7 @@ const traditionalChinese: TranslationDictionary = {
         home: "首頁",
         pages: "各個頁面",
         shop: "Yumi 的商店",
+        games: "遊戲",
         cosmic: "另一種樣子",
       },
       whatsNew: "新功能　{current}/{total}",
@@ -509,10 +510,18 @@ const traditionalChinese: TranslationDictionary = {
             "查完字，點我就回首頁。餵我一塊：把餅乾拖到我身上，或點開它按「餵給 Yumi」，不會用掉能量餅乾。",
           tag: "餵我 · 不花能量餅乾",
         },
+        voice: {
+          body:
+            "也可以按搜尋列裡的麥克風，用說的查字。你說話的時候，畫面底部的海會跟著你的聲音起伏。",
+        },
         library: {
           body:
-            "單字庫：存過的字都在這裡，可以重聽、看例句。",
+            "單字庫：存過的字都在這裡，可以重聽、看例句。「每日學習重點」的每一格，是今天該複習的一個字。",
           action: "去看看單字庫",
+        },
+        halo: {
+          body:
+            "點這裡的我，就會打開光環：每個鍵是一個功能，點一下我就帶你飛過去。",
         },
         review: {
           body:
@@ -544,6 +553,10 @@ const traditionalChinese: TranslationDictionary = {
             "設定：改語言，或到「說明與關於」重看教學。",
           action: "去看看設定",
         },
+        pocket: {
+          body:
+            "在 iPhone 主畫面長按，加入 Exchange Notes 小工具，一點就能查字。在別的 App 選取文字，按「分享」→ Exchange Notes，也能查、也能收藏。",
+        },
         cookies: {
           body:
             "能量餅乾是我商店的錢，第一次存下一個字就得到 3 塊。點右上角發光的購物袋，進來逛逛。",
@@ -553,13 +566,17 @@ const traditionalChinese: TranslationDictionary = {
             "點商品就能免費試戴；喜歡再按購買，確認後才扣餅乾。",
           action: "打開商店",
         },
+        games: {
+          body:
+            "上方的手把通往三款單字遊戲：猜對的字能換能量餅乾，連勝還能解鎖只有在遊戲裡才拿得到的收藏。點手把進去看看。",
+        },
         modeSwitch: {
           body:
             "點右上角的切換鍵，換到{cosmic}。單字和進度都不會變。",
         },
         deck: {
           body:
-            "這是{cosmic}：我在正中間，六個功能收在我旁邊這顆軌道鍵裡，正下方是{omni}，{scanner}拍菜單和招牌，最底部是導覽列。",
+            "這是{cosmic}：我在正中間，六個功能收在我旁邊這顆軌道鍵裡。正下方是{omni}，打字、說話或拍照都能查字；最底部那顆星核點一下，就會展開導覽。",
         },
         choose: {
           body:

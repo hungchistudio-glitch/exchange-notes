@@ -17,10 +17,11 @@
    ── Two tracks ─────────────────────────────────────────────────────────
 
    "full" is the whole tour, for a reader who has just arrived. "refresh" is
-   only the steps a new edition of the tour added, for a reader who had
+   only the steps newer editions of the tour added, for a reader who had
    already finished an earlier one (Chi, 2026-10-18: "只看新增部分"). Which
-   steps those are is the coach's business (`refresh` on a step); this file
-   only remembers which track is running and how far along it is.
+   steps those are is the coach's business (`since` on a step); this file
+   remembers which track is running, how far along it is, and which edition
+   the reader had finished, so a reader two editions behind sees both.
 
    A reader is moved onto the refresh track once, the first time this device
    reads the store after the edition changes, and only if it had finished the
@@ -39,15 +40,22 @@ const TRACK = "yumi-coach-track";
 /** The edition of the tour this device has finished. */
 const EDITION = "yumi-coach-edition";
 
+/** The edition finished before the refresh track began: what is new is newer. */
+const SEEN = "yumi-coach-seen";
+
 /**
  * The tour's current edition.
  *
  * 2 (2026-10-18): the dial, the two things a saved word earns, the
- * pronunciation lab and the shop's energy supply. Bump it when a new set of
- * steps is marked `refresh`, and readers who finished the last edition are
- * shown those steps, and only those.
+ * pronunciation lab and the shop's energy supply.
+ * 3 (2026-11-13, Chi: 重新更新實際教學介紹): speaking a word, the library's
+ * Daily Focus and Yumi's halo there, the games, and on an iPhone the pocket
+ * lookup.
+ *
+ * Bump it when steps are marked `since` the new number, and readers who
+ * finished an earlier edition are shown the steps newer than theirs.
  */
-export const COACH_EDITION = 2;
+export const COACH_EDITION = 3;
 
 /** Past the last step. Stored as the number so one key carries both. */
 export const COACH_FINISHED = 99;
@@ -56,6 +64,7 @@ export type CoachTrack = "full" | "refresh";
 
 let cached: number | null = null;
 let cachedTrack: CoachTrack = "full";
+let cachedSeen = COACH_EDITION;
 const listeners = new Set<() => void>();
 
 export function subscribeToCoach(listener: () => void) {
@@ -81,7 +90,8 @@ function read() {
   try {
     const stored = window.localStorage.getItem(KEY);
     const armed = window.localStorage.getItem(ARMED) === "1";
-    const edition = Number(window.localStorage.getItem(EDITION) ?? 0);
+    /* The first edition recorded none: a tour finished then is edition 1. */
+    const edition = Number(window.localStorage.getItem(EDITION) ?? 1) || 1;
 
     let step = stored === null ? (armed ? 0 : COACH_FINISHED) : Number(stored);
     if (!Number.isFinite(step)) step = COACH_FINISHED;
@@ -96,9 +106,16 @@ function read() {
     if (stored !== null && step === COACH_FINISHED && edition < COACH_EDITION) {
       step = 0;
       cachedTrack = "refresh";
+      cachedSeen = edition;
       write(KEY, "0");
       write(TRACK, "refresh");
+      write(SEEN, String(edition));
       write(EDITION, String(COACH_EDITION));
+    } else if (cachedTrack === "refresh") {
+      /* Mid-way through what's new, on a later visit. A device moved onto
+         this track before the edition was remembered saw the one before. */
+      const seen = window.localStorage.getItem(SEEN);
+      cachedSeen = seen === null ? COACH_EDITION - 1 : Number(seen) || 0;
     }
 
     cached = step;
@@ -121,9 +138,16 @@ export function getCoachTrack(): CoachTrack {
   return cachedTrack;
 }
 
+/** On the refresh track: the edition the reader had finished. */
+export function getCoachSeenEdition(): number {
+  if (cached === null) read();
+  return cachedSeen;
+}
+
 /** The server has no localStorage and nobody is mid-tour on it. */
 export const getServerCoachStep = () => COACH_FINISHED;
 export const getServerCoachTrack = (): CoachTrack => "full";
+export const getServerCoachSeenEdition = () => COACH_EDITION;
 
 export function setCoachStep(step: number) {
   if (cached === step) return;
@@ -166,4 +190,5 @@ export function armCoach() {
 export function resetCoachCacheForTests() {
   cached = null;
   cachedTrack = "full";
+  cachedSeen = COACH_EDITION;
 }

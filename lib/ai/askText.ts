@@ -9,6 +9,7 @@ import {
 } from "@/lib/ai/modelHealth";
 import {
   generateJson,
+  isTimeoutError,
   TEXT_REQUEST_TIMEOUT_MS,
   type ModelInputPart,
 } from "@/lib/ai/modelRequest";
@@ -52,8 +53,9 @@ export type AskTextOptions = {
   candidates?: readonly string[];
   /**
    * Nobody is waiting on this (the nightly news, a refill). It runs only
-   * when the allowance is comfortable, asks one model, and never hedges —
-   * so it cannot take a model away from the camera or a lookup.
+   * when the allowance is comfortable and never hedges, so it cannot take a
+   * model away from the camera or a lookup. It asks one model, and a second
+   * only when the first refused rather than hung.
    */
   background?: boolean;
 };
@@ -108,18 +110,39 @@ export async function askText(
    * generateJson does the bookkeeping on every failed attempt — the shared
    * health row and the failure log — so nothing is recorded twice here.
    */
-  const answered = await firstAnswer(
-    models,
-    (model, timeoutMs, signal) =>
-      generateJson(client, { model, input, schema, timeoutMs, purpose, signal }),
-    {
-      hedgeAfterMs: background ? Number.POSITIVE_INFINITY : hedgeAfterMs,
-      deadline,
-      minAttemptMs,
-      maxAttemptMs,
-      maxAttempts: background ? 1 : CORE_MAX_ATTEMPTS,
-    },
-  );
+  const ask = (from: readonly string[], maxAttempts: number, onFailure?: (error: unknown) => void) =>
+    firstAnswer(
+      from,
+      (model, timeoutMs, signal) =>
+        generateJson(client, { model, input, schema, timeoutMs, purpose, signal }),
+      {
+        hedgeAfterMs: background ? Number.POSITIVE_INFINITY : hedgeAfterMs,
+        deadline,
+        minAttemptMs,
+        maxAttempts,
+        maxAttemptMs,
+      },
+      onFailure && ((_model, error) => onFailure(error)),
+    );
+
+  let answered: Awaited<ReturnType<typeof ask>>;
+  if (!background) {
+    answered = await ask(models, CORE_MAX_ATTEMPTS);
+  } else {
+    /*
+     * Background work's second ask (Chi, 2026-11-13: 更快換模型). The daily
+     * news lost whole batches to one busy model: "No model answered this
+     * batch" five times in the week to 2026-11-12, the one model asked
+     * having refused with 503 "high demand". A refusal brings no answer and
+     * costs no time, so the next model is asked once. A model that hung has
+     * spent the time already, and the run does not wait on a second.
+     */
+    let refused = false;
+    answered = await ask(models.slice(0, 1), 1, (error) => {
+      refused = !isTimeoutError(error);
+    });
+    if (!answered && refused) answered = await ask(models.slice(1, 2), 1);
+  }
 
   if (answered) return { text: answered.value, model: answered.model };
 
