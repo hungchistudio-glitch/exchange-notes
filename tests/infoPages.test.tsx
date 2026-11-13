@@ -20,7 +20,13 @@ beforeEach(() => {
   clearChosenBeforeSignIn();
 });
 
-describe("localized information pages", () => {
+/*
+ * Twenty seconds rather than five: the privacy policy is the longest page in
+ * the app and every paragraph is checked visible. Alone each language takes
+ * a few hundred milliseconds; in the full suite on 2026-11-13 French took
+ * 8.6s and Italian 6.9s, and failed only on the clock.
+ */
+describe("localized information pages", { timeout: 20_000 }, () => {
   for (const language of i18n.TRANSLATION_LANGUAGES) {
     for (const page of ["about", "community", "privacy", "terms"] as InfoPageKind[]) {
       it(`renders ${page} in ${language} with working contact and navigation`, async () => {

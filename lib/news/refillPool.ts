@@ -114,8 +114,21 @@ export async function refillDailyNewsPool(
    per reader.
    ========================================================= */
 
-/** A full night is six to twelve cards; fewer than this is a night that failed. */
-export const THIN_DAY = 4;
+/*
+ * Fewer than this is a night that lost a batch.
+ *
+ * It was four, which caught a night that lost everything but not one that
+ * lost half: 5 cards on 2026-11-10 and 6 on the 12th, each batch the first
+ * model refusing 503 and the second hanging to its 504. The fortnight to
+ * 2026-11-13 shows what a whole night makes: 8 to 11 cards, never fewer
+ * when no batch failed. So eight (Chi, 2026-11-13: 不到 8 張就白天補做).
+ *
+ * A refill takes only articles the pool does not hold, so the lost batch's
+ * articles come back first, and a night that was short only because the
+ * feeds were quiet costs nothing more than the feed reads: with no new
+ * article there is nothing to ask a model.
+ */
+export const THIN_DAY = 8;
 
 /** At most one refill attempt across all instances in this window. */
 export const REFILL_EVERY_MS = 3 * 60 * 60 * 1000;
