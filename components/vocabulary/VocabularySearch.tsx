@@ -9,7 +9,6 @@ import {
   LayoutGrid,
   List,
   LoaderCircle,
-  Mic,
   Search,
   SlidersHorizontal,
   X,
@@ -18,6 +17,7 @@ import {
 import { Pill } from "@/components/foundation-legacy";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
+import { VoiceMicButton } from "@/components/lexicon/VoiceCapture";
 
 import type { SortMode } from "@/components/vocabulary/SortBottomSheet";
 import { DEFAULT_SORT_MODE } from "@/components/vocabulary/SortBottomSheet";
@@ -91,13 +91,19 @@ export default function VocabularySearch({
   });
 
   // Dictate in the language being learned — that's what the user is
-  // searching their vocabulary for.
-  const { supported: voiceSupported, listening, toggle: toggleVoice } =
-    useVoiceInput({
-      // Dictation listens in the language being learned, whichever it is.
-      lang: getLanguage(learningLanguage).speechTag,
-      onResult: onQueryChange,
-    });
+  // searching their vocabulary for. The words go into the field as they are
+  // said, so the list narrows while the reader speaks (Chi, 2026-11-12).
+  const {
+    supported: voiceSupported,
+    listening,
+    toggle: toggleVoice,
+    bindLevel: voiceLevelRef,
+  } = useVoiceInput({
+    // Dictation listens in the language being learned, whichever it is.
+    lang: getLanguage(learningLanguage).speechTag,
+    onResult: onQueryChange,
+    onCaption: onQueryChange,
+  });
 
   /*
    * 36px, and deliberately not the 44pt a standalone control would get.
@@ -222,27 +228,25 @@ export default function VocabularySearch({
               buttonClassName={`${lookupButtonClass} disabled:opacity-50`}
             />
 
+            {/* The same microphone as the home field's: its ring swells
+                with the voice while it listens. A new dictation starts from
+                an empty field (Chi, 2026-11-12: 再次按下收音…應該自動刪除
+                原先上回收音的字), so the last one's words never linger
+                in front of the new ones. */}
             {voiceSupported && (
-              <button
-                type="button"
-                onClick={toggleVoice}
-                aria-label={
-                  listening ? search.voiceListening : search.voiceSearch
-                }
-                title={listening ? search.voiceListening : search.voiceSearch}
-                aria-pressed={listening}
-                className={
-                  listening
-                    ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-amber)] text-white transition duration-200 active:scale-90"
-                    : lookupButtonClass
-                }
-              >
-                <Mic
-                  size={16}
-                  strokeWidth={1.8}
-                  className={listening ? "animate-pulse" : undefined}
-                />
-              </button>
+              <VoiceMicButton
+                listening={listening}
+                levelRef={voiceLevelRef}
+                onPress={() => {
+                  if (!listening) onQueryChange("");
+                  toggleVoice();
+                }}
+                labels={{ idle: search.voiceSearch, listening: search.voiceListening }}
+                iconSize={16}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition duration-200 active:scale-90"
+                idleClassName="cosmic-instrument text-ink-soft hover:bg-black/[0.04] hover:text-black"
+                activeClassName="bg-[var(--accent-amber)] text-white"
+              />
             )}
           </span>
         </label>

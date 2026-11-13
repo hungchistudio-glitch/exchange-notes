@@ -44,6 +44,7 @@ export function VoiceMicButton({
   idleClassName,
   activeClassName,
   iconSize = 17,
+  labels,
 }: VoiceView & {
   onPress: () => void;
   /** Size and shape; the colours come from the two below. */
@@ -51,11 +52,14 @@ export function VoiceMicButton({
   idleClassName: string;
   activeClassName: string;
   iconSize?: number;
+  /** The field's own words for the key, where it has them (the library's search). */
+  labels?: { idle: string; listening: string };
 }) {
   const { t } = useTranslation();
   const copy = t.lexicon;
   const phase = givenPhase ?? (listening ? "listening" : "idle");
   const active = phase !== "idle";
+  const label = phase === "listening" ? labels?.listening ?? copy.voice.stop : labels?.idle ?? copy.modeVoice;
 
   /*
    * The light sits on a wrapper behind the button rather than inside it: a
@@ -78,8 +82,8 @@ export function VoiceMicButton({
       <button
         type="button"
         onClick={onPress}
-        aria-label={phase === "listening" ? copy.voice.stop : copy.modeVoice}
-        title={phase === "listening" ? copy.voice.stop : copy.modeVoice}
+        aria-label={label}
+        title={label}
         aria-pressed={phase === "listening"}
         aria-busy={phase === "understanding"}
         className={`${styles.micButton} ${className} ${

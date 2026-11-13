@@ -14,7 +14,7 @@ In short, before pushing run:
 npx tsc --noEmit
 npx eslint .
 npx vitest run
-npx next build   # CI does not run it, and only the build type-checks tests/
+npx next build   # CI does not run it; only it checks Next's route types (.next/types)
 ```
 
 Merging to `main` deploys production.

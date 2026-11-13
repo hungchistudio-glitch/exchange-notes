@@ -80,11 +80,16 @@ export function createBandReader(analyser: AnalyserNode) {
 
 /**
  * A meter of its own, for a recorder that has none (the Pronunciation Lab's
- * Speak): an analyser on the stream, read every frame into voiceSignal until
- * stopped. Never throws; where the browser will not meter, the sea just
- * breathes on its own.
+ * Speak) or a dictation that only listens (the library's search field): an
+ * analyser on the stream, read every frame into voiceSignal until stopped,
+ * and handed to `onLevel` for a microphone's own ring. Never throws; where
+ * the browser will not meter, the sea just breathes on its own.
  */
-export function meterStream(context: AudioContext, stream: MediaStream): () => void {
+export function meterStream(
+  context: AudioContext,
+  stream: MediaStream,
+  onLevel?: (level: number) => void,
+): () => void {
   let frame = 0;
   let source: MediaStreamAudioSourceNode | null = null;
   try {
@@ -101,6 +106,7 @@ export function meterStream(context: AudioContext, stream: MediaStream): () => v
       for (let i = 0; i < samples.length; i += 1) sum += samples[i] * samples[i];
       level = levelFromRms(Math.sqrt(sum / samples.length), level);
       bands.read(level);
+      onLevel?.(level);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -111,5 +117,54 @@ export function meterStream(context: AudioContext, stream: MediaStream): () => v
     cancelAnimationFrame(frame);
     try { source?.disconnect(); } catch { /* Already gone. */ }
     resetVoiceSignal();
+  };
+}
+
+/*
+ * How the words move the sea when nothing can meter the microphone. A word
+ * heard is a swell that dies away over about a third of a second, and its
+ * consonants a ripple over about a fifth.
+ */
+const PULSE_SWELL_S = 0.35;
+const PULSE_RIPPLE_S = 0.18;
+
+/**
+ * A meter without a microphone (Chi, 2026-11-12): the library's dictation
+ * where the recogniser cannot share the microphone with a meter (iPhone,
+ * Android; hooks/useVoiceInput.ts says why). The recogniser's own news, that
+ * speech began and each word it hears, is the voice: `pulse` it, and the sea
+ * and `onLevel` rise with every word and settle between them. Stopping calms
+ * the sea.
+ */
+export function speechPulse(onLevel?: (level: number) => void) {
+  let frame = 0;
+  let energy = 0;
+  let level = 0;
+  let last = 0;
+  const tick = (now: number) => {
+    const seconds = last ? Math.min(0.1, (now - last) / 1000) : 0;
+    last = now;
+    energy *= Math.exp(-seconds / PULSE_SWELL_S);
+    // Quick up and slow down, as the microphone's meter reads.
+    level = energy > level ? level + (energy - level) * 0.4 : level * 0.92 + energy * 0.08;
+    voiceSignal.level = level;
+    voiceSignal.low += (level * 0.8 - voiceSignal.low) * 0.12;
+    voiceSignal.high *= Math.exp(-seconds / PULSE_RIPPLE_S);
+    onLevel?.(level);
+    frame = requestAnimationFrame(tick);
+  };
+  frame = requestAnimationFrame(tick);
+
+  return {
+    /** Something was heard; 0–1 for how much (a syllable, a whole word). */
+    pulse(strength: number) {
+      const amount = Math.min(1, Math.max(0, strength));
+      energy = Math.min(1, Math.max(energy, 0.35 + amount * 0.5));
+      voiceSignal.high = Math.min(1, voiceSignal.high + 0.25 + amount * 0.45);
+    },
+    stop() {
+      cancelAnimationFrame(frame);
+      resetVoiceSignal();
+    },
   };
 }

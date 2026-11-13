@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { tidyChinese } from "@/lib/chinese/tidyChinese";
 import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import { stopSpeech } from "@/lib/speech";
-import { createBandReader, levelFromRms, resetVoiceSignal } from "@/lib/voice/signal";
+import { createBandReader, levelFromRms, meterStream, resetVoiceSignal, speechPulse } from "@/lib/voice/signal";
 
 import {
   getRecognitionConstructor,
@@ -44,6 +44,26 @@ function canRecord() {
  */
 function recognizerSharesMicrophone() {
   return typeof navigator === "undefined" || navigator.vendor !== "Apple Computer, Inc.";
+}
+
+/*
+ * Whether dictation, which only listens, can open a meter of its own beside
+ * the recogniser so its animation follows the voice (Chi, 2026-11-12: 發聲時
+ * 收音動畫並沒反應). Only on a computer's Chromium. Apple's engine mutes one
+ * of two listeners (above). Android gives the microphone to one app at a
+ * time, and its recogniser runs in Google's app, so a meter the browser
+ * opened would leave the dictation hearing silence. Where it cannot, the
+ * recogniser's own news of each word moves the animation instead
+ * (speechPulse in lib/voice/signal.ts).
+ */
+function dictationCanMeter() {
+  return (
+    recognizerSharesMicrophone() &&
+    typeof navigator !== "undefined" &&
+    !/Android/i.test(navigator.userAgent ?? "") &&
+    Boolean(navigator.mediaDevices?.getUserMedia) &&
+    audioContextConstructor() !== null
+  );
 }
 
 function endRecognition(session: { recognition: SpeechRecognitionLike | null }) {
@@ -144,7 +164,10 @@ export type VoiceAudioOutcome = "handled" | "unheard" | "unavailable" | "limit";
  * fallback for when the model cannot be reached.
  *
  * Without `onAudio` (the library's filter field) this is plain dictation in
- * the browser, as it always was.
+ * the browser, as it always was. Its words reach `onCaption` while they are
+ * being said, and it has a meter too (dictationCanMeter), only to move the
+ * animation: on a computer the microphone's level, elsewhere a pulse for
+ * each word the recogniser hears.
  *
  * ── The level ────────────────────────────────────────────────────────
  *
@@ -158,11 +181,14 @@ export type VoiceAudioOutcome = "handled" | "unheard" | "unavailable" | "limit";
 export default function useVoiceInput({
   lang,
   onResult,
+  onCaption,
   onAudio,
   onStart,
 }: {
   lang: string;
   onResult: (transcript: string) => void;
+  /** Dictation only: the words heard so far, while they are being said. */
+  onCaption?: (words: string) => void;
   /** Called as a recording opens: a moment to get ready for what it will need. */
   onStart?: () => void;
   onAudio?: (
@@ -197,12 +223,20 @@ export default function useVoiceInput({
     cancelled: boolean;
     submitted: boolean;
     timer: ReturnType<typeof setTimeout> | null;
+    /** Dictation's meter, whichever kind it got. */
+    stopMeter: (() => void) | null;
+    /** Set when dictation's meter is the recogniser's news of each word. */
+    pulse: ((strength: number) => void) | null;
+    /** How many characters dictation has heard, to size each pulse. */
+    heard: number;
   };
   const sessionRef = useRef<Session | null>(null);
   const onResultRef = useRef(onResult);
+  const onCaptionRef = useRef(onCaption);
   const onAudioRef = useRef(onAudio);
   const onStartRef = useRef(onStart);
   useEffect(() => { onResultRef.current = onResult; }, [onResult]);
+  useEffect(() => { onCaptionRef.current = onCaption; }, [onCaption]);
   useEffect(() => { onAudioRef.current = onAudio; }, [onAudio]);
   useEffect(() => { onStartRef.current = onStart; }, [onStart]);
 
@@ -233,6 +267,9 @@ export default function useVoiceInput({
     session.stopped = true;
     if (session.timer) { clearTimeout(session.timer); session.timer = null; }
     if (session.frame !== null) { cancelAnimationFrame(session.frame); session.frame = null; }
+    session.stopMeter?.();
+    session.stopMeter = null;
+    session.pulse = null;
     try {
       if (session.recorder?.state === "recording") session.recorder.stop();
     } catch { /* Track release below is still required. */ }
@@ -458,6 +495,9 @@ export default function useVoiceInput({
       cancelled: false,
       submitted: false,
       timer: null,
+      stopMeter: null,
+      pulse: null,
+      heard: 0,
     };
     sessionRef.current = session;
     const current = () => sessionRef.current === session && !session.cancelled;
@@ -489,7 +529,12 @@ export default function useVoiceInput({
         for (let i = event.resultIndex; i < event.results.length; i += 1) {
           if (event.results[i].isFinal) transcript += event.results[i][0].transcript;
         }
-        setCaption(tidyChinese(`${finals}${interim}`.trim()));
+        const words = tidyChinese(`${finals}${interim}`.trim());
+        // Each new syllable swells the sea where nothing meters the voice.
+        session.pulse?.(Math.max(0.2, Math.min(1, (words.length - session.heard) / 6)));
+        session.heard = words.length;
+        setCaption(words);
+        if (words) onCaptionRef.current?.(words);
         if (transcript.trim()) {
           session.submitted = true;
           onResultRef.current(tidyChinese(transcript.trim()));
@@ -506,6 +551,9 @@ export default function useVoiceInput({
         sessionRef.current = null;
         setPhase("idle");
         setCaption("");
+      };
+      recognition.onspeechstart = () => {
+        if (current()) session.pulse?.(0.6);
       };
       recognition.onend = () => {
         if (recording) return; // The recording, not the recogniser, decides.
@@ -557,6 +605,37 @@ export default function useVoiceInput({
       });
     }
 
+    if (!recording && recognition) {
+      const pulseWords = () => {
+        const pulse = speechPulse(writeLevel);
+        session.pulse = pulse.pulse;
+        session.stopMeter = pulse.stop;
+      };
+      const Context = dictationCanMeter() ? audioContextConstructor() : null;
+      if (Context) {
+        try {
+          // Created inside the tap, as the recording's is.
+          session.audioContext = new Context();
+          void session.audioContext.resume?.().catch(() => undefined);
+        } catch { session.audioContext = null; }
+      }
+      if (session.audioContext) {
+        void navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+          const context = session.audioContext;
+          if (!current() || session.stopped || !context) { stream.getTracks().forEach(track => track.stop()); return; }
+          session.stream = stream;
+          void context.resume?.().catch(() => undefined);
+          session.stopMeter = meterStream(context, stream, writeLevel);
+        }).catch(() => {
+          // The recogniser reports a refused microphone itself; the
+          // animation still has the words.
+          if (current() && !session.stopped) pulseWords();
+        });
+      } else {
+        pulseWords();
+      }
+    }
+
     try {
       recognition?.start();
     } catch (error) {
@@ -581,7 +660,7 @@ export default function useVoiceInput({
       setPhase("idle");
       setCaption("");
     }, recording ? MAX_RECORDING_MS : DICTATION_MAX_MS);
-  }, [lang, records, cancel, release, finish, meter, showNotice]);
+  }, [lang, records, cancel, release, finish, meter, showNotice, writeLevel]);
 
   const toggle = useCallback(() => {
     if (phase === "listening") {
