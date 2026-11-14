@@ -1,7 +1,6 @@
 import {
   getSpeechSettings,
   speak,
-  speakEach,
   stopSpeech,
   type SpeechLanguage,
 } from "@/lib/speech";
@@ -20,8 +19,11 @@ import {
 
    Where the word comes from:
 
-   - Word by word: each word is its own utterance, and its `start` is the
-     moment it is lit. Exact everywhere.
+   - Word by word: each word is its own utterance, spoken when the last
+     one has ended and a short pause has passed, and lit as it is asked
+     for. They used to be queued all at once and lit by each one's own
+     `start`, which an iPhone does not send for queued utterances: the
+     light stayed on the first word (Chi, 2026-11-13).
    - Whole text, on an engine that reports word boundaries (Safari, and the
      local voices of Chrome and Edge): the boundary's character offset.
    - Whole text, on one that does not (Chrome's "Google" cloud voices): an
@@ -131,15 +133,26 @@ export function estimateWordMs(word: string): number {
 /** Slower than the reader's own pace, for one word at a time. */
 const WORD_BY_WORD_RATE = 0.85;
 
+/** The pause between two words said one at a time (Chi, 2026-11-13: 0.3s). */
+export const WORD_PAUSE_MS = 300;
+
+/** Past a word's own length, how long to wait for an `end` that never comes. */
+const WORD_END_GRACE_MS = 1_500;
+
 /* Each play gets its own number, so a callback from speech that has since
    been replaced does nothing. */
 let run = 0;
 let estimateTimer: number | null = null;
+let wordTimer: number | null = null;
 
 function clearEstimate() {
   if (estimateTimer !== null) {
     window.clearTimeout(estimateTimer);
     estimateTimer = null;
+  }
+  if (wordTimer !== null) {
+    window.clearTimeout(wordTimer);
+    wordTimer = null;
   }
 }
 
@@ -154,7 +167,7 @@ export type PlaySpokenOptions = {
   key: string;
   text: string;
   lang: SpeechLanguage;
-  /** One word at a time, each its own utterance, with the engine's pause between. */
+  /** One word at a time, each its own utterance, with WORD_PAUSE_MS between. */
   wordByWord?: boolean;
 };
 
@@ -170,18 +183,39 @@ export function playSpoken({ key, text, lang, wordByWord = false }: PlaySpokenOp
   set({ key, segment: -1 });
 
   if (wordByWord && words.length > 1) {
-    speakEach(
-      words.map((index) => segments[index].text),
-      lang,
-      {
-        onPart: (part) => {
-          if (own === run) set({ key, segment: words[part] });
-        },
-        onEnd: () => finish(own),
-        onError: () => finish(own),
-      },
-      getSpeechSettings().rate * WORD_BY_WORD_RATE,
-    );
+    const wordRate = (getSpeechSettings().rate || 1) * WORD_BY_WORD_RATE;
+    let position = 0;
+
+    /* The next word: lit, said, and on its end (or, if the engine never
+       says it has ended, a little after it should have) the pause, then
+       the one after it. The first is said inside the tap, which is what
+       lets an iPhone say the rest from its callbacks. */
+    const sayNext = () => {
+      if (own !== run) return;
+      if (position >= words.length) {
+        finish(own);
+        return;
+      }
+      const index = words[position];
+      position += 1;
+      let moved = false;
+      const onward = () => {
+        if (moved || own !== run) return;
+        moved = true;
+        if (wordTimer !== null) window.clearTimeout(wordTimer);
+        wordTimer = window.setTimeout(sayNext, WORD_PAUSE_MS);
+      };
+
+      set({ key, segment: index });
+      speak(segments[index].text, lang, { onEnd: onward, onError: onward }, wordRate);
+      if (wordTimer !== null) window.clearTimeout(wordTimer);
+      wordTimer = window.setTimeout(
+        onward,
+        estimateWordMs(segments[index].text) / wordRate + WORD_END_GRACE_MS,
+      );
+    };
+
+    sayNext();
     return;
   }
 

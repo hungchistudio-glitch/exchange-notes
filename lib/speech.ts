@@ -666,14 +666,6 @@ export type SpeechCallbacks = {
   onBoundary?: (charIndex: number) => void;
 };
 
-export type SpeechSequenceCallbacks = {
-  /** Part `index` of the sequence started. */
-  onPart?: (index: number) => void;
-  /** The last part finished. */
-  onEnd?: () => void;
-  onError?: () => void;
-};
-
 // Bumped on every speak() call so a delayed speak() from an interaction the
 // user has since moved on from can detect it's stale and bail instead of
 // firing late.
@@ -748,11 +740,15 @@ function makeUtterance(text: string, lang: SpeechLanguage, rate?: number) {
  * something already in the queue, and the gesture rule only binds when
  * nothing is. So the queue's own state picks the path — speak immediately
  * when there is nothing to cancel, defer when there is.
+
  *
- * Several utterances are queued together, in the tap, rather than one after
- * another from each one's `end`: the queue keeps them inside the gesture
- * WebKit wants, and the engine's own gap between them is the pause.
+ * The utterances are held until the next call: one nothing refers to can be
+ * collected while it is still speaking, in Chrome and in WebKit, and then
+ * its `end` and `boundary` events never arrive.
  */
+/** The utterances last queued, held so they are not collected mid-sentence. */
+const held: { utterances: SpeechSynthesisUtterance[] } = { utterances: [] };
+
 function enqueue(build: () => SpeechSynthesisUtterance[]) {
   const sequence = ++speakSequence;
 
@@ -771,6 +767,7 @@ function enqueue(build: () => SpeechSynthesisUtterance[]) {
   if (wasBusy) window.speechSynthesis.cancel();
 
   const utterances = build();
+  held.utterances = utterances;
 
   if (!wasBusy) {
     for (const utterance of utterances) window.speechSynthesis.speak(utterance);
@@ -813,34 +810,6 @@ export function speak(
 
     return [utterance];
   });
-}
-
-/**
- * Several pieces of text, one after another, each its own utterance — a
- * sentence said one word at a time (Chi, 2026-11-13: 逐字). Cancelled like
- * anything else by the next speak() or by stopSpeech().
- */
-export function speakEach(
-  texts: readonly string[],
-  lang: SpeechLanguage,
-  callbacks?: SpeechSequenceCallbacks,
-  rate?: number,
-) {
-  if (typeof window === "undefined") return;
-  if (!("speechSynthesis" in window) || texts.length === 0) {
-    callbacks?.onError?.();
-    return;
-  }
-
-  enqueue(() =>
-    texts.map((text, index) => {
-      const utterance = makeUtterance(text, lang, rate);
-      utterance.onstart = () => callbacks?.onPart?.(index);
-      if (index === texts.length - 1) utterance.onend = () => callbacks?.onEnd?.();
-      utterance.onerror = () => callbacks?.onError?.();
-      return utterance;
-    }),
-  );
 }
 
 export function speechSupported(): boolean {
