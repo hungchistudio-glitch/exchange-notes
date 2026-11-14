@@ -342,14 +342,16 @@ export default function CommandDeck() {
         </header>
 
         {/* One line of what the app actually holds: no gauge, no dial. A
-            dash while it loads, never a 0 that is not true yet. */}
+            dash while it loads, never a 0 that is not true yet. Each
+            reading has its status light, the bridge console's (Chi,
+            2026-11-14): Due blinks amber while words wait. */}
         <dl className={styles.status} data-arrive="text">
           <div className={styles.reading}>
-            <dt>{copy.deck.readoutLexicon}</dt>
-            <dd>{count(items.length)}</dd>
+            <dt><span className={`hud-led ${styles.led}`} aria-hidden="true" />{copy.deck.readoutLexicon}</dt>
+            <dd className="hud-figure">{count(items.length)}</dd>
           </div>
           <div className={styles.reading}>
-            <dt>{copy.deck.readoutLearning}</dt>
+            <dt><span className={`hud-led ${styles.led}`} aria-hidden="true" />{copy.deck.readoutLearning}</dt>
             <dd>
               <span className={styles.badge} aria-hidden="true">
                 {getLanguage(learningLanguage).badge}
@@ -360,8 +362,15 @@ export default function CommandDeck() {
             </dd>
           </div>
           <div className={styles.reading}>
-            <dt>{copy.deck.readoutDue}</dt>
-            <dd>{count(reviewStats.due)}</dd>
+            <dt>
+              <span
+                className={`hud-led ${styles.led}`}
+                data-state={itemsLoading ? "off" : reviewStats.due > 0 ? "alert" : undefined}
+                aria-hidden="true"
+              />
+              {copy.deck.readoutDue}
+            </dt>
+            <dd className="hud-figure">{count(reviewStats.due)}</dd>
           </div>
         </dl>
 
@@ -374,6 +383,8 @@ export default function CommandDeck() {
           onPointerDown={pulse}
         >
           <span className={styles.pool} aria-hidden="true" />
+          {/* The bridge's radar behind her (app/hud.css, .hud-radar). */}
+          <span className={`hud-radar ${styles.radar}`} aria-hidden="true" />
           <span className={styles.orbit} aria-hidden="true">
             <span className={styles.orbitLine} />
             <span className={styles.voiceRing} />

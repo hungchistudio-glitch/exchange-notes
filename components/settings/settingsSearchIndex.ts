@@ -93,6 +93,12 @@ export function buildSettingsSearchIndex(
       keywords: ["font", "size", "text", "type", "bigger", "smaller"],
     },
     {
+      id: "setting-interface-sounds",
+      title: settings.interfaceSounds.rowTitle,
+      section: sections.app,
+      keywords: ["sound", "sounds", "audio", "effects", "mute", "click"],
+    },
+    {
       id: "setting-install",
       title: t.pwa.settingsRowTitle,
       section: sections.devices,

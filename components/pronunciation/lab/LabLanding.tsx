@@ -150,7 +150,7 @@ export default function LabLanding() {
         {/* ── Progress ──────────────────────────────────────────── */}
         <section
           aria-label={copy.progress.title}
-          className="rounded-[26px] border border-black/[0.06] bg-white p-5"
+          className="hud-panel rounded-[26px] border border-black/[0.06] bg-white p-5"
         >
           <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
             {copy.progress.eyebrow}
@@ -239,7 +239,7 @@ export default function LabLanding() {
         </nav>
 
         {/* ── Weakness preview ──────────────────────────────────── */}
-        <section className="rounded-[26px] border border-black/[0.06] bg-white p-5">
+        <section className="hud-panel rounded-[26px] border border-black/[0.06] bg-white p-5">
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="text-lg font-bold tracking-[-0.02em]">
               {copy.weakness.title}
@@ -299,7 +299,7 @@ export default function LabLanding() {
         {/* ── Category progress, as the "continue where you left off" ── */}
         <section
           aria-label={copy.sounds.title}
-          className="rounded-[26px] border border-black/[0.06] bg-white p-5"
+          className="hud-panel rounded-[26px] border border-black/[0.06] bg-white p-5"
         >
           <h2 className="text-lg font-bold tracking-[-0.02em]">
             {copy.sounds.title}

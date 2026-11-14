@@ -710,7 +710,7 @@ export default function ReviewPage() {
             <p className="text-xs text-ink-invert-faint">{copy.introLineOne}</p>
           </div>
 
-          <p className="mt-3 text-[2.5rem] font-bold leading-none">
+          <p className="hud-figure mt-3 text-[2.5rem] font-bold leading-none">
             {loading ? "…" : dueInLanguage.length}
           </p>
           <p className="mt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-invert-faint">
@@ -760,7 +760,7 @@ export default function ReviewPage() {
           </div>
         </button>
 
-        <div className="mt-4 rounded-[28px] border border-line bg-white p-6">
+        <div className="hud-panel mt-4 rounded-[28px] border border-line bg-white p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black text-white">
               <InfinityIcon />

@@ -1266,7 +1266,7 @@ const english: TranslationDictionary = {
       saveError: "This note could not be saved. Check your connection and try again.",
       libraryTitle: "Notes",
       libraryDescription: "One thought, with every language view kept together.",
-      searchPlaceholder: "Search your words",
+      searchPlaceholder: "Search your notes",
       allNotes: "All",
       mine: "Mine",
       sharedWithMe: "Shared with me",
@@ -2807,6 +2807,13 @@ const english: TranslationDictionary = {
         "The test notification could not be delivered. Please try again.",
       testNetworkError:
         "The test service could not be reached. Check your connection and try again.",
+    },
+
+    interfaceSounds: {
+      rowTitle: "Interface sounds",
+      rowDescription: "Soft console sounds for taps, pages and rewards",
+      on: "On",
+      off: "Off",
     },
 
     fontSize: {

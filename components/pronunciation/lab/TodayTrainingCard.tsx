@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 
+import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { fill } from "@/lib/i18n/format";
+import { localize } from "@/lib/pronunciation/localizedText";
 import type { DailyTrainingPlan } from "@/lib/pronunciation/lab/dailyTraining";
 
 import trainingStyles from "./TodayTraining.module.css";
@@ -22,6 +24,7 @@ export default function TodayTrainingCard({
   plan: DailyTrainingPlan;
   copy: LabCopy;
 }) {
+  const language = useInterfaceLanguage();
   return (
     <section className={`ob-edge overflow-hidden rounded-[26px] border border-black/[0.06] bg-black text-white ${trainingStyles.training}`}>
       <div className="p-5">
@@ -65,7 +68,7 @@ export default function TodayTrainingCard({
                     {copy.modules[item.module].title}{ordinal}
                   </span>
                   <span className="font-cjk shrink-0 truncate text-right font-medium">
-                    {item.label}
+                    {item.title ? localize(item.title, language) : item.label}
                   </span>
                 </li>
                 );

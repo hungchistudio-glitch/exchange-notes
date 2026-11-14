@@ -437,6 +437,12 @@ export type TrainingItem = {
   /** Which module screen can render it. */
   module: PronunciationModuleId;
   label: string;
+  /**
+   * What the reader is shown, where the label is an id rather than words:
+   * a rhythm lesson's label is "connected-speech", its title "Linking"
+   * (shown raw on Today's training until 2026-11-14).
+   */
+  title?: LocalizedText;
   /** Roughly how long this item takes, in seconds. Used for the plan header. */
   estimatedSeconds: number;
 };

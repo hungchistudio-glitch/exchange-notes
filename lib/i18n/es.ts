@@ -1265,7 +1265,7 @@ const spanish: TranslationDictionary = {
       saveError: "No se pudo guardar la nota. Comprueba la conexión e inténtalo de nuevo.",
       libraryTitle: "Notas",
       libraryDescription: "Una idea con todas sus versiones lingüísticas juntas.",
-      searchPlaceholder: "Busca tus palabras",
+      searchPlaceholder: "Busca tus notas",
       allNotes: "Todas",
       mine: "Mías",
       sharedWithMe: "Compartidas conmigo",
@@ -2803,6 +2803,13 @@ const spanish: TranslationDictionary = {
         "No se ha podido entregar la notificación de prueba. Inténtalo de nuevo.",
       testNetworkError:
         "No se ha podido contactar con el servicio de pruebas. Comprueba tu conexión e inténtalo de nuevo.",
+    },
+
+    interfaceSounds: {
+      rowTitle: "Sonidos de la interfaz",
+      rowDescription: "Sonidos suaves de consola al tocar, cambiar de página y ganar premios",
+      on: "Activados",
+      off: "Desactivados",
     },
 
     fontSize: {

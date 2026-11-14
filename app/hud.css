@@ -1,0 +1,340 @@
+/* =========================================================
+   The HUD (Chi, 2026-11-14: 更科幻風格)
+
+   Chi chose all four ideas and placed them:
+   - A, the holographic HUD: panels, titles and readouts, everywhere.
+   - B, the bridge console: the home's radar and status lights.
+   - C, the hologram projection: a word card arriving.
+   - D, the star chart: Cosmic's sky and its warp between pages.
+
+   Yumi Cosmic takes all of it. Standard takes a light hand: corner
+   brackets, a title that decodes, monospace figures with status lights,
+   and a radar under Yumi. It stays cream and paper, and keeps its lamp.
+   The strength is "clear but readable": nothing moves for good except the
+   radar and the stars, and every arrival plays once.
+
+   This file holds what is shared and the Standard half. The Cosmic
+   arrival is lib/motion/warpArrival.ts; the title's decode is
+   decodeTitle in lib/motion/pageArrival.ts.
+   ========================================================= */
+
+:root {
+  /* How far a Cosmic panel's two cut corners go in. */
+  --hud-cut: 12px;
+  /* Tucked into the corner, clear of a card's 16px padding: at 8px in and
+     12px long they sat on a note card's date. */
+  --hud-bracket: 10px;
+  --hud-bracket-inset: 4px;
+  --hud-ok: #4f8a6b;
+  --hud-alert: #b5772a;
+}
+
+html[data-interface-mode="yumi-cosmic"] {
+  --hud-line: #34444e;
+  --hud-tick: #86d8d2;
+  --hud-ok: #86d8d2;
+  --hud-alert: #e9c57e;
+}
+
+/* ---------------------------------------------------------- the panels */
+
+/*
+ * A panel is `.ob-edge` (the obsidian panels: Settings' sections, Daily
+ * Focus, Review's Today, a note, a conversation, the featured story,
+ * Today's training) or anything given `.hud-panel`.
+ *
+ * In Cosmic it is cut at two opposite corners, the corners left square
+ * enough to read as machined, and carries two brackets at the other two.
+ * The cut edge has no border of its own (clip-path takes it), so the
+ * bracket layer draws it: one hairline across each cut.
+ */
+html[data-interface-mode="yumi-cosmic"] :is(.ob-edge, .hud-panel) {
+  position: relative;
+  border-radius: 10px;
+  clip-path: polygon(
+    var(--hud-cut) 0,
+    100% 0,
+    100% calc(100% - var(--hud-cut)),
+    calc(100% - var(--hud-cut)) 100%,
+    0 100%,
+    0 var(--hud-cut)
+  );
+}
+
+/* A focus ring is drawn outside the panel, where the cut would clip it:
+   while a panel holds keyboard focus it keeps its full outline. */
+html[data-interface-mode="yumi-cosmic"] :is(.ob-edge, .hud-panel):focus-visible {
+  clip-path: none;
+}
+
+html[data-interface-mode="yumi-cosmic"] :is(.ob-edge, .hud-panel)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  --cut-line: linear-gradient(
+    135deg,
+    transparent calc(50% - 0.8px),
+    var(--hud-line) calc(50% - 0.8px),
+    var(--hud-line) calc(50% + 0.8px),
+    transparent calc(50% + 0.8px)
+  );
+  --tick: linear-gradient(var(--hud-tick), var(--hud-tick));
+  background:
+    var(--cut-line) left top / var(--hud-cut) var(--hud-cut) no-repeat,
+    var(--cut-line) right bottom / var(--hud-cut) var(--hud-cut) no-repeat,
+    var(--tick) right var(--hud-bracket-inset) top var(--hud-bracket-inset) / var(--hud-bracket) 1.5px no-repeat,
+    var(--tick) right var(--hud-bracket-inset) top var(--hud-bracket-inset) / 1.5px var(--hud-bracket) no-repeat,
+    var(--tick) left var(--hud-bracket-inset) bottom var(--hud-bracket-inset) / var(--hud-bracket) 1.5px no-repeat,
+    var(--tick) left var(--hud-bracket-inset) bottom var(--hud-bracket-inset) / 1.5px var(--hud-bracket) no-repeat;
+  opacity: 0.85;
+}
+
+/*
+ * Standard: the paper keeps its round corners and gains four fine
+ * brackets, in the panel's own ink (currentColor), so a dark slab
+ * (Review's Today) gets pale ones and a cream card dark ones.
+ */
+html:not([data-interface-mode="yumi-cosmic"]) :is(.ob-edge, .hud-panel) {
+  position: relative;
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) :is(.ob-edge, .hud-panel)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  --tick: linear-gradient(
+    color-mix(in oklab, currentColor 34%, transparent),
+    color-mix(in oklab, currentColor 34%, transparent)
+  );
+  --at: 10px;
+  --len: 10px;
+  background:
+    var(--tick) left var(--at) top var(--at) / var(--len) 1px no-repeat,
+    var(--tick) left var(--at) top var(--at) / 1px var(--len) no-repeat,
+    var(--tick) right var(--at) top var(--at) / var(--len) 1px no-repeat,
+    var(--tick) right var(--at) top var(--at) / 1px var(--len) no-repeat,
+    var(--tick) left var(--at) bottom var(--at) / var(--len) 1px no-repeat,
+    var(--tick) left var(--at) bottom var(--at) / 1px var(--len) no-repeat,
+    var(--tick) right var(--at) bottom var(--at) / var(--len) 1px no-repeat,
+    var(--tick) right var(--at) bottom var(--at) / 1px var(--len) no-repeat;
+}
+
+/* ---------------------------------------------- figures and status lights */
+
+/*
+ * A measured value: a count, a score, a time. Monospace with even figures,
+ * as an instrument reads; only numbers take it, never a sentence, since
+ * wide tracking and a fixed pitch hurt a translated phrase (app/cosmic.css,
+ * .hud-label).
+ */
+.hud-figure {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * A status light. Steady is "on, all well"; `data-state="alert"` blinks
+ * in amber (something is due); `data-state="off"` is dark.
+ */
+.hud-led {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hud-ok);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--hud-ok) 18%, transparent);
+  vertical-align: middle;
+}
+
+html[data-interface-mode="yumi-cosmic"] .hud-led {
+  box-shadow: 0 0 6px color-mix(in oklab, var(--hud-ok) 70%, transparent);
+}
+
+.hud-led[data-state="alert"] {
+  background: var(--hud-alert);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--hud-alert) 20%, transparent);
+  animation: hudBlink 1.6s steps(1, end) infinite;
+}
+
+.hud-led[data-state="off"] {
+  background: color-mix(in oklab, currentColor 30%, transparent);
+  box-shadow: none;
+}
+
+@keyframes hudBlink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/*
+ * The rule after a page's small caps: a hairline running to the edge, the
+ * way a HUD underlines a heading.
+ */
+.hud-rule {
+  flex: 1;
+  min-width: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in oklab, currentColor 45%, transparent), transparent);
+}
+
+/* -------------------------------------------------------- the title decode */
+
+/*
+ * While a title decodes (decodeTitle, lib/motion/pageArrival.ts), its own
+ * text keeps its place and reads to a screen reader, but draws nothing;
+ * an overlay above it, hidden from assistive technology, shows the
+ * scramble resolving into it.
+ */
+[data-title-text] {
+  position: relative;
+}
+
+[data-title-text][data-decoding] {
+  color: transparent;
+}
+
+[data-title-decode] {
+  position: absolute;
+  inset: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+  /* Its colour is the title's own, read as the decode starts. */
+}
+
+/* ------------------------------------------------------- Cosmic's sky (D) */
+
+/*
+ * A field of stars behind every Cosmic page, in two depths drifting very
+ * slowly upward: one painted layer, moved only by transform, so it costs
+ * the compositor and nothing else. Panels are opaque, so the stars show
+ * in the gaps, as a sky behind instruments would.
+ *
+ * The body is made a stacking context so the sky (and the faint glows of
+ * body::before in app/cosmic.css) paint above its own dark background and
+ * below everything in it. Without it a z-index of -1 put them under the
+ * body's background, where nobody could see them.
+ */
+html[data-interface-mode="yumi-cosmic"] body {
+  isolation: isolate;
+}
+
+html[data-interface-mode="yumi-cosmic"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0 0 -60vh;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.8px 1.8px at 12% 18%, rgba(228, 236, 238, 0.9), transparent 60%),
+    radial-gradient(1.3px 1.3px at 38% 62%, rgba(228, 236, 238, 0.7), transparent 60%),
+    radial-gradient(2px 2px at 71% 27%, rgba(184, 232, 229, 0.95), transparent 60%),
+    radial-gradient(1.3px 1.3px at 86% 78%, rgba(228, 236, 238, 0.65), transparent 60%),
+    radial-gradient(1.2px 1.2px at 55% 9%, rgba(228, 236, 238, 0.6), transparent 60%),
+    radial-gradient(1.8px 1.8px at 24% 88%, rgba(229, 173, 210, 0.75), transparent 60%),
+    radial-gradient(1px 1px at 63% 47%, rgba(228, 236, 238, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 5% 51%, rgba(228, 236, 238, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 93% 41%, rgba(228, 236, 238, 0.5), transparent 60%),
+    radial-gradient(1px 1px at 47% 33%, rgba(228, 236, 238, 0.5), transparent 60%);
+  background-size: 340px 420px, 340px 420px, 340px 420px, 340px 420px, 340px 420px,
+    520px 610px, 210px 260px, 210px 260px, 210px 260px, 210px 260px;
+  animation: hudStarDrift 160s linear infinite;
+  will-change: transform;
+}
+
+@keyframes hudStarDrift {
+  to {
+    transform: translateY(-420px);
+  }
+}
+
+/* ------------------------------------------------ a word as a hologram (C) */
+
+/*
+ * A word card arriving in Cosmic: it flickers on as a projection does,
+ * and its headword keeps a faint split of colour at its edges. The flicker
+ * is opacity only and plays once, as the card mounts.
+ */
+html[data-interface-mode="yumi-cosmic"] [data-holo] {
+  animation: hudHoloIn 560ms linear both;
+}
+
+html[data-interface-mode="yumi-cosmic"] [data-holo-word] {
+  text-shadow:
+    -1px 0 rgba(255, 120, 170, 0.5),
+    1px 0 rgba(110, 210, 255, 0.55),
+    0 0 14px rgba(184, 232, 229, 0.18);
+}
+
+@keyframes hudHoloIn {
+  0% { opacity: 0; }
+  14% { opacity: 0.75; }
+  20% { opacity: 0.2; }
+  32% { opacity: 0.9; }
+  38% { opacity: 0.5; }
+  52%,
+  100% { opacity: 1; }
+}
+
+/* --------------------------------------------------------------- the radar (B) */
+
+/*
+ * Rings and a sweeping wedge, drawn once and turned by transform. Placed by
+ * the home that holds it (CommandDeck in Cosmic, YumiHomeStage in
+ * Standard, where it lies flat under Yumi as a floor pad).
+ */
+.hud-radar {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  --radar-ink: rgba(134, 216, 210, 0.5);
+  background:
+    radial-gradient(circle, transparent 0 32%, var(--radar-ink) 32.4%, transparent 33.2%),
+    radial-gradient(circle, transparent 0 65%, var(--radar-ink) 65.4%, transparent 66.2%),
+    radial-gradient(circle, transparent 0 98.4%, var(--radar-ink) 98.8%, transparent 99.6%);
+}
+
+.hud-radar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg 300deg, color-mix(in oklab, var(--radar-ink) 40%, transparent) 345deg, var(--radar-ink) 359deg, transparent 360deg);
+  animation: hudSweep 4.8s linear infinite;
+}
+
+.hud-radar::after {
+  /* One contact, blinking where the sweep last found it. */
+  content: "";
+  position: absolute;
+  left: 70%;
+  top: 26%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--hud-alert);
+  animation: hudBlink 2.4s steps(1, end) infinite;
+}
+
+@keyframes hudSweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-led[data-state="alert"],
+  .hud-radar::before,
+  .hud-radar::after,
+  html[data-interface-mode="yumi-cosmic"] body::after,
+  html[data-interface-mode="yumi-cosmic"] [data-holo] {
+    animation: none;
+  }
+}
