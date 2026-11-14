@@ -294,6 +294,38 @@
   transform: rotate(38deg);
 }
 
+/*
+ * The bridge's radar (Chi, 2026-11-14: 艦橋控制台): rings and a turning
+ * sweep behind Yumi, drawn by .hud-radar in app/hud.css. It steps back
+ * while the orbit is open or the console is in use, as the orbit's own
+ * line does.
+ */
+.radar {
+  left: 50%;
+  top: 48%;
+  z-index: 0;
+  width: calc(62 * var(--u));
+  height: calc(62 * var(--u));
+  transform: translate(-50%, -50%);
+  opacity: 0.75;
+  transition: opacity 220ms ease;
+}
+
+.stage[data-orbit="open"] .radar,
+.stage:not([data-omni="idle"]) .radar {
+  opacity: 0.25;
+}
+
+.bridge[data-arrival="full"] .radar {
+  animation: wakeOrbit 180ms ease-out both;
+}
+
+/* A reading's status light, before its name. */
+.led {
+  margin-right: 0.3rem;
+  margin-top: -1px;
+}
+
 /* The voice, while she listens: the orbit lights with the level the
    microphone's own meter reads (--voice-level, written by CosmicHomeYumi
    from lib/voice/signal.ts). Dark without it; opacity is all that moves. */

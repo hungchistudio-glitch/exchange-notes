@@ -26,8 +26,8 @@
    ========================================================= */
 
 /*
- * The layers' own timing. Since the lamp (below) and the liquid
- * (lib/motion/liquidArrival.ts) took over the two looks' arrivals, it
+ * The layers' own timing. Since the lamp (below) and the warp
+ * (lib/motion/warpArrival.ts) took over the two looks' arrivals, it
  * plays only where nothing may move: a page a feature's key is landing on
  * (lib/motion/featureFlight.ts), whose layers fade in, in turn.
  */
@@ -101,7 +101,8 @@ export function inView(layer: Element, viewportHeight: number) {
    onto the paper as the light reaches its top, coming down a few pixels
    and landing. The rows inside (settings, stories, conversations) then
    slide into place one after another, as index cards do. Yumi Cosmic's
-   page rises under a liquid from the foot (lib/motion/liquidArrival.ts);
+   page comes through a warp and switches on under a scan line
+   (lib/motion/warpArrival.ts; it was a rising liquid until 2026-11-14);
    this is its pair, at the same pace (Chi: 和 Cosmic 一樣明顯).
 
    | moment                          | when                                |
@@ -186,7 +187,7 @@ function passLight(viewportHeight: number) {
 /**
  * Plays Standard's arrival over the page's layers (already chosen and in
  * view; see RouteStage). `rows` names the rows that slide in after their
- * block: the same rows Cosmic turns into droplets.
+ * block: the same rows Cosmic slides in (ARRIVAL_ROWS).
  */
 export function playLampArrival(layers: HTMLElement[], rows: string) {
   const viewportHeight = window.innerHeight;
@@ -211,4 +212,66 @@ export function playLampArrival(layers: HTMLElement[], rows: string) {
         });
       });
   });
+}
+
+/* =========================================================
+   A title decodes (Chi, 2026-11-14: 更科幻風格, 標題解碼進場)
+
+   As a page arrives, in either look, its title comes up as a HUD's
+   does: a scramble of glyphs that resolves into the words, left to
+   right, in about half a second. The title's own text never changes: it
+   keeps its place and reads to a screen reader the whole time, drawn
+   transparent, while an overlay above it (aria-hidden) shows the
+   scramble. A timer, not animation frames, so a hidden tab still ends it.
+   ========================================================= */
+
+export const DECODE_MS = 520;
+const DECODE_TICK_MS = 34;
+/** The first fifth is all scramble; the rest resolves left to right. */
+const DECODE_HOLD = 0.2;
+const GLYPHS = "▓▒░#%&@$0123456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+
+/** What the title shows at `progress` (0–1) of its decode. */
+export function decodeFrame(text: string, progress: number, random: () => number = Math.random) {
+  const characters = Array.from(text);
+  const resolving = Math.max(0, Math.min(1, (progress - DECODE_HOLD) / (1 - DECODE_HOLD)));
+  const settled = Math.floor(characters.length * resolving);
+  return characters
+    .map((character, index) =>
+      index < settled || /\s/.test(character)
+        ? character
+        : GLYPHS[Math.floor(random() * GLYPHS.length)],
+    )
+    .join("");
+}
+
+/** Decodes the page's title (`[data-title-text]`, from PageTitle), once. */
+export function decodeTitle(root: ParentNode) {
+  const target = root.querySelector<HTMLElement>("[data-title-text]");
+  if (!target || target.hasAttribute("data-decoding")) return;
+  const text = target.textContent ?? "";
+  if (!text.trim()) return;
+
+  const overlay = document.createElement("span");
+  overlay.setAttribute("data-title-decode", "");
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.style.color = getComputedStyle(target).color;
+  overlay.textContent = decodeFrame(text, 0);
+  target.setAttribute("data-decoding", "");
+  target.appendChild(overlay);
+
+  const started = Date.now();
+  const finish = () => {
+    window.clearInterval(timer);
+    window.clearTimeout(safety);
+    overlay.remove();
+    target.removeAttribute("data-decoding");
+  };
+  const timer = window.setInterval(() => {
+    const progress = (Date.now() - started) / DECODE_MS;
+    if (progress >= 1 || !overlay.isConnected) finish();
+    else overlay.textContent = decodeFrame(text, progress);
+  }, DECODE_TICK_MS);
+  // React may replace the title's text under it; the title never stays hidden.
+  const safety = window.setTimeout(finish, DECODE_MS + 400);
 }

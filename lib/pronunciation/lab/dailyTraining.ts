@@ -207,6 +207,7 @@ export function buildDailyTraining({
       targetId: lesson.id,
       module: "rhythm",
       label: lesson.id,
+      title: lesson.title,
       estimatedSeconds: SECONDS.rhythm,
     });
   }

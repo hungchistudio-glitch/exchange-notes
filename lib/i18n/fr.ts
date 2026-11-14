@@ -1214,7 +1214,7 @@ const french: TranslationDictionary = {
       saveError: "Impossible d'enregistrer la note. Vérifiez votre connexion et réessayez.",
       libraryTitle: "Notes",
       libraryDescription: "Une idée, avec toutes ses versions linguistiques réunies.",
-      searchPlaceholder: "Chercher tes mots",
+      searchPlaceholder: "Chercher tes notes",
       allNotes: "Toutes",
       mine: "Les miennes",
       sharedWithMe: "Partagées avec moi",
@@ -2595,6 +2595,13 @@ const french: TranslationDictionary = {
       testDeliveryError: "La notification test n'a pas pu être remise. Réessayez.",
       testNetworkError: "Le service de test est injoignable. Vérifiez votre connexion et réessayez.",
     },
+    interfaceSounds: {
+      rowTitle: "Sons de l’interface",
+      rowDescription: "Des sons de console discrets pour les touches, les pages et les récompenses",
+      on: "Activés",
+      off: "Désactivés",
+    },
+
     fontSize: {
       rowTitle: "Taille du texte",
       rowDescription: "Ajustez le texte dans toute l'app",

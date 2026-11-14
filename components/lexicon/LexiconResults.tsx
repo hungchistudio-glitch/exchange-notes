@@ -619,7 +619,8 @@ export default function LexiconResults({
             </div>
           )}
 
-          <article className={`mt-3 overflow-hidden ${cardClass(tone)}`}>
+          {/* A hologram in Yumi Cosmic as it arrives (app/hud.css). */}
+          <article className={`mt-3 overflow-hidden ${cardClass(tone)}`} data-holo="">
             {/*
               The photograph this word came from, above the word — the same
               place, and the same 16:9 container, that a saved card uses.
@@ -650,6 +651,7 @@ export default function LexiconResults({
                   className={`min-w-0 flex-1 break-words font-semibold tracking-[-0.03em] ${
                     isSentence ? "text-[1.1875rem] leading-7" : "text-[1.75rem]"
                   }`}
+                  data-holo-word=""
                 >
                   <SpokenText text={entry.term} language={languages.sourceLanguage} />
                 </p>

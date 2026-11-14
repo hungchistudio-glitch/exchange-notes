@@ -32,6 +32,7 @@ import SettingsAnchor from "@/components/settings/SettingsAnchor";
 import SettingsSearch from "@/components/settings/SettingsSearch";
 import PocketKeysSettingsButton from "@/components/settings/PocketKeysSettingsButton";
 import SettingsSection from "@/components/settings/SettingsSection";
+import InterfaceSoundsSettingsButton from "@/components/settings/InterfaceSoundsSettingsButton";
 import ProfileLanguageSettingsButton from "@/components/settings/ProfileLanguageSettingsButton";
 import DailyGoalSettingsButton from "@/components/settings/DailyGoalSettingsButton";
 import PronunciationSettingsButton from "@/components/settings/PronunciationSettingsButton";
@@ -558,6 +559,10 @@ export default function ProfilePage() {
 
             <SettingsAnchor id="setting-font-size">
               <FontSizeSettingsButton />
+            </SettingsAnchor>
+
+            <SettingsAnchor id="setting-interface-sounds">
+              <InterfaceSoundsSettingsButton />
             </SettingsAnchor>
 
           </SettingsSection>

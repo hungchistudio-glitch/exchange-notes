@@ -175,9 +175,12 @@ export function DeckWordCard({
     + `&widgetNonce=home-${encodeURIComponent(item.id)}`;
 
   return (
+    // In Yumi Cosmic a card arrives as a hologram (app/hud.css: data-holo,
+    // data-holo-word; Chi, 2026-11-14). Standard ignores both.
     <article
       className={styles.card}
       data-tone={tone}
+      data-holo=""
       aria-hidden={interactive ? undefined : true}
     >
       <div className={styles.grain} aria-hidden="true" />
@@ -213,6 +216,7 @@ export function DeckWordCard({
           <h2
             className={styles.primaryWord}
             data-word-size={primaryWordSize}
+            data-holo-word=""
           >
             {primaryWord}
           </h2>

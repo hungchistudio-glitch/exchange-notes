@@ -1214,7 +1214,7 @@ const italian: TranslationDictionary = {
       saveError: "Impossibile salvare la nota. Controlla la connessione e riprova.",
       libraryTitle: "Note",
       libraryDescription: "Un pensiero, con tutte le versioni linguistiche riunite.",
-      searchPlaceholder: "Cerca le tue parole",
+      searchPlaceholder: "Cerca le tue note",
       allNotes: "Tutte",
       mine: "Mie",
       sharedWithMe: "Condivise con me",
@@ -2595,6 +2595,13 @@ const italian: TranslationDictionary = {
       testDeliveryError: "Non è stato possibile consegnare la notifica di prova. Riprova.",
       testNetworkError: "Il servizio di prova non è raggiungibile. Controlla la connessione e riprova.",
     },
+    interfaceSounds: {
+      rowTitle: "Suoni dell’interfaccia",
+      rowDescription: "Suoni di console discreti per tocchi, pagine e premi",
+      on: "Attivi",
+      off: "Disattivati",
+    },
+
     fontSize: {
       rowTitle: "Dimensione del testo",
       rowDescription: "Regola il testo in tutta l'app",

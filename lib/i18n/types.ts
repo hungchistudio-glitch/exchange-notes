@@ -2736,6 +2736,14 @@ export type TranslationDictionary = {
      * shows each size at its own size — so the labels survive as the
      * accessible names of the segments, and the sheet's prose does not.
      */
+    /** The interface's sounds switch (lib/sound/interfaceSounds.ts). */
+    interfaceSounds: {
+      rowTitle: string;
+      rowDescription: string;
+      on: string;
+      off: string;
+    };
+
     fontSize: {
       rowTitle: string;
       rowDescription: string;

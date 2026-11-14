@@ -1251,7 +1251,7 @@ const traditionalChinese: TranslationDictionary = {
       saveError: "無法儲存這則筆記，請檢查網路後再試一次。",
       libraryTitle: "筆記",
       libraryDescription: "同一個想法的所有語言版本都留在一起。",
-      searchPlaceholder: "搜尋你的單字",
+      searchPlaceholder: "搜尋你的筆記",
       allNotes: "全部",
       mine: "我的",
       sharedWithMe: "分享給我的",
@@ -2765,6 +2765,13 @@ const traditionalChinese: TranslationDictionary = {
         "無法傳送測試通知，請再試一次。",
       testNetworkError:
         "無法連線至測試服務，請檢查網路後再試一次。",
+    },
+
+    interfaceSounds: {
+      rowTitle: "介面音效",
+      rowDescription: "點擊、換頁和獲得獎勵時的輕柔科幻音效",
+      on: "開",
+      off: "關",
     },
 
     fontSize: {

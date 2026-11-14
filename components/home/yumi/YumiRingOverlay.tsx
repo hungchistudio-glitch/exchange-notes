@@ -1805,8 +1805,10 @@ export default function YumiRingOverlay({
               <div className={styles.notices}>
                 {notices.reviewDue > 0 ? (
                   <Link href="/review" className={styles.notice}>
+                    {/* Words wait: a status light, blinking (app/hud.css). */}
+                    <span className="hud-led" data-state="alert" aria-hidden="true" />
                     <span>{t.navigation.review}</span>
-                    <i>{notices.reviewDue}</i>
+                    <i className="hud-figure">{notices.reviewDue}</i>
                   </Link>
                 ) : null}
 

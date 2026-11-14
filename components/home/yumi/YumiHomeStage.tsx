@@ -747,6 +747,12 @@ export default function YumiHomeStage({
       className={styles.stage}
       data-in-view={inView ? "true" : "false"}
     >
+      {/* A radar pad on the floor where she stands (Chi, 2026-11-14:
+          Standard takes the home's radar too), drawn by .hud-radar in
+          app/hud.css and laid flat here. Outside the ground, which clips:
+          the live scene draws her a little below its foot. */}
+      <span className={`hud-radar ${styles.radarPad}`} aria-hidden="true" />
+
       <div ref={yumiZoneRef} className={styles.ground}>
         <div className={styles.ambientLight} aria-hidden="true">
           <span />

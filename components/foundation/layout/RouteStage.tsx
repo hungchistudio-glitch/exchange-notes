@@ -15,12 +15,19 @@ import {
   ARRIVAL_MS,
   arrivalDelay,
   arrivalLayers,
+  decodeTitle,
   holdsFixed,
   inView,
   playLampArrival,
 } from "@/lib/motion/pageArrival";
 import { announceRouteArrival } from "@/lib/motion/featureFlight";
-import { LIQUID_OPTIONS, playLiquidArrival } from "@/lib/motion/liquidArrival";
+import { ARRIVAL_ROWS, playWarpArrival } from "@/lib/motion/warpArrival";
+import { ENERGY_LANDED_EVENT } from "@/lib/shop/energy";
+import {
+  SOUNDING,
+  interfaceSounds,
+  unlockInterfaceSounds,
+} from "@/lib/sound/interfaceSounds";
 
 /**
  * The stage every protected route is played on.
@@ -35,8 +42,9 @@ import { LIQUID_OPTIONS, playLiquidArrival } from "@/lib/motion/liquidArrival";
  *    the stage brightens back to full as it goes up.
  * 3. **The page.** When the real page is in, it arrives in layers, each
  *    look in its own way: in Standard its blocks settle under a passing
- *    lamp (lib/motion/pageArrival), in Yumi Cosmic they float up under a
- *    rising liquid (lib/motion/liquidArrival). A page behind a skeleton is played as
+ *    lamp (lib/motion/pageArrival), in Yumi Cosmic starlight warps past
+ *    and they switch on under a scan line (lib/motion/warpArrival). In
+ *    both, the title decodes (decodeTitle). A page behind a skeleton is played as
  *    the skeleton leaves, which is the moment that used to jump: the
  *    outline swapped for the page in one frame.
  *
@@ -87,6 +95,7 @@ function reducedMotion() {
 function arrive(stage: HTMLElement) {
   announceRouteArrival();
   if (stage.querySelector(OWN_WHOLE_ARRIVAL)) return;
+  decodeTitle(stage);
   if (stage.querySelector(OWN_ARRIVAL)) {
     stage.animate([{ opacity: 0.6 }, { opacity: 1 }], { duration: 150, easing: ARRIVAL_EASING });
     return;
@@ -101,13 +110,15 @@ function arrive(stage: HTMLElement) {
   // in turn, below.
   const landing = document.documentElement.hasAttribute("data-feature-flight");
   if (!landing) {
-    // Yumi Cosmic: the page comes up under a rising liquid (lib/motion/
-    // liquidArrival.ts; Chi, 2026-11-12). Standard: it settles under a
-    // passing lamp, its pair (lib/motion/pageArrival.ts; Chi, 2026-11-13).
+    // Yumi Cosmic: a warp, then the page switches on under a scan line
+    // (lib/motion/warpArrival.ts; Chi, 2026-11-14: 先躍遷再組裝). Standard:
+    // it settles under a passing lamp (lib/motion/pageArrival.ts).
     if (document.documentElement.dataset.interfaceMode === "yumi-cosmic") {
-      playLiquidArrival(layers, holdsFixed);
+      playWarpArrival(layers, holdsFixed);
+      interfaceSounds.warp();
     } else {
-      playLampArrival(layers, LIQUID_OPTIONS);
+      playLampArrival(layers, ARRIVAL_ROWS);
+      interfaceSounds.page();
     }
     return;
   }
@@ -137,6 +148,29 @@ export default function RouteStage({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const previousPathRef = useRef<string | null>(null);
   const leavingRef = useRef<Animation | null>(null);
+
+  /*
+   * The interface's sounds (lib/sound/interfaceSounds.ts; Chi,
+   * 2026-11-14): a tick for whatever a finger presses, made inside the
+   * press (iOS starts audio nowhere else), and two notes up when cookies
+   * land. Each checks the switch and the screen itself.
+   */
+  useEffect(() => {
+    const onPress = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      unlockInterfaceSounds();
+      const control = (event.target as Element | null)?.closest?.(SOUNDING);
+      if (!control || control.matches(":disabled, [aria-disabled='true']")) return;
+      interfaceSounds.tap();
+    };
+    const onReward = () => interfaceSounds.reward();
+    document.addEventListener("pointerdown", onPress, true);
+    window.addEventListener(ENERGY_LANDED_EVENT, onReward);
+    return () => {
+      document.removeEventListener("pointerdown", onPress, true);
+      window.removeEventListener(ENERGY_LANDED_EVENT, onReward);
+    };
+  }, []);
 
   /* 1. The tap: dim the page being left, in the click itself. */
   useEffect(() => {
