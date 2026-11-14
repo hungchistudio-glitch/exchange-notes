@@ -518,13 +518,15 @@ describe("a first reader's feedback", () => {
     }
   });
 
-  it("says an example one word at a time when the switch is on", () => {
+  it("says an example one word at a time, lighting each as it is said", () => {
+    vi.useFakeTimers();
     const speech = captureSpeech();
     try {
       const { search, save } = harness({});
       const { container } = render(
         <LexiconResults search={search as never} save={save as never} />,
       );
+      const lit = () => container.querySelector("[data-spoken-now]")?.textContent;
 
       const toggle = screen.getByRole("switch", { name: "Word by word" });
       fireEvent.click(toggle);
@@ -532,22 +534,39 @@ describe("a first reader's feedback", () => {
 
       fireEvent.click(screen.getAllByRole("button", { name: "Play" })[2]);
 
-      /* One utterance a word, queued together in the tap. */
-      expect(speech.said.map((utterance) => utterance.text)).toEqual([
-        "Il",
-        "faut",
-        "tondre",
-        "la",
-        "pelouse",
-      ]);
+      /* One word at a time, each lit as it is said: they used to be queued
+         all at once and lit by each one's own start, which an iPhone does
+         not send for queued utterances (Chi, 2026-11-13). */
+      expect(speech.said.map((utterance) => utterance.text)).toEqual(["Il"]);
+      expect(lit()).toBe("Il");
 
-      act(() => speech.said[2].onstart?.());
-      expect(container.querySelector("[data-spoken-now]")?.textContent).toBe("tondre");
+      // Its end, then the pause, then the next.
+      act(() => speech.said[0].onend?.());
+      expect(speech.said).toHaveLength(1);
+      act(() => vi.advanceTimersByTime(300));
+      expect(speech.said.map((utterance) => utterance.text)).toEqual(["Il", "faut"]);
+      expect(lit()).toBe("faut");
+
+      // An end that never comes does not stop it: it goes on a little after
+      // the word should have finished.
+      act(() => vi.advanceTimersByTime(2_300));
+      expect(speech.said[2].text).toBe("tondre");
+      expect(lit()).toBe("tondre");
     } finally {
       spokenWords.stopSpoken();
       spokenWords.setWordByWord(false);
       speech.restore();
+      vi.useRealTimers();
     }
+  });
+
+  it("names its play keys for a screen reader, with only the triangle on the card", () => {
+    const { search, save } = harness({});
+    render(<LexiconResults search={search as never} save={save as never} />);
+
+    const key = screen.getAllByRole("button", { name: "Play" })[0];
+    expect(key).toHaveTextContent("");
+    expect(key).toHaveAttribute("title", "Play");
   });
 
   it("shows the way to the vocabulary page once a word is kept", () => {

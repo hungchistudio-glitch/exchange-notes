@@ -123,10 +123,12 @@ function useSpokenSegment(key: string) {
 /**
  * The play key, for one piece of text in one language.
  *
- * ▶ and the word "Play", and ■ "Stop" while it plays (Chi, 2026-11-13). It
- * was a bare speaker labelled "Listen", which a first reader did not take
- * for a button at all; a play triangle with its name on it says what it
- * does before it is pressed, and Stop says how to end it.
+ * ▶, and ■ while it plays (Chi, 2026-11-13). It was a bare speaker
+ * labelled "Listen", which a first reader did not take for a button at all;
+ * the play triangle says what it does before it is pressed, and the square
+ * says how to end it. Its word ("Play", "Stop") is its name for a screen
+ * reader and its tooltip: on the card it was one word too many beside each
+ * sentence (Chi, 2026-11-13, the same day).
  *
  * `onSurface` is not decoration. The tinted blocks on this card are painted
  * with --surface, and a --surface button on a --surface block is a button
@@ -165,10 +167,11 @@ function SpeakButton({
           : playSpoken({ key, text, lang: getLanguage(language).speechTag, wordByWord })
       }
       aria-pressed={playing}
+      aria-label={playing ? copy.stop : copy.play}
       title={playing ? copy.stop : copy.play}
       data-speak-key=""
-      // 44px tall, the minimum comfortable target.
-      className={`flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-3.5 text-[0.75rem] font-semibold transition-transform active:scale-95 ${
+      // 44px, the minimum comfortable target.
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 ${
         tone === "cosmic"
           ? "cosmic-sonar border border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
           : onSurface
@@ -177,11 +180,11 @@ function SpeakButton({
       }`}
     >
       {playing ? (
-        <Square size={11} fill="currentColor" strokeWidth={0} aria-hidden="true" />
+        <Square size={12} fill="currentColor" strokeWidth={0} aria-hidden="true" />
       ) : (
-        <Play size={13} fill="currentColor" strokeWidth={0} aria-hidden="true" />
+        /* Nudged right: a triangle's weight sits left of its box's centre. */
+        <Play size={15} fill="currentColor" strokeWidth={0} className="translate-x-px" aria-hidden="true" />
       )}
-      {playing ? copy.stop : copy.play}
     </button>
   );
 }
