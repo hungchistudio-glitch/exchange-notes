@@ -260,10 +260,16 @@
 
 /* ------------------------------------------------------------ the planet */
 
-/* The one Earth, drawn where Station 33's horizon is: a circle 175% of the
-   screen's width, its top at 63% of the height, centred — the window's own
-   Earth (OrbitalBackdrop's .earth), which the film leaves out. The film only
-   ever shrinks it from here (globe() in storyTimeline.ts). */
+/* The one Earth's box: where Station 33's horizon is — a circle 175% of
+   the screen's width, its top at 63% of the height, centred — the window's
+   own Earth (OrbitalBackdrop's .earth), which the film leaves out. The film
+   only ever shrinks it from here (globe() in storyTimeline.ts).
+
+   It paints nothing (Chi, 2026-11-13). Its animation, and its flare's,
+   still run, and say where the Earth is each frame; the Earth itself is
+   drawn into .earth at the screen's resolution (earthPainter.ts). As layers
+   four times the screen's size, zoomed, the continents flickered and went
+   missing on the way down, the rim stepped and the shade banded. */
 .planet {
   position: absolute;
   left: -37.5%;
@@ -271,125 +277,41 @@
   width: 175%;
   aspect-ratio: 1;
   opacity: 0;
+  visibility: hidden;
 }
 
-.planetSurface {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: 50%;
-  background: radial-gradient(circle at 34% 30%, #8fd0f2 0%, #3b8fcc 26%, #1c5d98 52%, #0f3a66 76%, #0a2747 100%);
-}
-
-/* A strip twice the planet's width, tiled once and sliding by half: an
-   endless turn, as on Station 33's window. */
-/* A strip twice the planet's width, two turns of it side by side, sliding
-   by half: an endless turn, as on Station 33's window. Each continent and
-   cloud is its own small soft shape (see BLOBS in YumiOriginStory.tsx). */
-.planetLand,
-.planetClouds {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 200%;
-  height: 100%;
-}
-
-.planetLand i,
-.planetClouds i {
-  position: absolute;
-}
-
-.planetLand {
-  opacity: 0.62;
-  animation: planetTurn 90s linear infinite;
-}
-
-.planetClouds {
-  opacity: 0.75;
-  animation: planetTurn 54s linear infinite;
-}
-
-@keyframes planetTurn {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-/* Lit from the upper left, where the sun is coming up over its rim. */
-.planetShade {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 28% 24%,
-    transparent 0 34%,
-    rgba(3, 8, 20, 0.42) 58%,
-    rgba(2, 5, 12, 0.9) 82%,
-    rgba(2, 5, 12, 0.96) 100%
-  );
-}
-
-.planetAtmosphere {
-  position: absolute;
-  inset: -5%;
-  border-radius: 50%;
-  background: radial-gradient(
-    closest-side,
-    transparent 89%,
-    rgba(140, 210, 255, 0.55) 93%,
-    rgba(140, 210, 255, 0.14) 97%,
-    transparent 100%
-  );
-  box-shadow: 0 0 33cqw rgba(79, 176, 255, 0.22);
-}
-
-/* The sunrise on its rim: a glint, and the long horizontal streak a cinema
-   lens draws across the frame from it. Laid over the planet's own box. */
 .flare {
   position: absolute;
   inset: 0;
   opacity: 0;
 }
 
-.flare::before,
-.flare::after {
+/* The Earth, painted each frame; over the window's stars, under her. */
+.earth {
   position: absolute;
-  content: "";
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
-.flare::before {
-  left: -6%;
-  top: -4%;
-  width: 46%;
-  height: 46%;
+/* A little of the Earth's blue in her eye while she watches it (placed and
+   faded each frame by the projector). */
+.eyeGlint {
+  position: absolute;
+  top: 0;
+  left: 0;
   border-radius: 50%;
   background: radial-gradient(
-    closest-side,
-    rgba(255, 255, 255, 0.95) 0 6%,
-    rgba(255, 228, 180, 0.6) 18%,
-    rgba(255, 201, 107, 0.18) 48%,
-    transparent 100%
+    circle,
+    rgba(186, 230, 255, 0.95) 0%,
+    rgba(120, 196, 255, 0.28) 32%,
+    rgba(120, 196, 255, 0) 58%
   );
-}
-
-.flare::after {
-  left: calc(17% - 160%);
-  top: calc(19% - 0.6%);
-  width: 320%;
-  height: 1.2%;
-  min-height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(159, 220, 255, 0.12) 28%,
-    rgba(214, 238, 255, 0.75) 50%,
-    rgba(159, 220, 255, 0.12) 72%,
-    transparent 100%
-  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
 }
 
 /* ------------------------------------------------------------ Station 33 */
@@ -1179,6 +1101,20 @@
     display: none;
   }
 
+  /* A fade where the rail goes on past its edge, so it reads as one that
+     scrolls (set by markRailEdges in YumiOriginStory.tsx). */
+  .tryOn ul[data-more-end] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+  }
+
+  .tryOn ul[data-more-start] {
+    mask-image: linear-gradient(to right, transparent, #000 36px);
+  }
+
+  .tryOn ul[data-more-start][data-more-end] {
+    mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  }
+
   .tryOn li {
     flex: none;
     scroll-snap-align: start;
@@ -1248,8 +1184,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .matter span,
-  .planetLand,
-  .planetClouds,
   .streaks span,
   .cloudOne,
   .cloudTwo,

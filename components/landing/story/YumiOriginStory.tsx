@@ -17,9 +17,12 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { QUIET_SCENE } from "@/lib/shop/atmosphere";
 import type { ShopItem, YumiOutfit } from "@/lib/shop/catalog";
+import type { Blob } from "./earthPainter";
 import { prepareWhenIdle } from "@/lib/yumi3d/prepareWhenIdle";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
+import { createEarthPainter, type EarthPainter } from "./earthPainter";
+import { createEarthShader } from "./earthShader";
 import {
   ACT_STILLS_MS,
   END_CARD_AT_MS,
@@ -55,20 +58,21 @@ type StoryCopy = TranslationDictionary["landing"]["story"];
    herself (STATION_LOOKS), or what the reader picks for her.
    ========================================================= */
 
-/** A few of the shop's pieces: something to wear, something from Earth. */
-const TRY_ON_IDS = ["monocle", "headphones", "star-pupil", "beret", "bubble-tea"] as const;
+/**
+ * A few of the shop's pieces: something to wear, something from Earth.
+ *
+ * In the order of her own looks (STATION_LOOKS), so each look's two pieces
+ * sit side by side: on a phone the list is a rail that shows about two at a
+ * time, and it scrolls to each look as it goes on (Chi, 2026-11-13: she put
+ * on the bubble tea and nothing on the rail said so).
+ */
+const TRY_ON_IDS = ["monocle", "beret", "bubble-tea", "headphones", "star-pupil"] as const;
 
 /*
- * The planet's continents and clouds, each painted over its own box only.
- * As gradients across the whole strip (a strip twice the width of a planet
- * the size of Station 33's horizon) they were the film's one big paint:
- * 100ms frames as the planet came into view on a desktop (measured
- * 2026-10-17), and nothing at all without them.
- *
- * In percent of one turn of the planet: centre x and y, half width and half
- * height, the colour, and where it has faded out.
+ * The planet's continents and clouds, in percent of one turn of it: centre
+ * x and y, half width and half height, and the colour. Painted each frame
+ * by earthPainter.ts, wrapped round the globe.
  */
-type Blob = [x: number, y: number, rx: number, ry: number, tone: string, fade?: number];
 const LAND: Blob[] = [
   // A long continent, a broad one with a desert, an island chain, the ice.
   [9, 34, 7, 15, "#6e9a5c"], [13, 52, 6, 9, "#7fa463"], [16, 66, 5, 8, "#8a9d5f"],
@@ -83,21 +87,19 @@ const CLOUDS: Blob[] = [
   [30, 80, 12, 3, "rgba(255, 255, 255, 0.7)"],
 ];
 
-/** Two turns side by side, so the strip loops with no seam. */
-function Blobs({ blobs }: { blobs: Blob[] }) {
-  return [0, 50].flatMap(turn => blobs.map(([x, y, rx, ry, tone, fade = 70], index) => (
-    <i
-      key={`${turn}-${index}`}
-      style={{
-        left: `${turn + (x - rx) / 2}%`,
-        top: `${y - ry}%`,
-        width: `${rx}%`,
-        height: `${2 * ry}%`,
-        background: `radial-gradient(closest-side, ${tone}, transparent ${fade}%)`,
-      }}
-    />
-  )));
-}
+/* The air over the end of the descent: up as she nears it, gone by the dock. */
+const smooth = (from: number, to: number, time: number) => {
+  const x = Math.min(1, Math.max(0, (time - from) / (to - from)));
+  return x * x * (3 - 2 * x);
+};
+const airAt = (time: number) => smooth(15_500, 18_600, time) * (1 - smooth(19_400, 20_400, time));
+/* How much she watches the Earth itself, rather than the film's set gaze. */
+const watchAt = (time: number) => smooth(10_300, 11_500, time) * (1 - smooth(19_600, DOCKED_AT_MS, time));
+/** The Earth canvas's pixels at most, in device pixels (see ratioFor). */
+const EARTH_PIXEL_BUDGET = 760_000;
+/** The Earth is on screen between these, give or take its fades. */
+const EARTH_FROM_MS = 9_900;
+const EARTH_TO_MS = 31_600;
 
 /** Everything else drifting out there with YU and MI. */
 const MATTER: ReadonlyArray<{
@@ -248,6 +250,13 @@ export default function YumiOriginStory({
   const filmRef = useRef<HTMLDivElement>(null);
   const screenRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  /** The Earth's canvas, and the invisible layers whose animations place it. */
+  const earthRef = useRef<HTMLCanvasElement>(null);
+  const orbitRef = useRef<HTMLDivElement>(null);
+  const planetRef = useRef<HTMLDivElement>(null);
+  const flareRef = useRef<HTMLSpanElement>(null);
+  /** A little of the Earth's blue in her eye while she watches it. */
+  const glintRef = useRef<HTMLDivElement>(null);
   const clockRef = useRef<FilmClock | null>(null);
   const handleRef = useRef<YumiSceneHandle | null>(null);
   const reducedRef = useRef(false);
@@ -262,6 +271,11 @@ export default function YumiOriginStory({
   const veilAnimationRef = useRef<Animation | null>(null);
   /** The reader has pressed play, pause or a scene: autoplay stands down. */
   const tookOverRef = useRef(false);
+  /** The try-on rail, and whether the reader has moved it themselves. */
+  const railRef = useRef<HTMLUListElement>(null);
+  const railTouchedRef = useRef(false);
+  /** The look before this one, to tell which pieces have just gone on. */
+  const lastLookRef = useRef<YumiOutfit>({});
 
   const [act, setAct] = useState(0);
   /** The act whose words are fading out under the new act's. */
@@ -366,7 +380,11 @@ export default function YumiOriginStory({
     };
     // From the end card back to the first frame is a cut, not a jump, and
     // a fresh showing: she tries her own looks on again.
-    if (clock.time() >= STORY_DURATION_MS - 1) cut(() => { setChosen(null); start(); });
+    if (clock.time() >= STORY_DURATION_MS - 1) cut(() => {
+      setChosen(null);
+      railTouchedRef.current = false;
+      start();
+    });
     else start();
   }, [cut]);
 
@@ -428,6 +446,91 @@ export default function YumiOriginStory({
     let lastDraw = -Infinity;
     const size = { width: screen.clientWidth, height: screen.clientHeight };
 
+    /* The Earth (earthPainter.ts): its box read once, and again on resize. */
+    const earthCanvas = earthRef.current;
+    /* Every browser the film plays in has both; a test's DOM has neither. */
+    const painter: EarthPainter | null =
+      earthCanvas && typeof DOMMatrix === "function" && typeof CanvasRenderingContext2D === "function"
+        ? (createEarthShader(earthCanvas, LAND, CLOUDS) ?? createEarthPainter(earthCanvas, LAND, CLOUDS))
+        : null;
+    const planetBox = { left: 0, top: 0, size: 0 };
+    let earthDrawnAt = Number.NaN;
+    /*
+     * Its resolution: 1.5x at most (as her own canvas), and no more pixels
+     * than EARTH_PIXEL_BUDGET. When the Earth is the horizon it fills half
+     * the frame and every pixel of it is worked out each frame; on a 2018
+     * MacBook's Iris 655, a desktop-sized film at 1.5x beside her held the
+     * station's act near 50 frames a second, and at 1x it held 60 (measured
+     * 2026-11-13). A phone's film is small enough to stay at 1.5x. Its
+     * edges are smooth at any of these, never stepped.
+     *
+     * And a step down from there while the film plays slower than the
+     * screen: a quarter of the last second's frames late, and it is drawn a
+     * quarter step coarser. Never back up within a showing, so it cannot
+     * see-saw.
+     */
+    const ratioFor = () =>
+      Math.max(1, Math.min(1.5, window.devicePixelRatio || 1, Math.sqrt(EARTH_PIXEL_BUDGET / Math.max(1, size.width * size.height))));
+    let earthRatio = ratioFor();
+    let ratioSteps = 0;
+    const recentGaps: number[] = [];
+    let lastTick = Number.NaN;
+    const measureEarth = () => {
+      const planet = planetRef.current;
+      if (planet) {
+        planetBox.left = planet.offsetLeft;
+        planetBox.top = planet.offsetTop;
+        planetBox.size = planet.offsetWidth;
+      }
+      earthRatio = Math.max(1, ratioFor() - 0.25 * ratioSteps);
+      painter?.resize(size.width, size.height, earthRatio);
+      earthDrawnAt = Number.NaN;
+    };
+    measureEarth();
+    let glintShown = false;
+
+    /*
+     * Where the planet's and the window's animations have put the Earth this
+     * frame, as one matrix from the planet's box to the screen, and draw it.
+     * Returns its centre and radius on screen, for her gaze.
+     */
+    const drawEarth = (time: number) => {
+      const orbit = orbitRef.current;
+      const planet = planetRef.current;
+      if (!painter || !orbit || !planet) return null;
+      if (time < EARTH_FROM_MS || time > EARTH_TO_MS) {
+        painter.clear();
+        earthDrawnAt = Number.NaN;
+        return null;
+      }
+      const orbitStyle = getComputedStyle(orbit);
+      const planetStyle = getComputedStyle(planet);
+      const toMatrix = (value: string) => new DOMMatrix(value && value !== "none" ? value : undefined);
+      const half = planetBox.size / 2;
+      const matrix = new DOMMatrix()
+        .translate(0.5 * size.width, 0.7 * size.height)
+        .multiply(toMatrix(orbitStyle.transform))
+        .translate(-0.5 * size.width, -0.7 * size.height)
+        .translate(planetBox.left + half, planetBox.top + half)
+        .multiply(toMatrix(planetStyle.transform))
+        .translate(-half, -half);
+      if (time !== earthDrawnAt) {
+        earthDrawnAt = time;
+        painter.draw({
+          width: size.width,
+          height: size.height,
+          size: planetBox.size,
+          matrix,
+          opacity: Number(orbitStyle.opacity) * Number(planetStyle.opacity),
+          flare: flareRef.current ? Number(getComputedStyle(flareRef.current).opacity) : 0,
+          time,
+          air: reduced ? 0 : airAt(time),
+        });
+      }
+      const centre = matrix.transformPoint(new DOMPoint(half, half));
+      return { x: centre.x, y: centre.y, radius: half * Math.hypot(matrix.a, matrix.b) };
+    };
+
     const finish = () => {
       clock.pause();
       clock.seek(STORY_DURATION_MS);
@@ -448,6 +551,21 @@ export default function YumiOriginStory({
       if (disposed || !onScreen) return;
       raf = requestAnimationFrame(loop);
 
+      /* The screen's own pace, while the Earth is being drawn and the film
+         plays: frames twice as long as they should be, half a second's
+         worth, and the Earth is drawn a step coarser. */
+      const gap = now - lastTick;
+      lastTick = now;
+      if (clock.playing() && !Number.isNaN(earthDrawnAt) && earthRatio > 1 && gap < 200) {
+        recentGaps.push(gap);
+        if (recentGaps.length > 60) recentGaps.shift();
+        if (recentGaps.length === 60 && recentGaps.filter(value => value > 20).length >= 15) {
+          recentGaps.length = 0;
+          ratioSteps += 1;
+          measureEarth();
+        }
+      }
+
       const interval = clock.playing() ? 1000 / 60 : 1000 / 30;
       if (now - lastDraw < interval - 2) return;
       lastDraw = now;
@@ -456,17 +574,60 @@ export default function YumiOriginStory({
       if (clock.playing() && time >= STORY_DURATION_MS) finish();
       showTime(time);
 
+      const earth = drawEarth(time);
+
       const handle = handleRef.current;
       if (handle) {
         const pose = yumiAt(time, size.width < size.height * 0.9, reduced);
+        const radius = pose.r * Math.min(size.width, size.height);
+        const yumiX = pose.x * size.width;
+        const yumiY = pose.y * size.height;
         handle.setParts?.(pose.parts);
-        handle.setScreenAnchor(
-          pose.x * size.width,
-          pose.y * size.height,
-          pose.r * Math.min(size.width, size.height),
-        );
-        handle.setGaze?.(pose.gaze?.x ?? 0, pose.gaze?.y ?? 0);
+        handle.setScreenAnchor(yumiX, yumiY, radius);
+
+        /*
+         * She watches the Earth itself (Chi, 2026-11-13): the nearest point
+         * of it, as it slides in, grows, and becomes the horizon under her.
+         * Blended in from the film's own gaze as she turns to it, and back
+         * out as the stand takes her.
+         */
+        let gazeX = pose.gaze?.x ?? 0;
+        let gazeY = pose.gaze?.y ?? 0;
+        const watch = earth ? watchAt(time) : 0;
+        if (earth && watch > 0) {
+          const dx = yumiX - earth.x;
+          const dy = yumiY - earth.y;
+          const away = Math.hypot(dx, dy) || 1;
+          const reach = Math.min(earth.radius, away);
+          const lookX = earth.x + (dx / away) * reach - yumiX;
+          const lookY = earth.y + (dy / away) * reach - yumiY;
+          const span = 0.45 * Math.min(size.width, size.height);
+          const clamp = (value: number) => Math.max(-1, Math.min(1, value));
+          gazeX += (clamp(lookX / span) - gazeX) * watch;
+          gazeY += (clamp(lookY / span) - gazeY) * watch;
+        }
+        handle.setGaze?.(gazeX, gazeY);
         handle.frame(now);
+
+        /* And a little of its blue in her eye, stronger as it fills the frame. */
+        const glint = glintRef.current;
+        if (glint) {
+          if (earth && watch > 0.01 && !reduced) {
+            const eye = handle.eyeScreenPosition();
+            const near = Math.min(1, earth.radius / (0.6 * size.width));
+            /* A highlight on the side of the eye that faces it, not a tint
+               over the whole eye. */
+            const diameter = 0.3 * radius;
+            glint.style.width = `${diameter}px`;
+            glint.style.height = `${diameter}px`;
+            glint.style.transform = `translate(${eye.x - diameter / 2 + gazeX * 0.13 * radius}px, ${eye.y - diameter / 2 + gazeY * 0.13 * radius}px)`;
+            glint.style.opacity = String(watch * (0.3 + 0.5 * near));
+            glintShown = true;
+          } else if (glintShown) {
+            glint.style.opacity = "0";
+            glintShown = false;
+          }
+        }
       }
     };
     const run = () => {
@@ -624,6 +785,7 @@ export default function YumiOriginStory({
             size.height = screen.clientHeight;
             handleRef.current?.resize();
             clock.resize?.(size.width, size.height);
+            measureEarth();
           });
     resize?.observe(screen);
 
@@ -653,6 +815,55 @@ export default function YumiOriginStory({
   useEffect(() => {
     handleRef.current?.setOutfit?.(outfit);
   }, [outfit, yumi]);
+
+  /*
+   * The rail follows her own looks: as each goes on, it scrolls to the
+   * pieces she has just put on, so what she is wearing is on screen. Both of
+   * a look's pieces if they fit; else the later of the two, centred, with
+   * the other showing at the edge. Only the rail moves (never the page),
+   * and not once the reader has scrolled or picked something themselves.
+   */
+  const railVisible = STORY_ACTS[act].id === "station" && docked && Boolean(catalog?.items.length);
+  useEffect(() => {
+    const rail = railRef.current;
+    const previous = lastLookRef.current;
+    lastLookRef.current = ownOutfit;
+    if (!rail || chosen || railTouchedRef.current) return;
+    if (rail.scrollWidth <= rail.clientWidth + 1) return;
+
+    const fresh = Object.entries(ownOutfit)
+      .filter(([slot, id]) => previous[slot as keyof YumiOutfit] !== id)
+      .map(([, id]) => id);
+    const wanted = (fresh.length ? fresh : Object.values(ownOutfit)).filter(Boolean);
+    const buttons = Array.from(rail.querySelectorAll<HTMLElement>("[data-piece]"))
+      .filter(button => wanted.includes(button.dataset.piece ?? ""));
+    if (!buttons.length) return;
+
+    const box = rail.getBoundingClientRect();
+    const spans = buttons.map(button => {
+      const r = button.getBoundingClientRect();
+      return { left: r.left - box.left + rail.scrollLeft, right: r.right - box.left + rail.scrollLeft };
+    });
+    const left = Math.min(...spans.map(span => span.left));
+    const right = Math.max(...spans.map(span => span.right));
+    const last = spans[spans.length - 1];
+    const centre = right - left <= rail.clientWidth ? (left + right) / 2 : (last.left + last.right) / 2;
+    rail.scrollTo({
+      left: Math.max(0, centre - rail.clientWidth / 2),
+      behavior: reducedRef.current ? "auto" : "smooth",
+    });
+  }, [ownOutfit, chosen, railVisible]);
+
+  /* The rail's edges fade where there is more to scroll to. */
+  const markRailEdges = useCallback(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    rail.toggleAttribute("data-more-start", rail.scrollLeft > 2);
+    rail.toggleAttribute("data-more-end", rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2);
+  }, []);
+  useEffect(() => {
+    if (railVisible) markRailEdges();
+  }, [railVisible, markRailEdges]);
 
   const tryOn = (item: ShopItem) => {
     if (!catalog) return;
@@ -722,21 +933,22 @@ export default function YumiOriginStory({
                 she sees far off is the Earth under the station (see globe()
                 in storyTimeline.ts). The window's own Earth is left out; by
                 day, as the planet always is here. */}
-            <div data-track="orbit" className={styles.orbit}>
+            <div ref={orbitRef} data-track="orbit" className={styles.orbit}>
               <div data-track="station" className={styles.station}>
                 <OrbitalBackdrop scene={QUIET_SCENE} celebrateKey={0} earth={false} />
               </div>
-              <div data-track="planet" className={styles.planet}>
-                <span className={styles.planetSurface}>
-                  <span className={styles.planetLand}><Blobs blobs={LAND} /></span>
-                  <span className={styles.planetClouds}><Blobs blobs={CLOUDS} /></span>
-                </span>
-                <span className={styles.planetShade} />
-                <span className={styles.planetAtmosphere} />
-                <span data-track="flare" className={styles.flare} />
+              {/* The planet's and the flare's animations still run here, on
+                  layers that paint nothing: they are where the Earth is.
+                  The Earth itself is the canvas below (earthPainter.ts). */}
+              <div ref={planetRef} data-track="planet" className={styles.planet}>
+                <span ref={flareRef} data-track="flare" className={styles.flare} />
               </div>
-              {/* Each of her own looks goes on with a ring of light from the
-                  stand, the shop's own for a purchase. */}
+            </div>
+            <canvas ref={earthRef} className={styles.earth} aria-hidden="true" />
+            {/* Each of her own looks goes on with a ring of light from the
+                stand, the shop's own for a purchase. On the window's own
+                track, so it moves with the view as it did inside it. */}
+            <div data-track="orbit" className={styles.orbit}>
               {look >= 0 && !chosen ? <Burst key={look} /> : null}
             </div>
             <div data-track="dock" className={styles.dock}>
@@ -765,6 +977,7 @@ export default function YumiOriginStory({
               onPointerUp={() => handleRef.current?.pointerUp()}
               onPointerCancel={() => handleRef.current?.pointerCancel?.()}
             />
+            <div ref={glintRef} className={styles.eyeGlint} aria-hidden="true" />
             <YumiLoading
               className={styles.loader}
               state={yumi === "live" ? "done" : yumi}
@@ -820,16 +1033,22 @@ export default function YumiOriginStory({
             </div>
           </div>
 
-          {STORY_ACTS[act].id === "station" && docked && catalog && catalog.items.length ? (
+          {railVisible && catalog ? (
             <div className={styles.tryOn} role="group" aria-label={copy.tryOn.title}>
               <p className={styles.tryOnTitle}>{copy.tryOn.title}</p>
-              <ul>
+              <ul
+                ref={railRef}
+                onScroll={markRailEdges}
+                onPointerDown={() => { railTouchedRef.current = true; }}
+                onWheel={() => { railTouchedRef.current = true; }}
+              >
                 {catalog.items.map(item => {
                   const wearing = outfit[item.slot] === item.id;
                   return (
                     <li key={item.id}>
                       <button
                         type="button"
+                        data-piece={item.id}
                         aria-pressed={wearing}
                         onClick={() => tryOn(item)}
                         disabled={yumi !== "live"}
