@@ -413,6 +413,74 @@ describe("the film on the page", () => {
     expect(scene.handle!.setOutfit).toHaveBeenLastCalledWith({ head: "headphones", eyewear: "monocle" });
   });
 
+  /*
+   * On a phone the rail shows about two pieces at a time, and she put on
+   * the bubble tea with nothing on screen saying so (Chi, 2026-11-13). Each
+   * of her looks' pieces sit side by side, and the rail scrolls to them as
+   * they go on — never once the reader has moved it themselves.
+   */
+  it("keeps each of her looks' pieces side by side on the rail", async () => {
+    renderStory();
+    await act(async () => {});
+    fireEvent.click(screen.getByRole("button", { name: /Station 33/ }));
+    const later = skipAhead(DOCKED_AT_MS - STORY_ACTS[3].start + 200);
+    const rail = await screen.findByRole("group", { name: story.tryOn.title });
+    later.mockRestore();
+    const order = Array.from(rail.querySelectorAll<HTMLElement>("[data-piece]"), button => button.dataset.piece);
+    for (const look of STATION_LOOKS) {
+      const at = Object.values(look.outfit).map(id => order.indexOf(id)).sort((a, b) => a - b);
+      expect(at[1] - at[0], JSON.stringify(look.outfit)).toBe(1);
+    }
+  });
+
+  async function railAtTheDock() {
+    renderStory();
+    await waitFor(() => expect(scene.handle).not.toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: /Station 33/ }));
+    /* One clock moved on in two steps (a second spy would replace the
+       first): the plain clock reads performance.now(), and putting it back
+       between them would take the film back before the dock, and the rail
+       with it. */
+    const real = performance.now.bind(performance);
+    const clock = { ahead: DOCKED_AT_MS - STORY_ACTS[3].start + 200 };
+    const docked = vi.spyOn(performance, "now").mockImplementation(() => real() + clock.ahead);
+    const group = await screen.findByRole("group", { name: story.tryOn.title });
+    /* jsdom has no layout: a phone's rail, 300px showing of 700. */
+    const rail = group.querySelector("ul")!;
+    Object.defineProperty(rail, "clientWidth", { configurable: true, value: 300 });
+    Object.defineProperty(rail, "scrollWidth", { configurable: true, value: 700 });
+    rail.getBoundingClientRect = () => ({ left: 0, right: 300, top: 0, bottom: 52, width: 300, height: 52, x: 0, y: 0, toJSON() {} }) as DOMRect;
+    rail.querySelectorAll<HTMLElement>("[data-piece]").forEach((button, index) => {
+      button.getBoundingClientRect = () =>
+        ({ left: index * 140, right: index * 140 + 130, top: 0, bottom: 52, width: 130, height: 52, x: index * 140, y: 0, toJSON() {} }) as DOMRect;
+    });
+    const scrollTo = vi.fn();
+    rail.scrollTo = scrollTo as never;
+    const toLook = (index: number) => {
+      clock.ahead = STATION_LOOKS[index].at - STORY_ACTS[3].start + 100;
+    };
+    return { rail, scrollTo, docked, toLook };
+  }
+
+  it("scrolls the rail to the pieces she has just put on", async () => {
+    const { scrollTo, docked, toLook } = await railAtTheDock();
+    toLook(2);
+    await waitFor(() => expect(scene.handle!.setOutfit).toHaveBeenLastCalledWith(STATION_LOOKS[2].outfit));
+    docked.mockRestore();
+    // The beret and the bubble tea, second and third (140–410): centred
+    // together in the 300px that shows.
+    expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ left: 125 }));
+  });
+
+  it("leaves the rail where the reader put it", async () => {
+    const { rail, scrollTo, docked, toLook } = await railAtTheDock();
+    fireEvent.pointerDown(rail);
+    toLook(2);
+    await waitFor(() => expect(scene.handle!.setOutfit).toHaveBeenLastCalledWith(STATION_LOOKS[2].outfit));
+    docked.mockRestore();
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
   it("names the pieces in the page's language", async () => {
     const copy = renderStory("traditional-chinese");
     await act(async () => {});
