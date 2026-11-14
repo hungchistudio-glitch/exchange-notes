@@ -27,6 +27,9 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { plural } from "@/lib/i18n/format";
 
 type Phase = "landing" | "session" | "complete";
+
+/** How many of today's due words the slab names before "+N more". */
+const DUE_WORDS_SHOWN = 6;
 type Mode = "due" | "all";
 
 function BackIcon() {
@@ -711,8 +714,45 @@ export default function ReviewPage() {
             {loading ? "…" : dueInLanguage.length}
           </p>
           <p className="mt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-invert-faint">
-            {copy.cardsReady}
+            {!loading && dueInLanguage.length === 1 ? copy.cardReady : copy.cardsReady}
           </p>
+
+          {/*
+            Which words they are (Chi, 2026-11-13). A first reader was told
+            one card was ready and could not tell which: a number alone asks
+            to be trusted, and a reader deciding whether to start wants to
+            know what they are starting on. The first few, in the order the
+            round will ask them, and how many more. Spans with list roles,
+            since this is all inside the slab's one button.
+          */}
+          {!loading && dueInLanguage.length > 0 ? (
+            <span
+              role="list"
+              aria-label={copy.dueWordsLabel}
+              data-review-due-words=""
+              className="mt-4 flex flex-wrap gap-1.5"
+            >
+              {dueInLanguage.slice(0, DUE_WORDS_SHOWN).map((word) => (
+                <span
+                  key={word.id}
+                  role="listitem"
+                  className="max-w-full truncate rounded-full bg-[color-mix(in_oklab,currentColor_14%,transparent)] px-3 py-1 text-[0.8125rem] font-semibold"
+                >
+                  {word.term}
+                </span>
+              ))}
+              {dueInLanguage.length > DUE_WORDS_SHOWN ? (
+                <span
+                  role="listitem"
+                  className="rounded-full px-2 py-1 text-[0.8125rem] font-semibold text-ink-invert-faint"
+                >
+                  {insertValues(copy.moreWords, {
+                    count: dueInLanguage.length - DUE_WORDS_SHOWN,
+                  })}
+                </span>
+              ) : null}
+            </span>
+          ) : null}
 
           <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4 text-sm font-semibold">
             {copy.startReview}

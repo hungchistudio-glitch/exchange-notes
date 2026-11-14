@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { LanguageCode } from "@/lib/languages";
@@ -149,7 +149,7 @@ describe("the two shells", () => {
     );
 
     const text = container.textContent ?? "";
-    const listeners = screen.getAllByRole("button", { name: "Listen" }).length;
+    const listeners = screen.getAllByRole("button", { name: "Play" }).length;
     const saveButtons = screen.queryAllByRole("button", {
       name: "Save to vocabulary",
     }).length;
@@ -177,7 +177,7 @@ describe("the two shells", () => {
 });
 
 describe("the result view", () => {
-  it("shows the reader's own words above the dictionary, each labelled", () => {
+  it("shows the reader's own words below the dictionary, each labelled", () => {
     const mine = saved("01", "tondre", "割草", "fr");
     const { search, save } = harness({ savedMatches: [mine] });
 
@@ -195,9 +195,10 @@ describe("the result view", () => {
     expect(yours).toBeInTheDocument();
     expect(dictionary).toBeInTheDocument();
 
-    // Order matters: what you already have comes first.
+    // Order matters (Chi, 2026-11-13): the answer to what was just asked
+    // comes first, and the reader's own matches under it.
     expect(
-      yours.compareDocumentPosition(dictionary) &
+      dictionary.compareDocumentPosition(yours) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
@@ -305,7 +306,7 @@ describe("the result view", () => {
 
     render(<LexiconResults search={search as never} save={save as never} />);
 
-    const listeners = screen.getAllByRole("button", { name: "Listen" });
+    const listeners = screen.getAllByRole("button", { name: "Play" });
 
     // Headword, meaning, and both halves of the example.
     expect(listeners.length).toBe(4);
@@ -437,5 +438,139 @@ describe("a lookup that failed", () => {
     );
 
     expect(screen.getByText(sentence)).toBeInTheDocument();
+  });
+});
+
+/* =========================================================
+   A first reader's feedback (Chi, 2026-11-13)
+
+   He typed a word and thought the app had broken while it looked it up; he
+   did not take the speaker for a button; he wanted to see each word as it
+   was said and to hear a sentence one word at a time; he lost the words he
+   had kept; and with no word in mind he had nowhere to start.
+   ========================================================= */
+
+const spokenWords = await import("@/lib/spokenWords");
+
+type FakeUtterance = {
+  text: string;
+  onstart?: () => void;
+  onend?: () => void;
+  onboundary?: (event: { name?: string; charIndex: number }) => void;
+};
+
+function captureSpeech() {
+  const said: FakeUtterance[] = [];
+  const spy = vi
+    .spyOn(window.speechSynthesis, "speak")
+    .mockImplementation((utterance) => {
+      said.push(utterance as unknown as FakeUtterance);
+    });
+  return { said, restore: () => spy.mockRestore() };
+}
+
+describe("a first reader's feedback", () => {
+  it("says the word it is looking up, then that it is still going, then that it is slow", () => {
+    vi.useFakeTimers();
+    try {
+      const { search, save } = harness({ status: "searching" });
+
+      render(<LexiconResults search={search as never} save={save as never} />);
+
+      expect(screen.getByText("I'm looking up “tondre”…")).toBeInTheDocument();
+
+      act(() => vi.advanceTimersByTime(4_000));
+      expect(screen.getByText("Still looking — almost there.")).toBeInTheDocument();
+
+      act(() => vi.advanceTimersByTime(6_000));
+      expect(screen.getByText(/taking longer than usual/)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("names the key Play, says Stop while it plays, and lights the word being said", () => {
+    const speech = captureSpeech();
+    try {
+      const { search, save } = harness({});
+      const { container } = render(
+        <LexiconResults search={search as never} save={save as never} />,
+      );
+
+      /* The example sentence's key: headword, meaning, then the two halves. */
+      fireEvent.click(screen.getAllByRole("button", { name: "Play" })[2]);
+      const example = speech.said.at(-1)!;
+      expect(example.text).toBe("Il faut tondre la pelouse.");
+      expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument();
+
+      act(() => example.onstart?.());
+      expect(container.querySelector("[data-spoken-now]")?.textContent).toBe("Il");
+
+      act(() => example.onboundary?.({ name: "word", charIndex: 8 }));
+      expect(container.querySelector("[data-spoken-now]")?.textContent).toBe("tondre");
+
+      act(() => example.onend?.());
+      expect(container.querySelector("[data-spoken-now]")).toBeNull();
+      expect(screen.queryByRole("button", { name: "Stop" })).toBeNull();
+    } finally {
+      spokenWords.stopSpoken();
+      speech.restore();
+    }
+  });
+
+  it("says an example one word at a time when the switch is on", () => {
+    const speech = captureSpeech();
+    try {
+      const { search, save } = harness({});
+      const { container } = render(
+        <LexiconResults search={search as never} save={save as never} />,
+      );
+
+      const toggle = screen.getByRole("switch", { name: "Word by word" });
+      fireEvent.click(toggle);
+      expect(toggle).toHaveAttribute("aria-checked", "true");
+
+      fireEvent.click(screen.getAllByRole("button", { name: "Play" })[2]);
+
+      /* One utterance a word, queued together in the tap. */
+      expect(speech.said.map((utterance) => utterance.text)).toEqual([
+        "Il",
+        "faut",
+        "tondre",
+        "la",
+        "pelouse",
+      ]);
+
+      act(() => speech.said[2].onstart?.());
+      expect(container.querySelector("[data-spoken-now]")?.textContent).toBe("tondre");
+    } finally {
+      spokenWords.stopSpoken();
+      spokenWords.setWordByWord(false);
+      speech.restore();
+    }
+  });
+
+  it("shows the way to the vocabulary page once a word is kept", () => {
+    const { search, save } = harness({ saveState: "saved" });
+
+    render(<LexiconResults search={search as never} save={save as never} />);
+
+    expect(screen.getByRole("link", { name: "See my words" })).toHaveAttribute(
+      "href",
+      "/vocabulary",
+    );
+  });
+
+  it("offers today's theme words when nothing has been asked, and looks one up", () => {
+    const { search, save } = harness({ status: "idle" });
+
+    render(<LexiconResults search={search as never} save={save as never} />);
+
+    expect(screen.getByText(/^Try one · /)).toBeInTheDocument();
+    const words = screen.getAllByRole("listitem");
+    expect(words).toHaveLength(5);
+
+    fireEvent.click(within(words[0]).getByRole("button"));
+    expect(search.submit).toHaveBeenCalledWith(words[0].textContent, "type");
   });
 });

@@ -1,11 +1,9 @@
 /*
   The coach strip.
 
-  At the top, and deliberately not anywhere else. Everything this tour asks
-  for lives in the lower two thirds of the home screen — Yumi in the middle,
-  her voice line, the search field, the counts and the biscuits around her —
-  so the one place a card can stand without covering the thing it is pointing
-  at is above all of it.
+  At the top by default, which is where the shop wants it. Home stands every
+  step at the foot instead (.foot, below), and the rest of the main screens
+  above the dock (.docked).
 
   No scrim, no focus trap, no dialog role. The reader is meant to keep using
   the screen while this is up; that is the whole difference between this and
@@ -47,19 +45,17 @@
 /*
   A strip while the reader types (Chi, 2026-10-03: "打字時縮成細條").
 
-  Typing in the home search lifts Yumi and the field to the top of the
-  screen, clear of the keyboard — right where this card stands, so the step
-  that asks for a word hid the one asked. While a field there has the
-  keyboard the card keeps only its step number, pinned to the top edge; the
-  sentence and the keys come back when the keyboard goes, and Yumi's answer
-  position keeps below whichever height it has (YumiRingOverlay,
-  data-coach-card).
+  Typing in the home search lifts Yumi and the field up the screen, clear of
+  the keyboard. While a field there has focus the card keeps only its step
+  number; the sentence and the keys come back when the field is let go of.
+  It stays at the foot rather than moving to the top edge, as it used to
+  (Chi, 2026-11-13: a card that moves reads as a fault): on a phone the
+  keyboard covers it there, which is no loss while the reader is typing,
+  and on a computer it is a slim pill under the answer, which keeps clear of
+  it (YumiRingOverlay, data-coach-card).
 */
-:global(body:has([data-yumi-typing="true"])) .coach {
-  top: calc(env(safe-area-inset-top) + 0.25rem);
-  /* A step placed at the foot keeps its `bottom` otherwise, and a strip
-     fixed at both edges is the whole height of the screen. */
-  bottom: auto;
+:global(body:has([data-yumi-typing="true"])) .coach.foot {
+  bottom: calc(env(safe-area-inset-bottom) + 0.75rem);
 }
 
 :global(body:has([data-yumi-typing="true"])) .card {
@@ -91,32 +87,30 @@
 }
 
 /*
-  The switch step, on Home: at the foot of the screen.
+  Every step on Home: at the foot of the screen, and staying there.
 
-  The strip's usual place covers the top corner on a phone, and that corner
-  is where the switch is (HomeModePortal). Just under the switch it covered
-  the top of Yumi instead. Down here it covers only the search and the
-  review key, which this step does not use, and leaves the switch it points
-  at — breathing its ring — the one thing up top.
+  It used to stand at the top for most steps and at the foot for a few — the
+  switch, the shop and games keys, whose top corner it would have covered,
+  and the dial, which it has to stay clear of — so the card leapt up and
+  down between steps. A first reader took the leap for a fault (Chi,
+  2026-11-13). Yumi's rest position rises while a tour is on so the field
+  under her keeps clear of it (StandardHome.module.css), and her answer
+  column ends above it (YumiRingOverlay, data-coach-card).
 */
-.switchStep {
+.foot {
   top: auto;
   bottom: calc(env(safe-area-inset-bottom) + 1.25rem);
 }
 
 /*
-  The dial's steps, on Home: at the foot, and still there while it is out.
+  The dial's steps stay up while it is out.
 
   The rule near the top hides the strip while the ring is open, written when
   the only step about the ring was over the moment it opened. The dial's two
-  steps are read with it open — turn it, then turn to Search — so they stand
-  at the foot, below its lowest key, and stay. Without this a reader opened
-  the dial and lost the sentence telling them what to do with it.
+  steps are read with it open, so they stand at the foot, below its lowest
+  key, and stay. Without this a reader opened the dial and lost the sentence
+  telling them what to do with it.
 */
-.dialStep {
-  top: auto;
-  bottom: calc(env(safe-area-inset-bottom) + 1.25rem);
-}
 
 :global(body:has([data-yumi-mode="open"])) .coach.dialStep {
   opacity: 1;
@@ -159,6 +153,71 @@
   font-size: 0.9375rem;
   line-height: 1.6;
   color: #171717;
+}
+
+/*
+  A step of several small moves, as a checklist (Chi, 2026-11-13). The line
+  to do now is the dark one; a done line keeps its tick and fades, so the
+  reader can see how far they have got without reading it all again.
+*/
+.tasks {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.tasks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: rgb(0 0 0 / 0.42);
+  transition: color 240ms ease;
+}
+
+.tasks li[data-state="now"] {
+  color: #171717;
+  font-weight: 600;
+}
+
+.tasks li[data-state="done"] {
+  color: rgb(0 0 0 / 0.42);
+}
+
+.tick {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.05rem;
+  border: 1px solid rgb(0 0 0 / 0.2);
+  border-radius: 999px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  transition: background-color 240ms ease, color 240ms ease, border-color 240ms ease;
+}
+
+.tasks li[data-state="now"] .tick {
+  border-color: #171717;
+}
+
+.tasks li[data-state="done"] .tick {
+  border-color: #2f7d4f;
+  background: #2f7d4f;
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tasks li,
+  .tick {
+    transition: none;
+  }
 }
 
 .keys {

@@ -134,7 +134,7 @@ describe("when the tour shows it", () => {
 
     vi.useFakeTimers();
     await act(async () => {
-      announceHomeMoment("dial-turned");
+      announceHomeMoment("dial-chosen");
     });
 
     /* The "Good." beat: it flashes and lets go, rather than vanishing. */

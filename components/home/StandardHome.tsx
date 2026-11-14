@@ -20,6 +20,7 @@ import TutorialLauncher from "@/components/tutorial/TutorialLauncher";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useLocalClock from "@/hooks/home/useLocalClock";
+import useRiseClearOfCoach from "@/hooks/home/useRiseClearOfCoach";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useIncomingFriendRequestCount from "@/hooks/friends/useIncomingFriendRequestCount";
@@ -106,6 +107,9 @@ export default function StandardHome() {
       getCoachStep,
       getServerCoachStep,
     ) !== COACH_FINISHED;
+
+  /* She rises clear of the tour's card at the foot. */
+  useRiseClearOfCoach(stageRef, coaching);
 
   const now = useLocalClock();
   const locale = INTERFACE_LANGUAGE_CODE[language];

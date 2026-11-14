@@ -275,31 +275,51 @@ function getAvailableVoices(): SpeechSynthesisVoice[] {
 // often play nothing at all — no error — when utterance.lang doesn't
 // exactly match an installed voice and no explicit voice is set.
 // Among a set of same-language candidate voices, prefer the one that will
-// actually sound least robotic. Chrome/Edge ship both a cloud-quality
-// "Google …" voice and a much flatter local/system voice for the same
-// language — when both are installed the Google one is dramatically more
-// natural. Local "Compact" voices (common on macOS/iOS for languages you
-// haven't downloaded the full voice pack for) are the opposite: noticeably
-// more synthetic than a normal system voice, so they're avoided unless
-// nothing else matches.
+// actually sound least robotic.
+//
+// Devices name their good voices, and the names are the only quality signal
+// the Web Speech API gives: Apple's downloadable voices say "(Premium)" or
+// "(Enhanced)", Edge's neural cloud voices say "Online (Natural)", some
+// engines say "Neural", and Chrome's cloud voices say "Google". Each of
+// those is far less flat than the plain system voice for the same language.
+// Local "Compact" voices (common on macOS/iOS for languages you haven't
+// downloaded the full voice pack for) are the opposite: noticeably more
+// synthetic than a normal system voice, so they're avoided unless nothing
+// else matches, and novelty voices come last of all.
+//
+// It used to take the first "Google" voice and stop, which passed over a
+// Premium voice the reader had downloaded on a Mac and every Natural voice in
+// Edge (Chi, 2026-11-13, from a first reader who found the voice unnatural).
+export function voiceQuality(voice: SpeechSynthesisVoice): number {
+  const name = voice.name.toLowerCase();
+
+  if (isNoveltyVoice(voice)) return -100;
+  if (name.includes("compact")) return -50;
+  if (name.includes("premium")) return 100;
+  if (name.includes("natural")) return 95;
+  if (name.includes("enhanced")) return 90;
+  if (name.includes("neural")) return 85;
+  if (name.includes("google")) return 80;
+  return 0;
+}
+
 function pickBestQualityVoice(
   voices: SpeechSynthesisVoice[]
 ): SpeechSynthesisVoice {
-  const cloudVoice = voices.find((voice) =>
-    voice.name.toLowerCase().includes("google")
-  );
-  if (cloudVoice) return cloudVoice;
+  /* Highest score wins; on a tie the platform's own order stands, which is
+     what this did for every voice it had no opinion about before. */
+  let best = voices[0];
+  let bestScore = best ? voiceQuality(best) : Number.NEGATIVE_INFINITY;
 
-  const nonCompact = voices.filter(
-    (voice) => !voice.name.toLowerCase().includes("compact")
-  );
+  for (const voice of voices.slice(1)) {
+    const score = voiceQuality(voice);
+    if (score > bestScore) {
+      best = voice;
+      bestScore = score;
+    }
+  }
 
-  // Prefer a normal-sounding voice over a novelty one whenever any normal
-  // option exists at all — see the NOVELTY_VOICE_NAMES comment above.
-  const normalSounding = nonCompact.filter((voice) => !isNoveltyVoice(voice));
-  if (normalSounding.length > 0) return normalSounding[0];
-
-  return nonCompact[0] ?? voices[0];
+  return best;
 }
 
 /**
@@ -635,6 +655,23 @@ export type SpeechCallbacks = {
   onStart?: () => void;
   onEnd?: () => void;
   onError?: () => void;
+  /**
+   * The engine reached a word, by its character offset into the text.
+   *
+   * Only where the engine reports it: Safari's voices and the local voices
+   * of Chrome and Edge do; Chrome's "Google" cloud voices never do. A caller
+   * that highlights the word being said has to carry on without it
+   * (lib/spokenWords.ts estimates instead).
+   */
+  onBoundary?: (charIndex: number) => void;
+};
+
+export type SpeechSequenceCallbacks = {
+  /** Part `index` of the sequence started. */
+  onPart?: (index: number) => void;
+  /** The last part finished. */
+  onEnd?: () => void;
+  onError?: () => void;
 };
 
 // Bumped on every speak() call so a delayed speak() from an interaction the
@@ -642,35 +679,8 @@ export type SpeechCallbacks = {
 // firing late.
 let speakSequence = 0;
 
-export function speak(
-  text: string,
-  lang: SpeechLanguage,
-  callbacks?: SpeechCallbacks,
-  rate?: number,
-) {
-  if (typeof window === "undefined") return;
-  if (!("speechSynthesis" in window)) {
-    callbacks?.onError?.();
-    return;
-  }
-
-  const sequence = ++speakSequence;
-
-  /* Before anything is queued, while this is still the tap's own task. */
-  preferPlaybackAudio();
-
-  /*
-   * Whether anything is actually in the queue right now.
-   *
-   * Read before cancel(), because cancel() is what makes it false — and the
-   * answer decides which of the two paths at the bottom of this function is
-   * taken. See the note there.
-   */
-  const wasBusy =
-    window.speechSynthesis.speaking || window.speechSynthesis.pending;
-
-  if (wasBusy) window.speechSynthesis.cancel();
-
+/** One utterance with the reader's voice, rate and the language rules below. */
+function makeUtterance(text: string, lang: SpeechLanguage, rate?: number) {
   const settings = getSpeechSettings();
 
   const utterance = new SpeechSynthesisUtterance(text);
@@ -708,38 +718,62 @@ export function speak(
     });
   }
 
-  if (callbacks?.onStart) utterance.onstart = () => callbacks.onStart?.();
-  if (callbacks?.onEnd) utterance.onend = () => callbacks.onEnd?.();
-  if (callbacks?.onError) utterance.onerror = () => callbacks.onError?.();
+  return utterance;
+}
+
+/**
+ * Queues utterances the way speak() always has.
+ *
+ * Two paths, and which one is taken decides whether iOS makes any sound at
+ * all.
+ *
+ * The delayed path exists for a real race: Chrome, Edge and Safari can
+ * silently drop an utterance queued in the same tick as cancel(), or let
+ * whatever was just cancelled keep sounding for a moment before the new one
+ * starts. Tapping quickly between sound cards then reads as "I tapped F and
+ * heard something else" — the previous card bleeding through. A short delay
+ * after cancel() gives the queue time to clear.
+ *
+ * But that delay also breaks WebKit's other rule: the first
+ * speechSynthesis.speak() of a session has to happen inside the task the
+ * user's tap started. Deferring it by even 60ms severs that association, and
+ * WebKit's response is to do nothing — no sound, no error event, nothing in
+ * the console. Every later tap goes down the same path, so the engine never
+ * unlocks and the whole screen stays mute for the session. That is what made
+ * the Pronunciation Lab's English letters silent while its Zhuyin sounds
+ * played perfectly: Zhuyin has recorded audio files and never touches speech
+ * synthesis at all, so it was never subject to either rule.
+ *
+ * The two only conflict when both apply, and they cannot: the race needs
+ * something already in the queue, and the gesture rule only binds when
+ * nothing is. So the queue's own state picks the path — speak immediately
+ * when there is nothing to cancel, defer when there is.
+ *
+ * Several utterances are queued together, in the tap, rather than one after
+ * another from each one's `end`: the queue keeps them inside the gesture
+ * WebKit wants, and the engine's own gap between them is the pause.
+ */
+function enqueue(build: () => SpeechSynthesisUtterance[]) {
+  const sequence = ++speakSequence;
+
+  /* Before anything is queued, while this is still the tap's own task. */
+  preferPlaybackAudio();
 
   /*
-   * Two paths, and which one is taken decides whether iOS makes any sound at
-   * all.
+   * Whether anything is actually in the queue right now.
    *
-   * The delayed path exists for a real race: Chrome, Edge and Safari can
-   * silently drop an utterance queued in the same tick as cancel(), or let
-   * whatever was just cancelled keep sounding for a moment before the new one
-   * starts. Tapping quickly between sound cards then reads as "I tapped F and
-   * heard something else" — the previous card bleeding through. A short delay
-   * after cancel() gives the queue time to clear.
-   *
-   * But that delay also breaks WebKit's other rule: the first
-   * speechSynthesis.speak() of a session has to happen inside the task the
-   * user's tap started. Deferring it by even 60ms severs that association, and
-   * WebKit's response is to do nothing — no sound, no error event, nothing in
-   * the console. Every later tap goes down the same path, so the engine never
-   * unlocks and the whole screen stays mute for the session. That is what made
-   * the Pronunciation Lab's English letters silent while its Zhuyin sounds
-   * played perfectly: Zhuyin has recorded audio files and never touches speech
-   * synthesis at all, so it was never subject to either rule.
-   *
-   * The two only conflict when both apply, and they cannot: the race needs
-   * something already in the queue, and the gesture rule only binds when
-   * nothing is. So the queue's own state picks the path — speak immediately
-   * when there is nothing to cancel, defer when there is.
+   * Read before cancel(), because cancel() is what makes it false — and the
+   * answer decides which of the two paths below is taken.
    */
+  const wasBusy =
+    window.speechSynthesis.speaking || window.speechSynthesis.pending;
+
+  if (wasBusy) window.speechSynthesis.cancel();
+
+  const utterances = build();
+
   if (!wasBusy) {
-    window.speechSynthesis.speak(utterance);
+    for (const utterance of utterances) window.speechSynthesis.speak(utterance);
     return;
   }
 
@@ -747,8 +781,66 @@ export function speak(
   // something else — this one bails rather than firing late and stepping on it.
   window.setTimeout(() => {
     if (sequence !== speakSequence) return;
-    window.speechSynthesis.speak(utterance);
+    for (const utterance of utterances) window.speechSynthesis.speak(utterance);
   }, 60);
+}
+
+export function speak(
+  text: string,
+  lang: SpeechLanguage,
+  callbacks?: SpeechCallbacks,
+  rate?: number,
+) {
+  if (typeof window === "undefined") return;
+  if (!("speechSynthesis" in window)) {
+    callbacks?.onError?.();
+    return;
+  }
+
+  enqueue(() => {
+    const utterance = makeUtterance(text, lang, rate);
+
+    if (callbacks?.onStart) utterance.onstart = () => callbacks.onStart?.();
+    if (callbacks?.onEnd) utterance.onend = () => callbacks.onEnd?.();
+    if (callbacks?.onError) utterance.onerror = () => callbacks.onError?.();
+    if (callbacks?.onBoundary) {
+      utterance.onboundary = (event) => {
+        if (event.name === undefined || event.name === "word") {
+          callbacks.onBoundary?.(event.charIndex);
+        }
+      };
+    }
+
+    return [utterance];
+  });
+}
+
+/**
+ * Several pieces of text, one after another, each its own utterance — a
+ * sentence said one word at a time (Chi, 2026-11-13: 逐字). Cancelled like
+ * anything else by the next speak() or by stopSpeech().
+ */
+export function speakEach(
+  texts: readonly string[],
+  lang: SpeechLanguage,
+  callbacks?: SpeechSequenceCallbacks,
+  rate?: number,
+) {
+  if (typeof window === "undefined") return;
+  if (!("speechSynthesis" in window) || texts.length === 0) {
+    callbacks?.onError?.();
+    return;
+  }
+
+  enqueue(() =>
+    texts.map((text, index) => {
+      const utterance = makeUtterance(text, lang, rate);
+      utterance.onstart = () => callbacks?.onPart?.(index);
+      if (index === texts.length - 1) utterance.onend = () => callbacks?.onEnd?.();
+      utterance.onerror = () => callbacks?.onError?.();
+      return utterance;
+    }),
+  );
 }
 
 export function speechSupported(): boolean {

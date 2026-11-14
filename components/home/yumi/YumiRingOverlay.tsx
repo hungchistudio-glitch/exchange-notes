@@ -829,6 +829,34 @@ export default function YumiRingOverlay({
       }
       if (canvas.hasPointerCapture?.(current.id)) canvas.releasePointerCapture(current.id);
     };
+    /*
+     * A mouse over her says she can be pressed (Chi, 2026-11-13): the hand
+     * cursor, a warm glow round her and a small "click me" beside her. A
+     * first reader on a computer moved over her, saw nothing change, and did
+     * not take her for something to press. The same 100px round her eye that
+     * a press is judged by; only for a mouse, so a finger's tap does not
+     * leave her lit. Written straight onto the layer, not into state: it
+     * changes with every move, and nothing else on the screen depends on it.
+     */
+    let hovering = false;
+    const setHover = (next: boolean) => {
+      if (next === hovering) return;
+      hovering = next;
+      canvas.style.cursor = next ? "pointer" : "";
+      if (next) rootRef.current?.setAttribute("data-yumi-hover", "true");
+      else rootRef.current?.removeAttribute("data-yumi-hover");
+    };
+    const onCanvasHover = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
+      const eye = sceneRef.current?.eyeScreenPosition();
+      setHover(
+        Boolean(eye) &&
+          !openRef.current &&
+          !returningHomeRef.current &&
+          Math.hypot(event.clientX - eye!.x, event.clientY - eye!.y) <= 100,
+      );
+    };
+    const onCanvasLeave = () => setHover(false);
     const onHidden = () => { if (document.hidden) cancelCanvasGesture(); };
     const onBite = () => {
       if (reachingFor.current) return;
@@ -842,6 +870,8 @@ export default function YumiRingOverlay({
     stage?.addEventListener("yumi-cookie-bite", onBite);
     canvas.addEventListener("pointerdown", onCanvasDown);
     canvas.addEventListener("pointermove", onCanvasMove);
+    canvas.addEventListener("pointermove", onCanvasHover);
+    canvas.addEventListener("pointerleave", onCanvasLeave);
     canvas.addEventListener("pointerup", onCanvasUp);
     canvas.addEventListener("pointercancel", onCanvasUp);
     canvas.addEventListener("lostpointercapture", onCanvasUp);
@@ -996,12 +1026,12 @@ export default function YumiRingOverlay({
           }
           const keyboardPending = expectKeyboardRef.current;
           /*
-           * Clear of the tour's card, when one is up (it stands at the top of
-           * this screen, and her answer position is just under it): her top
-           * edge goes below its bottom. While the reader types the card is a
-           * slim strip (TutorialCoach.module.css), so this costs the keyboard
-           * a few pixels at most; with the answer up it is the card's full
-           * height, and there is room for that once the keyboard has gone.
+           * Clear of the tour's card, when one is up. On Home it stands at
+           * the foot (TutorialCoach.module.css, .foot), so the answer column
+           * ends above its top edge (`coachFloor`, used for --below-room
+           * below). A card at the top — Cosmic's, or any card that is ever
+           * put there again — instead pushes her answer position down below
+           * its bottom edge, as it always did.
            */
           let answerY = answerAnchorY(
             rect.height,
@@ -1009,15 +1039,20 @@ export default function YumiRingOverlay({
               ? rect.height * KEYBOARD_VISIBLE_SHARE
               : viewportWatch.settled,
           );
+          let coachFloor = Number.POSITIVE_INFINITY;
           if (answeringRef.current) {
             const coach = document
               .querySelector("[data-coach-card]")
               ?.getBoundingClientRect();
             if (coach && coach.height > 0) {
-              answerY = Math.max(
-                answerY,
-                Math.round(coach.bottom - rect.top + ANSWER_RADIUS + COACH_CLEARANCE),
-              );
+              if (coach.top - rect.top > rect.height / 2) {
+                coachFloor = Math.round(coach.top - rect.top - COACH_CLEARANCE);
+              } else {
+                answerY = Math.max(
+                  answerY,
+                  Math.round(coach.bottom - rect.top + ANSWER_RADIUS + COACH_CLEARANCE),
+                );
+              }
             }
           }
 
@@ -1222,7 +1257,7 @@ export default function YumiRingOverlay({
                  moving eye is the same jitter one property along. */
               const belowRoom = `${Math.round(Math.max(
                   0,
-                  liveVisible - answerY - BELOW_OFFSET - BELOW_AIR,
+                  Math.min(liveVisible, coachFloor) - answerY - BELOW_OFFSET - BELOW_AIR,
                 ))}px`;
               if (belowRoom !== lastBelowRoom) {
                 ringRef.current.style.setProperty("--below-room", belowRoom);
@@ -1270,6 +1305,9 @@ export default function YumiRingOverlay({
       stage?.removeEventListener("yumi-cookie-bite", onBite);
       canvas.removeEventListener("pointerdown", onCanvasDown);
       canvas.removeEventListener("pointermove", onCanvasMove);
+      canvas.removeEventListener("pointermove", onCanvasHover);
+      canvas.removeEventListener("pointerleave", onCanvasLeave);
+      setHover(false);
       canvas.removeEventListener("pointerup", onCanvasUp);
       canvas.removeEventListener("pointercancel", onCanvasUp);
       canvas.removeEventListener("lostpointercapture", onCanvasUp);
@@ -1603,6 +1641,8 @@ export default function YumiRingOverlay({
   }, [close, open]);
 
   function choose(spoke: Spoke) {
+    /* The tour's first step ends on this: open, turn, and go in. */
+    announceHomeMoment("dial-chosen");
     close();
     if (onChooseDestination) {
       onChooseDestination(spoke);
@@ -1665,6 +1705,7 @@ export default function YumiRingOverlay({
         <button
           type="button"
           className={styles.scrim}
+          data-no-hover=""
           onClick={close}
           aria-label={t.common.close}
           aria-hidden={!open}
@@ -1721,6 +1762,12 @@ export default function YumiRingOverlay({
           className={styles.ring}
           data-yumi-ring=""
         >
+          {/* Lit while a mouse is over her (see onCanvasHover). */}
+          <span className={styles.hoverGlow} aria-hidden="true" />
+          <span className={styles.hoverTag} aria-hidden="true">
+            {answering ? t.home.yumiHoverHome : t.home.yumiHover}
+          </span>
+
           <PrecisionDial
             enabled={open}
             radius={ringRadius}

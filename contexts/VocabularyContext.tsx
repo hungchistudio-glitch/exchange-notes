@@ -440,6 +440,15 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * The library if there is one here, or null: for a small piece that can be
+ * drawn inside the app or outside it (today's theme words, which pass over
+ * the words already kept when they can see them).
+ */
+export function useOptionalVocabulary() {
+  return useContext(VocabularyContext);
+}
+
 export function useVocabulary() {
   const context = useContext(VocabularyContext);
 

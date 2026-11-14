@@ -94,27 +94,57 @@ describe("chapter one: doing it on the home screen", () => {
     expect(screen.getByText("Chapter 1 · Home · 1/5")).toBeInTheDocument();
   });
 
-  it("waits for the dial to be turned, not merely opened", async () => {
+  it("ticks the dial's three moves off as they happen, and is done when a key is tapped", async () => {
     coach();
 
-    expect(screen.getByText(/Tap me to open the dial, turn it/)).toBeInTheDocument();
+    const line = (text: string) => screen.getByText(text).closest("li");
+    const open = "Tap me to open the dial";
+    const turn = "Turn the dial to another place";
+    const enter = "Turn to Search and tap it to go in";
 
-    /* The wrong events must do nothing: a reader who looked a word up, or
-       opened the dial and never turned it, has not done step one. */
+    /* The line to do now is marked, so a first reader can see where they
+       are (Chi, 2026-11-13). */
+    expect(line(open)).toHaveAttribute("data-state", "now");
+    expect(line(turn)).toHaveAttribute("data-state", "later");
+
+    /* The wrong events must do nothing. */
     await act(async () => {
       announceHomeMoment("word-answered");
     });
+    expect(line(open)).toHaveAttribute("data-state", "now");
+
     await act(async () => {
       announceHomeMoment("ring-opened");
     });
+    expect(line(open)).toHaveAttribute("data-state", "done");
+    expect(line(turn)).toHaveAttribute("data-state", "now");
 
+    await act(async () => {
+      announceHomeMoment("dial-turned");
+    });
+    expect(line(turn)).toHaveAttribute("data-state", "done");
+    expect(line(enter)).toHaveAttribute("data-state", "now");
+
+    /* Opened and turned is not yet in: only a tapped key goes in. */
     expect(screen.queryByText("Good.")).toBeNull();
+
+    await act(async () => {
+      announceHomeMoment("dial-chosen");
+    });
+
+    expect(screen.getByText("Good.")).toBeInTheDocument();
+    expect(line(enter)).toHaveAttribute("data-state", "done");
+  });
+
+  it("counts a later move as the earlier ones too", async () => {
+    coach();
 
     await act(async () => {
       announceHomeMoment("dial-turned");
     });
 
-    expect(screen.getByText("Good.")).toBeInTheDocument();
+    expect(screen.getByText("Tap me to open the dial").closest("li")).toHaveAttribute("data-state", "done");
+    expect(screen.getByText("Turn the dial to another place").closest("li")).toHaveAttribute("data-state", "done");
   });
 
   it("offers no Next on a step that is waiting, only a way past that one step", async () => {
@@ -132,7 +162,7 @@ describe("chapter one: doing it on the home screen", () => {
     });
 
     expect(getCoachStep()).toBe(stepOf("ask"));
-    expect(screen.getByText(/Turn to Search, tap it/)).toBeInTheDocument();
+    expect(screen.getByText(/Now look a word up for me/)).toBeInTheDocument();
   });
 
   it("does not count a word the reader already had as keeping one", async () => {

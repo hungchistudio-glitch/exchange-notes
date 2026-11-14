@@ -143,6 +143,8 @@ type StepKey =
   | "deck"
   | "choose";
 
+type MeetTask = keyof TranslationDictionary["tutorial"]["coach"]["steps"]["meet"]["tasks"];
+
 type Step = {
   key: StepKey;
   chapter: Chapter;
@@ -168,6 +170,14 @@ type Step = {
   since?: number;
   /** Only inside the iPhone app: it is about the phone's own Home Screen. */
   iphoneApp?: boolean;
+  /**
+   * A step of several small moves, ticked off one by one as each happens
+   * (Chi, 2026-11-13, from a first reader who could not tell what the
+   * opening card wanted of him). Each names the moment that ticks it and the
+   * line of the step's `tasks` copy it ticks; a later moment ticks the
+   * earlier lines too, since it could not have happened without them.
+   */
+  checklist?: readonly { moment: HomeMoment; task: MeetTask }[];
   /**
    * The key the LED glow rings (CoachLight), as selectors in
    * order of preference: the first with a visible element wins. Absent on
@@ -249,7 +259,12 @@ export const COACH_STEPS: readonly Step[] = [
     chapter: "home",
     route: "/home",
     mode: STANDARD,
-    awaits: ["dial-turned"],
+    awaits: ["dial-chosen"],
+    checklist: [
+      { moment: "ring-opened", task: "open" },
+      { moment: "dial-turned", task: "turn" },
+      { moment: "dial-chosen", task: "enter" },
+    ],
     since: 2,
     point: POINT.dial,
   },
@@ -534,6 +549,26 @@ export default function TutorialCoach({
   }, []);
 
   /*
+   * How many of a checklist step's lines are ticked, kept with the step it
+   * was counted on so that moving to another step starts it at none without
+   * an effect to reset it.
+   */
+  const [ticked, setTicked] = useState({ step: -1, count: 0 });
+  const checklist = current?.checklist;
+
+  useEffect(() => {
+    if (!checklist) return;
+    return subscribeToHomeMoments((moment) => {
+      const at = checklist.findIndex((item) => item.moment === moment);
+      if (at < 0) return;
+      setTicked((previous) => ({
+        step: index,
+        count: Math.max(previous.step === index ? previous.count : 0, at + 1),
+      }));
+    });
+  }, [checklist, index]);
+
+  /*
    * A returning reader is told what a kept word earns rather than asked to
    * keep one there and then: there is no answer on their screen to keep
    * from, and they know how to get one.
@@ -724,23 +759,33 @@ export default function TutorialCoach({
         }
       : null;
 
-  /* Home keeps the strip at the top, above Yumi; everywhere else it sits
-     above the dock, clear of each screen's own header and back button. The
-     switch, cookie and games steps go to the foot of Home, because the top
-     corner they would cover on a phone holds the switch and the two keys
-     they point at. The shop keeps it at the top too: its own bar stands where the dock
-     would. The dial's two steps go to the foot as well: they have to stay
-     readable with the dial out. */
+  /* On Home every step stands at the foot, and stays there (Chi,
+     2026-11-13): a first reader saw the card leap from the foot to the top
+     between the dial and the save, and read it as something gone wrong. The
+     dial's two steps also stay readable with the dial out. Everywhere else
+     it sits above the dock, clear of each screen's own header and back
+     button. The shop keeps it at the top: its own bar stands where the dock
+     would, and so does Cosmic's Home, whose foot is the core the deck step
+     points at. */
   const placement =
-    pathname === "/shop"
+    pathname === "/shop" || (pathname === "/home" && interfaceMode === COSMIC)
       ? ""
       : pathname !== "/home"
         ? ` ${styles.docked}`
         : current.key === "meet" || current.key === "ask"
-          ? ` ${styles.dialStep}`
-          : current.key === "modeSwitch" || current.key === "cookies" || current.key === "games"
-            ? ` ${styles.switchStep}`
-            : "";
+          ? ` ${styles.foot} ${styles.dialStep}`
+          : ` ${styles.foot}`;
+
+  /* A checklist step's lines, ticked as far as the reader has got; all of
+     them on the "Good." beat. */
+  const tasks =
+    checklist && "tasks" in stepCopy && onRoute && !wrongMode
+      ? checklist.map((item, at) => ({
+          text: stepCopy.tasks[item.task],
+          ticked: done || at < (ticked.step === index ? ticked.count : 0),
+        }))
+      : null;
+  const nextTask = tasks ? tasks.findIndex((task) => !task.ticked) : -1;
 
   const finish = (mode: InterfaceMode) => {
     setCoachStep(COACH_FINISHED);
@@ -850,6 +895,22 @@ export default function TutorialCoach({
           <p className={styles.label}>{label}</p>
 
           <p className={styles.body}>{fill(body, t)}</p>
+
+          {tasks ? (
+            <ol className={styles.tasks}>
+              {tasks.map((task, at) => (
+                <li
+                  key={task.text}
+                  data-state={task.ticked ? "done" : at === nextTask ? "now" : "later"}
+                >
+                  <span className={styles.tick} aria-hidden="true">
+                    {task.ticked ? "✓" : at + 1}
+                  </span>
+                  <span>{task.text}</span>
+                </li>
+              ))}
+            </ol>
+          ) : null}
 
           <div className={styles.keys}>
             {keys}

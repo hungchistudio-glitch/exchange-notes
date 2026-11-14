@@ -1,23 +1,26 @@
 "use client";
 
 import {
+  ArrowRight,
   BookmarkCheck,
   BookmarkPlus,
   Gift,
   LoaderCircle,
+  Play,
   Send,
   Share2,
   Sparkles,
-  Volume2,
+  Square,
   WifiOff,
 } from "lucide-react";
 
 import Link from "next/link";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from "react";
 
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
+import ThemeWords from "@/components/lexicon/ThemeWords";
 import YumiInsight from "@/components/lexicon/YumiInsight";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
@@ -45,7 +48,18 @@ import {
   getLanguageName,
   type LanguageCode,
 } from "@/lib/languages";
-import { speak } from "@/lib/speech";
+import {
+  getServerSpoken,
+  getServerWordByWord,
+  getSpoken,
+  getWordByWord,
+  playSpoken,
+  segmentWords,
+  setWordByWord,
+  stopSpoken,
+  subscribeToSpoken,
+  subscribeToWordByWord,
+} from "@/lib/spokenWords";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
@@ -55,7 +69,7 @@ import { formatResetTime } from "@/lib/i18n/format";
 /* =========================================================
    What the app knows, in two layers
 
-   Layer one is the reader's own words. Layer two is the dictionary. They are
+   The dictionary, and under it the reader's own words. They are
    drawn as two labelled sections and never merged into one ranked list,
    because "you saved this in March" is a different kind of answer from "here
    is what it means" — the first one is about the reader and only they can
@@ -96,50 +110,214 @@ function cardClass(tone: LexiconTone) {
     : "rounded-[24px] border border-black/[0.07] bg-white shadow-[0_10px_34px_rgba(0,0,0,0.05)]";
 }
 
+/** Which text a key and its words share: the same words in the same language. */
+function spokenKey(text: string, language: LanguageCode) {
+  return `${language}:${text}`;
+}
+
+function useSpokenSegment(key: string) {
+  const spoken = useSyncExternalStore(subscribeToSpoken, getSpoken, getServerSpoken);
+  return spoken?.key === key ? spoken.segment : null;
+}
+
 /**
- * A speaker button, for one piece of text in one language.
+ * The play key, for one piece of text in one language.
  *
- * Always labelled with the text it will read: a row of unlabelled speakers is
- * unusable with a screen reader, and ambiguous to the eye when two languages
- * sit one above the other.
+ * ▶ and the word "Play", and ■ "Stop" while it plays (Chi, 2026-11-13). It
+ * was a bare speaker labelled "Listen", which a first reader did not take
+ * for a button at all; a play triangle with its name on it says what it
+ * does before it is pressed, and Stop says how to end it.
  *
  * `onSurface` is not decoration. The tinted blocks on this card are painted
  * with --surface, and a --surface button on a --surface block is a button
  * with no edges — it reads as a stray icon rather than something to press.
  * Inside those blocks the button takes the card's own white instead.
+ *
+ * `wordByWord` says the text one word at a time (the example block's
+ * switch). Either way the words are lit as they are said, by SpokenText.
  */
 function SpeakButton({
   text,
   language,
-  label,
+  copy,
   tone,
   onSurface = false,
+  wordByWord = false,
 }: {
   text: string;
   language: LanguageCode;
-  label: string;
+  copy: Copy;
   tone: LexiconTone;
   onSurface?: boolean;
+  wordByWord?: boolean;
 }) {
+  const key = spokenKey(text, language);
+  const playing = useSpokenSegment(key) !== null;
+
   if (!text.trim()) return null;
 
   return (
     <button
       type="button"
-      onClick={() => speak(text, getLanguage(language).speechTag)}
-      aria-label={label}
-      title={label}
-      // 44px, the minimum comfortable target, rather than the 40px the older
-      // sheets used — this is a new surface and has no rhythm to preserve.
-      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 ${
+      onClick={() =>
+        playing
+          ? stopSpoken()
+          : playSpoken({ key, text, lang: getLanguage(language).speechTag, wordByWord })
+      }
+      aria-pressed={playing}
+      title={playing ? copy.stop : copy.play}
+      data-speak-key=""
+      // 44px tall, the minimum comfortable target.
+      className={`flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-3.5 text-[0.75rem] font-semibold transition-transform active:scale-95 ${
         tone === "cosmic"
           ? "cosmic-sonar border border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
           : onSurface
-            ? "bg-white text-ink-soft shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
+            ? "bg-white text-ink-strong shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
             : "bg-surface text-ink-strong"
       }`}
     >
-      <Volume2 size={16} strokeWidth={1.8} aria-hidden="true" />
+      {playing ? (
+        <Square size={11} fill="currentColor" strokeWidth={0} aria-hidden="true" />
+      ) : (
+        <Play size={13} fill="currentColor" strokeWidth={0} aria-hidden="true" />
+      )}
+      {playing ? copy.stop : copy.play}
+    </button>
+  );
+}
+
+/**
+ * Text that lights the word being said, while its play key is playing.
+ *
+ * Plain text the rest of the time: the split into words is only made while
+ * this text is sounding, so a card full of sentences is not a card full of
+ * spans for nothing.
+ */
+function SpokenText({ text, language }: { text: string; language: LanguageCode }) {
+  const segment = useSpokenSegment(spokenKey(text, language));
+
+  if (segment === null) return <>{text}</>;
+
+  return (
+    <>
+      {segmentWords(text, getLanguage(language).speechTag).map((part, index) =>
+        index === segment ? (
+          <mark key={part.start} className="spoken-now" data-spoken-now="">
+            {part.text}
+          </mark>
+        ) : (
+          <span key={part.start}>{part.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+/** The four stages of a wait, by how long it has gone on. */
+const LOOKUP_STILL_MS = 4_000;
+const LOOKUP_LONG_MS = 10_000;
+
+/**
+ * Yumi saying she is looking it up, right under the field, with a bar that
+ * moves (Chi, 2026-11-13).
+ *
+ * A first reader typed a word, saw a small spinner in the send key and some
+ * grey blocks, and thought the app had broken or that he had done something
+ * wrong. This says what is happening, with the word in it, the moment the
+ * lookup starts; after four seconds that it is still going and nearly done,
+ * and after ten that it is slow but has not stopped. Keyed by the word, so a
+ * new lookup starts its clock again.
+ */
+function LookupProgress({
+  term,
+  retrying,
+  copy,
+  tone,
+}: {
+  term: string;
+  retrying: boolean;
+  copy: Copy;
+  tone: LexiconTone;
+}) {
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    const still = window.setTimeout(() => setStage(1), LOOKUP_STILL_MS);
+    const long = window.setTimeout(() => setStage(2), LOOKUP_LONG_MS);
+    return () => {
+      window.clearTimeout(still);
+      window.clearTimeout(long);
+    };
+  }, []);
+
+  const line = retrying
+    ? copy.retrying
+    : stage === 0
+      ? insertValues(copy.lookingUp, { term })
+      : stage === 1
+        ? copy.stillLooking
+        : copy.takingLong;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      data-lookup-progress=""
+      className={`px-4 py-3 ${cardClass(tone)}`}
+    >
+      <p className="flex items-center gap-2.5 text-[0.9375rem] font-semibold leading-6">
+        <span
+          aria-hidden="true"
+          className={`lookup-yumi ${tone === "cosmic" ? "lookup-yumi-cosmic" : ""}`}
+        />
+        <span className="min-w-0 flex-1 break-words">{line}</span>
+      </p>
+      <div aria-hidden="true" className="lookup-bar mt-2.5">
+        <span />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The example block's switch: say each sentence one word at a time, with a
+ * pause between (Chi, 2026-11-13). Kept on this device.
+ */
+function WordByWordSwitch({ copy, tone }: { copy: Copy; tone: LexiconTone }) {
+  const on = useSyncExternalStore(subscribeToWordByWord, getWordByWord, getServerWordByWord);
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={() => {
+        stopSpoken();
+        setWordByWord(!on);
+      }}
+      className={`flex h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[0.6875rem] font-semibold transition-colors ${
+        on
+          ? tone === "cosmic"
+            ? "border-[var(--cosmic-cyan)] text-[var(--cosmic-cyan)]"
+            : "border-black bg-black text-white"
+          : tone === "cosmic"
+            ? "border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
+            : "border-black/15 bg-white text-ink-soft"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`relative h-3.5 w-6 rounded-full transition-colors ${
+          on ? "bg-white/35" : "bg-black/15"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 h-2.5 w-2.5 rounded-full transition-[left] ${
+            on ? "left-3 bg-white" : "left-0.5 bg-white"
+          }`}
+        />
+      </span>
+      {copy.wordByWord}
     </button>
   );
 }
@@ -158,6 +336,11 @@ export default function LexiconResults({
   const { pair } = useDisplayLanguages();
 
   const { status, result, preview, error, savedMatches, query } = search;
+  const wordByWord = useSyncExternalStore(
+    subscribeToWordByWord,
+    getWordByWord,
+    getServerWordByWord,
+  );
 
   /*
    * Which query the language picker was opened for, or null.
@@ -200,6 +383,12 @@ export default function LexiconResults({
         <p className="mx-auto mt-1.5 max-w-xs text-[0.8125rem] leading-6 text-ink-soft">
           {copy.emptyDescription}
         </p>
+
+        <ThemeWords
+          className="mt-6"
+          tone={tone}
+          onPick={(word) => search.submit(word, "type")}
+        />
       </div>
     );
   }
@@ -252,82 +441,19 @@ export default function LexiconResults({
 
   return (
     <div className="space-y-6">
-      {/* ---------- layer one: the reader's own words ---------- */}
-
-      {savedMatches.length > 0 && (
-        <section aria-label={copy.yourVocabulary}>
-          <p className={eyebrow}>{copy.yourVocabulary}</p>
-
-          <ul className="mt-3 space-y-2">
-            {savedMatches.map((item) => {
-              const saved = formatDate(item.created_at);
-
-              /*
-               * The app's own answer to "which side of a saved card leads",
-               * not a second one invented here. A saved word leads in the
-               * language it was saved in — deliberately, and not in the
-               * language being studied today, because the background fill
-               * eventually gives every row a text in that language and a
-               * library where everything leads in Italian is not a library
-               * that remembers you once studied French. See
-               * lib/vocabulary/cardSides.ts.
-               */
-              const sides = getVocabularyCardSides(item, pair[0], pair[1]);
-
-              return (
-                <li key={item.id}>
-                  <div
-                    className={`flex items-center gap-3 px-4 py-3 ${cardClass(tone)}`}
-                  >
-                    <LanguageOriginBadge language={sides.primary.language} size="sm" />
-
-                    <div className="min-w-0 flex-1">
-                      <p className="tactile-serif truncate text-[0.9375rem] font-semibold">
-                        {sides.primary.text}
-                      </p>
-                      <p className="truncate text-[0.8125rem] text-ink-soft">
-                        {sides.secondary.text}
-                      </p>
-                      {saved && (
-                        <p className="mt-0.5 text-[0.6875rem] text-ink-faint">
-                          {insertValues(copy.savedOn, { date: saved })}
-                        </p>
-                      )}
-                    </div>
-
-                    <SpeakButton
-                      text={sides.primary.text}
-                      language={sides.primary.language}
-                      label={copy.listen}
-                      tone={tone}
-                    />
-
-                    {onOpenSaved && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenSaved(item)}
-                        className={`h-9 shrink-0 rounded-full px-4 text-[0.75rem] font-semibold transition-transform active:scale-95 ${
-                          tone === "cosmic"
-                            ? "border border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
-                            : "bg-black text-white"
-                        }`}
-                      >
-                        {copy.openWord}
-                      </button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
       {/* ---------- still looking ---------- */}
 
       {status === "searching" && (
         <section aria-busy="true">
-          <p className={eyebrow}>{copy.dictionary}</p>
+          <LookupProgress
+            key={query.trim()}
+            term={query.trim()}
+            retrying={search.retrying}
+            copy={copy}
+            tone={tone}
+          />
+
+          <p className={`mt-5 ${eyebrow}`}>{copy.dictionary}</p>
 
           <div className={`mt-3 p-5 ${cardClass(tone)}`}>
             {showPreview ? (
@@ -353,10 +479,6 @@ export default function LexiconResults({
               <div className="h-4 w-3/5 animate-pulse rounded-full bg-black/[0.06]" />
             </div>
 
-            <p className="mt-4 flex items-center gap-2 text-[0.75rem] text-ink-faint">
-              <LoaderCircle size={13} className="animate-spin" aria-hidden="true" />
-              {search.retrying ? copy.retrying : copy.searching}
-            </p>
           </div>
         </section>
       )}
@@ -526,7 +648,7 @@ export default function LexiconResults({
                     isSentence ? "text-[1.1875rem] leading-7" : "text-[1.75rem]"
                   }`}
                 >
-                  {entry.term}
+                  <SpokenText text={entry.term} language={languages.sourceLanguage} />
                 </p>
 
                 <div className="flex shrink-0 items-center gap-2">
@@ -541,7 +663,7 @@ export default function LexiconResults({
                   <SpeakButton
                     text={entry.term}
                     language={languages.sourceLanguage}
-                    label={copy.listen}
+                    copy={copy}
                     tone={tone}
                   />
                 </div>
@@ -627,7 +749,7 @@ export default function LexiconResults({
                   <div className="mt-1.5 flex items-start gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="break-words text-[1.0625rem] leading-7 text-ink-soft">
-                        {entry.translation}
+                        <SpokenText text={entry.translation} language={languages.glossLanguage} />
                       </p>
 
                       {!isSentence && (
@@ -646,7 +768,7 @@ export default function LexiconResults({
                     <SpeakButton
                       text={entry.translation}
                       language={languages.glossLanguage}
-                      label={copy.listen}
+                      copy={copy}
                       tone={tone}
                     />
                   </div>
@@ -678,31 +800,36 @@ export default function LexiconResults({
                 entry.termExample &&
                 entry.translationExample && (
                   <div className="mt-5 rounded-[18px] bg-surface p-4">
-                    <p className={eyebrow}>{copy.example}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className={eyebrow}>{copy.example}</p>
+                      <WordByWordSwitch copy={copy} tone={tone} />
+                    </div>
 
                     <div className="mt-2.5 flex items-start gap-3">
                       <p className="min-w-0 flex-1 text-[0.875rem] leading-6">
-                        {entry.termExample}
+                        <SpokenText text={entry.termExample} language={languages.sourceLanguage} />
                       </p>
                       <SpeakButton
                         text={entry.termExample}
                         language={languages.sourceLanguage}
-                        label={copy.listen}
+                        copy={copy}
                         tone={tone}
                         onSurface
+                        wordByWord={wordByWord}
                       />
                     </div>
 
                     <div className="mt-2 flex items-start gap-3">
                       <p className="min-w-0 flex-1 text-[0.8125rem] leading-6 text-ink-soft">
-                        {entry.translationExample}
+                        <SpokenText text={entry.translationExample} language={languages.glossLanguage} />
                       </p>
                       <SpeakButton
                         text={entry.translationExample}
                         language={languages.glossLanguage}
-                        label={copy.listen}
+                        copy={copy}
                         tone={tone}
                         onSurface
+                        wordByWord={wordByWord}
                       />
                     </div>
                   </div>
@@ -815,6 +942,84 @@ export default function LexiconResults({
         </section>
       )}
 
+      {/* ---------- the reader's own words ----------
+
+        Below the dictionary, not above it (Chi, 2026-11-13). Above, a match
+        from the library pushed the answer to what was just asked down the
+        screen, and a first reader saw "your vocabulary" sitting where he
+        expected the dictionary. While nothing has been asked yet — the
+        reader still typing — it is the only thing here, so the order changes
+        nothing then. */}
+
+      {savedMatches.length > 0 && (
+        <section aria-label={copy.yourVocabulary}>
+          <p className={eyebrow}>{copy.yourVocabulary}</p>
+
+          <ul className="mt-3 space-y-2">
+            {savedMatches.map((item) => {
+              const saved = formatDate(item.created_at);
+
+              /*
+               * The app's own answer to "which side of a saved card leads",
+               * not a second one invented here. A saved word leads in the
+               * language it was saved in — deliberately, and not in the
+               * language being studied today, because the background fill
+               * eventually gives every row a text in that language and a
+               * library where everything leads in Italian is not a library
+               * that remembers you once studied French. See
+               * lib/vocabulary/cardSides.ts.
+               */
+              const sides = getVocabularyCardSides(item, pair[0], pair[1]);
+
+              return (
+                <li key={item.id}>
+                  <div
+                    className={`flex items-center gap-3 px-4 py-3 ${cardClass(tone)}`}
+                  >
+                    <LanguageOriginBadge language={sides.primary.language} size="sm" />
+
+                    <div className="min-w-0 flex-1">
+                      <p className="tactile-serif truncate text-[0.9375rem] font-semibold">
+                        <SpokenText text={sides.primary.text} language={sides.primary.language} />
+                      </p>
+                      <p className="truncate text-[0.8125rem] text-ink-soft">
+                        {sides.secondary.text}
+                      </p>
+                      {saved && (
+                        <p className="mt-0.5 text-[0.6875rem] text-ink-faint">
+                          {insertValues(copy.savedOn, { date: saved })}
+                        </p>
+                      )}
+                    </div>
+
+                    <SpeakButton
+                      text={sides.primary.text}
+                      language={sides.primary.language}
+                      copy={copy}
+                      tone={tone}
+                    />
+
+                    {onOpenSaved && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenSaved(item)}
+                        className={`h-9 shrink-0 rounded-full px-4 text-[0.75rem] font-semibold transition-transform active:scale-95 ${
+                          tone === "cosmic"
+                            ? "border border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
+                            : "bg-black text-white"
+                        }`}
+                      >
+                        {copy.openWord}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* Offline, with the word found on the device and no dictionary behind
           it. A complete answer rather than an empty state, and said plainly
           instead of left as silence under the list. */}
@@ -891,7 +1096,7 @@ function SaveRow({
     );
   }
 
-  return (
+  const key = (
     <button
       type="button"
       data-coach-target="save-word"
@@ -920,6 +1125,31 @@ function SaveRow({
         </>
       )}
     </button>
+  );
+
+  if (state !== "saved") return key;
+
+  /*
+   * Where it went (Chi, 2026-11-13). A first reader kept a few words, looked
+   * up the next, and lost sight of the ones he had kept: the list he wanted
+   * is the vocabulary page, and nothing on this card said so.
+   */
+  return (
+    <>
+      {key}
+      <Link
+        href="/vocabulary"
+        data-view-my-words=""
+        className={`mt-2 flex h-11 items-center justify-center gap-2 rounded-full text-[0.8125rem] font-semibold transition-transform active:scale-[0.99] ${
+          tone === "cosmic"
+            ? "border border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
+            : "border border-black/15 bg-white text-ink-strong"
+        }`}
+      >
+        {copy.viewMyWords}
+        <ArrowRight size={15} aria-hidden="true" />
+      </Link>
+    </>
   );
 }
 
@@ -960,12 +1190,12 @@ function SentenceKeep({
       {/* Same rule as the example block: each language says itself. */}
       <div className="mt-2 flex items-start gap-3">
         <p className="min-w-0 flex-1 text-[1.0625rem] font-semibold">
-          {entry.highlight.term}
+          <SpokenText text={entry.highlight.term} language={languages.sourceLanguage} />
         </p>
         <SpeakButton
           text={entry.highlight.term}
           language={languages.sourceLanguage}
-          label={copy.listen}
+          copy={copy}
           tone={tone}
           onSurface
         />
@@ -973,12 +1203,12 @@ function SentenceKeep({
 
       <div className="mt-0.5 flex items-start gap-3">
         <p className="min-w-0 flex-1 text-[0.8125rem] leading-6 text-ink-soft">
-          {entry.highlight.translation}
+          <SpokenText text={entry.highlight.translation} language={languages.glossLanguage} />
         </p>
         <SpeakButton
           text={entry.highlight.translation}
           language={languages.glossLanguage}
-          label={copy.listen}
+          copy={copy}
           tone={tone}
           onSurface
         />

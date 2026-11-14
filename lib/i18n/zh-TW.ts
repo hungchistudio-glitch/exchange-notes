@@ -494,11 +494,16 @@ const traditionalChinese: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "我是 Yumi，也是選單。點我打開撥盤，轉到想去的地方，再點那一格就進去。",
+            "我是 Yumi，也是選單。跟著做這三步就進去了：",
+          tasks: {
+            open: "點我，打開撥盤",
+            turn: "轉動撥盤，換到別的地方",
+            enter: "轉到「搜尋」，點一下進去",
+          },
         },
         ask: {
           body:
-            "轉到「搜尋」點一下，查一個字給我看：打字、說話或拍照都可以。",
+            "現在查一個字給我看：打字、說話或拍照都可以。",
         },
         keep: {
           body:
@@ -660,6 +665,14 @@ const traditionalChinese: TranslationDictionary = {
     openWord: "開啟",
     reviewWord: "複習",
     listen: "發音",
+    play: "播放",
+    stop: "停止",
+    wordByWord: "逐字",
+    lookingUp: "我正在查「{term}」…",
+    stillLooking: "還在查，快好了。",
+    takingLong: "這個字查得比平常久，我還在努力，沒有出錯。",
+    viewMyWords: "看我的單字",
+    themeWords: "試試看 · {theme}",
 
     save: "存進單字庫",
     saving: "儲存中…",
@@ -1075,6 +1088,8 @@ const traditionalChinese: TranslationDictionary = {
      * used once. Review needs no line here — its key is on screen.
      */
     yumiHint: "點一下 Yumi 打開選單",
+    yumiHover: "點我",
+    yumiHoverHome: "點我回首頁",
     panelTitle: "全部功能",
     panelLearning: "學習",
     panelDiscover: "發現",
@@ -2249,6 +2264,9 @@ const traditionalChinese: TranslationDictionary = {
     subtitle: "加強今天已準備好複習的單字。",
     today: "今天",
     cardsReady: "個單字待複習",
+    cardReady: "個單字待複習",
+    dueWordsLabel: "今天要複習的字",
+    moreWords: "還有 {count} 個",
     introLineOne: "先複習今天到期的單字。",
     startReview: "開始複習",
     freePractice: "自由練習",
