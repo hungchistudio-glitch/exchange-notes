@@ -58,6 +58,15 @@ export type AskTextOptions = {
    * only when the first refused rather than hung.
    */
   background?: boolean;
+  /**
+   * Background only: whether a refusal from the first model brings a second
+   * ask. The news turns it off (Chi, 2026-11-15: 卡住時更快放棄): in the
+   * fortnight to 2026-11-15 the second model was asked six times for a news
+   * batch and failed six times, five of them hanging to a 504 at nineteen
+   * seconds, which left the next batch no time to start. A refused batch now
+   * gives up at once, and the catch-up runs half an hour apart ask again.
+   */
+  secondAsk?: boolean;
 };
 
 export type AskTextResult =
@@ -97,6 +106,7 @@ export async function askText(
     minAttemptMs = ASK_TEXT_MIN_ATTEMPT_MS,
     candidates = getTextModelCandidates(),
     background = false,
+    secondAsk = true,
   }: AskTextOptions,
 ): Promise<AskTextResult> {
   if (background && !(await backgroundAllowed(candidates))) {
@@ -141,7 +151,7 @@ export async function askText(
     answered = await ask(models.slice(0, 1), 1, (error) => {
       refused = !isTimeoutError(error);
     });
-    if (!answered && refused) answered = await ask(models.slice(1, 2), 1);
+    if (!answered && refused && secondAsk) answered = await ask(models.slice(1, 2), 1);
   }
 
   if (answered) return { text: answered.value, model: answered.model };

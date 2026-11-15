@@ -139,4 +139,20 @@ describe("askText in the background", () => {
 
     expect(generateJson).toHaveBeenCalledTimes(1);
   });
+
+  /*
+   * Chi, 2026-11-15 (卡住時更快放棄): for the news the second model hung to a
+   * 504 six times in six, leaving the next batch no time. A refused batch
+   * gives up at once and the next half-hourly catch-up asks again.
+   */
+  it("gives up after a refusal when asked not to try a second model", async () => {
+    generateJson.mockRejectedValue(Object.assign(new Error("busy"), { status: 503 }));
+
+    const result = await askText(client, {
+      purpose: "daily-news", input: "hi", budgetMs: 10_000, background: true, secondAsk: false,
+    });
+
+    expect(result.text).toBeNull();
+    expect(generateJson).toHaveBeenCalledTimes(1);
+  });
 });
