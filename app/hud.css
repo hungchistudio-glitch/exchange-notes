@@ -200,6 +200,12 @@ html[data-interface-mode="yumi-cosmic"] .hud-led {
   color: transparent;
 }
 
+/* Gilt lettering (background clipped to the text) paints the scramble's
+   glyphs and the real ones alike: the real ones step aside meanwhile. */
+[data-title-clipped][data-decoding] > [data-title-real] {
+  visibility: hidden;
+}
+
 [data-title-decode] {
   position: absolute;
   inset: 0;

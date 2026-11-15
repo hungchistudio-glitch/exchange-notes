@@ -3,7 +3,9 @@
 import dynamic from "next/dynamic";
 import { use } from "react";
 
+import PageTitle from "@/components/foundation/layout/PageTitle";
 import AppPage from "@/components/ui/AppPage";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import YumiCompanion from "@/components/vocabulary/pet/YumiCompanion";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import useVocabularyPage from "@/hooks/pages/useVocabularyPage";
@@ -25,6 +27,7 @@ type VocabularyPageProps = {
 };
 
 export default function VocabularyPage({ searchParams }: VocabularyPageProps) {
+  const { t } = useTranslation();
   const { widgetAction, widgetWordId, widgetNonce } = use(searchParams);
   const normalizedWidgetAction = Array.isArray(widgetAction)
     ? widgetAction[0]
@@ -58,6 +61,12 @@ export default function VocabularyPage({ searchParams }: VocabularyPageProps) {
 
   return (
     <AppPage width="default">
+      {/* The title every page wears, above Yumi's halo (Chi, 2026-11-15:
+          單字庫加標題). The page's column is 21px in, and so is the title. */}
+      <div className="px-[21px]">
+        <PageTitle flush eyebrow={t.navigation.vocabulary} title={t.vocabulary.hero.library} />
+      </div>
+
       <YumiCompanion {...yumiProps} />
 
       <VocabularyMainContent {...mainContentProps} />

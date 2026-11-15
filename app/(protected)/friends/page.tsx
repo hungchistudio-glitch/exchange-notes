@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
 import Avatar from "@/components/foundation/media/Avatar";
+import PageTitle from "@/components/foundation/layout/PageTitle";
 import FriendQrScanner from "@/components/friends/FriendQrScanner";
 import HelloFriendsCard from "@/components/hello/HelloFriendsCard";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
@@ -266,37 +267,26 @@ function FriendsPageContent() {
   }
 
   return (
-    <main className="min-h-screen bg-surface px-4 pb-28 pt-6 text-black sm:px-6 sm:py-10">
+    <main className="min-h-screen bg-surface px-4 pb-28 text-black sm:px-6 sm:pb-10">
       <div className="mx-auto max-w-2xl">
-        <header>
-          {/*
-            Goes back, rather than going home.
-            This used to be a hard link to "/", which was wrong from every
-            entry point that is not Home — arriving from the Messages list and
-            pressing back dropped you on the Command Deck instead of back in
-            the list you came from. There is no history to return to when a
-            push notification opens the app directly on this page, which is
-            what the fallback is for.
-          */}
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label={t.common.back}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-black transition hover:bg-black/[0.04]"
-          >
-            ←
-          </button>
+        {/*
+          Goes back, rather than going home.
+          This used to be a hard link to "/", which was wrong from every
+          entry point that is not Home — arriving from the Messages list and
+          pressing back dropped you on the Command Deck instead of back in
+          the list you came from. There is no history to return to when a
+          push notification opens the app directly on this page, which is
+          what the fallback is for.
 
-          <p className="mt-5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-            {copy.eyebrow}
-          </p>
-
-          <h1 className="mt-1 text-3xl font-bold text-black">
-            {copy.title}
-          </h1>
-
-          <p className="mt-2 text-ink-soft">{copy.subtitle}</p>
-        </header>
+          The title is the one every page wears (Chi, 2026-11-15).
+        */}
+        <PageTitle
+          flush
+          back={{ onClick: handleBack, label: t.common.back }}
+          eyebrow={copy.eyebrow}
+          title={copy.title}
+          subtitle={copy.subtitle}
+        />
 
         <section className="mt-6 rounded-[24px] border border-line bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold text-black">{copy.add.title}</h2>

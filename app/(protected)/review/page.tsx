@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 
 import MissionCompleteStage from "@/components/cosmic/MissionCompleteStage";
 import MissionLaunchStage from "@/components/cosmic/MissionLaunchStage";
-import PageTitle from "@/components/foundation/layout/PageTitle";
+import PageTitle, { PAGE_TITLE_CLASS, TitleText } from "@/components/foundation/layout/PageTitle";
 import Screen from "@/components/foundation/layout/Screen";
 import ReviewCelebration, { riseClassName } from "@/components/review/ReviewCelebration";
 import useCardMotion, { NEXT_CARD, TURN_OVER } from "@/components/review/useCardMotion";
@@ -329,11 +329,14 @@ export default function ReviewPage() {
 
           <div className="mt-3 flex items-start justify-between gap-3">
             <div>
-              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              {/* The title every page wears, here for the session (Chi,
+                  2026-11-15). */}
+              <p className="flex items-center gap-2 text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+                <span className="hud-led" aria-hidden="true" />
                 {copy.sessionEyebrow}
               </p>
-              <h1 className="mt-1 text-[1.625rem] font-bold tracking-[-0.02em]">
-                {copy.sessionTitle}
+              <h1 className={`mt-1 ${PAGE_TITLE_CLASS}`}>
+                <TitleText text={copy.sessionTitle} />
               </h1>
             </div>
 

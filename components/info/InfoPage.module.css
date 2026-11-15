@@ -165,11 +165,8 @@
 }
 
 .article h1 {
+  /* Size, weight and face are the page title's (PAGE_TITLE_CLASS). */
   margin-top: 0.75rem;
-  font-size: 1.125rem;
-  line-height: 1.5;
-  font-weight: 500;
-  color: var(--info-muted);
 }
 
 .hero {

@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleText } from "@/components/foundation/layout/PageTitle";
 import { ArrowLeft, BookmarkCheck, BookmarkPlus, Check, Globe, Info } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -659,9 +660,10 @@ export default function HangyumiGame({
         <div className={styles.signArea}>
           <h1 className={styles.sign}>
             <span className={styles.signHooks} aria-hidden="true" />
+            {/* The gilt name runs its letters into place (Chi, 2026-11-15). */}
             {signTitle === copy.title
-              ? <span className={styles.signName}>{copy.title}</span>
-              : <><span className={styles.signName} aria-hidden="true">{signTitle}</span><span className={styles.srOnly}>{copy.title}</span></>}
+              ? <span className={styles.signName}><TitleText text={copy.title} clipped /></span>
+              : <><span className={styles.signName} aria-hidden="true"><TitleText text={signTitle} clipped /></span><span className={styles.srOnly}>{copy.title}</span></>}
             <span className={styles.signOrbit} aria-hidden="true">
               <span className={styles.signWallet} data-bump={bump % 2 ? "a" : "b"} ref={counterRef}>
                 <EnergyCookie className={styles.signCookie} />

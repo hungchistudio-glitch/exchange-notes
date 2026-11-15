@@ -15,7 +15,6 @@ import {
   ARRIVAL_MS,
   arrivalDelay,
   arrivalLayers,
-  decodeTitle,
   holdsFixed,
   inView,
   playLampArrival,
@@ -44,7 +43,8 @@ import {
  *    look in its own way: in Standard its blocks settle under a passing
  *    lamp (lib/motion/pageArrival), in Yumi Cosmic starlight warps past
  *    and they switch on under a scan line (lib/motion/warpArrival). In
- *    both, the title decodes (decodeTitle). A page behind a skeleton is played as
+ *    both, the title decodes, by itself as it mounts (TitleText in
+ *    PageTitle, so the first page opened decodes too). A page behind a skeleton is played as
  *    the skeleton leaves, which is the moment that used to jump: the
  *    outline swapped for the page in one frame.
  *
@@ -95,7 +95,7 @@ function reducedMotion() {
 function arrive(stage: HTMLElement) {
   announceRouteArrival();
   if (stage.querySelector(OWN_WHOLE_ARRIVAL)) return;
-  decodeTitle(stage);
+  /* The title runs its own letters into place as it mounts (TitleText). */
   if (stage.querySelector(OWN_ARRIVAL)) {
     stage.animate([{ opacity: 0.6 }, { opacity: 1 }], { duration: 150, easing: ARRIVAL_EASING });
     return;

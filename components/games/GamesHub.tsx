@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleText } from "@/components/foundation/layout/PageTitle";
 import { ArrowLeft, ArrowRight, Gift } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -180,7 +181,8 @@ export default function GamesHub({ loadToday, loadBalance, loadProgress, hrefs, 
         <div className={hy.signArea}>
           <h1 className={hy.sign}>
             <span className={hy.signHooks} aria-hidden="true" />
-            <span className={hy.signName}>{copy.title}</span>
+            {/* The gilt name runs its letters into place (Chi, 2026-11-15). */}
+            <span className={hy.signName}><TitleText text={copy.title} clipped /></span>
             <span className={hy.signOrbit} aria-hidden="true">
               <span className={hy.signWallet}>
                 <EnergyCookie className={hy.signCookie} />

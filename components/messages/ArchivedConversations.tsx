@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import PageTitle from "@/components/foundation/layout/PageTitle";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Undo2 } from "lucide-react";
+import { Undo2 } from "lucide-react";
 
 import ConversationRow from "@/components/messages/ConversationRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -87,34 +87,18 @@ export default function ArchivedConversations() {
 
   return (
     <main
-      className="min-h-[100dvh] px-4 pb-32 pt-6 sm:px-6"
+      className="min-h-[100dvh] px-4 pb-32 sm:px-6"
       style={{ background: "var(--msg-page)", color: "var(--msg-ink)" }}
     >
       <div className="mx-auto w-full max-w-[720px] lg:max-w-[900px]">
-        <div style={{ paddingTop: "env(safe-area-inset-top)" }} />
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/messages"
-            aria-label={copy.hub.backToMessages}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border"
-            style={{
-              background: "var(--msg-surface)",
-              borderColor: "var(--msg-line)",
-            }}
-          >
-            <ArrowLeft size={18} strokeWidth={1.9} />
-          </Link>
-
-          <div className="min-w-0">
-            <h1 className="text-[1.375rem] font-bold tracking-[-0.02em]">
-              {copy.hub.archivedTitle}
-            </h1>
-            <p className="text-[0.8125rem]" style={{ color: "var(--msg-ink-soft)" }}>
-              {copy.hub.archivedSubtitle}
-            </p>
-          </div>
-        </div>
+        {/* The title every page wears (Chi, 2026-11-15). */}
+        <PageTitle
+          flush
+          back={{ href: "/messages", label: copy.hub.backToMessages }}
+          eyebrow={copy.hub.eyebrow}
+          title={copy.hub.archivedTitle}
+          subtitle={copy.hub.archivedSubtitle}
+        />
 
         {loading && (
           <p

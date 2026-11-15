@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, FolderPlus, Plus } from "lucide-react";
+import { FolderPlus, Plus } from "lucide-react";
 
 import Screen from "@/components/foundation/layout/Screen";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
@@ -16,6 +16,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
 import type { VocabularyCollection } from "@/lib/types/app";
+import PageTitle from "@/components/foundation/layout/PageTitle";
 import FeatureMark from "@/components/features/FeatureMark";
 
 export default function VocabularyCollectionsPage() {
@@ -93,28 +94,15 @@ export default function VocabularyCollectionsPage() {
 
   return (
     <Screen>
-      <div
-        className="px-4"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)" }}
-      >
-        <Link
-          href="/vocabulary"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
-          aria-label={copy.backToVocabulary}
-        >
-          <ArrowLeft size={20} strokeWidth={1.9} />
-        </Link>
-
-        <div className="mt-3 flex items-start justify-between gap-3">
-          <div>
-            <h1 className="flex items-center gap-2.5 text-[1.625rem] font-bold tracking-[-0.02em]">
-              {/* Collect's key lands here from Yumi's halo (Chi, 2026-11-12). */}
-              <FeatureMark feature="collect" />
-              <span className="min-w-0">{copy.title}</span>
-            </h1>
-            <p className="mt-1 text-ink-soft">{copy.description}</p>
-          </div>
-
+      {/* The title every page wears (Chi, 2026-11-15). Collect's key lands on
+          its mark from Yumi's halo (Chi, 2026-11-12). */}
+      <PageTitle
+        back={{ href: "/vocabulary", label: copy.backToVocabulary }}
+        eyebrow={t.navigation.vocabulary}
+        title={copy.title}
+        subtitle={copy.description}
+        mark={<FeatureMark feature="collect" />}
+        action={
           <button
             type="button"
             onClick={() => setCreating(true)}
@@ -123,8 +111,10 @@ export default function VocabularyCollectionsPage() {
           >
             <Plus size={20} strokeWidth={2} />
           </button>
-        </div>
+        }
+      />
 
+      <div className="px-4">
         {errorMessage && (
           <p className="mt-4 text-sm font-semibold text-red-600">
             {errorMessage}

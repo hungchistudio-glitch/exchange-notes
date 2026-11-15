@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleText } from "@/components/foundation/layout/PageTitle";
 import { ArrowLeft, Check, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -83,7 +84,7 @@ export default function HangyumiWordReview({ review: given }: { review?: WordRev
         <Link href="/hangyumi" className={styles.back} aria-label={copy.play} title={copy.play}>
           <ArrowLeft size={22} strokeWidth={1.9} aria-hidden="true" />
         </Link>
-        <h1>{copy.title}</h1>
+        <h1><TitleText text={copy.title} /></h1>
       </header>
 
       {phase === "loading" && <p className={styles.note} aria-busy="true">…</p>}

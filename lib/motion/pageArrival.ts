@@ -245,17 +245,42 @@ export function decodeFrame(text: string, progress: number, random: () => number
     .join("");
 }
 
-/** Decodes the page's title (`[data-title-text]`, from PageTitle), once. */
-export function decodeTitle(root: ParentNode) {
-  const target = root.querySelector<HTMLElement>("[data-title-text]");
-  if (!target || target.hasAttribute("data-decoding")) return;
+/**
+ * Gilt lettering is a background clipped to the text, painted by an ancestor
+ * (the games' and the shop's signs). That clip does not reach the scramble,
+ * which sits over the text on its own, so the scramble is given the same
+ * paint, clipped to its own glyphs.
+ */
+function paintLike(overlay: HTMLElement, target: HTMLElement) {
+  for (let painter = target.parentElement; painter; painter = painter.parentElement) {
+    const style = getComputedStyle(painter);
+    const clip = `${style.backgroundClip} ${style.getPropertyValue("-webkit-background-clip")}`;
+    if (!clip.includes("text")) continue;
+    overlay.style.backgroundImage = style.backgroundImage;
+    overlay.style.backgroundColor = style.backgroundColor;
+    overlay.style.backgroundSize = style.backgroundSize;
+    overlay.style.setProperty("-webkit-background-clip", "text");
+    overlay.style.backgroundClip = "text";
+    overlay.style.color = "transparent";
+    return;
+  }
+}
+
+/**
+ * Decodes one title in place, once: an overlay scrambles and resolves over
+ * it while the real text, kept for a screen reader, is hidden. Returns what
+ * stops it early (a title that unmounts, a text that changes).
+ */
+export function decodeElement(target: HTMLElement): () => void {
+  if (target.hasAttribute("data-decoding")) return () => undefined;
   const text = target.textContent ?? "";
-  if (!text.trim()) return;
+  if (!text.trim()) return () => undefined;
 
   const overlay = document.createElement("span");
   overlay.setAttribute("data-title-decode", "");
   overlay.setAttribute("aria-hidden", "true");
   overlay.style.color = getComputedStyle(target).color;
+  if (target.hasAttribute("data-title-clipped")) paintLike(overlay, target);
   overlay.textContent = decodeFrame(text, 0);
   target.setAttribute("data-decoding", "");
   target.appendChild(overlay);
@@ -274,4 +299,11 @@ export function decodeTitle(root: ParentNode) {
   }, DECODE_TICK_MS);
   // React may replace the title's text under it; the title never stays hidden.
   const safety = window.setTimeout(finish, DECODE_MS + 400);
+  return finish;
+}
+
+/** Decodes the first title (`[data-title-text]`) under `root`, once. */
+export function decodeTitle(root: ParentNode) {
+  const target = root.querySelector<HTMLElement>("[data-title-text]");
+  if (target) decodeElement(target);
 }
