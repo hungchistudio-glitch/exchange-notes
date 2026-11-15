@@ -260,6 +260,11 @@ export function LexiconSearchProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** The sheet, where a provider holds it; null outside one (a test, a public page). */
+export function useOptionalLexiconSearchSheet(): LexiconSearchContextType | null {
+  return useContext(LexiconSearchContext);
+}
+
 export function useLexiconSearchSheet(): LexiconSearchContextType {
   const context = useContext(LexiconSearchContext);
 

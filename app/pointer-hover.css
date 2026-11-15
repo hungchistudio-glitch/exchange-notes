@@ -112,6 +112,34 @@ html[data-interface-mode="yumi-cosmic"] .spoken-now {
   cursor: pointer;
 }
 
+/* A word the reader has kept, where it turns up in what they read (Chi,
+   2026-11-15: 新聞裡學過的字發光). A sea-green underline on paper, an ice
+   glow on obsidian: noticed at a glance, never louder than the text, and
+   never the honey of the word being said. */
+.known-word {
+  text-decoration: underline 0.14em rgb(29 158 117 / 0.55);
+  text-underline-offset: 0.22em;
+  text-decoration-skip-ink: none;
+  background: rgb(29 158 117 / 0.08);
+  border-radius: 0.2em;
+}
+
+html[data-interface-mode="yumi-cosmic"] .known-word {
+  text-decoration-color: rgb(184 232 229 / 0.7);
+  background: rgb(184 232 229 / 0.08);
+  text-shadow: 0 0 0.6em rgb(184 232 229 / 0.55);
+}
+
+/* A held word opens a lookup, so on a phone the hold is not also the
+   system's selection callout. */
+@media (hover: none) {
+  [data-long-press] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
 /* =========================================================
    Yumi looking a word up (LookupProgress in LexiconResults)
 

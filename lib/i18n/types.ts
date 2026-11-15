@@ -869,6 +869,8 @@ export type TranslationDictionary = {
   };
 
   discover: {
+    /** Under a story's summary: what the glow means and what a held word does. */
+    knownWordsHint: string;
     title: string;
     eyebrow: string;
     subtitle: string;
@@ -1318,6 +1320,90 @@ export type TranslationDictionary = {
    * Public, so its copy follows the interface language stored on the device
    * rather than a profile. What it says a word *in* comes from the link.
    */
+  /** Listening mode: today's due words and the news, read one after another (2026-11-15). */
+  listen: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    sources: string;
+    words: string;
+    news: string;
+    wordKind: string;
+    newsKind: string;
+    play: string;
+    pause: string;
+    next: string;
+    previous: string;
+    progress: string;
+    upNext: string;
+    empty: string;
+    done: string;
+    again: string;
+    screenOn: string;
+    open: string;
+  };
+
+  /** The weak-spot radar on the review page (2026-11-15). */
+  weakSpots: {
+    title: string;
+    axes: {
+      recall: string;
+      retention: string;
+      listening: string;
+      speaking: string;
+      growth: string;
+    };
+    /** An axis with nothing to measure yet. */
+    noData: string;
+    weakest: string;
+    words: string;
+    practiceWords: string;
+    noWords: string;
+    sounds: string;
+    noSounds: string;
+  };
+
+  /** The library as a star chart (2026-11-15). */
+  starMap: {
+    open: string;
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    newest: string;
+    kinds: {
+      people: string;
+      objects: string;
+      actions: string;
+      other: string;
+    };
+    zoomIn: string;
+    zoomOut: string;
+    empty: string;
+    hint: string;
+    openWord: string;
+  };
+
+  /** The weekly recap card (2026-11-15). */
+  recap: {
+    open: string;
+    banner: string;
+    eyebrow: string;
+    title: string;
+    range: string;
+    newWords: string;
+    reviews: string;
+    accuracy: string;
+    lab: string;
+    activeDays: string;
+    activeDaysValue: string;
+    streak: string;
+    topWordLine: string;
+    footer: string;
+    share: string;
+    downloaded: string;
+    quiet: string;
+  };
+
   speakPage: {
     eyebrow: string;
     noText: string;

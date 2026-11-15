@@ -8,12 +8,14 @@ import {
   useSyncExternalStore,
   type CSSProperties,
   type MouseEvent,
+  type PointerEvent,
   type ReactNode,
 } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useCosmicMode from "@/hooks/useCosmicMode";
 import type { SpeechLanguage } from "@/lib/speech";
+import type { TextRange } from "@/lib/vocabulary/knownWords";
 import {
   getServerWordByWord,
   getSpoken,
@@ -23,6 +25,7 @@ import {
   playSpokenFrom,
   segmentAt,
   segmentSpoken,
+  segmentWords,
   setWordByWord,
   spokenKey,
   stopSpoken,
@@ -252,8 +255,34 @@ type SpokenTextProps = {
    * sounds: a Lab key that plays and stops its own word.
    */
   tappable?: boolean;
+  /**
+   * Character ranges to mark as words the reader has kept (Chi, 2026-11-15:
+   * 新聞裡學過的字發光). Sorted and apart; lib/vocabulary/knownWords.ts makes them.
+   */
+  marks?: readonly TextRange[];
+  /** A word held down: looked up where the reader is (Chi, 2026-11-15). */
+  onLongPressWord?: (word: string) => void;
   className?: string;
 };
+
+/** How long a press is held before it is a long press. */
+const LONG_PRESS_MS = 450;
+/** A finger that moves further than this is scrolling, not pressing. */
+const LONG_PRESS_SLOP_PX = 10;
+
+/** The text cut at the marks: plain runs, and the marked words in a span. */
+function markedRuns(text: string, marks: readonly TextRange[]) {
+  const runs: Array<{ text: string; start: number; known: boolean }> = [];
+  let at = 0;
+  for (const mark of marks) {
+    if (mark.start < at || mark.end <= mark.start) continue;
+    if (mark.start > at) runs.push({ text: text.slice(at, mark.start), start: at, known: false });
+    runs.push({ text: text.slice(mark.start, mark.end), start: mark.start, known: true });
+    at = mark.end;
+  }
+  if (at < text.length) runs.push({ text: text.slice(at), start: at, known: false });
+  return runs;
+}
 
 /**
  * Text that lights the word being said, while it is being said.
@@ -262,11 +291,63 @@ type SpokenTextProps = {
  * this text is sounding, so a page full of sentences is not a page full of
  * spans for nothing.
  */
-export function SpokenText({ text, lang, tapToStart = false, tappable = true, className }: SpokenTextProps) {
+export function SpokenText({
+  text,
+  lang,
+  tapToStart = false,
+  tappable = true,
+  marks,
+  onLongPressWord,
+  className,
+}: SpokenTextProps) {
   const key = spokenKey(text, lang);
   const segment = useSpokenSegment(key);
   const containerRef = useRef<HTMLSpanElement | null>(null);
   const lastSegment = useRef<number | null>(null);
+  const press = useRef<{ x: number; y: number; timer: number } | null>(null);
+  /* The click a long press ends in is the press's, not a tap's. */
+  const pressed = useRef(false);
+
+  const endPress = () => {
+    if (press.current) window.clearTimeout(press.current.timer);
+    press.current = null;
+  };
+  useEffect(() => endPress, []);
+
+  const longPress = onLongPressWord
+    ? {
+        onPointerDown: (event: PointerEvent<HTMLSpanElement>) => {
+          if (event.pointerType === "mouse" && event.button !== 0) return;
+          endPress();
+          pressed.current = false;
+          const container = event.currentTarget;
+          const { clientX: x, clientY: y } = event;
+          press.current = {
+            x,
+            y,
+            timer: window.setTimeout(() => {
+              press.current = null;
+              const offset = offsetAt(container, x, y);
+              if (offset === null) return;
+              const segments = segmentWords(text, lang);
+              const at = segmentAt(segments, offset);
+              if (at < 0) return;
+              pressed.current = true;
+              window.getSelection?.()?.removeAllRanges();
+              onLongPressWord(segments[at].text);
+            }, LONG_PRESS_MS),
+          };
+        },
+        onPointerMove: (event: PointerEvent<HTMLSpanElement>) => {
+          const start = press.current;
+          if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > LONG_PRESS_SLOP_PX) endPress();
+        },
+        onPointerUp: endPress,
+        onPointerCancel: endPress,
+        onPointerLeave: endPress,
+        onContextMenu: (event: MouseEvent<HTMLSpanElement>) => event.preventDefault(),
+      }
+    : {};
 
   /* Follows the lit word out of view, but only while the reader is following
      it: if the word lit last is still in view, the next one is brought into
@@ -290,6 +371,12 @@ export function SpokenText({ text, lang, tapToStart = false, tappable = true, cl
   }, [segment]);
 
   const onClick = (event: MouseEvent<HTMLSpanElement>) => {
+    if (pressed.current) {
+      pressed.current = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (!tappable) return;
     const sounding = getSpoken()?.key === key;
     if (!sounding && !tapToStart) return;
@@ -312,24 +399,48 @@ export function SpokenText({ text, lang, tapToStart = false, tappable = true, cl
   };
 
   const tapReads = tappable && (tapToStart || segment !== null);
+  const known = (start: number, end: number) =>
+    Boolean(marks?.some((mark) => mark.start < end && start < mark.end));
 
   return (
     <span
       ref={containerRef}
       data-spoken-text=""
       data-spoken-tap={tapReads ? "" : undefined}
+      data-long-press={onLongPressWord ? "" : undefined}
       onClick={onClick}
+      {...longPress}
       className={className}
     >
       {segment === null
-        ? text
+        ? marks?.length
+          ? markedRuns(text, marks).map((run) =>
+              run.known ? (
+                <span key={run.start} className="known-word" data-known="">{run.text}</span>
+              ) : (
+                <Fragment key={run.start}>{run.text}</Fragment>
+              ),
+            )
+          : text
         : segmentSpoken(text, lang).map((part, index) =>
             index === segment ? (
-              <mark key={part.start} className="spoken-now" data-spoken-now="" data-segment={index}>
+              <mark
+                key={part.start}
+                className={`spoken-now${known(part.start, part.end) ? " known-word" : ""}`}
+                data-spoken-now=""
+                data-segment={index}
+              >
                 {part.text}
               </mark>
             ) : (
-              <span key={part.start} data-segment={index}>{part.text}</span>
+              <span
+                key={part.start}
+                data-segment={index}
+                className={part.word && known(part.start, part.end) ? "known-word" : undefined}
+                data-known={part.word && known(part.start, part.end) ? "" : undefined}
+              >
+                {part.text}
+              </span>
             ),
           )}
     </span>

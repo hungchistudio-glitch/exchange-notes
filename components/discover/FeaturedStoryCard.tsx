@@ -11,6 +11,7 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import AudioRail from "./AudioRail";
 import { SpokenText } from "@/components/speech/Spoken";
+import useKnownWords from "@/hooks/useKnownWords";
 import { getLanguage } from "@/lib/languages";
 import { DISCOVER_COLORS, categoryAccent, type AudioPlaybackMode, type DailyNewsCard } from "./types";
 
@@ -62,6 +63,7 @@ export default function FeaturedStoryCard({
 }: FeaturedStoryCardProps) {
   const { locale } = useTranslation();
   const { pair } = useDisplayLanguages();
+  const { marksFor, lookUp } = useKnownWords();
   /*
    * The two languages the reader chose, and only those. A card that cannot
    * lead in the language being learned is filtered out upstream rather than
@@ -179,14 +181,14 @@ export default function FeaturedStoryCard({
           className={`mt-4 ${isAudioPlaying && audioMode === "primary" ? "" : "line-clamp-3"} text-[1.875rem] font-bold leading-[1.16] tracking-[-0.02em]`}
           style={{ color: DISCOVER_COLORS.text }}
         >
-          <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} />
+          <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} marks={marksFor(card.titles[primaryLanguage] ?? "", getLanguage(primaryLanguage).speechTag)} onLongPressWord={lookUp} />
         </h2>
 
         <p
           className="mt-2.5 text-[1rem] font-medium leading-[1.55] tracking-[0.005em]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} />
+          <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} marks={marksFor(card.titles[secondaryLanguage] ?? "", getLanguage(secondaryLanguage).speechTag)} onLongPressWord={lookUp} />
         </p>
 
         {/* Short summary */}
@@ -194,14 +196,14 @@ export default function FeaturedStoryCard({
           className={`mt-4 ${isAudioPlaying && audioMode === "primary" ? "" : "line-clamp-2"} text-[0.9375rem] leading-[1.6]`}
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} />
+          <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} marks={marksFor(card.summaries[primaryLanguage] ?? "", getLanguage(primaryLanguage).speechTag)} onLongPressWord={lookUp} />
         </p>
 
         <p
           className={`mt-1 ${isAudioPlaying && audioMode === "secondary" ? "" : "line-clamp-1"} text-[0.84375rem] leading-[1.6]`}
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} />
+          <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} marks={marksFor(card.summaries[secondaryLanguage] ?? "", getLanguage(secondaryLanguage).speechTag)} onLongPressWord={lookUp} />
         </p>
       </div>
 
