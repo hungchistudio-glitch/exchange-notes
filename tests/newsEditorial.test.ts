@@ -73,7 +73,9 @@ describe("C2 multilingual editorial generation", () => {
       if (source.name === "Vogue") throw new Error("offline");
       return [{ ...article, sourceName: source.name, category, url: `https://publisher.example/${source.name}/old` }, { ...article, sourceName: source.name, category, url: `https://publisher.example/${source.name}/new` }];
     });
-    const result = await selectTodaysArticles(url => url.endsWith("/old"));
+    const result = (await selectTodaysArticles(url => url.endsWith("/old")))
+      // With no Guardian key, the Guardian's slots read its feeds (tests/guardianFallback).
+      .filter(a => a.sourceName !== "The Guardian");
     expect(result).toHaveLength(4);
     expect(result.every(a => a.url.endsWith("/new"))).toBe(true);
     expect(result.some(a => a.sourceName === "Ars Technica")).toBe(true);

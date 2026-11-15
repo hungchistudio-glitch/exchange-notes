@@ -17,7 +17,12 @@ export type RssSource = {
   excludeCategories?: readonly string[];
   includeCategories?: readonly string[];
   minimumExcerptLength?: number;
+  /** Paths whose articles are not news: the Guardian's shopping roundups. */
+  excludePaths?: readonly string[];
 };
+
+/** The Guardian's shopping roundups ("The 14 best men's boots"), under any section. */
+export const GUARDIAN_SHOPPING_PATH = "/thefilter/";
 
 export const RSS_SOURCES = {
   hyperallergic: {
@@ -45,12 +50,45 @@ export const RSS_SOURCES = {
   },
 } as const satisfies Record<string, RssSource>;
 
+/*
+ * The Guardian's own public feeds, for when its API cannot be asked (Chi,
+ * 2026-11-15). The API key is free, but the Guardian deletes a key that is
+ * ninety days old unless its owner answers an email; on 2026-11-15 one was
+ * deleted, and seven of the twelve slots (World, Science, Environment and
+ * Taiwan only exist there) would have come back empty every day. A feed needs
+ * no key and never expires. It carries a few paragraphs rather than the
+ * article's opening body, so the API stays first and these only stand in.
+ *
+ * Edition-prefixed where the bare path redirects by the reader's country
+ * (technology, environment): the adapter refuses redirects.
+ */
+const guardianFeed = (path: string): RssSource => ({
+  name: "The Guardian",
+  url: `https://www.theguardian.com/${path}/rss`,
+  articleHosts: ["www.theguardian.com"],
+  imageHosts: ["i.guim.co.uk"],
+  minimumExcerptLength: 200,
+  excludePaths: [GUARDIAN_SHOPPING_PATH],
+});
+
+export const GUARDIAN_FEEDS = {
+  technology: guardianFeed("uk/technology"),
+  artanddesign: guardianFeed("artanddesign"),
+  fashion: guardianFeed("fashion"),
+  world: guardianFeed("world"),
+  science: guardianFeed("science"),
+  environment: guardianFeed("uk/environment"),
+  taiwan: guardianFeed("world/taiwan"),
+} as const satisfies Record<string, RssSource>;
+
 export type NewsSlot = {
   category: string;
   section?: string;
   query?: string;
   headlineMustMention?: string[];
   rss?: RssSource;
+  /** Read when the Guardian's API cannot be: no key, or a key it refuses. */
+  rssFallback?: RssSource;
 };
 
 /** Twelve cards, still at most four model batches; focused topics go first. */
@@ -59,12 +97,17 @@ export const NEWS_SLOTS: NewsSlot[] = [
   { category: "Technology", rss: RSS_SOURCES.ars },
   { category: "Fashion", rss: RSS_SOURCES.vogue },
   { category: "Art", rss: RSS_SOURCES.artnews },
-  { category: "Technology", section: "technology" },
+  { category: "Technology", section: "technology", rssFallback: GUARDIAN_FEEDS.technology },
   { category: "Fashion", rss: RSS_SOURCES.fashionunited },
-  { category: "Art", section: "artanddesign" },
-  { category: "Fashion", section: "fashion" },
-  { category: "World", section: "world" },
-  { category: "Science", section: "science" },
-  { category: "Environment", section: "environment" },
-  { category: "Taiwan", query: "Taiwan", headlineMustMention: ["taiwan", "taipei", "taiwanese"] },
+  { category: "Art", section: "artanddesign", rssFallback: GUARDIAN_FEEDS.artanddesign },
+  { category: "Fashion", section: "fashion", rssFallback: GUARDIAN_FEEDS.fashion },
+  { category: "World", section: "world", rssFallback: GUARDIAN_FEEDS.world },
+  { category: "Science", section: "science", rssFallback: GUARDIAN_FEEDS.science },
+  { category: "Environment", section: "environment", rssFallback: GUARDIAN_FEEDS.environment },
+  {
+    category: "Taiwan",
+    query: "Taiwan",
+    headlineMustMention: ["taiwan", "taipei", "taiwanese"],
+    rssFallback: GUARDIAN_FEEDS.taiwan,
+  },
 ];

@@ -2815,6 +2815,12 @@ const english: TranslationDictionary = {
       on: "On",
       off: "Off",
     },
+    newsSource: {
+      rowTitle: "The Guardian's key isn't working",
+      refused: "The Guardian refused the news key, so today's stories come from its public feeds, with shorter excerpts. Ask for a new free key and set it as GUARDIAN_API_KEY in Vercel.",
+      missing: "No Guardian key is set, so today's stories come from its public feeds, with shorter excerpts. Ask for a free key and set it as GUARDIAN_API_KEY in Vercel.",
+      fix: "Get a key",
+    },
 
     fontSize: {
       rowTitle: "Font size",

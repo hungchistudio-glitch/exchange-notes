@@ -2601,6 +2601,12 @@ const french: TranslationDictionary = {
       on: "Activés",
       off: "Désactivés",
     },
+    newsSource: {
+      rowTitle: "La clé du Guardian ne fonctionne plus",
+      refused: "Le Guardian a refusé la clé des actualités : elles viennent de ses flux publics, avec des extraits plus courts. Demande une nouvelle clé gratuite et mets-la dans GUARDIAN_API_KEY sur Vercel.",
+      missing: "Aucune clé du Guardian n'est définie : les actualités viennent de ses flux publics, avec des extraits plus courts. Demande une clé gratuite et mets-la dans GUARDIAN_API_KEY sur Vercel.",
+      fix: "Obtenir une clé",
+    },
 
     fontSize: {
       rowTitle: "Taille du texte",

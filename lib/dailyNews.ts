@@ -12,7 +12,7 @@ import { askText } from "@/lib/ai/askText";
  * Generated only by cron/background refill, never while a reader waits.
  */
 export type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
-import { NEWS_SLOTS, type NewsArticle, type NewsSlot } from "@/lib/news/sources";
+import { GUARDIAN_SHOPPING_PATH, NEWS_SLOTS, type NewsArticle, type NewsSlot } from "@/lib/news/sources";
 import { fetchRssArticles } from "@/lib/news/rss";
 import { hasAdvancedVocabularyDiversity, isNewsSourceAnchor } from "@/lib/news/vocabulary";
 import { toTraditional } from "@/lib/chinese/toTraditional";
@@ -163,11 +163,16 @@ type GuardianApiResult = {
  * yields nothing usable returns an empty array rather than throwing: on any
  * given day the Taiwan query legitimately has no new coverage, and one empty
  * slot must not cost the other eleven their run.
+ *
+ * Null, rather than an empty list, when the API itself could not be asked:
+ * a refused key (401/403, as on 2026-11-15 when the Guardian deleted one at
+ * ninety days), a server error or a timeout. The caller then reads the
+ * slot's public feed instead.
  */
 async function fetchSlotCandidates(
   slot: NewsSlot,
   apiKey: string
-): Promise<NewsArticle[]> {
+): Promise<NewsArticle[] | null> {
   const url = new URL("https://content.guardianapis.com/search");
 
   if (slot.section) {
@@ -183,18 +188,24 @@ async function fetchSlotCandidates(
   url.searchParams.set("show-fields", "trailText,bodyText,thumbnail");
   url.searchParams.set("api-key", apiKey);
 
-  const response = await fetch(url.toString(), {
-    // The cron job already runs on a schedule; no need for Next.js's own
-    // data cache on top of that.
-    cache: "no-store",
-    signal: AbortSignal.timeout(6_000),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      // The cron job already runs on a schedule; no need for Next.js's own
+      // data cache on top of that.
+      cache: "no-store",
+      signal: AbortSignal.timeout(6_000),
+    });
+  } catch {
+    console.error(`Guardian API unreachable for slot "${slot.category}"; reading its feed`);
+    return null;
+  }
 
   if (!response.ok) {
     console.error(
-      `Guardian API request failed for slot "${slot.category}": ${response.status}`
+      `Guardian API request failed for slot "${slot.category}": ${response.status}; reading its feed`
     );
-    return [];
+    return null;
   }
 
   const data = (await response.json()) as {
@@ -206,6 +217,11 @@ async function fetchSlotCandidates(
 
   for (const result of results) {
     if (result.type !== "article") {
+      continue;
+    }
+
+    // A shopping roundup filed under the section is not news.
+    if (result.webUrl?.includes(GUARDIAN_SHOPPING_PATH)) {
       continue;
     }
 
@@ -434,9 +450,19 @@ export async function selectTodaysArticles(
   const candidateLists = await Promise.all(
     NEWS_SLOTS.map(async slot => {
       try {
-        return slot.rss
-          ? await fetchRssArticles(slot.rss, slot.category)
-          : guardianApiKey ? await fetchSlotCandidates(slot, guardianApiKey) : [];
+        if (slot.rss) return await fetchRssArticles(slot.rss, slot.category);
+        const viaApi = guardianApiKey ? await fetchSlotCandidates(slot, guardianApiKey) : null;
+        if (viaApi) return viaApi;
+        /* No key, or one the Guardian refuses: its public feed stands in, so
+           World, Science, Environment and Taiwan never drop out (Chi,
+           2026-11-15). The same headline rule holds for the Taiwan feed. */
+        if (!slot.rssFallback) return [];
+        const viaFeed = await fetchRssArticles(slot.rssFallback, slot.category);
+        return slot.headlineMustMention
+          ? viaFeed.filter((article) =>
+              slot.headlineMustMention!.some((term) => article.title.toLowerCase().includes(term)),
+            )
+          : viaFeed;
       } catch (error) {
         // A publisher timeout or malformed feed must not lose the whole day.
         console.warn(`News source unavailable: ${slot.rss?.name ?? slot.section ?? slot.query}`, error instanceof Error ? error.message : "Fetch failed");
