@@ -515,6 +515,9 @@ async function buildLearningBatch(
     maxAttemptMs: 20_000,
     /* Nobody is waiting on the news; it yields to the camera and lookups. */
     background: true,
+    /* A refused batch gives up at once; the next catch-up run asks again
+       (lib/news/refillPool.ts). */
+    secondAsk: false,
   });
 
   /*

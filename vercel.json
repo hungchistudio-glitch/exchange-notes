@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/daily-news",
-      "schedule": "0 22 * * *"
+      "schedule": "0 20 * * *"
     },
     {
       "path": "/api/cron/yumi-reminders",
