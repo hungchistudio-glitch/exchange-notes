@@ -3,7 +3,7 @@
 import { Check, RotateCcw } from "lucide-react";
 import { useRef, useState } from "react";
 
-import { ListenButton, speechTagFor, useSpeaker } from "@/components/landing/listen";
+import { ListenButton, Said, speechTagFor, useSpeaker } from "@/components/landing/listen";
 import Yumi3DFigure from "@/components/yumi3d/Yumi3DFigure";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
@@ -66,7 +66,7 @@ export default function YumiShowcase({
         ) : (
           <div className={styles.reviewOpen}>
             <div className={styles.wordCardHead}>
-              <strong lang={copy.reviewLang}>{copy.reviewWord}</strong>
+              <strong lang={copy.reviewLang}><Said text={copy.reviewWord} speech={speech} /></strong>
               {speech ? (
                 <ListenButton
                   id="review"

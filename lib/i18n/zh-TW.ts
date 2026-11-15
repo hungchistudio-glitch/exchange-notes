@@ -418,6 +418,9 @@ const traditionalChinese: TranslationDictionary = {
     clearField: "清除",
     showFullText: "展開全文",
     showLess: "收合",
+    play: "播放",
+    stop: "停止",
+    wordByWord: "逐字",
   },
 
   friendPicker: {
@@ -665,9 +668,6 @@ const traditionalChinese: TranslationDictionary = {
     openWord: "開啟",
     reviewWord: "複習",
     listen: "發音",
-    play: "播放",
-    stop: "停止",
-    wordByWord: "逐字",
     lookingUp: "我正在查「{term}」…",
     stillLooking: "還在查，快好了。",
     takingLong: "這個字查得比平常久，我還在努力，沒有出錯。",

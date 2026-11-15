@@ -6,16 +6,14 @@ import {
   BookmarkPlus,
   Gift,
   LoaderCircle,
-  Play,
   Send,
   Share2,
   Sparkles,
-  Square,
   WifiOff,
 } from "lucide-react";
 
 import Link from "next/link";
-import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
@@ -49,17 +47,10 @@ import {
   type LanguageCode,
 } from "@/lib/languages";
 import {
-  getServerSpoken,
-  getServerWordByWord,
-  getSpoken,
-  getWordByWord,
-  playSpoken,
-  segmentWords,
-  setWordByWord,
-  stopSpoken,
-  subscribeToSpoken,
-  subscribeToWordByWord,
-} from "@/lib/spokenWords";
+  SpeakKey,
+  SpokenText as SharedSpokenText,
+  WordByWordSwitch,
+} from "@/components/speech/Spoken";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
@@ -110,66 +101,36 @@ function cardClass(tone: LexiconTone) {
     : "rounded-[24px] border border-black/[0.07] bg-white shadow-[0_10px_34px_rgba(0,0,0,0.05)]";
 }
 
-/** Which text a key and its words share: the same words in the same language. */
-function spokenKey(text: string, language: LanguageCode) {
-  return `${language}:${text}`;
-}
-
-function useSpokenSegment(key: string) {
-  const spoken = useSyncExternalStore(subscribeToSpoken, getSpoken, getServerSpoken);
-  return spoken?.key === key ? spoken.segment : null;
-}
-
 /**
- * The play key, for one piece of text in one language.
- *
- * ▶, and ■ while it plays (Chi, 2026-11-13). It was a bare speaker
- * labelled "Listen", which a first reader did not take for a button at all;
- * the play triangle says what it does before it is pressed, and the square
- * says how to end it. Its word ("Play", "Stop") is its name for a screen
- * reader and its tooltip: on the card it was one word too many beside each
- * sentence (Chi, 2026-11-13, the same day).
+ * The play key, for one piece of text in one language: the app's own
+ * (components/speech/Spoken.tsx), ▶ and ■ while it plays (Chi, 2026-11-13).
  *
  * `onSurface` is not decoration. The tinted blocks on this card are painted
  * with --surface, and a --surface button on a --surface block is a button
  * with no edges — it reads as a stray icon rather than something to press.
  * Inside those blocks the button takes the card's own white instead.
  *
- * `wordByWord` says the text one word at a time (the example block's
- * switch). Either way the words are lit as they are said, by SpokenText.
+ * Sentences are said one word at a time when the reader's switch is on (the
+ * example block carries it). Either way the words are lit as they are said,
+ * by SpokenText.
  */
 function SpeakButton({
   text,
   language,
-  copy,
   tone,
   onSurface = false,
-  wordByWord = false,
 }: {
   text: string;
   language: LanguageCode;
-  copy: Copy;
   tone: LexiconTone;
   onSurface?: boolean;
-  wordByWord?: boolean;
 }) {
-  const key = spokenKey(text, language);
-  const playing = useSpokenSegment(key) !== null;
-
   if (!text.trim()) return null;
 
   return (
-    <button
-      type="button"
-      onClick={() =>
-        playing
-          ? stopSpoken()
-          : playSpoken({ key, text, lang: getLanguage(language).speechTag, wordByWord })
-      }
-      aria-pressed={playing}
-      aria-label={playing ? copy.stop : copy.play}
-      title={playing ? copy.stop : copy.play}
-      data-speak-key=""
+    <SpeakKey
+      text={text}
+      lang={getLanguage(language).speechTag}
       // 44px, the minimum comfortable target.
       className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 ${
         tone === "cosmic"
@@ -178,42 +139,13 @@ function SpeakButton({
             ? "bg-white text-ink-strong shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
             : "bg-surface text-ink-strong"
       }`}
-    >
-      {playing ? (
-        <Square size={12} fill="currentColor" strokeWidth={0} aria-hidden="true" />
-      ) : (
-        /* Nudged right: a triangle's weight sits left of its box's centre. */
-        <Play size={15} fill="currentColor" strokeWidth={0} className="translate-x-px" aria-hidden="true" />
-      )}
-    </button>
+    />
   );
 }
 
-/**
- * Text that lights the word being said, while its play key is playing.
- *
- * Plain text the rest of the time: the split into words is only made while
- * this text is sounding, so a card full of sentences is not a card full of
- * spans for nothing.
- */
+/** Text that lights the word being said; a tapped word reads on from there. */
 function SpokenText({ text, language }: { text: string; language: LanguageCode }) {
-  const segment = useSpokenSegment(spokenKey(text, language));
-
-  if (segment === null) return <>{text}</>;
-
-  return (
-    <>
-      {segmentWords(text, getLanguage(language).speechTag).map((part, index) =>
-        index === segment ? (
-          <mark key={part.start} className="spoken-now" data-spoken-now="">
-            {part.text}
-          </mark>
-        ) : (
-          <span key={part.start}>{part.text}</span>
-        ),
-      )}
-    </>
-  );
+  return <SharedSpokenText text={text} lang={getLanguage(language).speechTag} tapToStart />;
 }
 
 /** The four stages of a wait, by how long it has gone on. */
@@ -282,49 +214,6 @@ function LookupProgress({
   );
 }
 
-/**
- * The example block's switch: say each sentence one word at a time, with a
- * pause between (Chi, 2026-11-13). Kept on this device.
- */
-function WordByWordSwitch({ copy, tone }: { copy: Copy; tone: LexiconTone }) {
-  const on = useSyncExternalStore(subscribeToWordByWord, getWordByWord, getServerWordByWord);
-
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      onClick={() => {
-        stopSpoken();
-        setWordByWord(!on);
-      }}
-      className={`flex h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[0.6875rem] font-semibold transition-colors ${
-        on
-          ? tone === "cosmic"
-            ? "border-[var(--cosmic-cyan)] text-[var(--cosmic-cyan)]"
-            : "border-black bg-black text-white"
-          : tone === "cosmic"
-            ? "border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
-            : "border-black/15 bg-white text-ink-soft"
-      }`}
-    >
-      <span
-        aria-hidden="true"
-        className={`relative h-3.5 w-6 rounded-full transition-colors ${
-          on ? "bg-white/35" : "bg-black/15"
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 h-2.5 w-2.5 rounded-full transition-[left] ${
-            on ? "left-3 bg-white" : "left-0.5 bg-white"
-          }`}
-        />
-      </span>
-      {copy.wordByWord}
-    </button>
-  );
-}
-
 export default function LexiconResults({
   tone = "warm",
   search,
@@ -339,11 +228,6 @@ export default function LexiconResults({
   const { pair } = useDisplayLanguages();
 
   const { status, result, preview, error, savedMatches, query } = search;
-  const wordByWord = useSyncExternalStore(
-    subscribeToWordByWord,
-    getWordByWord,
-    getServerWordByWord,
-  );
 
   /*
    * Which query the language picker was opened for, or null.
@@ -668,7 +552,6 @@ export default function LexiconResults({
                   <SpeakButton
                     text={entry.term}
                     language={languages.sourceLanguage}
-                    copy={copy}
                     tone={tone}
                   />
                 </div>
@@ -773,7 +656,6 @@ export default function LexiconResults({
                     <SpeakButton
                       text={entry.translation}
                       language={languages.glossLanguage}
-                      copy={copy}
                       tone={tone}
                     />
                   </div>
@@ -807,7 +689,7 @@ export default function LexiconResults({
                   <div className="mt-5 rounded-[18px] bg-surface p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className={eyebrow}>{copy.example}</p>
-                      <WordByWordSwitch copy={copy} tone={tone} />
+                      <WordByWordSwitch tone={tone} />
                     </div>
 
                     <div className="mt-2.5 flex items-start gap-3">
@@ -817,10 +699,8 @@ export default function LexiconResults({
                       <SpeakButton
                         text={entry.termExample}
                         language={languages.sourceLanguage}
-                        copy={copy}
                         tone={tone}
                         onSurface
-                        wordByWord={wordByWord}
                       />
                     </div>
 
@@ -831,10 +711,8 @@ export default function LexiconResults({
                       <SpeakButton
                         text={entry.translationExample}
                         language={languages.glossLanguage}
-                        copy={copy}
                         tone={tone}
                         onSurface
-                        wordByWord={wordByWord}
                       />
                     </div>
                   </div>
@@ -1000,7 +878,6 @@ export default function LexiconResults({
                     <SpeakButton
                       text={sides.primary.text}
                       language={sides.primary.language}
-                      copy={copy}
                       tone={tone}
                     />
 
@@ -1200,7 +1077,6 @@ function SentenceKeep({
         <SpeakButton
           text={entry.highlight.term}
           language={languages.sourceLanguage}
-          copy={copy}
           tone={tone}
           onSurface
         />
@@ -1213,7 +1089,6 @@ function SentenceKeep({
         <SpeakButton
           text={entry.highlight.translation}
           language={languages.glossLanguage}
-          copy={copy}
           tone={tone}
           onSurface
         />

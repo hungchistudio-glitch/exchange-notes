@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 
 import AudioButton, { AudioGlyph } from "@/components/pronunciation/lab/AudioButton";
 import LabScreen from "@/components/pronunciation/lab/LabScreen";
+import { SpokenText, useSpokenSegment } from "@/components/speech/Spoken";
 import SpeakTrainer from "@/components/pronunciation/lab/SpeakTrainer";
 import YumiCoach from "@/components/pronunciation/lab/YumiCoach";
 import { LabEmpty } from "@/components/pronunciation/lab/StateViews";
@@ -13,6 +14,8 @@ import usePronunciationPlayback from "@/hooks/pronunciation/usePronunciationPlay
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { fill } from "@/lib/i18n/format";
 import { getLanguage } from "@/lib/languages";
+import type { SpeechLanguage } from "@/lib/speech";
+import { isCharByChar, spokenKey } from "@/lib/spokenWords";
 import { exampleAudio, unitAudio } from "@/lib/pronunciation/lab/audio";
 import { findUnit } from "@/lib/pronunciation/lab/registry";
 import { localize, type LocalizedText } from "@/lib/pronunciation/localizedText";
@@ -296,7 +299,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
                         style={{ fontFamily: `var(${meta.fontVariable})` }}
                         lang={meta.htmlLang}
                       >
-                        <Highlighted text={example.text} match={example.highlight} />
+                        <SpokenExample text={example.text} match={example.highlight} lang={meta.speechTag} />
                       </span>
 
                       <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
@@ -411,7 +414,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
                                   className="font-cjk block truncate text-sm font-semibold"
                                   lang={meta.htmlLang}
                                 >
-                                  {example.text}
+                                  <SpokenText text={example.text} lang={meta.speechTag} tappable={false} />
                                 </span>
                                 {example.meaning ? (
                                   <span className="font-cjk block truncate text-[0.6875rem] text-ink-faint">
@@ -480,6 +483,23 @@ function Highlighted({ text, match }: { text: string; match?: string }) {
       </span>
       {text.slice(index + match.length)}
     </>
+  );
+}
+
+/**
+ * An example, lit while it is said (Chi, 2026-11-14): a Chinese word a
+ * character at a time; any other whole, its marked sound still marked.
+ */
+function SpokenExample({ text, match, lang }: { text: string; match?: string; lang: SpeechLanguage }) {
+  const segment = useSpokenSegment(spokenKey(text, lang));
+  if (segment === null || segment < 0) return <Highlighted text={text} match={match} />;
+  if (!match || isCharByChar(text, lang)) {
+    return <SpokenText text={text} lang={lang} tappable={false} />;
+  }
+  return (
+    <mark className="spoken-now" data-spoken-now="">
+      <Highlighted text={text} match={match} />
+    </mark>
   );
 }
 

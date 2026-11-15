@@ -17,7 +17,7 @@ import {
 } from "@/lib/review/getTodaysReview";
 import { beginReviewRound, saveReviewResult } from "@/lib/review/saveReviewResult";
 import type { ReviewGrade } from "@/types/vocabulary";
-import { speak } from "@/lib/speech";
+import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
@@ -77,26 +77,6 @@ function InfinityIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-    </svg>
-  );
-}
-
-function SpeakerIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path
-        d="M4 9.5h3.2L11 6v12l-3.8-3.5H4v-5z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M15 9a3.5 3.5 0 010 6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -373,27 +353,24 @@ export default function ReviewPage() {
                   size="sm"
                 />
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    speak(
-                      currentWord.translation,
-                      getLanguage(currentWord.translationLanguage).speechTag,
-                    )
-                  }
-                  aria-label={insertValues(
+                <SpeakKey
+                  text={currentWord.translation}
+                  lang={getLanguage(currentWord.translationLanguage).speechTag}
+                  label={insertValues(
                     t.vocabulary.detail.listenAriaLabel,
                     { text: currentWord.translation },
                   )}
+                  iconSize={13}
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-line"
-                >
-                  <SpeakerIcon />
-                </button>
+                />
               </div>
             </div>
 
             <p className="mt-4 text-[2.25rem] font-bold tracking-[-0.02em]">
-              {currentWord.translation}
+              <SpokenText
+                text={currentWord.translation}
+                lang={getLanguage(currentWord.translationLanguage).speechTag}
+              />
             </p>
 
             {/*
@@ -427,7 +404,10 @@ export default function ReviewPage() {
                 <div className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-5">
                   <div className="min-w-0">
                     <p className="break-words text-2xl font-bold">
-                      {currentWord.term}
+                      <SpokenText
+                        text={currentWord.term}
+                        lang={getLanguage(currentWord.termLanguage).speechTag}
+                      />
                     </p>
 
                     <PronunciationBlock
@@ -447,22 +427,16 @@ export default function ReviewPage() {
                       size="sm"
                     />
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        speak(
-                          currentWord.term,
-                          getLanguage(currentWord.termLanguage).speechTag,
-                        )
-                      }
-                      aria-label={insertValues(
+                    <SpeakKey
+                      text={currentWord.term}
+                      lang={getLanguage(currentWord.termLanguage).speechTag}
+                      label={insertValues(
                         t.vocabulary.detail.listenAriaLabel,
                         { text: currentWord.term },
                       )}
+                      iconSize={13}
                       className="flex h-9 w-9 items-center justify-center rounded-full border border-line"
-                    >
-                      <SpeakerIcon />
-                    </button>
+                    />
                   </div>
                 </div>
 
@@ -486,20 +460,19 @@ export default function ReviewPage() {
                       key={language}
                       className="mt-2 flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3"
                     >
-                      <p className="min-w-0 text-sm leading-6">{example}</p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          speak(example, getLanguage(language).speechTag)
-                        }
-                        aria-label={insertValues(
+                      <p className="min-w-0 text-sm leading-6">
+                        <SpokenText text={example} lang={getLanguage(language).speechTag} tapToStart />
+                      </p>
+                      <SpeakKey
+                        text={example}
+                        lang={getLanguage(language).speechTag}
+                        label={insertValues(
                           t.vocabulary.detail.listenAriaLabel,
                           { text: example },
                         )}
-                        className="shrink-0"
-                      >
-                        <SpeakerIcon />
-                      </button>
+                        iconSize={13}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center"
+                      />
                     </div>
                   ) : null,
                 )}

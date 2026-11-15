@@ -26,7 +26,8 @@ vi.mock("@/components/cosmic/MissionCompleteStage", () => ({
 vi.mock("@/components/language/LanguageOriginBadge", () => ({
   default: ({ language }: { language: string }) => <span>{language}</span>,
 }));
-vi.mock("@/lib/speech", () => ({ speak: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: vi.fn() }));
 
 const words = vi.hoisted(() => ({ due: [] as unknown[] }));
 

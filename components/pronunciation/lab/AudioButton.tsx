@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, LoaderCircle, RotateCcw, Volume2 } from "lucide-react";
+import { Check, LoaderCircle, Play, RotateCcw, Square } from "lucide-react";
 
 import type { PlaybackPhase } from "@/hooks/pronunciation/usePronunciationPlayback";
 
@@ -80,7 +80,8 @@ function PhaseIcon({ phase, size }: { phase?: PlaybackPhase; size: number }) {
     return <LoaderCircle size={size} strokeWidth={1.8} className="animate-spin" />;
   }
   if (phase === "playing") {
-    return <Volume2 size={size} strokeWidth={1.8} className="animate-pulse" />;
+    /* ■ while it plays, which a tap stops (Chi, 2026-11-14). */
+    return <Square size={Math.round(size * 0.75)} fill="currentColor" strokeWidth={0} />;
   }
   if (phase === "done") {
     return <Check size={size} strokeWidth={2.2} />;
@@ -88,7 +89,8 @@ function PhaseIcon({ phase, size }: { phase?: PlaybackPhase; size: number }) {
   if (phase === "error") {
     return <RotateCcw size={size} strokeWidth={1.8} />;
   }
-  return <Volume2 size={size} strokeWidth={1.8} />;
+  /* ▶, as every speaker in the app (Chi, 2026-11-14). */
+  return <Play size={Math.round(size * 0.9)} fill="currentColor" strokeWidth={0} className="translate-x-px" />;
 }
 
 /**

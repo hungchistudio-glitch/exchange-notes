@@ -5,9 +5,10 @@ import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
 import { useState } from "react";
-import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from "lucide-react";
+import { Bookmark, BookmarkCheck, LoaderCircle } from "lucide-react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import { SpeakKey, SpokenText, WordByWordSwitch } from "@/components/speech/Spoken";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { getCurrentUser } from "@/lib/vocabulary/repository";
 import {
@@ -26,36 +27,32 @@ type VocabularyDrawerProps = {
   open: boolean;
   onClose: () => void;
   copy: TranslationDictionary["discover"];
-  speakingKey: string | null;
-  onSpeak: (
-    key: string,
-    text: string,
-    language: SpeechLanguage
-  ) => void;
+  /** The news's own pace (its Slow/Natural/Fast), per language. */
+  speechRate: (language: SpeechLanguage) => number;
 };
 
+/** ▶, ■ while it plays; its text lights as it is said (Chi, 2026-11-14). */
 function SpeakerButton({
-  onClick,
-  active,
+  text,
+  lang,
+  rate,
   ariaLabel,
 }: {
-  onClick: () => void;
-  active: boolean;
+  text: string;
+  lang: SpeechLanguage;
+  rate: (language: SpeechLanguage) => number;
   ariaLabel: string;
 }) {
+  if (!text.trim()) return null;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={ariaLabel}
+    <SpeakKey
+      text={text}
+      lang={lang}
+      rate={rate}
+      label={ariaLabel}
+      iconSize={12}
       className="hit-44 relative cosmic-sonar flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
-    >
-      <Volume2
-        size={14}
-        strokeWidth={1.8}
-        className={active ? "animate-pulse" : ""}
-      />
-    </button>
+    />
   );
 }
 
@@ -101,8 +98,7 @@ export default function VocabularyDrawer({
   open,
   onClose,
   copy,
-  speakingKey,
-  onSpeak,
+  speechRate,
 }: VocabularyDrawerProps) {
   const { t } = useTranslation();
   const { pair } = useDisplayLanguages();
@@ -215,12 +211,14 @@ export default function VocabularyDrawer({
     >
       {card ? (
         <div className="space-y-5">
+          {/* The reader's one switch, beside every block of sentences (Chi, 2026-11-14). */}
+          <div className="flex justify-end">
+            <WordByWordSwitch />
+          </div>
+
           {card.vocabulary.map((item, index) => {
             const baseKey = `drawer-${card.id}-${index}`;
             const wordKey = `${baseKey}-word`;
-            const translationKey = `${baseKey}-translation`;
-            const englishExampleKey = `${baseKey}-en-example`;
-            const chineseExampleKey = `${baseKey}-zh-example`;
 
             const owned = alreadyInLibrary(item);
             /*
@@ -242,7 +240,7 @@ export default function VocabularyDrawer({
                     <span
                       className="text-[1.0625rem] font-semibold text-black"
                     >
-                      {word}
+                      <SpokenText text={word} lang={getLanguage(primaryLanguage).speechTag} tapToStart />
                     </span>
 
                     {(
@@ -303,10 +301,9 @@ export default function VocabularyDrawer({
                   )}
 
                   <SpeakerButton
-                    onClick={() =>
-                      onSpeak(wordKey, (item.texts[primaryLanguage] ?? ""), getLanguage(primaryLanguage).speechTag)
-                    }
-                    active={speakingKey === wordKey}
+                    text={item.texts[primaryLanguage] ?? ""}
+                    lang={getLanguage(primaryLanguage).speechTag}
+                    rate={speechRate}
                     ariaLabel={copy.readVocabWordAriaLabel.replace(
                       "{word}",
                       (item.texts[primaryLanguage] ?? "")
@@ -326,7 +323,7 @@ export default function VocabularyDrawer({
                     <p
                       className="text-sm text-ink-soft"
                     >
-                      {(item.texts[secondaryLanguage] ?? "")}
+                      <SpokenText text={item.texts[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} tapToStart />
                     </p>
 
 
@@ -345,14 +342,9 @@ export default function VocabularyDrawer({
 
                 <div className="flex shrink-0 items-center gap-1.5">
                   <SpeakerButton
-                    onClick={() =>
-                      onSpeak(
-                        translationKey,
-                        (item.texts[secondaryLanguage] ?? ""),
-                        getLanguage(secondaryLanguage).speechTag
-                      )
-                    }
-                    active={speakingKey === translationKey}
+                    text={item.texts[secondaryLanguage] ?? ""}
+                    lang={getLanguage(secondaryLanguage).speechTag}
+                    rate={speechRate}
                     ariaLabel={copy.readVocabChineseAriaLabel.replace(
                       "{translation}",
                       (item.texts[secondaryLanguage] ?? "")
@@ -368,18 +360,13 @@ export default function VocabularyDrawer({
                 className="flex items-start gap-2"
               >
                 <p className="min-w-0 flex-1 text-sm leading-6 text-ink-strong">
-                  {(item.examples[primaryLanguage] ?? "")}
+                  <SpokenText text={item.examples[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} tapToStart />
                 </p>
 
                 <SpeakerButton
-                  onClick={() =>
-                    onSpeak(
-                      englishExampleKey,
-                      (item.examples[primaryLanguage] ?? ""),
-                      getLanguage(primaryLanguage).speechTag
-                    )
-                  }
-                  active={speakingKey === englishExampleKey}
+                  text={item.examples[primaryLanguage] ?? ""}
+                  lang={getLanguage(primaryLanguage).speechTag}
+                  rate={speechRate}
                   ariaLabel={copy.readEnglishAriaLabel}
                 />
               </div>
@@ -391,18 +378,13 @@ export default function VocabularyDrawer({
                 className="flex items-start gap-2"
               >
                 <p className="min-w-0 flex-1 text-sm leading-6 text-ink-soft">
-                  {(item.examples[secondaryLanguage] ?? "")}
+                  <SpokenText text={item.examples[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} tapToStart />
                 </p>
 
                 <SpeakerButton
-                  onClick={() =>
-                    onSpeak(
-                      chineseExampleKey,
-                      (item.examples[secondaryLanguage] ?? ""),
-                      getLanguage(secondaryLanguage).speechTag
-                    )
-                  }
-                  active={speakingKey === chineseExampleKey}
+                  text={item.examples[secondaryLanguage] ?? ""}
+                  lang={getLanguage(secondaryLanguage).speechTag}
+                  rate={speechRate}
                   ariaLabel={copy.readChineseAriaLabel}
                 />
               </div>

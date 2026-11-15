@@ -29,7 +29,8 @@ vi.mock("@/contexts/LexiconSearchContext", () => ({ useLexiconSearchSheet: () =>
 vi.mock("@/hooks/i18n/useTranslation", () => ({ default: () => ({ language: "english", t: english }) }));
 vi.mock("@/hooks/useDisplayLanguages", () => ({ default: () => ({ learningLanguage: "it", supportLanguage: "zh-TW" }) }));
 vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => null }));
-vi.mock("@/lib/speech", () => ({ speak: vi.fn(), stopSpeech: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: vi.fn(), stopSpeech: vi.fn() }));
 
 let pendingFrames: FrameRequestCallback[];
 // Async, so the MutationObserver the field reads the stage's mode through has

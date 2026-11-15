@@ -3,7 +3,7 @@
 import { Bookmark, Check, RotateCcw, Send } from "lucide-react";
 import { useState } from "react";
 
-import { ListenButton, speechTagFor, useSpeaker, type Speaker } from "@/components/landing/listen";
+import { ListenButton, Said, speechTagFor, useSpeaker, type Speaker } from "@/components/landing/listen";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import styles from "./LandingSections.module.css";
@@ -26,7 +26,7 @@ function WordCard({
   return (
     <article className={styles.wordCard}>
       <div className={styles.wordCardHead}>
-        <strong lang={copy.wordLang}>{copy.word}</strong>
+        <strong lang={copy.wordLang}><Said text={copy.word} speech={speech} /></strong>
         {speech ? (
           <ListenButton
             id={id}

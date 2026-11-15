@@ -21,7 +21,8 @@ vi.mock("@/hooks/useVoiceInput", () => ({ default: (callbacks: NonNullable<typeo
   services.voice = callbacks;
   return { supported: true, stop: services.stopVoice, toggle: vi.fn() };
 } }));
-vi.mock("@/lib/speech", () => ({ stopSpeech: services.stopSpeech }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), stopSpeech: services.stopSpeech }));
 vi.mock("@/components/lexicon/LexiconImageMenu", () => ({ default: () => null }));
 vi.mock("@/components/lexicon/LexiconResults", () => ({ default: () => <p>Dictionary answer</p> }));
 vi.mock("@/hooks/lexicon/useLexiconSearch", () => ({ default: function Search() {

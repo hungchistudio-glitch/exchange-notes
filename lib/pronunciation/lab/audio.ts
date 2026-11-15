@@ -1,5 +1,6 @@
 import { getLanguage, type LanguageCode } from "@/lib/languages";
-import { getSpeechSettings, speak, speechSupported } from "@/lib/speech";
+import { getSpeechSettings, speechSupported } from "@/lib/speech";
+import { followRecording, playSpoken, stopSpoken } from "@/lib/spokenWords";
 
 import { isZhuyin, parseTranscription, parseZhuyin } from "../phones";
 import type { ArticulationHint } from "../speaking";
@@ -123,6 +124,8 @@ export type PlayOptions = {
   onStart?: () => void;
   onEnd?: () => void;
   onError?: () => void;
+  /** Another key in the app started sounding over this one: it has stopped. */
+  onCancel?: () => void;
 };
 
 let currentAudioElement: HTMLAudioElement | null = null;
@@ -141,9 +144,8 @@ export function stopPronunciationAudio() {
     currentAudioElement = null;
   }
 
-  if (typeof window !== "undefined" && "speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
-  }
+  /* The voice, and the light on whatever word it was saying. */
+  if (typeof window !== "undefined") stopSpoken();
 }
 
 /** The voice's rate for `speed` — what the animation's clock divides by. */
@@ -165,7 +167,7 @@ export function playPronunciation(
   source: AudioSource,
   options: PlayOptions = {},
 ): PlaybackHandle {
-  const { speed = "native", onStart, onEnd, onError } = options;
+  const { speed = "native", onStart, onEnd, onError, onCancel } = options;
 
   stopPronunciationAudio();
 
@@ -181,30 +183,54 @@ export function playPronunciation(
     stopPronunciationAudio();
   };
 
-  if (source.kind === "speech") {
-    speak(
-      source.text,
-      getLanguage(source.language).speechTag,
-      {
-        onStart: () => {
-          if (!cancelled) onStart?.();
-        },
-        onEnd: () => {
-          if (!cancelled) onEnd?.();
-        },
-        onError: () => {
-          if (!cancelled) onError?.();
-        },
-      },
-      speechRateFor(speed),
-    );
+  /* Some other key took over: this one is over, and says so once. */
+  const replaced = () => {
+    if (cancelled) return;
+    cancelled = true;
+    onCancel?.();
+  };
 
+  /*
+   * Said through the app's one speech state, so the word on screen is lit
+   * as it is said (Chi, 2026-11-14): a Chinese word a character at a time.
+   * Always whole, never word by word: a lesson's phrase has to be heard as
+   * it is really said, with its rhythm and its links.
+   */
+  const say = (text: string) =>
+    playSpoken({
+      text,
+      lang: getLanguage(source.language).speechTag,
+      rate: speechRateFor(speed),
+      wordByWord: false,
+      onStart: () => {
+        if (!cancelled) onStart?.();
+      },
+      onEnd: () => {
+        if (!cancelled) onEnd?.();
+      },
+      onError: () => {
+        if (!cancelled) onError?.();
+      },
+      onCancel: replaced,
+    });
+
+  if (source.kind === "speech") {
+    say(source.text);
     return { stop };
   }
 
   const element = new Audio(source.src);
   element.playbackRate = speed === "slow" ? SLOW_RATE_MULTIPLIER : 1;
   currentAudioElement = element;
+  /* A recording reports no words: its text is lit across its own length. */
+  const unfollow = followRecording(
+    { text: source.text, lang: getLanguage(source.language).speechTag },
+    element,
+    () => {
+      currentAudioElement = null;
+      replaced();
+    },
+  );
 
   let handled = false;
 
@@ -219,27 +245,13 @@ export function playPronunciation(
     handled = true;
     currentAudioElement = null;
 
+    unfollow();
     if (!source.text || !speechSupported()) {
       onError?.();
       return;
     }
 
-    speak(
-      source.text,
-      getLanguage(source.language).speechTag,
-      {
-        onStart: () => {
-          if (!cancelled) onStart?.();
-        },
-        onEnd: () => {
-          if (!cancelled) onEnd?.();
-        },
-        onError: () => {
-          if (!cancelled) onError?.();
-        },
-      },
-      speechRateFor(speed),
-    );
+    say(source.text);
   };
 
   element.addEventListener(
@@ -284,6 +296,8 @@ export function playSequence(
     onStepEnd?: (index: number) => void;
     onEnd?: () => void;
     onError?: () => void;
+    /** Another key in the app started sounding over the sequence. */
+    onCancel?: () => void;
   } = {},
 ): PlaybackHandle {
   let cancelled = false;
@@ -320,6 +334,12 @@ export function playSequence(
         if (cancelled) return;
         options.onError?.();
         runStep(index + 1);
+      },
+      onCancel: () => {
+        if (cancelled) return;
+        cancelled = true;
+        if (gapTimer) clearTimeout(gapTimer);
+        options.onCancel?.();
       },
     });
   }

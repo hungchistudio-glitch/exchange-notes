@@ -5,6 +5,8 @@ import { Mic, Square } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import AudioButton, { AudioGlyph } from "@/components/pronunciation/lab/AudioButton";
+import { SpokenText } from "@/components/speech/Spoken";
+import { getLanguage } from "@/lib/languages";
 import ScoreBreakdown from "@/components/pronunciation/lab/ScoreBreakdown";
 import StatusMessage from "@/components/foundation/feedback/StatusMessage";
 import usePronunciationPlayback from "@/hooks/pronunciation/usePronunciationPlayback";
@@ -233,7 +235,7 @@ export default function SpeakTrainer({
         </p>
 
         <p className="font-cjk mt-2 text-[1.5rem] font-bold leading-tight tracking-[-0.02em]">
-          {targetText}
+          <SpokenText text={targetText} lang={getLanguage(language).speechTag} />
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">

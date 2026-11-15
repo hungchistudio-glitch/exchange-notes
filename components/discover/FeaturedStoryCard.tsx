@@ -10,6 +10,8 @@ import { ZoomIn } from "lucide-react";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import AudioRail from "./AudioRail";
+import { SpokenText } from "@/components/speech/Spoken";
+import { getLanguage } from "@/lib/languages";
 import { DISCOVER_COLORS, categoryAccent, type AudioPlaybackMode, type DailyNewsCard } from "./types";
 
 type FeaturedStoryCardProps = {
@@ -168,34 +170,38 @@ export default function FeaturedStoryCard({
           </span>
         </div>
 
-        {/* Bilingual headline block */}
+        {/*
+          Bilingual headline block. While the full story plays, the words
+          light as they are said (Chi, 2026-11-14), and the language being
+          read is shown whole, so the light never runs on past a clamp.
+        */}
         <h2
-          className="mt-4 line-clamp-3 text-[1.875rem] font-bold leading-[1.16] tracking-[-0.02em]"
+          className={`mt-4 ${isAudioPlaying && audioMode === "primary" ? "" : "line-clamp-3"} text-[1.875rem] font-bold leading-[1.16] tracking-[-0.02em]`}
           style={{ color: DISCOVER_COLORS.text }}
         >
-          {(card.titles[primaryLanguage] ?? "")}
+          <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} />
         </h2>
 
         <p
           className="mt-2.5 text-[1rem] font-medium leading-[1.55] tracking-[0.005em]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {(card.titles[secondaryLanguage] ?? "")}
+          <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} />
         </p>
 
         {/* Short summary */}
         <p
-          className="mt-4 line-clamp-2 text-[0.9375rem] leading-[1.6]"
+          className={`mt-4 ${isAudioPlaying && audioMode === "primary" ? "" : "line-clamp-2"} text-[0.9375rem] leading-[1.6]`}
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {(card.summaries[primaryLanguage] ?? "")}
+          <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} />
         </p>
 
         <p
-          className="mt-1 line-clamp-1 text-[0.84375rem] leading-[1.6]"
+          className={`mt-1 ${isAudioPlaying && audioMode === "secondary" ? "" : "line-clamp-1"} text-[0.84375rem] leading-[1.6]`}
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {(card.summaries[secondaryLanguage] ?? "")}
+          <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} />
         </p>
       </div>
 

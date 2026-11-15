@@ -3,7 +3,7 @@
 import { Lock, X } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 
-import { ListenButton, useSpeaker, type Speaker } from "@/components/landing/listen";
+import { ListenButton, Said, useSpeaker, type Speaker } from "@/components/landing/listen";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { NOTE_SAMPLES, noteOriginalFor } from "@/lib/landing/noteSamples";
 import { LANGUAGE_CODES, getLanguage, type LanguageCode } from "@/lib/languages";
@@ -182,7 +182,7 @@ function Lookup({
   return (
     <div id={id} className={styles.lookup}>
       <div className={styles.lookupHead}>
-        <strong lang={language.htmlLang}>{sample.word}</strong>
+        <strong lang={language.htmlLang}><Said text={sample.word} speech={language.speechTag} /></strong>
         <span lang={language.htmlLang}>{sample.reading}</span>
       </div>
       {/* The feeling, said in the reader's own language: the same for every

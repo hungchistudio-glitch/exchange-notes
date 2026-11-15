@@ -34,6 +34,7 @@ import {
   type SpeechTag,
 } from "@/lib/languages";
 import {
+  Said,
   ListenButton as SharedListenButton,
   speechTagFor,
   useHydrated,
@@ -517,7 +518,7 @@ export default function HeroTrial({
                 ))}
               </div>
               <div className={styles.rendering} lang={getLanguage(compare).htmlLang}>
-                <strong>{phrase.renderings[compare].text}</strong>
+                <strong><Said text={phrase.renderings[compare].text} speech={getLanguage(compare).speechTag} /></strong>
                 <p>{phrase.renderings[compare].note}</p>
                 <ListenButton
                   id={`compare-${compare}`}
@@ -578,7 +579,7 @@ export default function HeroTrial({
               <p className={styles.insight}>
                 <Sparkles size={13} aria-hidden="true" /> {journey.exchange.insight}
                 {" · "}
-                <span lang={journey.exchange.replyLang}>{journey.exchange.replyWord}</span>
+                <span lang={journey.exchange.replyLang}><Said text={journey.exchange.replyWord} speech={replySpeech} /></span>
                 {": "}
                 {journey.exchange.replyMeaning}
               </p>
@@ -648,7 +649,7 @@ export default function HeroTrial({
                     total: notebook.length,
                   })}
                 </p>
-                <p className={styles.flashWord} lang={current.lang}>{current.text}</p>
+                <p className={styles.flashWord} lang={current.lang}><Said text={current.text} speech={current.speech} /></p>
                 {phase === "recall" ? (
                   <p className={styles.prompt}>{trial.review.prompt}</p>
                 ) : (

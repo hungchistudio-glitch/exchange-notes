@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ListenButton, useSpeaker } from "@/components/landing/listen";
+import { ListenButton, Said, useSpeaker } from "@/components/landing/listen";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import styles from "./LandingSections.module.css";
@@ -110,7 +110,7 @@ function MenuScan({ copy }: { copy: LensCopy }) {
               aria-pressed={chosen === index}
               onClick={() => setChosen(index)}
             >
-              <span className={styles.menuSource} lang="zh-Hant">{dish.source}</span>
+              <span className={styles.menuSource} lang="zh-Hant">{chosen === index ? <Said text={dish.source} speech="zh-TW" /> : dish.source}</span>
               <span className={styles.menuName}>{dish.name}</span>
               <span className={styles.menuIpa} lang="zh-Latn-pinyin">{dish.reading}</span>
             </button>

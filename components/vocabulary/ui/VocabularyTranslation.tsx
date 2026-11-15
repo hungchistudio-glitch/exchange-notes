@@ -6,6 +6,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import type { SpeechLanguage } from "@/lib/speech";
 import VocabularyCopyButton from "./VocabularyCopyButton";
 import VocabularySpeechButton from "./VocabularySpeechButton";
+import { SpokenText } from "@/components/speech/Spoken";
 
 type Props = {
   text: string;
@@ -53,7 +54,7 @@ export default function VocabularyTranslation({
             : "min-w-0 flex-1 break-words text-[1.25rem] font-normal leading-[1.45] tracking-[-0.01em] text-ink-faint"
         }
       >
-        {normalizedText}
+        <SpokenText text={normalizedText} lang={language} />
       </TextComponent>
 
       <div className="flex shrink-0 items-center gap-2">

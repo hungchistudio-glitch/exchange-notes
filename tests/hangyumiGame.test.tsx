@@ -16,7 +16,8 @@ import { createPreviewHangyumi, type PracticeWord, type SaveWord } from "@/lib/h
 const speech = vi.hoisted(() => ({ speak: vi.fn() }));
 const reader = vi.hoisted(() => ({ language: "english" as "english" | "traditional-chinese" }));
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => reader.language }));
-vi.mock("@/lib/speech", () => ({ speak: speech.speak, speechSupported: () => true, stopSpeech: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: speech.speak, speechSupported: () => true, stopSpeech: vi.fn() }));
 vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => undefined }));
 /* The page waits for the first line to come to rest: the stand-in's is at
    rest as soon as the word is dealt. */

@@ -3,6 +3,8 @@
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import MasteryRing, { statusClassName } from "@/components/vocabulary/MasteryRing";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import { SpokenText } from "@/components/speech/Spoken";
+import { getLanguage } from "@/lib/languages";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -32,7 +34,11 @@ export default function VocabularyCompactHeader({ item }: Props) {
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center justify-between gap-3">
             <h3 className="min-w-0 break-words text-[1.0625rem] font-semibold leading-6 tracking-[-0.025em] text-black">
-              {primary.text || item.word}
+              {primary.text ? (
+                <SpokenText text={primary.text} lang={getLanguage(primary.language).speechTag} />
+              ) : (
+                item.word
+              )}
             </h3>
             {/*
               One right-hand cluster, not two.
@@ -56,7 +62,7 @@ export default function VocabularyCompactHeader({ item }: Props) {
 
           {secondary.text ? (
             <p className="mt-0.5 break-words text-[0.8125rem] leading-5 text-ink-soft">
-              {secondary.text}
+              <SpokenText text={secondary.text} lang={getLanguage(secondary.language).speechTag} />
             </p>
           ) : null}
 

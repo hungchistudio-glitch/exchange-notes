@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertCircle, ArrowLeftRight, LoaderCircle, RotateCcw, Volume2 } from "lucide-react";
+import { AlertCircle, ArrowLeftRight, LoaderCircle, RotateCcw } from "lucide-react";
+import { SpeakGlyph, SpokenText } from "@/components/speech/Spoken";
 import { useSyncExternalStore } from "react";
 
 import useHelloSpeech, { type SpeakerPhase } from "@/hooks/hello/useHelloSpeech";
@@ -125,7 +126,11 @@ export default function HelloCard({
               side={side}
               phase={speech.phaseFor(slot)}
               canSpeak={speech.supported}
-              onSpeak={() => side && speech.play(slot, side.text, language)}
+              onSpeak={() => {
+                /* ■ while it plays stops it; ▶ plays it (Chi, 2026-11-14). */
+                if (speech.phaseFor(slot) === "playing") speech.stop();
+                else if (side) speech.play(slot, side.text, language);
+              }}
               onRetry={onRetryMissing ? () => onRetryMissing(language) : undefined}
               retrying={retrying?.has(language) ?? false}
               missingNote={missingNote}
@@ -237,7 +242,7 @@ function SideView({
     <article className={styles.side} lang={meta.htmlLang}>
       <p className={styles.sideLanguage}>{languageName}</p>
       <p className={styles.word} style={{ fontFamily: `var(${meta.fontVariable})` }}>
-        {side.text}
+        <SpokenText text={side.text.trim()} lang={meta.speechTag} />
       </p>
       {partOfSpeech ? <p className={styles.partOfSpeech}>{partOfSpeech}</p> : null}
       {readings.length ? (
@@ -262,7 +267,7 @@ function SideView({
         ) : phase === "error" ? (
           <AlertCircle size={20} aria-hidden="true" />
         ) : (
-          <Volume2 size={20} aria-hidden="true" />
+          <SpeakGlyph playing={phase === "playing"} size={17} />
         )}
       </button>
       {phase === "error" ? (

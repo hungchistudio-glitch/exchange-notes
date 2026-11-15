@@ -1,7 +1,7 @@
 "use client";
 
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { BookmarkCheck, BookmarkPlus, LoaderCircle, Send, Volume2 } from "lucide-react";
+import { BookmarkCheck, BookmarkPlus, LoaderCircle, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -24,7 +24,8 @@ import {
   getLanguage,
   type LanguageCode,
 } from "@/lib/languages";
-import { speak, type SpeechLanguage } from "@/lib/speech";
+import { SpeakGlyph, SpokenText, useSpeakToggle } from "@/components/speech/Spoken";
+import type { SpeechLanguage } from "@/lib/speech";
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
@@ -160,7 +161,6 @@ export default function MenuItemInsightSheet({
   const item = useRetainedWhileClosing(selectedItem);
 
 
-  const [speaking, setSpeaking] = useState<SpeechLanguage | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [actionError, setActionError] = useState("");
 
@@ -244,17 +244,10 @@ export default function MenuItemInsightSheet({
     item,
     targetLanguage,
   );
-
-  function handleListen(text: string, speech: SpeechLanguage) {
-    if (!text || speaking) return;
-
-    setSpeaking(speech);
-
-    speak(text, speech, {
-      onEnd: () => setSpeaking(null),
-      onError: () => setSpeaking(null),
-    });
-  }
+  /* The language the second line is in, so it lights when its key plays. */
+  const secondaryCode = LANGUAGE_CODES.find(
+    (code) => code !== targetLanguage && item.names[code] === secondary,
+  );
 
   async function handleSave() {
     // Captured before the first await: `item` is a prop, and TypeScript
@@ -400,7 +393,13 @@ export default function MenuItemInsightSheet({
       <BottomSheet
         open={Boolean(selectedItem)}
         onClose={onClose}
-        title={primary}
+        title={
+          item.names[targetLanguage] ? (
+            <SpokenText text={primary} lang={getLanguage(targetLanguage).speechTag} />
+          ) : (
+            primary
+          )
+        }
         description={primaryDescription || undefined}
         titleAction={<VocabularyCopyButton text={primary} />}
       >
@@ -411,7 +410,11 @@ export default function MenuItemInsightSheet({
           */}
           {secondary ? (
             <p className="px-1 text-[1rem] font-semibold tracking-[-0.02em] text-ink-strong">
-              {secondary}
+              {secondaryCode ? (
+                <SpokenText text={secondary} lang={getLanguage(secondaryCode).speechTag} />
+              ) : (
+                secondary
+              )}
             </p>
           ) : null}
 
@@ -449,21 +452,13 @@ export default function MenuItemInsightSheet({
               const tag = language.speechTag;
 
               return (
-                <button
+                <DishSpeakKey
                   key={code}
-                  type="button"
-                  onClick={() => handleListen(item.names[code] ?? "", tag)}
-                  disabled={speaking !== null}
-                  aria-label={`${copy.listen} ${language.endonym}`}
-                  className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
-                >
-                  {speaking === tag ? (
-                    <LoaderCircle size={16} className="animate-spin" />
-                  ) : (
-                    <Volume2 size={16} strokeWidth={1.9} />
-                  )}
-                  {language.endonym}
-                </button>
+                  text={item.names[code] ?? ""}
+                  lang={tag}
+                  label={`${copy.listen} ${language.endonym}`}
+                  name={language.endonym}
+                />
               );
             })}
           </div>
@@ -590,5 +585,25 @@ export default function MenuItemInsightSheet({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * One language's key for a dish: ▶ and the language's name, ■ while it
+ * plays, and the name lit as it is said (Chi, 2026-11-14).
+ */
+function DishSpeakKey({ text, lang, label, name }: { text: string; lang: SpeechLanguage; label: string; name: string }) {
+  const { playing, toggle } = useSpeakToggle({ text, lang });
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={label}
+      aria-pressed={playing}
+      className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
+    >
+      <SpeakGlyph playing={playing} size={14} />
+      {name}
+    </button>
   );
 }

@@ -3,13 +3,13 @@
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage } from "@/lib/languages";
-import { Volume2 } from "lucide-react";
 
 import { formatMessageTime } from "@/lib/messages/format";
 import type { SharedNewsCard as SharedNewsCardData } from "@/lib/messages/newsCard";
 import usePhonetics from "@/hooks/usePhonetics";
 import useLocalPhonetics from "@/hooks/useLocalPhonetics";
-import { speak, type SpeechLanguage } from "@/lib/speech";
+import type { SpeechLanguage } from "@/lib/speech";
+import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
 
 /*
  * A Daily News card someone sent into a conversation.
@@ -26,6 +26,7 @@ type NewsCardMessageProps = {
   createdAt: string;
 };
 
+/** ▶, ■ while it plays; its text lights as it is said (Chi, 2026-11-14). */
 function SpeakerButton({
   text,
   language,
@@ -38,10 +39,11 @@ function SpeakerButton({
   size?: "sm" | "md";
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => speak(text, language)}
-      aria-label={label}
+    <SpeakKey
+      text={text}
+      lang={language}
+      label={label}
+      iconSize={size === "sm" ? 9 : 11}
       className={`flex shrink-0 items-center justify-center rounded-full border ${
         size === "sm" ? "h-6 w-6" : "h-7 w-7"
       }`}
@@ -50,9 +52,7 @@ function SpeakerButton({
         borderColor: "var(--msg-line)",
         color: "var(--msg-ink-soft)",
       }}
-    >
-      <Volume2 size={size === "sm" ? 11 : 13} strokeWidth={1.8} />
-    </button>
+    />
   );
 }
 
@@ -117,7 +117,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
 
       <div className="mt-1.5 flex items-start justify-between gap-2">
         <p className="min-w-0 flex-1 text-[1rem] font-bold leading-[1.3]">
-          {(card.titles[primaryLanguage] ?? "")}
+          <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} />
         </p>
         <SpeakerButton
           text={(card.titles[primaryLanguage] ?? "")}
@@ -132,7 +132,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
             className="text-[0.875rem] font-medium leading-[1.5]"
             style={{ color: "var(--msg-ink-soft)" }}
           >
-            {(card.titles[secondaryLanguage] ?? "")}
+            <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} />
           </p>
           {(titlePronunciation.pinyin || titlePronunciation.zhuyin) && (
             <p
@@ -158,7 +158,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
       >
         <div className="flex items-start justify-between gap-2">
           <p className="min-w-0 flex-1 text-xs leading-5">
-            {(card.summaries[primaryLanguage] ?? "")}
+            <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} />
           </p>
           <SpeakerButton
             text={(card.summaries[primaryLanguage] ?? "")}
@@ -173,7 +173,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
               className="text-xs leading-5"
               style={{ color: "var(--msg-ink-soft)" }}
             >
-              {(card.summaries[secondaryLanguage] ?? "")}
+              <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} />
             </p>
             {(summaryPronunciation.pinyin || summaryPronunciation.zhuyin) && (
               <p
@@ -233,7 +233,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="min-w-0 truncate text-xs font-semibold">
-                      {(item.texts[primaryLanguage] ?? "")}
+                      <SpokenText text={item.texts[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} />
                     </p>
                     <SpeakerButton
                       text={(item.texts[primaryLanguage] ?? "")}
@@ -248,7 +248,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
                         className="truncate text-xs"
                         style={{ color: "var(--msg-ink-soft)" }}
                       >
-                        {(item.texts[secondaryLanguage] ?? "")}
+                        <SpokenText text={item.texts[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} />
                       </p>
                       {/*
                         IPA belongs here too, and only here.

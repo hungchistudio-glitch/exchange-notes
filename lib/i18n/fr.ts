@@ -423,6 +423,9 @@ const french: TranslationDictionary = {
     clearField: "Effacer",
     showFullText: "Afficher le texte complet",
     showLess: "Réduire",
+    play: "Lire",
+    stop: "Arrêter",
+    wordByWord: "Mot à mot",
   },
 
   friendPicker: {
@@ -664,9 +667,6 @@ const french: TranslationDictionary = {
     openWord: "Ouvrir",
     reviewWord: "Réviser",
     listen: "Écouter",
-    play: "Lire",
-    stop: "Arrêter",
-    wordByWord: "Mot à mot",
     lookingUp: "Je cherche « {term} »…",
     stillLooking: "Je cherche encore, c'est presque prêt.",
     takingLong: "Celui-ci prend plus de temps que d'habitude. Je continue, rien n'a planté.",

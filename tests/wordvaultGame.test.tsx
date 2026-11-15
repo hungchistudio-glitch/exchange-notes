@@ -15,7 +15,8 @@ import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
 
 const reader = vi.hoisted(() => ({ language: "english" as "english" | "traditional-chinese" }));
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => reader.language }));
-vi.mock("@/lib/speech", () => ({ speak: vi.fn(), speechSupported: () => true, stopSpeech: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: vi.fn(), speechSupported: () => true, stopSpeech: vi.fn() }));
 vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => undefined }));
 /* The studios stand in: Yumi lands, or the line comes to rest, as soon as
    it can, unless a test holds it. */

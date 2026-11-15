@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { getLanguage, type LanguageCode } from "@/lib/languages";
-import { isAppleTouchDevice, speak, speechSupported, stopSpeech } from "@/lib/speech";
+import { isAppleTouchDevice, speechSupported } from "@/lib/speech";
+import { playSpoken, stopSpoken } from "@/lib/spokenWords";
 
 /* =========================================================
    The hello card's two speakers
@@ -59,7 +60,7 @@ export default function useHelloSpeech(): HelloSpeech {
 
   const stop = useCallback(() => {
     token.current += 1;
-    stopSpeech();
+    stopSpoken();
     setState(null);
   }, []);
 
@@ -74,10 +75,15 @@ export default function useHelloSpeech(): HelloSpeech {
     };
     setState({ side, phase: "loading" });
     if (appleTouch) setSilentHint(true);
-    speak(trimmed, getLanguage(language).speechTag, {
+    /* Through the app's speech state, so the word lights as it is said (Chi,
+       2026-11-14). */
+    playSpoken({
+      text: trimmed,
+      lang: getLanguage(language).speechTag,
       onStart: () => own("playing"),
       onEnd: () => own(null),
       onError: () => own("error"),
+      onCancel: () => own(null),
     });
   }, [appleTouch]);
 

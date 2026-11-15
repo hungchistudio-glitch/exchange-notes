@@ -12,7 +12,8 @@ import english from "@/lib/i18n/en";
 vi.mock("@/hooks/i18n/useTranslation", () => ({ default: () => ({ language: "english", t: english }) }));
 vi.mock("@/hooks/useDisplayLanguages", () => ({ default: () => ({ learningLanguage: "it", supportLanguage: "zh-TW" }) }));
 vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => null }));
-vi.mock("@/lib/speech", () => ({ speak: vi.fn(), stopSpeech: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: vi.fn(), stopSpeech: vi.fn() }));
 
 beforeEach(() => { vi.mocked(speak).mockClear(); vi.mocked(stopSpeech).mockClear(); });
 

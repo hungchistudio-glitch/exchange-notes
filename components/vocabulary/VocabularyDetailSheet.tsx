@@ -11,7 +11,6 @@ import {
   Send,
   Share2,
   Trash2,
-  Volume2,
   X,
 } from "lucide-react";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
@@ -28,7 +27,7 @@ import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { vocabularyImageUrl } from "@/lib/media/imageUrl";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { speak } from "@/lib/speech";
+import { SpeakKey, SpokenText, WordByWordSwitch } from "@/components/speech/Spoken";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
@@ -72,18 +71,17 @@ function SpeechRow({
             size === "md" ? "text-[0.9375rem] font-medium" : "text-sm"
           } text-black`}
         >
-          {text}
+          <SpokenText text={text} lang={lang} tapToStart />
         </span>
       </span>
 
-      <button
-        type="button"
-        onClick={() => speak(text, lang)}
-        aria-label={listenAriaLabel}
+      <SpeakKey
+        text={text}
+        lang={lang}
+        label={listenAriaLabel}
+        iconSize={13}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
-      >
-        <Volume2 size={16} strokeWidth={1.8} />
-      </button>
+      />
     </div>
   );
 }
@@ -255,9 +253,12 @@ export default function VocabularyDetailSheet({
 
             {(item.example_sentence || item.translated_example) && (
               <div className="mt-3">
-                <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-faint">
-                  {detail.example}
-                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-faint">
+                    {detail.example}
+                  </p>
+                  <WordByWordSwitch />
+                </div>
 
                 <div className="mt-2 space-y-2">
                   {[sides.primary, sides.secondary].map((side) =>

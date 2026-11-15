@@ -25,7 +25,8 @@ vi.mock("@/hooks/i18n/useTranslation", () => ({
   }),
 }));
 
-vi.mock("@/lib/speech", () => ({ speak: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: vi.fn() }));
 
 /*
  * A distinct word per case, because the store is module-level on purpose

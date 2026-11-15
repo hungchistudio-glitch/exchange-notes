@@ -20,7 +20,8 @@ import { progress as vaultProgress } from "@/lib/wordvault/presentation";
    ========================================================= */
 
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => "english" }));
-vi.mock("@/lib/speech", () => ({ speak: vi.fn(), speechSupported: () => true, stopSpeech: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: vi.fn(), speechSupported: () => true, stopSpeech: vi.fn() }));
 vi.mock("@/hooks/usePhonetics", () => ({ default: () => () => undefined }));
 /* Hangyumi's page waits for its first line to come to rest: at once here. */
 vi.mock("@/components/hangyumi/HangyumiStage", async () => {

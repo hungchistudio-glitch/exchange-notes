@@ -30,7 +30,8 @@ vi.mock("@/contexts/LearningLanguageContext", () => ({
 
 const spoken = vi.hoisted(() => ({ calls: [] as Array<[string, string]> }));
 
-vi.mock("@/lib/speech", () => ({
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()),
   speak: (text: string, language: string) => {
     spoken.calls.push([text, language]);
   },

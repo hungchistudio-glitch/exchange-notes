@@ -21,7 +21,12 @@ vi.mock("@/hooks/usePhonetics", () => ({
 }));
 vi.mock("@/hooks/useDisplayLanguages", () => ({ default: () => ({ learningLanguage: "en", supportLanguage: "zh-TW" }) }));
 vi.mock("@/hooks/useTranslatedTexts", () => ({ default: () => () => undefined }));
-vi.mock("@/lib/speech", () => ({ speak: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: vi.fn() }));
+
+/** The clamped line a word or sentence is drawn in: the text itself sits in a
+ *  span inside it, which lights each word as it is said. */
+const line = (text: HTMLElement) => text.closest("[data-clamp]") ?? text;
 
 const SENTENCE = "To achieve even growth, you either need to limit the fast growing trees or speed up the slower growing ones";
 const GLOSS = "要達到均衡的生長，你要嘛限制生長快速的樹木，要嘛加速生長較慢的樹木";
@@ -65,13 +70,13 @@ describe("a long sentence on a card", () => {
   it("offers no key when nothing is cut", () => {
     renderCard("library", "圖書館");
     expect(screen.queryByRole("button", { name: "Show full text" })).toBeNull();
-    expect(screen.getByText("library")).toHaveClass("text-xl", "line-clamp-3");
+    expect(line(screen.getByText("library"))).toHaveClass("text-xl", "line-clamp-3");
   });
 
   it("cuts to three lines and one per reading, then opens and closes the whole card", () => {
     cutEverything();
     renderCard(SENTENCE, GLOSS);
-    const sentence = screen.getByText(SENTENCE);
+    const sentence = line(screen.getByText(SENTENCE));
     const reading = screen.getByText(/^\/tu əˈtʃiv/);
     // A sentence is set smaller than a word.
     expect(sentence).toHaveClass("text-[1.0625rem]", "line-clamp-3");
@@ -83,12 +88,12 @@ describe("a long sentence on a card", () => {
     fireEvent.click(key);
     expect(key).toHaveAttribute("aria-expanded", "true");
     expect(key).toHaveTextContent("Show less");
-    expect(screen.getByText(SENTENCE)).not.toHaveClass("line-clamp-3");
-    expect(screen.getByText(GLOSS)).not.toHaveClass("line-clamp-3");
+    expect(line(screen.getByText(SENTENCE))).not.toHaveClass("line-clamp-3");
+    expect(line(screen.getByText(GLOSS))).not.toHaveClass("line-clamp-3");
     expect(screen.getByText(/^\/tu əˈtʃiv/)).not.toHaveClass("truncate");
 
     fireEvent.click(key);
     expect(key).toHaveAttribute("aria-expanded", "false");
-    expect(screen.getByText(SENTENCE)).toHaveClass("line-clamp-3");
+    expect(line(screen.getByText(SENTENCE))).toHaveClass("line-clamp-3");
   });
 });

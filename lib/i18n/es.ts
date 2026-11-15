@@ -420,6 +420,9 @@ const spanish: TranslationDictionary = {
     clearField: "Borrar",
     showFullText: "Ver texto completo",
     showLess: "Ver menos",
+    play: "Reproducir",
+    stop: "Detener",
+    wordByWord: "Palabra a palabra",
   },
 
   friendPicker: {
@@ -669,9 +672,6 @@ const spanish: TranslationDictionary = {
     openWord: "Abrir",
     reviewWord: "Repasar",
     listen: "Escuchar",
-    play: "Reproducir",
-    stop: "Detener",
-    wordByWord: "Palabra a palabra",
     lookingUp: "Estoy buscando «{term}»…",
     stillLooking: "Sigo buscando, ya casi está.",
     takingLong: "Esta tarda más de lo normal. Sigo en ello; no ha fallado nada.",

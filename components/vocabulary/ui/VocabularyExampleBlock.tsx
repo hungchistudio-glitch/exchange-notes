@@ -4,6 +4,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { insertValues } from "@/lib/utils";
 import VocabularySpeechButton from "./VocabularySpeechButton";
+import { SpokenText, WordByWordSwitch } from "@/components/speech/Spoken";
 
 type ExampleEntry = {
   text?: string | null;
@@ -49,7 +50,7 @@ export default function VocabularyExampleBlock({
             hero ? "text-neutral-700" : "text-ink-soft"
           }`}
         >
-          {text}
+          <SpokenText text={text} lang={getLanguage(entry.language).speechTag} tapToStart />
         </p>
 
         <VocabularySpeechButton
@@ -70,6 +71,10 @@ export default function VocabularyExampleBlock({
     <section
       className={`mt-6 overflow-hidden rounded-[24px] bg-surface ${className}`}
     >
+      {/* The reader's one switch, beside every block of sentences (Chi, 2026-11-14). */}
+      <div className="flex justify-end px-5 pt-4">
+        <WordByWordSwitch />
+      </div>
       {visibleBlocks.map((block, index) => (
         <div
           key={index}
