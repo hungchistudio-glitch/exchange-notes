@@ -2743,6 +2743,16 @@ export type TranslationDictionary = {
       on: string;
       off: string;
     };
+    /**
+     * Shown only to the app's owner, when the Guardian refuses the news's key
+     * and the news reads its public feeds instead (2026-11-15).
+     */
+    newsSource: {
+      rowTitle: string;
+      refused: string;
+      missing: string;
+      fix: string;
+    };
 
     fontSize: {
       rowTitle: string;

@@ -2773,6 +2773,12 @@ const traditionalChinese: TranslationDictionary = {
       on: "開",
       off: "關",
     },
+    newsSource: {
+      rowTitle: "Guardian 金鑰失效",
+      refused: "Guardian 拒絕了新聞用的金鑰，新聞目前改抓它的公開 RSS，摘錄比較短。申請一把新的免費金鑰，貼到 Vercel 的 GUARDIAN_API_KEY。",
+      missing: "還沒設定 Guardian 金鑰，新聞目前改抓它的公開 RSS，摘錄比較短。申請一把免費金鑰，貼到 Vercel 的 GUARDIAN_API_KEY。",
+      fix: "申請金鑰",
+    },
 
     fontSize: {
       rowTitle: "字體大小",

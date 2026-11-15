@@ -2601,6 +2601,12 @@ const italian: TranslationDictionary = {
       on: "Attivi",
       off: "Disattivati",
     },
+    newsSource: {
+      rowTitle: "La chiave del Guardian non funziona",
+      refused: "Il Guardian ha rifiutato la chiave delle notizie: ora arrivano dai suoi feed pubblici, con estratti più brevi. Chiedi una nuova chiave gratuita e impostala come GUARDIAN_API_KEY su Vercel.",
+      missing: "Nessuna chiave del Guardian impostata: le notizie arrivano dai suoi feed pubblici, con estratti più brevi. Chiedi una chiave gratuita e impostala come GUARDIAN_API_KEY su Vercel.",
+      fix: "Ottieni una chiave",
+    },
 
     fontSize: {
       rowTitle: "Dimensione del testo",

@@ -50,14 +50,25 @@ export function parseRssArticles(xml: string, source: RssSource, category: strin
     const categories = list(item.category).flatMap(value => plain(value).toLowerCase().split(/\s*\/\s*/));
     if (source.excludeCategories?.some(label => categories.includes(label.toLowerCase()))) return [];
     if (source.includeCategories && !source.includeCategories.some(label => categories.includes(label.toLowerCase()))) return [];
+    if (url && source.excludePaths?.some(path => new URL(url).pathname.startsWith(path))) return [];
     if (!url || used.has(url) || !title || !Number.isFinite(published) || published > now + 3_600_000 || published < now - MAX_AGE_MS) return [];
     // Ignore recruiting, shopping roundups and paid placements in mixed feeds.
     if (/\b(sponsored|is hiring|job listings?|shop (?:now|the)|best .{0,35} to buy)\b/i.test(title)) return [];
     const content = plain(item["content:encoded"]);
     const description = plain(item.description);
-    const excerpt = (content.length > description.length ? content : description).slice(0, 1600);
+    const excerpt = (content.length > description.length ? content : description)
+      // The feed's own "Continue reading..." link is not part of the story.
+      .replace(/\s*Continue reading(?:\.\.\.|…)\s*$/i, "")
+      .slice(0, 1600);
     if (excerpt.length < (source.minimumExcerptLength ?? 100)) return [];
-    const media = [...list(item["media:content"]), ...list(item["media:thumbnail"]), ...list(item.enclosure)];
+    /* The widest of the sizes a feed offers (the Guardian lists a 140px one
+       first), so a card is not drawn from a thumbnail. Unsized ones keep
+       their order. */
+    const width = (node: unknown) => Number(object(node)["@_width"]) || 0;
+    const media = [...list(item["media:content"]), ...list(item["media:thumbnail"]), ...list(item.enclosure)]
+      .map((node, index) => ({ node, index }))
+      .sort((a, b) => width(b.node) - width(a.node) || a.index - b.index)
+      .map(({ node }) => node);
     const inlineImage = text(item["content:encoded"]).match(/<img\b[^>]*\bsrc=["']([^"']+)/i)?.[1];
     const imageUrl = [...media.map(node => object(node)["@_url"]), inlineImage]
       .map(value => trustedUrl(value, source.imageHosts)).find(Boolean) ?? null;

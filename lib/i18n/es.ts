@@ -2811,6 +2811,12 @@ const spanish: TranslationDictionary = {
       on: "Activados",
       off: "Desactivados",
     },
+    newsSource: {
+      rowTitle: "La clave de The Guardian no funciona",
+      refused: "The Guardian rechazó la clave de las noticias, así que hoy llegan de sus feeds públicos, con extractos más cortos. Pide una clave gratuita nueva y ponla como GUARDIAN_API_KEY en Vercel.",
+      missing: "No hay clave de The Guardian, así que las noticias llegan de sus feeds públicos, con extractos más cortos. Pide una clave gratuita y ponla como GUARDIAN_API_KEY en Vercel.",
+      fix: "Pedir clave",
+    },
 
     fontSize: {
       rowTitle: "Tamaño del texto",
