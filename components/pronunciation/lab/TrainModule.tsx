@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import AudioButton from "@/components/pronunciation/lab/AudioButton";
+import { SpokenMark, SpokenText } from "@/components/speech/Spoken";
+import { getLanguage } from "@/lib/languages";
 import LabScreen from "@/components/pronunciation/lab/LabScreen";
 import MinimalPairDrill, {
   buildDrillQuestions,
@@ -345,7 +347,13 @@ function SoundStep({ item, pack, playback, onCoachStateChange }: StepProps) {
   return (
     <section className="rounded-[26px] border border-black/[0.06] bg-white p-6 text-center">
       <p className="text-[2.75rem] font-bold leading-none tracking-[-0.02em]">
-        {unit.symbol}
+        {source.kind === "unavailable" ? (
+          unit.symbol
+        ) : (
+          <SpokenMark text={source.text} lang={getLanguage(unit.language).speechTag}>
+            {unit.symbol}
+          </SpokenMark>
+        )}
       </p>
 
       {unit.phoneticRepresentation ? (
@@ -505,7 +513,13 @@ function RhythmStep({
           <li key={phrase.id}>
             <div className="flex items-center justify-between gap-3">
               <p className="font-cjk min-w-0 truncate text-[0.9375rem] font-semibold">
-                {phrase.text}
+                {phrase.speechText && phrase.speechText !== phrase.text ? (
+                  <SpokenMark text={phrase.speechText} lang={getLanguage(lesson.language).speechTag}>
+                    {phrase.text}
+                  </SpokenMark>
+                ) : (
+                  <SpokenText text={phrase.text} lang={getLanguage(lesson.language).speechTag} tappable={false} />
+                )}
               </p>
 
               <AudioButton

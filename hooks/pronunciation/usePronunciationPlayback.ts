@@ -48,6 +48,15 @@ export type PlaybackControls = {
  */
 export default function usePronunciationPlayback(): PlaybackControls {
   const [playback, setPlayback] = useState<PlaybackState>(null);
+  /* Read by play() to tell a second tap on a sounding key from a first:
+     ■ stops it (Chi, 2026-11-14: every speaker ▶, ■ while it plays). */
+  const playbackRef = useRef<PlaybackState>(null);
+  useEffect(() => {
+    playbackRef.current = playback;
+  }, [playback]);
+  const sounding = (key: string) =>
+    playbackRef.current?.key === key
+    && (playbackRef.current.phase === "playing" || playbackRef.current.phase === "loading");
   const tokenRef = useRef(0);
   const handleRef = useRef<PlaybackHandle | null>(null);
   const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -118,6 +127,10 @@ export default function usePronunciationPlayback(): PlaybackControls {
 
   const play = useCallback<PlaybackControls["play"]>(
     (key, source, speed = "native") => {
+      if (sounding(key)) {
+        stop();
+        return;
+      }
       cancel();
       const token = tokenRef.current;
       setPlayback({ key, phase: "loading" });
@@ -137,13 +150,23 @@ export default function usePronunciationPlayback(): PlaybackControls {
           if (tokenRef.current === token) told(true);
           finish(token, key, "error");
         },
+        // Another key in the app took over: back to rest, not "failed".
+        onCancel: () => {
+          if (tokenRef.current !== token) return;
+          told(true);
+          setPlayback(null);
+        },
       });
     },
-    [cancel, finish, tell, told],
+    [cancel, finish, stop, tell, told],
   );
 
   const playSteps = useCallback<PlaybackControls["playSteps"]>(
     (key, steps, options) => {
+      if (sounding(key)) {
+        stop();
+        return;
+      }
       cancel();
       const token = tokenRef.current;
       setPlayback({ key, phase: "loading" });
@@ -166,9 +189,14 @@ export default function usePronunciationPlayback(): PlaybackControls {
           failed = true;
         },
         onEnd: () => finish(token, key, failed ? "error" : "done"),
+        onCancel: () => {
+          if (tokenRef.current !== token) return;
+          told(true);
+          setPlayback(null);
+        },
       });
     },
-    [cancel, finish, tell, told],
+    [cancel, finish, stop, tell, told],
   );
 
   const phaseFor = useCallback(

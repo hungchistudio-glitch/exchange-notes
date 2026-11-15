@@ -8,7 +8,7 @@ import { POST } from "@/app/api/pocket-lookup-review/route";
 import { reviewRouteOnly } from "@/lib/reviewRoutes";
 import type { LanguageCode } from "@/lib/languages";
 
-vi.mock("@/lib/speech",()=>({speak:vi.fn()}));
+vi.mock("@/lib/speech",async(original)=>({...(await original<typeof import("@/lib/speech")>()),speak:vi.fn()}));
 vi.mock("@/lib/reviewRoutes",()=>({reviewRouteOnly:vi.fn()}));
 vi.mock("@/hooks/useCosmicMode",()=>({default:()=>true}));
 vi.mock("@/hooks/useDisplayLanguages",()=>({default:()=>({pair:["fr","zh-TW"]})}));
@@ -28,7 +28,7 @@ describe("Pocket lookup controls",()=>{
   fireEvent.submit(screen.getByRole("textbox").closest("form")!);expect(p.onSubmit).toHaveBeenCalledOnce();
   const speakers=screen.getAllByRole("button",{name:/^Play pronunciation:/});
   expect(speakers).toHaveLength(2);fireEvent.click(speakers[0]);fireEvent.click(speakers[1]);
-  expect(speak).toHaveBeenNthCalledWith(1,"merci","fr-FR");expect(speak).toHaveBeenNthCalledWith(2,"謝謝","zh-TW");
+  expect(speak).toHaveBeenNthCalledWith(1,"merci","fr-FR",expect.any(Object));expect(speak).toHaveBeenNthCalledWith(2,"謝謝","zh-TW",expect.any(Object));
   expect(screen.getByRole("button",{name:/Saved/})).toBeDisabled();
  });
  it("does not render an old card while another lookup is pending",()=>{

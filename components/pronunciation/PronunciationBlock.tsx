@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
-import { speak } from "@/lib/speech";
+import { SpokenReading, useSpeakToggle } from "@/components/speech/Spoken";
+import type { SpeechLanguage } from "@/lib/speech";
 import usePhonetics from "@/hooks/usePhonetics";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { insertValues } from "@/lib/utils";
@@ -95,38 +96,62 @@ export default function PronunciationBlock({
       className={`space-y-1.5 break-words font-sans text-[0.6875rem] font-normal leading-[1.5] tracking-[-0.01em] text-ink-soft ${className}`}
     >
       {groups.map((group) => (
-        <button
+        <ReadingKey
           key={`${group.language}-${group.text}`}
-          type="button"
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            speak(group.text, group.speechTag);
-          }}
-          aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+          group={group}
+          label={insertValues(t.vocabulary.detail.listenAriaLabel, {
             text: group.text,
           })}
-          lang={group.language}
-          className="block min-w-0 max-w-full rounded-md text-left transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30 active:text-black"
-        >
-          {group.readings.map((reading) => (
-            <span
-              key={reading.script}
-              data-script={reading.script}
-              /*
-               * Pinyin is Mandarin written in Latin letters, and saying so
-               * is what stops a browser reaching for a CJK face to draw
-               * "tú shū guǎn" and a screen reader from spelling it out
-               * character by character in Chinese.
-               */
-              lang={reading.script === "pinyin" ? "zh-Latn" : group.language}
-              className={`block break-words ${reading.script === "zhuyin" ? "font-zhuyin" : "font-phonetic"}`}
-            >
-              {reading.label}
-            </span>
-          ))}
-        </button>
+        />
       ))}
     </div>
+  );
+}
+
+type ReadingGroup = {
+  readings: { script: "zhuyin" | "pinyin" | "ipa"; label: string }[];
+  text: string;
+  speechTag: SpeechLanguage;
+  language: LanguageCode;
+};
+
+/**
+ * One language's readings, which are also its play key. While it plays, the
+ * reading is lit with the word: a Chinese word's zhuyin and pinyin a
+ * syllable at a time, as each character is said (Chi, 2026-11-14).
+ */
+function ReadingKey({ group, label }: { group: ReadingGroup; label: string }) {
+  const { playing, toggle } = useSpeakToggle({ text: group.text, lang: group.speechTag });
+
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggle();
+      }}
+      aria-label={label}
+      aria-pressed={playing}
+      lang={group.language}
+      className="block min-w-0 max-w-full rounded-md text-left transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30 active:text-black"
+    >
+      {group.readings.map((reading) => (
+        <span
+          key={reading.script}
+          data-script={reading.script}
+          /*
+           * Pinyin is Mandarin written in Latin letters, and saying so
+           * is what stops a browser reaching for a CJK face to draw
+           * "tú shū guǎn" and a screen reader from spelling it out
+           * character by character in Chinese.
+           */
+          lang={reading.script === "pinyin" ? "zh-Latn" : group.language}
+          className={`block break-words ${reading.script === "zhuyin" ? "font-zhuyin" : "font-phonetic"}`}
+        >
+          <SpokenReading reading={reading.label} text={group.text} lang={group.speechTag} />
+        </span>
+      ))}
+    </button>
   );
 }

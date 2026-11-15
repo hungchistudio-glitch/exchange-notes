@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, LoaderCircle, Square, Volume2, X } from "lucide-react";
+import { ArrowUpRight, LoaderCircle, Play, Square, X } from "lucide-react";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -11,7 +11,8 @@ import usePhonetics from "@/hooks/usePhonetics";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import { getLanguage } from "@/lib/languages";
 import { floatingCopy } from "@/lib/home/floatingCopy";
-import { speak, stopSpeech } from "@/lib/speech";
+import { SpokenText } from "@/components/speech/Spoken";
+import { playSpoken, stopSpoken } from "@/lib/spokenWords";
 import type { VocabularyItem } from "@/lib/types/app";
 import styles from "./FloatingCookies.module.css";
 
@@ -35,7 +36,7 @@ export default function FloatingWordCard({ item, onClose, onFeed, canFeed }: {
   function cancel() {
     sequence.current++;
     clearTimeout(watchdog.current);
-    if (ownedAudio.current) stopSpeech();
+    if (ownedAudio.current) stopSpoken();
     ownedAudio.current = false;
     setAudio(null);
   }
@@ -43,7 +44,7 @@ export default function FloatingWordCard({ item, onClose, onFeed, canFeed }: {
     const stop = () => {
       sequence.current++;
       clearTimeout(watchdog.current);
-      if (ownedAudio.current) stopSpeech();
+      if (ownedAudio.current) stopSpoken();
       ownedAudio.current = false;
       setAudio(null);
     };
@@ -56,7 +57,7 @@ export default function FloatingWordCard({ item, onClose, onFeed, canFeed }: {
     if (motion.visible || !ownedAudio.current) return;
     sequence.current++;
     clearTimeout(watchdog.current);
-    stopSpeech();
+    stopSpoken();
     ownedAudio.current = false;
     setAudio(null);
   }, [motion.visible]);
@@ -76,7 +77,11 @@ export default function FloatingWordCard({ item, onClose, onFeed, canFeed }: {
       setError(failed);
     };
     // The first speak remains in the user's tap task for iOS Safari.
-    speak(entries[index].text, getLanguage(entries[index].language).speechTag, {
+    /* Through the app's speech state, so the word lights as it is said (Chi,
+       2026-11-14): a Chinese word a character at a time. */
+    playSpoken({
+      text: entries[index].text,
+      lang: getLanguage(entries[index].language).speechTag,
       onStart: () => {
         if (sequence.current !== token) return;
         clearTimeout(watchdog.current);
@@ -84,10 +89,12 @@ export default function FloatingWordCard({ item, onClose, onFeed, canFeed }: {
       },
       onEnd: () => finish(),
       onError: () => finish(true),
+      // Another key took over: back to rest.
+      onCancel: () => finish(),
     });
     watchdog.current = setTimeout(() => {
       if (sequence.current !== token) return;
-      stopSpeech();
+      stopSpoken();
       finish(true);
     }, 12000);
   }
@@ -108,12 +115,14 @@ export default function FloatingWordCard({ item, onClose, onFeed, canFeed }: {
             <div className={styles.wordRow}>
               <div lang={side.language}>
                 <span className={styles.language}>{getLanguage(side.language).name[language]}</span>
-                {index === 0 ? <h2 id={titleId}>{side.text}</h2> : <p className={styles.translation}>{side.text}</p>}
+                {index === 0
+                  ? <h2 id={titleId}><SpokenText text={side.text} lang={getLanguage(side.language).speechTag} /></h2>
+                  : <p className={styles.translation}><SpokenText text={side.text} lang={getLanguage(side.language).speechTag} /></p>}
               </div>
               <button type="button" className={styles.speaker} onClick={() => play(index)}
                 aria-label={`${audio?.index === index ? copy.stop : copy.listen}: ${side.text}`}
                 aria-pressed={audio?.index === index}>
-                {audio?.index === index ? (audio.started ? <Square size={17} fill="currentColor" /> : <LoaderCircle size={20} className={styles.spinner} />) : <Volume2 size={21} />}
+                {audio?.index === index ? (audio.started ? <Square size={17} fill="currentColor" /> : <LoaderCircle size={20} className={styles.spinner} />) : <Play size={19} fill="currentColor" strokeWidth={0} className="translate-x-px" />}
               </button>
             </div>
             {readings && <p className={styles.readings}>{readings}</p>}

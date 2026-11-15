@@ -15,10 +15,10 @@ import {
   Send,
   Share2,
   Sparkles,
-  Volume2,
 } from "lucide-react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import { SpeakKey, SpokenText, WordByWordSwitch } from "@/components/speech/Spoken";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { plural } from "@/lib/i18n/format";
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -32,14 +32,10 @@ type StoryDetailSheetProps = {
   copy: TranslationDictionary["discover"];
   isSaved: boolean;
   isSaving: boolean;
-  speakingKey: string | null;
   categoryText: string;
   formattedTime: string;
-  onSpeak: (
-    key: string,
-    text: string,
-    language: SpeechLanguage
-  ) => void;
+  /** The news's own pace (its Slow/Natural/Fast), per language. */
+  speechRate: (language: SpeechLanguage) => number;
   onSave: () => void;
   onSend: () => void;
   onOpenVocabulary: () => void;
@@ -55,10 +51,9 @@ export default function StoryDetailSheet({
   copy,
   isSaved,
   isSaving,
-  speakingKey,
   categoryText,
   formattedTime,
-  onSpeak,
+  speechRate,
   onSave,
   onSend,
   onOpenVocabulary,
@@ -86,10 +81,10 @@ export default function StoryDetailSheet({
    */
   if (!card) return null;
 
-  const titleEnKey = `detail-title-en-${card.id}`;
-  const titleZhKey = `detail-title-zh-${card.id}`;
-  const summaryEnKey = `detail-summary-en-${card.id}`;
-  const summaryZhKey = `detail-summary-zh-${card.id}`;
+  const primarySpeech = getLanguage(primaryLanguage).speechTag;
+  const secondarySpeech = getLanguage(secondaryLanguage).speechTag;
+  const titleKey = "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90";
+  const summaryKey = "hit-44 relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90";
 
   return (
     <BottomSheet
@@ -217,96 +212,77 @@ export default function StoryDetailSheet({
         </div>
       }
     >
+      {/*
+        Each line lights the word being said, and a tapped word reads on
+        from there (Chi, 2026-11-14). The story's full play on the featured
+        card lights these same lines, and follows them down the sheet.
+      */}
       <div className="space-y-5">
         <div>
           <div className="flex items-start gap-2">
             <h3 className="min-w-0 flex-1 text-[1.3125rem] font-bold leading-[1.25] tracking-[-0.02em] text-black">
-              {(card.titles[primaryLanguage] ?? "")}
+              <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={primarySpeech} tapToStart />
             </h3>
 
-            <button
-              type="button"
-              onClick={() =>
-                onSpeak(titleEnKey, (card.titles[primaryLanguage] ?? ""), getLanguage(primaryLanguage).speechTag)
-              }
-              aria-label={copy.readEnglishAriaLabel}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
-            >
-              <Volume2
-                size={15}
-                strokeWidth={1.8}
-                className={speakingKey === titleEnKey ? "animate-pulse" : ""}
-              />
-            </button>
+            <SpeakKey
+              text={card.titles[primaryLanguage] ?? ""}
+              lang={primarySpeech}
+              rate={speechRate}
+              label={copy.readEnglishAriaLabel}
+              iconSize={13}
+              className={titleKey}
+            />
           </div>
 
           <div className="mt-2 flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[0.9375rem] font-medium leading-[1.6] text-ink-soft">
-              {(card.titles[secondaryLanguage] ?? "")}
+              <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={secondarySpeech} tapToStart />
             </p>
 
-            <button
-              type="button"
-              onClick={() =>
-                onSpeak(titleZhKey, (card.titles[secondaryLanguage] ?? ""), getLanguage(secondaryLanguage).speechTag)
-              }
-              aria-label={copy.readChineseAriaLabel}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
-            >
-              <Volume2
-                size={15}
-                strokeWidth={1.8}
-                className={speakingKey === titleZhKey ? "animate-pulse" : ""}
-              />
-            </button>
+            <SpeakKey
+              text={card.titles[secondaryLanguage] ?? ""}
+              lang={secondarySpeech}
+              rate={speechRate}
+              label={copy.readChineseAriaLabel}
+              iconSize={13}
+              className={titleKey}
+            />
           </div>
         </div>
 
         <div className="space-y-2.5">
+          <div className="flex justify-end">
+            <WordByWordSwitch />
+          </div>
+
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[0.9375rem] leading-[1.7] text-ink-strong">
-              {(card.summaries[primaryLanguage] ?? "")}
+              <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={primarySpeech} tapToStart />
             </p>
 
-            <button
-              type="button"
-              onClick={() =>
-                onSpeak(summaryEnKey, (card.summaries[primaryLanguage] ?? ""), getLanguage(primaryLanguage).speechTag)
-              }
-              aria-label={copy.readEnglishAriaLabel}
-              className="hit-44 relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
-            >
-              <Volume2
-                size={14}
-                strokeWidth={1.8}
-                className={
-                  speakingKey === summaryEnKey ? "animate-pulse" : ""
-                }
-              />
-            </button>
+            <SpeakKey
+              text={card.summaries[primaryLanguage] ?? ""}
+              lang={primarySpeech}
+              rate={speechRate}
+              label={copy.readEnglishAriaLabel}
+              iconSize={12}
+              className={summaryKey}
+            />
           </div>
 
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[0.875rem] leading-[1.7] text-ink-soft">
-              {(card.summaries[secondaryLanguage] ?? "")}
+              <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={secondarySpeech} tapToStart />
             </p>
 
-            <button
-              type="button"
-              onClick={() =>
-                onSpeak(summaryZhKey, (card.summaries[secondaryLanguage] ?? ""), getLanguage(secondaryLanguage).speechTag)
-              }
-              aria-label={copy.readChineseAriaLabel}
-              className="hit-44 relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
-            >
-              <Volume2
-                size={14}
-                strokeWidth={1.8}
-                className={
-                  speakingKey === summaryZhKey ? "animate-pulse" : ""
-                }
-              />
-            </button>
+            <SpeakKey
+              text={card.summaries[secondaryLanguage] ?? ""}
+              lang={secondarySpeech}
+              rate={speechRate}
+              label={copy.readChineseAriaLabel}
+              iconSize={12}
+              className={summaryKey}
+            />
           </div>
         </div>
 

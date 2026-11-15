@@ -26,7 +26,8 @@ vi.mock("@/hooks/i18n/useTranslation", () => ({
   }),
 }));
 
-vi.mock("@/lib/speech", () => ({ speak: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: vi.fn() }));
 
 /* ---------- the library fill ---------- */
 

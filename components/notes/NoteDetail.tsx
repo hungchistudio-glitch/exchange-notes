@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Send, Sparkles, Trash2, Volume2 } from "lucide-react";
+import { LoaderCircle, Send, Sparkles, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -19,7 +19,7 @@ import {
   type NoteInterpretation,
 } from "@/lib/notes/clientRepository";
 import { createClient } from "@/lib/supabase/client";
-import { speak } from "@/lib/speech";
+import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
 import { track } from "@/lib/analytics/track";
 
 import NotesShareSheet from "./NotesShareSheet";
@@ -201,9 +201,9 @@ export default function NoteDetail({ noteId }: { noteId: string }) {
         <article className="rounded-[28px] border border-line bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.15em] text-ink-faint">{copy.originalLabel}</p>
-            <button type="button" onClick={() => speak(note.originalText, getLanguage(note.originalLanguage).speechTag)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface" aria-label={copy.originalLabel}><Volume2 size={15} /></button>
+            <SpeakKey text={note.originalText} lang={getLanguage(note.originalLanguage).speechTag} label={copy.originalLabel} iconSize={13} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface" />
           </div>
-          <p className="tactile-serif mt-3 whitespace-pre-wrap break-words text-[1.25rem] font-semibold leading-8 tracking-[-0.02em]">{note.originalText}</p>
+          <p className="tactile-serif mt-3 whitespace-pre-wrap break-words text-[1.25rem] font-semibold leading-8 tracking-[-0.02em]"><SpokenText text={note.originalText} lang={getLanguage(note.originalLanguage).speechTag} tapToStart /></p>
 
           {note.personalMeaning ? <div className="mt-5 rounded-2xl bg-surface p-4"><p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">{copy.personalMeaning}</p><p className="mt-2 text-sm leading-6">{note.personalMeaning}</p></div> : null}
           {note.context ? <div className="mt-3"><p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">{copy.contextLabel}</p><p className="mt-2 text-sm leading-6 text-ink-soft">{note.context}</p></div> : null}

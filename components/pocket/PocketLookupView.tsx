@@ -9,7 +9,6 @@ import {
   Check,
   Mic,
   Search,
-  Volume2,
 } from "lucide-react";
 import { useRef, type ReactNode } from "react";
 
@@ -21,7 +20,7 @@ import {
   type LanguageCode,
 } from "@/lib/languages";
 import type { LexiconEntry } from "@/lib/lexicon/types";
-import { speak } from "@/lib/speech";
+import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
 
 import styles from "./PocketLookup.module.css";
 
@@ -67,14 +66,13 @@ export default function PocketLookupView(props: PocketViewProps) {
 
   function speaker(text: string, code: LanguageCode) {
     return (
-      <button
-        type="button"
+      <SpeakKey
+        text={text}
+        lang={getLanguage(code).speechTag}
         className={styles.icon}
-        aria-label={`${copy.speak}: ${getLanguageName(code, language)}`}
-        onClick={() => speak(text, getLanguage(code).speechTag)}
-      >
-        <Volume2 size={19} />
-      </button>
+        label={`${copy.speak}: ${getLanguageName(code, language)}`}
+        iconSize={16}
+      />
     );
   }
 
@@ -195,14 +193,14 @@ export default function PocketLookupView(props: PocketViewProps) {
             <article className={styles.card} aria-label={copy.result}>
               <p className={styles.label}>{getLanguageName(source, language)}</p>
               <div className={styles.word}>
-                <h2>{entry.term}</h2>
+                <h2><SpokenText text={entry.term} lang={getLanguage(source).speechTag} tapToStart /></h2>
                 {speaker(entry.term, source)}
               </div>
               {entry.termIpa ? <p className={styles.muted}>{entry.termIpa}</p> : null}
               <div className={styles.rule} />
               <p className={styles.label}>{getLanguageName(target, language)}</p>
               <div className={styles.word}>
-                <h3>{entry.translation}</h3>
+                <h3><SpokenText text={entry.translation} lang={getLanguage(target).speechTag} tapToStart /></h3>
                 {speaker(entry.translation, target)}
               </div>
               {entry.termExample ? (

@@ -451,6 +451,11 @@ export type TranslationDictionary = {
     /** A long text cut to a few lines, and the key that shows all of it. */
     showFullText: string;
     showLess: string;
+    /** A speaker key: ▶ before it plays, ■ while it does (Chi, 2026-11-14). */
+    play: string;
+    stop: string;
+    /** The one switch, for the whole app, that says sentences a word at a time. */
+    wordByWord: string;
   };
 
   /** The sheet every "send to a partner" flow opens to pick a friend. */
@@ -688,11 +693,6 @@ export type TranslationDictionary = {
     openWord: string;
     reviewWord: string;
     listen: string;
-    /** The play key's two states: ▶ before, ■ while it plays. */
-    play: string;
-    stop: string;
-    /** The example block's switch: each sentence said one word at a time. */
-    wordByWord: string;
     /**
      * Yumi, right under the field while a lookup runs: at once ({term} is
      * the word asked), after four seconds, and after ten.

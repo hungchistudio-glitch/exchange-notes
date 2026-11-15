@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, HelpCircle, MessageSquare, Plus, Volume2, X } from "lucide-react";
+import { Check, HelpCircle, MessageSquare, Plus, X } from "lucide-react";
 
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import ReplyCoachPanel from "@/components/messages/ReplyCoachPanel";
@@ -11,7 +11,8 @@ import {
   type DetectedPhrase,
   type MessageAnalysis,
 } from "@/lib/messages/decode";
-import { speak, type SpeechLanguage } from "@/lib/speech";
+import type { SpeechLanguage } from "@/lib/speech";
+import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
 
 /*
  * The Decode card.
@@ -145,7 +146,7 @@ export default function YumiDecodeCard({
                   className="text-[1.0625rem] font-semibold underline decoration-dotted underline-offset-4"
                   style={{ textDecorationColor: "var(--msg-accent)" }}
                 >
-                  {phrase.phrase}
+                  <SpokenText text={phrase.phrase} lang={speechLanguage} tapToStart />
                 </span>
                 <span
                   className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
@@ -174,18 +175,18 @@ export default function YumiDecodeCard({
               </p>
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => speak(phrase.phrase, speechLanguage)}
+                <SpeakKey
+                  text={phrase.phrase}
+                  lang={speechLanguage}
+                  label={copy.listen}
+                  iconSize={11}
+                  caption={copy.listen}
                   className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.75rem] font-semibold"
                   style={{
                     borderColor: "var(--msg-line)",
                     color: "var(--msg-ink-soft)",
                   }}
-                >
-                  <Volume2 size={13} strokeWidth={1.9} />
-                  {copy.listen}
-                </button>
+                />
 
                 <button
                   type="button"

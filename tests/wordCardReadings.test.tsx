@@ -7,6 +7,8 @@ import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import english from "@/lib/i18n/en";
 
+import { stopSpoken } from "@/lib/spokenWords";
+
 const state = vi.hoisted(() => ({
   table: {} as Record<string, WordPhonetics>,
   requests: [] as Array<{ text: string; language: string }>,
@@ -24,8 +26,10 @@ vi.mock("@/hooks/useDisplayLanguages", () => ({
   default: () => ({ learningLanguage: "zh-TW", supportLanguage: state.support }),
 }));
 vi.mock("@/hooks/useTranslatedTexts", () => ({ default: () => () => undefined }));
-vi.mock("@/lib/pronunciation/playback", () => ({ speakText: state.speak, stopSpeech: vi.fn() }));
-vi.mock("@/lib/speech", () => ({ speak: state.speak }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()),
+  speak: state.speak,
+}));
 vi.mock("@/lib/vocabulary/repository", () => ({ fetchVocabulary: vi.fn(), getCurrentUser: vi.fn() }));
 
 const chinese = { zhuyin: "ㄊㄨˊ ㄕㄨ ㄍㄨㄢˇ", pinyin: "tú shū guǎn" };
@@ -44,6 +48,9 @@ beforeEach(() => {
   state.table = { "zh-TW:圖書館": chinese, "en:library": { ipa: "/ˈlaɪ.brer.i/" }, "fr:bibliothèque": { ipa: "/bi.bli.jɔ.tɛk/" } };
   state.requests = [];
   state.speak.mockClear();
+  /* The mocked voice never ends, so a word said in one test would still be
+     sounding in the next, and its key would stop it rather than play it. */
+  stopSpoken();
 });
 
 describe("word card readings", () => {
@@ -61,7 +68,7 @@ describe("word card readings", () => {
     ]));
     expect(state.requests).not.toContainEqual({ text: "library", language: "zh-TW" });
     fireEvent.click(within(mandarin).getByText(chinese.pinyin));
-    expect(state.speak).toHaveBeenCalledWith("圖書館", "zh-TW");
+    expect(state.speak).toHaveBeenCalledWith("圖書館", "zh-TW", expect.any(Object));
   });
 
   it("keeps a non-Chinese pair in its own languages", () => {
@@ -82,7 +89,7 @@ describe("word card readings", () => {
     const button = screen.getByRole("button", { name: /: 歡迎$/ });
     expect(within(button).getByText("歡迎")).toBeVisible();
     fireEvent.click(button);
-    expect(state.speak).toHaveBeenCalledWith("歡迎", "zh-TW");
+    expect(state.speak).toHaveBeenCalledWith("歡迎", "zh-TW", expect.any(Object));
 
     state.table["zh-TW:歡迎"] = { zhuyin: "ㄏㄨㄢ ㄧㄥˊ", pinyin: "huān yíng" };
     view.rerender(card(item, "en"));

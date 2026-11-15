@@ -1,13 +1,13 @@
 "use client";
 
-import { ChevronDown, Volume2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useId, useState } from "react";
 
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { readInsight } from "@/lib/lexicon/types";
-import { speak } from "@/lib/speech";
+import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
 
 import type { LexiconTone } from "@/components/lexicon/LexiconResults";
 
@@ -110,26 +110,23 @@ export default function YumiInsight({
                             : "decoration-[var(--accent-amber)]"
                         }`}
                       >
-                        {item.phrase}
+                        <SpokenText text={item.phrase} lang={getLanguage(phraseLanguage).speechTag} tapToStart />
                       </p>
                       <p className="mt-0.5 text-[0.8125rem] leading-6 text-ink-soft">
                         {item.note}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        speak(item.phrase, getLanguage(phraseLanguage).speechTag)
-                      }
-                      aria-label={`${t.lexicon.listen}: ${item.phrase}`}
+                    <SpeakKey
+                      text={item.phrase}
+                      lang={getLanguage(phraseLanguage).speechTag}
+                      label={`${t.lexicon.listen}: ${item.phrase}`}
+                      iconSize={13}
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 ${
                         cosmic
                           ? "border border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
                           : "bg-white text-ink-soft"
                       }`}
-                    >
-                      <Volume2 size={14} strokeWidth={1.8} aria-hidden="true" />
-                    </button>
+                    />
                   </li>
                 ))}
               </ul>

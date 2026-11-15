@@ -115,8 +115,7 @@ function open() {
       open
       onClose={() => {}}
       copy={copy}
-      speakingKey={null}
-      onSpeak={() => {}}
+      speechRate={() => 1}
     />,
   );
 }

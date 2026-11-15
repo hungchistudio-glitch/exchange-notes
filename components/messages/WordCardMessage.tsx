@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, Check, ChevronDown, Send, Volume2 } from "lucide-react";
+import { Bookmark, Check, ChevronDown, Send } from "lucide-react";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
@@ -19,7 +19,8 @@ import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import usePhonetics from "@/hooks/usePhonetics";
 import useTranslatedTexts from "@/hooks/useTranslatedTexts";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
-import { speak, type SpeechLanguage } from "@/lib/speech";
+import type { SpeechLanguage } from "@/lib/speech";
+import { SpeakKey, SpokenReading, SpokenText } from "@/components/speech/Spoken";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { insertValues } from "@/lib/utils";
 
@@ -180,19 +181,18 @@ export default function WordCardMessage({
               color: primary ? "var(--msg-ink)" : "var(--msg-ink-soft)",
             }}
           >
-            {text}
+            <SpokenText text={text} lang={language.speechTag} />
           </p>
-          <button
-            type="button"
-            onClick={() => speak(text, language.speechTag)}
-            aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+          <SpeakKey
+            text={text}
+            lang={language.speechTag}
+            label={insertValues(t.vocabulary.detail.listenAriaLabel, {
               text,
             })}
+            iconSize={13}
             className="hit-44 relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border"
             style={speakerStyle(primary)}
-          >
-            <Volume2 size={15} strokeWidth={1.8} />
-          </button>
+          />
         </div>
         {readings.length ? (
           <p
@@ -207,7 +207,7 @@ export default function WordCardMessage({
                 data-clamp
                 className={`block ${expanded ? "" : "truncate"} ${reading.script === "zhuyin" ? "font-zhuyin" : "font-phonetic"}`}
               >
-                {reading.label}
+                <SpokenReading reading={reading.label} text={text} lang={language.speechTag} />
               </span>
             ))}
           </p>
@@ -356,23 +356,22 @@ export default function WordCardMessage({
             color: primary ? "var(--msg-ink)" : "var(--msg-ink-soft)",
           }}
         >
-          {text}
+          <SpokenText text={text} lang={language} tapToStart />
         </p>
-        <button
-          type="button"
-          onClick={() => speak(text, language)}
-          aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+        <SpeakKey
+          text={text}
+          lang={language}
+          label={insertValues(t.vocabulary.detail.listenAriaLabel, {
             text,
           })}
+          iconSize={11}
           className="hit-44 relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border"
           style={{
             background: "var(--msg-surface)",
             borderColor: "var(--msg-line)",
             color: "var(--msg-ink-soft)",
           }}
-        >
-          <Volume2 size={13} strokeWidth={1.8} />
-        </button>
+        />
       </div>
     );
   }

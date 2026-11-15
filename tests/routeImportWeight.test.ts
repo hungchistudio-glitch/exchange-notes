@@ -227,10 +227,16 @@ describe("what the heaviest tabs drag in with them", () => {
    * components/lexicon/ThemeWords draws them on home's first paint, from
    * hooks and contexts the field already uses. hooks/home/useRiseClearOfCoach
    * lifts Yumi clear of the tour's card at the foot; it imports React only.
+   * Raised vocabulary 173 → 175 and home 192 → 194 (2026-11-14): every
+   * speaker in the app lights the word it is saying (Chi: 念到哪亮到哪).
+   * Two files each: components/speech/Spoken.tsx, the one play key, lit text
+   * and word-by-word switch every speaker shares, and the one file it reaches
+   * that the tab did not load already — lib/spokenWords.ts, which imports
+   * only lib/speech.ts, or hooks/useCosmicMode.ts, which imports only React.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 173],
-    ["home", TABS.home, 192],
+    ["vocabulary", TABS.vocabulary, 175],
+    ["home", TABS.home, 194],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

@@ -106,6 +106,12 @@ html[data-interface-mode="yumi-cosmic"] .spoken-now {
   box-shadow: 0 0 0 0.12em var(--cosmic-cyan-dim);
 }
 
+/* A text a tap reads from (Chi, 2026-11-14: 點一個字從那裡開始念). The
+   pointer says so on a computer; a phone has no hover to say it with. */
+[data-spoken-tap] {
+  cursor: pointer;
+}
+
 /* =========================================================
    Yumi looking a word up (LookupProgress in LexiconResults)
 

@@ -1,13 +1,14 @@
 "use client";
 
-import { LoaderCircle, Square, Volume2 } from "lucide-react";
+import { LoaderCircle, Play, Square } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import usePhonetics from "@/hooks/usePhonetics";
 import type { HangyumiReading } from "@/lib/hangyumi/rules";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
-import { speak, stopSpeech } from "@/lib/speech";
+import { SpokenText } from "@/components/speech/Spoken";
+import { playSpoken, stopSpoken } from "@/lib/spokenWords";
 
 import styles from "./Hangyumi.module.css";
 
@@ -55,7 +56,7 @@ export default function HangyumiWordCard({ sides, pending }: {
     const stop = () => {
       sequence.current++;
       clearTimeout(watchdog.current);
-      stopSpeech();
+      stopSpoken();
     };
     const onHidden = () => { if (document.hidden) { stop(); setAudio(null); } };
     document.addEventListener("visibilitychange", onHidden);
@@ -69,7 +70,7 @@ export default function HangyumiWordCard({ sides, pending }: {
     if (audio?.index === index) {
       sequence.current++;
       clearTimeout(watchdog.current);
-      stopSpeech();
+      stopSpoken();
       setAudio(null);
       return;
     }
@@ -84,14 +85,20 @@ export default function HangyumiWordCard({ sides, pending }: {
       setFailed(error);
     };
     // Inside the tap, so iOS lets it speak.
-    speak(shown[index].text, getLanguage(shown[index].language).speechTag, {
+    /* Through the app's speech state, so the word lights as it is said (Chi,
+       2026-11-14): a Chinese word a character at a time. */
+    playSpoken({
+      text: shown[index].text,
+      lang: getLanguage(shown[index].language).speechTag,
       onStart: () => { if (sequence.current === token) setAudio({ index, started: true }); },
       onEnd: () => finish(),
       onError: () => finish(true),
+      // Another key took over: back to rest.
+      onCancel: () => finish(),
     });
     watchdog.current = setTimeout(() => {
       if (sequence.current !== token) return;
-      stopSpeech();
+      stopSpoken();
       finish(true);
     }, 12000);
   }
@@ -107,7 +114,7 @@ export default function HangyumiWordCard({ sides, pending }: {
             <div className={styles.wordSideText}>
               <span className={styles.wordSideLanguage}>{getLanguage(side.language).name[interfaceLanguage]}</span>
               <span className={index === 0 ? styles.wordSideWord : styles.wordSideGloss} lang={getLanguage(side.language).htmlLang}>
-                {side.text}
+                <SpokenText text={side.text} lang={getLanguage(side.language).speechTag} />
               </span>
               {readings && <span className={styles.wordSideReadings}>{readings}</span>}
             </div>
@@ -123,7 +130,7 @@ export default function HangyumiWordCard({ sides, pending }: {
                 ? audio.started
                   ? <Square size={16} fill="currentColor" aria-hidden="true" />
                   : <LoaderCircle size={19} className={styles.spinner} aria-hidden="true" />
-                : <Volume2 size={20} strokeWidth={1.9} aria-hidden="true" />}
+                : <Play size={18} fill="currentColor" strokeWidth={0} className="translate-x-px" aria-hidden="true" />}
             </button>
           </div>
         );

@@ -24,7 +24,8 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
 import usePhonetics from "@/hooks/usePhonetics";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
-import { speakText, stopSpeech } from "@/lib/pronunciation/playback";
+import { SpokenReading, SpokenText } from "@/components/speech/Spoken";
+import { getSpoken, playSpoken, spokenKey, stopSpoken } from "@/lib/spokenWords";
 import type { VocabularyItem } from "@/lib/types/app";
 import {
   fetchVocabulary,
@@ -218,7 +219,7 @@ export function DeckWordCard({
             data-word-size={primaryWordSize}
             data-holo-word=""
           >
-            {primaryWord}
+            <SpokenText text={primaryWord} lang={getLanguage(sides.primary.language).speechTag} />
           </h2>
           {secondaryWord ? (
             <p className={styles.secondaryWord}>{secondaryWord}</p>
@@ -291,7 +292,14 @@ export function DeckWordCard({
                 type="button"
                 disabled={!interactive || !side.text}
                 tabIndex={interactive ? 0 : -1}
-                onClick={() => speakText(side.text, language.speechTag)}
+                /* Plays and stops; the word and its readings light as it
+                   is said, a Chinese word a character at a time (Chi,
+                   2026-11-14). */
+                onClick={() =>
+                  getSpoken()?.run === spokenKey(side.text, language.speechTag)
+                    ? stopSpoken()
+                    : playSpoken({ text: side.text, lang: language.speechTag })
+                }
                 // The button says the word, so the word is what it is called.
                 aria-label={`${label}: ${side.text}`}
                 className={styles.soundButton}
@@ -323,7 +331,7 @@ export function DeckWordCard({
                               : undefined
                         }
                       >
-                        {reading.text}
+                        <SpokenReading reading={reading.text} text={side.text} lang={language.speechTag} />
                       </span>
                     ))
                   ) : (
@@ -332,7 +340,7 @@ export function DeckWordCard({
                       data-script="word"
                       lang={side.language}
                     >
-                      {side.text}
+                      <SpokenText text={side.text} lang={language.speechTag} />
                     </span>
                   )}
                 </span>
@@ -538,7 +546,7 @@ export function TodayWordDeck({
     };
   }, [items.length]);
 
-  useEffect(() => () => stopSpeech(), []);
+  useEffect(() => () => stopSpoken(), []);
 
   function step(direction: -1 | 1) {
     const scroller = scrollerRef.current;

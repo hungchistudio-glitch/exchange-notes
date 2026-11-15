@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BookOpen, RotateCcw, Sparkles, Volume2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Play, RotateCcw, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import Screen from "@/components/foundation/layout/Screen";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { fill } from "@/lib/i18n/format";
 import { getLanguage, getLanguageName, type LanguageCode } from "@/lib/languages";
-import { speak } from "@/lib/speech";
+import { SpokenText } from "@/components/speech/Spoken";
+import { playSpoken, stopSpoken } from "@/lib/spokenWords";
 
 type SpeakPageClientProps = {
   /**
@@ -44,10 +45,14 @@ export default function SpeakPageClient({
     }
 
     setPlaybackState("playing");
-    speak(text, meta.speechTag, {
+    /* Lit word by word as it is said (Chi, 2026-11-14). */
+    playSpoken({
+      text,
+      lang: meta.speechTag,
       onStart: () => setPlaybackState("playing"),
       onEnd: () => setPlaybackState("complete"),
       onError: () => setPlaybackState("error"),
+      onCancel: () => setPlaybackState("idle"),
     });
   }, [meta.speechTag, text]);
 
@@ -61,7 +66,7 @@ export default function SpeakPageClient({
   }, [play, text]);
 
   useEffect(() => {
-    return () => window.speechSynthesis?.cancel();
+    return () => stopSpoken();
   }, []);
 
   const status =
@@ -136,7 +141,7 @@ export default function SpeakPageClient({
             style={{ fontFamily: `var(${meta.fontVariable})` }}
             lang={meta.htmlLang}
           >
-            {text || copy.noText}
+            {text ? <SpokenText text={text} lang={meta.speechTag} tapToStart /> : copy.noText}
           </h1>
 
           <p className="mt-4 min-h-6 text-sm text-[#ffffff]/65" aria-live="polite">
@@ -152,8 +157,10 @@ export default function SpeakPageClient({
             {playbackState === "complete" || playbackState === "error" ? (
               <RotateCcw size={19} aria-hidden="true" />
             ) : (
-              <Volume2
-                size={19}
+              <Play
+                size={17}
+                fill="currentColor"
+                strokeWidth={0}
                 className={playbackState === "playing" ? "animate-pulse" : ""}
                 aria-hidden="true"
               />

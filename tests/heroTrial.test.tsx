@@ -135,7 +135,7 @@ describe("Understand", () => {
     expect(within(languages).getByRole("button", { name: "English" })).toHaveAttribute("aria-pressed", "true");
 
     fireEvent.click(within(languages).getByRole("button", { name: "Italiano" }));
-    expect(within(trial).getByText("respiro", { selector: "strong" })).toBeInTheDocument();
+    expect(within(trial).getByText("respiro", { selector: "strong > [data-spoken-text]" })).toBeInTheDocument();
     expect(within(trial).getByText(/Uno spazio vuoto lasciato apposta/).closest("[lang]")).toHaveAttribute("lang", "it");
     // The interface around it stays in English.
     expect(within(trial).getByText(english.trial.compare.title)).toBeInTheDocument();
@@ -212,7 +212,7 @@ describe("Review", () => {
     fireEvent.click(within(trial).getByRole("button", { name: english.trial.review.again }));
     expect(within(trial).getByRole("status")).toHaveTextContent(english.trial.review.againResult);
     fireEvent.click(within(trial).getByRole("button", { name: english.trial.review.next }));
-    expect(within(trial).getByText("respiro", { selector: "p" })).toBeInTheDocument();
+    expect(within(trial).getByText("respiro", { selector: "p > [data-spoken-text]" })).toBeInTheDocument();
 
     for (let i = 0; i < 2; i += 1) {
       fireEvent.click(within(trial).getByRole("button", { name: english.trial.review.reveal }));

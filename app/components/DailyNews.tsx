@@ -22,7 +22,9 @@ import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { SLOW_NETWORK_MS, reportSlowNetwork } from "@/hooks/useOnline";
 import { createNote } from "@/lib/notes/clientRepository";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
-import { getVoiceForLanguage, preferPlaybackAudio, type SpeechLanguage } from "@/lib/speech";
+import type { SpeechLanguage } from "@/lib/speech";
+import { getSpoken, playSpoken, stopSpoken } from "@/lib/spokenWords";
+import { useSpokenProgress, useSpokenRun } from "@/components/speech/Spoken";
 import { encodeNewsCardMessage } from "@/lib/messages/newsCard";
 import { listFriends, getOrCreateConversationWithFriend, type FriendProfile } from "@/lib/friends";
 import PageTitle from "@/components/foundation/layout/PageTitle";
@@ -206,6 +208,11 @@ function createPartnerMessage(card: DailyNewsCard) {
 /** Where the last batch that arrived is kept, for a reader with no signal. */
 const NEWS_CACHE_KEY = "news:lastBatch";
 
+/** The name of a story's full play, which its audio rail watches. */
+function storyRun(id: string) {
+  return `story:${id}`;
+}
+
 export default function DailyNews() {
   const { t, locale } = useTranslation();
   const copy = t.discover;
@@ -253,7 +260,6 @@ export default function DailyNews() {
   }, []);
   const [notice, setNotice] = useState("");
 
-  const [speakingKey, setSpeakingKey] = useState<string | null>(null);
   const [savedCardIds, setSavedCardIds] = useState<Set<string>>(new Set());
   const [savingCardId, setSavingCardId] = useState<string | null>(null);
   const [speechRate, setSpeechRate] = useState<SpeechRate>(1);
@@ -298,13 +304,11 @@ export default function DailyNews() {
   const friendsLoadedRef = useRef(false);
 
   // Featured-story "audio rail" playback (Play full story / language
-  // toggle / progress). Separate from `speakingKey`, which still drives
-  // the per-sentence speakers inside the detail sheet and vocabulary
-  // drawer.
+  // toggle / progress). The run is named for its story, and the shared
+  // speech state (lib/spokenWords.ts) says whether it plays and how far it
+  // has got, as it does for every other speaker on the page.
   const [audioMode, setAudioMode] =
     useState<AudioPlaybackMode>("primary");
-  const [playingStoryId, setPlayingStoryId] = useState<string | null>(null);
-  const [playbackProgress, setPlaybackProgress] = useState(0);
 
   const requestControllerRef = useRef<AbortController | null>(null);
 
@@ -500,144 +504,45 @@ export default function DailyNews() {
       // replaces it, and that newer request is the one still in flight and
       // worth cancelling.
       requestControllerRef.current?.abort();
-      window.speechSynthesis?.cancel();
+      stopSpoken();
     };
   }, [copy, learningLanguage, loadFromDevice]);
 
-  function speak(
-    key: string,
-    text: string,
-    language: SpeechLanguage
-  ) {
-    if (
-      typeof window === "undefined" ||
-      !("speechSynthesis" in window) ||
-      !text.trim()
-    ) {
-      return;
-    }
+  /*
+   * The news's own pace: its Slow/Natural/Fast, and Chinese a step slower
+   * again, because Chinese voices read noticeably more rushed than English
+   * at the same rate.
+   */
+  const newsRate = useCallback(
+    (language: SpeechLanguage) => speechRate * (language === "zh-TW" ? 0.8 : 1),
+    [speechRate],
+  );
 
-    window.speechSynthesis.cancel();
-
-    if (speakingKey === key) {
-      setSpeakingKey(null);
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-
-    utterance.lang = language;
-    // Chinese TTS reads noticeably more "rushed"/synthetic than English at
-    // the same rate value, so it gets an extra slowdown on top of whatever
-    // speed preset (Slow/Natural/Fast) the user picked.
-    utterance.rate = speechRate * (language === "zh-TW" ? 0.8 : 1);
-    utterance.pitch = 1;
-
-    // Explicitly resolving a voice (rather than only setting
-    // utterance.lang) is what actually makes this reliable — see
-    // getVoiceForLanguage's comment for why.
-    const voice = getVoiceForLanguage(language);
-
-    if (voice) {
-      utterance.voice = voice;
-    }
-
-    utterance.onstart = () => setSpeakingKey(key);
-    utterance.onend = () => setSpeakingKey(null);
-    utterance.onerror = () => setSpeakingKey(null);
-
-    /* The silent switch would mute it on an iPhone otherwise (lib/speech.ts). */
-    preferPlaybackAudio();
-    window.speechSynthesis.speak(utterance);
-  }
-
-  // Consolidated "Play full story" control for the featured card's audio
-  // rail. The mode names refer to the two positions in the reader's current
-  // pair, so Spanish/French and every other supported pairing use the same
-  // playback path without being mislabeled as English/Chinese.
+  /*
+   * "Play full story": the title and then the summary, in one of the pair's
+   * two languages, each word lit on the featured card (and in the story's
+   * sheet, if it is open) as it is said (Chi, 2026-11-14). The mode names
+   * refer to the two positions in the reader's current pair, so every
+   * pairing uses the same path without being mislabelled.
+   */
   function toggleFullStoryPlayback(card: DailyNewsCard) {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+    const run = storyRun(card.id);
+    if (getSpoken()?.run === run) {
+      stopSpoken();
       return;
     }
 
-    window.speechSynthesis.cancel();
-    setSpeakingKey(null);
+    const language = audioMode === "primary" ? primaryLanguage : secondaryLanguage;
+    const lang = getLanguage(language).speechTag;
 
-    if (playingStoryId === card.id) {
-      setPlayingStoryId(null);
-      setPlaybackProgress(0);
-      return;
-    }
-
-    const segments: { text: string; lang: SpeechLanguage }[] =
-      audioMode === "primary"
-        ? [
-            {
-              text: `${(card.titles[primaryLanguage] ?? "")}. ${(card.summaries[primaryLanguage] ?? "")}`,
-              lang: getLanguage(primaryLanguage).speechTag,
-            },
-          ]
-        : [
-            {
-              text: `${(card.titles[secondaryLanguage] ?? "")}。${(card.summaries[secondaryLanguage] ?? "")}`,
-              lang: getLanguage(secondaryLanguage).speechTag,
-            },
-          ];
-
-    const totalLength =
-      segments.reduce((sum, segment) => sum + segment.text.length, 0) || 1;
-    let completedLength = 0;
-
-    setPlayingStoryId(card.id);
-    setPlaybackProgress(0);
-
-    function speakSegment(index: number) {
-      if (index >= segments.length) {
-        setPlayingStoryId(null);
-        setPlaybackProgress(0);
-        return;
-      }
-
-      const segment = segments[index];
-      const utterance = new SpeechSynthesisUtterance(segment.text);
-
-      utterance.lang = segment.lang;
-      utterance.rate = speechRate * (segment.lang === "zh-TW" ? 0.8 : 1);
-      utterance.pitch = 1;
-
-      const voice = getVoiceForLanguage(segment.lang);
-
-      if (voice) {
-        utterance.voice = voice;
-      }
-
-      utterance.onboundary = (event) => {
-        const charIndex =
-          "charIndex" in event && typeof event.charIndex === "number"
-            ? event.charIndex
-            : 0;
-
-        setPlaybackProgress(
-          Math.min(1, (completedLength + charIndex) / totalLength)
-        );
-      };
-
-      utterance.onend = () => {
-        completedLength += segment.text.length;
-        speakSegment(index + 1);
-      };
-
-      utterance.onerror = () => {
-        setPlayingStoryId(null);
-        setPlaybackProgress(0);
-      };
-
-      window.speechSynthesis.speak(utterance);
-    }
-
-    /* Once, in the tap: the later segments follow from each one's end. */
-    preferPlaybackAudio();
-    speakSegment(0);
+    playSpoken({
+      run,
+      parts: [
+        { text: card.titles[language] ?? "", lang },
+        { text: card.summaries[language] ?? "", lang },
+      ],
+      rate: newsRate,
+    });
   }
 
   async function saveToNotes(card: DailyNewsCard) {
@@ -864,6 +769,12 @@ export default function DailyNews() {
    */
   const detailCard = useRetainedWhileClosing(openDetailCard);
 
+  /* The featured story's full play, read from the shared speech state; hooks,
+     so above the loading return for the same reason. */
+  const featuredRun = visibleCards[0] ? storyRun(visibleCards[0].id) : "";
+  const featuredPlaying = useSpokenRun(featuredRun);
+  const featuredProgress = useSpokenProgress(featuredRun);
+
   if (loading) {
     return <LoadingHero />;
   }
@@ -1033,10 +944,8 @@ export default function DailyNews() {
             locale
           )}
           onOpen={() => setDetailCardId(featuredCard.id)}
-          isAudioPlaying={playingStoryId === featuredCard.id}
-          audioProgress={
-            playingStoryId === featuredCard.id ? playbackProgress : 0
-          }
+          isAudioPlaying={featuredPlaying}
+          audioProgress={featuredProgress}
           audioMode={audioMode}
           onAudioModeChange={setAudioMode}
           onToggleAudio={() => toggleFullStoryPlayback(featuredCard)}
@@ -1079,14 +988,13 @@ export default function DailyNews() {
         copy={copy}
         isSaved={detailCard ? savedCardIds.has(detailCard.id) : false}
         isSaving={detailCard ? savingCardId === detailCard.id : false}
-        speakingKey={speakingKey}
+        speechRate={newsRate}
         categoryText={
           detailCard ? categoryLabel(detailCard.category, copy) : ""
         }
         formattedTime={
           detailCard ? formatPublishedTime(detailCard.publishedAt, copy, locale) : ""
         }
-        onSpeak={speak}
         onSave={() => detailCard && void saveToNotes(detailCard)}
         onSend={() => detailCard && sendToPartner(detailCard)}
         onOpenVocabulary={() =>
@@ -1105,8 +1013,7 @@ export default function DailyNews() {
         open={vocabDrawerCardId !== null}
         onClose={() => setVocabDrawerCardId(null)}
         copy={copy}
-        speakingKey={speakingKey}
-        onSpeak={speak}
+        speechRate={newsRate}
       />
 
       {sendModalCardId !== null ? (

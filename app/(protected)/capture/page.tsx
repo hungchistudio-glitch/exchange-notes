@@ -53,7 +53,8 @@ import {
   getLanguageName,
   type LanguageCode,
 } from "@/lib/languages";
-import { speak as speakText } from "@/lib/speech";
+import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
+import { stopSpoken } from "@/lib/spokenWords";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import FeatureMark from "@/components/features/FeatureMark";
@@ -88,35 +89,6 @@ const assumeSupported = () => true;
  * camera to 1800, and all three were answering the same question.
  */
 const MAX_FILE_SIZE = MAX_IMAGE_FILE_SIZE;
-
-function SpeakerIcon({ speaking }: { speaking: boolean }) {
-  return (
-    <svg
-      className={speaking ? "h-4 w-4 animate-pulse" : "h-4 w-4"}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16 8.5a5 5 0 010 7"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M18.5 6a8.5 8.5 0 010 12"
-      />
-    </svg>
-  );
-}
 
 function CameraIcon() {
   return (
@@ -327,7 +299,6 @@ function CaptureContent() {
     readSpeechSupport,
     assumeSupported,
   );
-  const [speakingLang, setSpeakingLang] = useState<LanguageCode | null>(null);
   const [pronunciationEntry, setPronunciationEntry] = useState<{
     key: string;
     data: PronunciationResult | null;
@@ -513,16 +484,6 @@ function CaptureContent() {
    * useCameraStream's job now (hooks/camera/useCameraStream.ts). Three
    * effects and a ref went with them.
    */
-
-  function speak(text: string, language: LanguageCode) {
-    if (!speechSupported || !text.trim()) return;
-
-    speakText(text, getLanguage(language).speechTag, {
-      onStart: () => setSpeakingLang(language),
-      onEnd: () => setSpeakingLang(null),
-      onError: () => setSpeakingLang(null),
-    });
-  }
 
   /**
    * A raster and a target, turned into everything a save will need.
@@ -1038,7 +999,7 @@ function CaptureContent() {
     setError("");
     setSaved(false);
     setSaving(false);
-    setSpeakingLang(null);
+    stopSpoken();
   }
 
   return (
@@ -1341,7 +1302,9 @@ function CaptureContent() {
                           <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-ink-faint">
                             {getLanguage(language).endonym}
                           </span>
-                          <span className={valueClass(primary)}>{text}</span>
+                          <span className={valueClass(primary)}>
+                            <SpokenText text={text} lang={getLanguage(language).speechTag} tapToStart />
+                          </span>
                           {reading && (
                             <span className="mt-0.5 block text-[0.75rem] text-ink-faint">
                               {reading}
@@ -1350,17 +1313,16 @@ function CaptureContent() {
                         </span>
 
                         {speechSupported && (
-                          <button
-                            type="button"
-                            onClick={() => speak(text, language)}
-                            aria-label={insertValues(
+                          <SpeakKey
+                            text={text}
+                            lang={getLanguage(language).speechTag}
+                            label={insertValues(
                               t.vocabulary.detail.listenAriaLabel,
                               { text },
                             )}
+                            iconSize={13}
                             className={buttonClass(primary)}
-                          >
-                            <SpeakerIcon speaking={speakingLang === language} />
-                          </button>
+                          />
                         )}
                       </div>
                     );
@@ -1419,23 +1381,20 @@ function CaptureContent() {
                                   strong ? "text-neutral-900" : "text-ink-soft"
                                 }`}
                               >
-                                {text}
+                                <SpokenText text={text} lang={getLanguage(language).speechTag} tapToStart />
                               </span>
 
                               {speechSupported && (
-                                <button
-                                  type="button"
-                                  onClick={() => speak(text, language)}
-                                  aria-label={insertValues(
+                                <SpeakKey
+                                  text={text}
+                                  lang={getLanguage(language).speechTag}
+                                  label={insertValues(
                                     t.vocabulary.detail.listenAriaLabel,
                                     { text },
                                   )}
+                                  iconSize={13}
                                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
-                                >
-                                  <SpeakerIcon
-                                    speaking={speakingLang === language}
-                                  />
-                                </button>
+                                />
                               )}
                             </div>
                           ) : null;

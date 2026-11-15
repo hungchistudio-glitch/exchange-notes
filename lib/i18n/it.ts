@@ -423,6 +423,9 @@ const italian: TranslationDictionary = {
     clearField: "Cancella",
     showFullText: "Mostra tutto il testo",
     showLess: "Mostra meno",
+    play: "Riproduci",
+    stop: "Ferma",
+    wordByWord: "Parola per parola",
   },
 
   friendPicker: {
@@ -664,9 +667,6 @@ const italian: TranslationDictionary = {
     openWord: "Apri",
     reviewWord: "Ripassa",
     listen: "Ascolta",
-    play: "Riproduci",
-    stop: "Ferma",
-    wordByWord: "Parola per parola",
     lookingUp: "Sto cercando «{term}»…",
     stillLooking: "Sto ancora cercando, ci siamo quasi.",
     takingLong: "Questa ci mette più del solito. Ci sto ancora lavorando, non si è rotto niente.",

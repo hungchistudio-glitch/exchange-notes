@@ -11,7 +11,8 @@ import useSheetMotion from "./useSheetMotion";
 type BottomSheetProps = {
   open: boolean;
   onClose: () => void;
-  title: string;
+  /** Text, or text that lights as it is said (a dish's name). */
+  title: ReactNode;
   children: ReactNode;
   description?: string;
   titleAction?: ReactNode;

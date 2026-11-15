@@ -420,6 +420,9 @@ const english: TranslationDictionary = {
     clearField: "Clear",
     showFullText: "Show full text",
     showLess: "Show less",
+    play: "Play",
+    stop: "Stop",
+    wordByWord: "Word by word",
   },
 
   friendPicker: {
@@ -669,9 +672,6 @@ const english: TranslationDictionary = {
     openWord: "Open",
     reviewWord: "Review",
     listen: "Listen",
-    play: "Play",
-    stop: "Stop",
-    wordByWord: "Word by word",
     lookingUp: "I'm looking up “{term}”…",
     stillLooking: "Still looking — almost there.",
     takingLong: "This one is taking longer than usual. I'm still on it — nothing has gone wrong.",

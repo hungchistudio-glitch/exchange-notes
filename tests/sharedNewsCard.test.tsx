@@ -22,7 +22,8 @@ vi.mock("@/hooks/useDisplayLanguages", () => ({
   }),
 }));
 
-vi.mock("@/lib/speech", () => ({ speak: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: vi.fn() }));
 
 const card = {
   id: "https://example.com/a",

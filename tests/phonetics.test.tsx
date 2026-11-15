@@ -21,7 +21,8 @@ vi.mock("@/hooks/i18n/useTranslation", () => ({
   }),
 }));
 
-vi.mock("@/lib/speech", () => ({ speak: vi.fn() }));
+vi.mock("@/lib/speech", async (original) => ({
+  ...(await original<typeof import("@/lib/speech")>()), speak: vi.fn() }));
 
 type Answer = { ipa?: string; pinyin?: string; zhuyin?: string };
 
@@ -97,7 +98,7 @@ describe("PronunciationBlock", () => {
     expect(screen.getAllByRole("button", { name: "Listen to 監獄" })).toHaveLength(1);
 
     fireEvent.click(pinyin);
-    expect(speak).toHaveBeenCalledWith("監獄", "zh-TW");
+    expect(speak).toHaveBeenCalledWith("監獄", "zh-TW", expect.any(Object));
   });
 
   it("asks once for a word that appears many times on screen", async () => {

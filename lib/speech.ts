@@ -816,8 +816,24 @@ export function speechSupported(): boolean {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
+const stopListeners = new Set<() => void>();
+
+/**
+ * Hears every stopSpeech(), wherever it is called from: a microphone
+ * opening, a sheet closing. lib/spokenWords.ts unlights its word on it, which
+ * the engine's own events cannot be trusted to do. WebKit sends nothing for
+ * a cancelled utterance.
+ */
+export function onSpeechStop(listener: () => void): () => void {
+  stopListeners.add(listener);
+  return () => {
+    stopListeners.delete(listener);
+  };
+}
+
 /** Cancel both current audio and any replacement waiting for the cancel delay. */
 export function stopSpeech() {
   speakSequence += 1;
   if (speechSupported()) window.speechSynthesis.cancel();
+  for (const listener of [...stopListeners]) listener();
 }

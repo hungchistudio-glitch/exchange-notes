@@ -1,8 +1,7 @@
 "use client";
 
+import { SpeakKey } from "@/components/speech/Spoken";
 import type { SpeechLanguage } from "@/lib/speech";
-import { Volume2 } from "lucide-react";
-import { speak } from "@/lib/speech";
 
 type VocabularySpeechButtonProps = {
   text: string | null | undefined;
@@ -18,6 +17,11 @@ type VocabularySpeechButtonProps = {
   prominence?: "primary" | "secondary";
 };
 
+/**
+ * A vocabulary card's speaker: ▶, ■ while it plays, and the word or sentence
+ * it reads lit as it is said wherever it is shown (Chi, 2026-11-14). It
+ * sits on a card that opens when tapped, so its own tap stops there.
+ */
 export default function VocabularySpeechButton({
   text,
   language,
@@ -35,7 +39,7 @@ export default function VocabularySpeechButton({
       ? "h-9 w-9"
       : "h-10 w-10";
 
-  const iconSize = size === "sm" ? 15 : 16;
+  const iconSize = size === "sm" ? 13 : 14;
 
   const prominenceClasses =
     prominence === "primary"
@@ -43,13 +47,12 @@ export default function VocabularySpeechButton({
       : "border border-black/[0.07] bg-black/[0.035] text-ink-soft hover:border-black/[0.12] hover:bg-black/[0.07] hover:text-black";
 
   return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        speak(value, language);
-      }}
+    <SpeakKey
+      text={value}
+      lang={language}
+      label={label}
+      isolate
+      iconSize={iconSize}
       className={[
         "inline-flex shrink-0 items-center justify-center rounded-full",
         prominenceClasses,
@@ -59,10 +62,6 @@ export default function VocabularySpeechButton({
         sizeClasses,
         className,
       ].join(" ")}
-      aria-label={label}
-      title={label}
-    >
-      <Volume2 size={iconSize} strokeWidth={1.9} />
-    </button>
+    />
   );
 }

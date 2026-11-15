@@ -1,6 +1,8 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import { SpokenText } from "@/components/speech/Spoken";
+import { getLanguage } from "@/lib/languages";
 import { useId, useMemo, useState } from "react";
 
 import AudioButton from "@/components/pronunciation/lab/AudioButton";
@@ -215,7 +217,7 @@ export default function OtherReadings({
                         </p>
                         <p className="font-cjk mt-0.5 text-[0.8125rem] leading-5 text-ink-soft">{row.meaning}</p>
                         <p className="mt-0.5 text-[0.8125rem] text-ink-faint" lang={language}>
-                          {row.example}
+                          <SpokenText text={row.example} lang={getLanguage(language).speechTag} />
                         </p>
                       </div>
                       <AudioButton

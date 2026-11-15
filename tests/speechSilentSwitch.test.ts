@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { speakText } from "@/lib/pronunciation/playback";
 import { unlockSounds } from "@/lib/hangyumi/sounds";
 import { isAppleTouchDevice, speak } from "@/lib/speech";
+import { playSpoken, stopSpoken } from "@/lib/spokenWords";
 
 /* =========================================================
    Every speaker, through an iPhone's silent switch
@@ -63,8 +63,9 @@ describe("on an iPhone or iPad", () => {
 
   it("does the same for the Pronunciation Lab's word cards", () => {
     asDevice(IPHONE, 5);
-    speakText("圖書館", "zh-TW");
+    playSpoken({ text: "圖書館", lang: "zh-TW" });
     expect(order).toEqual(["silence", "speak"]);
+    stopSpoken();
   });
 
   it("counts an iPad that reports itself as a Mac", () => {
