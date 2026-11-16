@@ -2,6 +2,7 @@ import {
   DEFAULT_INTERFACE_LANGUAGE,
   type InterfaceLanguage,
 } from "@/lib/appPreferences";
+import { labTextFor } from "@/lib/pronunciation/labText";
 
 // Pronunciation guidance/tip content needs to follow the app's interface
 // language (not just be bundled in Traditional Chinese) — a user with
@@ -25,6 +26,10 @@ export type LocalizedText = Partial<Record<InterfaceLanguage, string>>;
  * entry: on a screen teaching pronunciation, English instructions are a
  * usable answer for a Spanish reader in a way that Chinese ones are not.
  * The last resort is any entry at all, so nothing renders blank.
+ *
+ * Between the two, the reader's language from the Lab's own tables
+ * (lib/pronunciation/labText), once a screen has fetched them with
+ * useLabText.
  */
 export function localize(
   value: LocalizedText,
@@ -32,6 +37,7 @@ export function localize(
 ): string {
   return (
     value[language] ??
+    (value.english ? labTextFor(language, value.english) : undefined) ??
     value[DEFAULT_INTERFACE_LANGUAGE] ??
     Object.values(value).find((text) => typeof text === "string" && text) ??
     ""

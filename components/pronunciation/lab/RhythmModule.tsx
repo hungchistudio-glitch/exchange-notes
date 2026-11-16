@@ -14,6 +14,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { phraseAudio } from "@/lib/pronunciation/lab/audio";
 import { lessonProgressKey } from "@/lib/pronunciation/lab/progress";
 import { localize } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 import type { RhythmPhrase } from "@/lib/pronunciation/lab/types";
 import type { YumiAnimationState } from "@/lib/pronunciation/yumiRig";
 
@@ -22,6 +23,7 @@ const BEAT_MS = 420;
 
 export default function RhythmModule() {
   const { t, language: interfaceLanguage } = useTranslation();
+  useLabText(interfaceLanguage);
   const copy = t.pronunciation.lab;
 
   const { pack, recordAttempt } = usePronunciationLab();

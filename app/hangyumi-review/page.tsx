@@ -7,7 +7,7 @@ import { reviewRouteOnly } from "@/lib/reviewRoutes";
  * (lib/hangyumi/service.ts): nothing here deals from the real bank, and
  * nothing pays anybody's cookies.
  *
- * ?lang=fr (en, zh-TW, es, fr, it) picks the language being learnt, and
+ * ?lang=fr (en, zh-TW, es, fr, it, ja, ko) picks the language being learnt, and
  * ?today=330 starts the day nearly capped, to see a short payment. The
  * clue is in the interface language, as in the game. ?game=wordvault plays
  * Yumi Wordvault on the same screen, and ?streak=3 (or 6) starts its streak

@@ -38,6 +38,7 @@ import {
   summariseSession,
 } from "@/lib/pronunciation/lab/session";
 import { localize } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 import { createClient } from "@/lib/supabase/client";
 import type { YumiAnimationState } from "@/lib/pronunciation/yumiRig";
 import type {
@@ -491,6 +492,7 @@ function RhythmStep({
   onCoachStateChange,
 }: StepProps) {
   const { t, language: interfaceLanguage } = useTranslation();
+  useLabText(interfaceLanguage);
   const copy = t.pronunciation.lab;
 
   const lesson = findLesson(pack, item.targetId);

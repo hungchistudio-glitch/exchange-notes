@@ -14,6 +14,7 @@ import { fill } from "@/lib/i18n/format";
 import { heteronymsFor, type Heteronym, type HeteronymReading } from "@/lib/pronunciation/heteronyms";
 import type { AudioSource } from "@/lib/pronunciation/lab/audio";
 import { localize } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 import type { YumiAnimationState } from "@/lib/pronunciation/yumiRig";
 
 /* =========================================================
@@ -56,6 +57,7 @@ function progressKey(heteronym: Heteronym): string {
 
 export default function ReadingsModule() {
   const { t, language: interfaceLanguage } = useTranslation();
+  useLabText(interfaceLanguage);
   const copy = t.pronunciation.lab.readings;
   const { pack, progress, recordAttempt } = usePronunciationLab();
   const playback = usePronunciationPlayback();

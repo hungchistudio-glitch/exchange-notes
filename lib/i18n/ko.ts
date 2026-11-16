@@ -147,7 +147,7 @@ const korean: TranslationDictionary = {
           share: "공유…",
           replyTitle: "친구는 이렇게 읽을지도 몰라요",
           keepWord: "'{word}'도 간직하기",
-          keptWord: "'{word}'가 노트에 들어 있어요",
+          keptWord: "이 노트에 '{word}' 단어가 들어 있어요",
         },
         review: {
           empty: "먼저 한마디를 간직한 다음, 다시 돌아와서 떠올려 보세요.",
@@ -826,8 +826,8 @@ const korean: TranslationDictionary = {
     recently: "최근",
     readEnglishAriaLabel: "{language}로 이야기 읽어 주기",
     readChineseAriaLabel: "{language}로 이야기 읽어 주기",
-    readVocabWordAriaLabel: "{word}와 예문 읽어 주기",
-    readVocabChineseAriaLabel: "{translation}와 예문 읽어 주기",
+    readVocabWordAriaLabel: "{word}와(과) 예문 읽어 주기",
+    readVocabChineseAriaLabel: "{translation}와(과) 예문 읽어 주기",
     loadingNewStories: "불러오는 중",
     sendToFriendAriaLabel: "친구에게 보내기",
     loginRequiredError: "로그인하지 않았어요. 파트너와 공유하려면 로그인해 주세요.",
@@ -1329,7 +1329,7 @@ const korean: TranslationDictionary = {
     },
     heteronyms: {
       summary: "읽는 법 {count}가지",
-      summaryCharacter: "「{character}」는 읽는 법이 {count}가지예요",
+      summaryCharacter: "「{character}」의 읽는 법은 {count}가지예요",
       show: "모든 읽는 법 보기",
       hide: "읽는 법 숨기기",
       usedHere: "여기서 쓰인 것",
@@ -2368,7 +2368,7 @@ const korean: TranslationDictionary = {
       placeholder: "설정 검색",
       cancel: "취소",
       resultsLabel: "맞는 설정",
-      empty: "'{query}'와 맞는 설정이 없어요.",
+      empty: "'{query}'에 맞는 설정이 없어요.",
       hint: "'위젯', '음성', '언어', '코스믹', '알림'으로 찾아보세요.",
     },
     devices: {
@@ -2944,7 +2944,7 @@ const korean: TranslationDictionary = {
     rewardWord: "단어 +{count}",
     stop: "정지",
     soundFailed: "소리가 재생되지 않았어요. 다시 시도해 주세요.",
-    nextLevel: "다음 단어는 {level}이에요.",
+    nextLevel: "다음 단어의 난이도: {level}",
     nextLanguage: "다음 단어는 {language}예요.",
     clue: "힌트",
     partsOfSpeech: {

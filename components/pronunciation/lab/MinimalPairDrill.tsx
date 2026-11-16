@@ -9,6 +9,7 @@ import { fill } from "@/lib/i18n/format";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { exampleAudio } from "@/lib/pronunciation/lab/audio";
 import { localize } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 import type {
   MinimalPairExample,
   MinimalPairSet,
@@ -79,6 +80,7 @@ export default function MinimalPairDrill({
   onCoachStateChange,
 }: MinimalPairDrillProps) {
   const { t, language: interfaceLanguage } = useTranslation();
+  useLabText(interfaceLanguage);
   const copy = t.pronunciation.lab.listen;
 
   const { phaseFor, play } = usePronunciationPlayback();

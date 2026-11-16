@@ -33,6 +33,7 @@ import {
 } from "@/lib/pronunciation/lab/progress";
 import { groupsForModule, moduleHasContent } from "@/lib/pronunciation/lab/registry";
 import { localize } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 import type { PronunciationModuleId } from "@/lib/pronunciation/lab/types";
 
 const MODULE_ICON: Record<PronunciationModuleId, LucideIcon> = {
@@ -65,6 +66,7 @@ const MODULE_ORDER: PronunciationModuleId[] = [
  */
 export default function LabLanding() {
   const { t, language: interfaceLanguage } = useTranslation();
+  useLabText(interfaceLanguage);
   const copy = t.pronunciation.lab;
 
   const { pack, language, progress, status, words, refresh } =

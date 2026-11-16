@@ -6,6 +6,7 @@ import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { fill } from "@/lib/i18n/format";
 import { localize } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 import type { DailyTrainingPlan } from "@/lib/pronunciation/lab/dailyTraining";
 
 import trainingStyles from "./TodayTraining.module.css";
@@ -25,6 +26,7 @@ export default function TodayTrainingCard({
   copy: LabCopy;
 }) {
   const language = useInterfaceLanguage();
+  useLabText(language);
   return (
     <section className={`ob-edge overflow-hidden rounded-[26px] border border-black/[0.06] bg-black text-white ${trainingStyles.training}`}>
       <div className="p-5">

@@ -204,7 +204,7 @@ function readToday(value: unknown): HangyumiToday {
 function readReading(value: unknown): HangyumiReading {
   const row = (value ?? {}) as Record<string, unknown>;
   const reading: HangyumiReading = {};
-  for (const key of ["ipa", "pinyin", "zhuyin"] as const) {
+  for (const key of ["ipa", "pinyin", "zhuyin", "kana", "romaji", "rr"] as const) {
     if (typeof row[key] === "string" && row[key]) reading[key] = row[key];
   }
   return reading;
