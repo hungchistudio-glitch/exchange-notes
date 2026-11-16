@@ -111,7 +111,9 @@ describe("a word sent with Yumi", () => {
       const yumi = { width: 400, height: 300 } as unknown as CanvasImageSource;
       drawHelloCard(ctx, { ...hello, format, yumi });
       expect([canvas.width, canvas.height]).toEqual([SHARE_SIZES[format].width, SHARE_SIZES[format].height]);
-      expect(texts).toEqual(expect.arrayContaining(["library", "圖書館", "@fixture_reader"]));
+      expect(texts).toEqual(expect.arrayContaining(["library", "圖書館"]));
+      /* The sender's ID sits in the header, tracked a letter at a time. */
+      expect(texts.join("")).toContain("@fixture_reader");
       /* Written out whole, on one line or two, for whoever cannot scan. */
       expect(texts.join("").replace(/\s/g, "")).toContain("exchange-notes-app.vercel.app/hello/fixtureLib01");
       expect(images).toEqual([yumi, hello.qr]);

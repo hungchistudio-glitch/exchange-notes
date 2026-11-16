@@ -40,6 +40,8 @@ export type HudColors = {
   accentSoft: string;
   line: string;
   alert: string;
+  /** The small caps of a page's eyebrow: brass on paper, ice on obsidian. */
+  eyebrow: string;
 };
 
 export function hudColors(cosmic: boolean): HudColors {
@@ -56,28 +58,32 @@ export function hudColors(cosmic: boolean): HudColors {
         accentSoft: "rgba(134,216,210,0.16)",
         line: "#34444e",
         alert: "#e9c57e",
+        eyebrow: "#b8e8e5",
       }
     : {
         page: "#f4f0e7",
         grid: "rgba(29,27,23,0.045)",
         gridStrong: "rgba(29,27,23,0.085)",
         panel: "rgba(255,253,248,0.95)",
-        ink: "#1d1b17",
-        soft: "rgba(29,27,23,0.6)",
-        faint: "rgba(29,27,23,0.4)",
+        ink: "#24211b",
+        soft: "rgba(36,33,27,0.62)",
+        faint: "rgba(36,33,27,0.42)",
         accent: "#2f8a67",
         accentSoft: "rgba(47,138,103,0.12)",
         line: "rgba(29,27,23,0.14)",
         alert: "#b5772a",
+        eyebrow: "#94733a",
       };
 }
 
-export type HudFonts = { sans: string; mono: string; phonetic: string };
+/** `serif` is the app's title face (app/tactile.css --font-display): Georgia, Noto Serif TC for Chinese. */
+export type HudFonts = { sans: string; mono: string; phonetic: string; serif: string };
 
 const FALLBACK_FONTS: HudFonts = {
   sans: 'system-ui, -apple-system, "PingFang TC", "Noto Sans TC", sans-serif',
   mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
   phonetic: '"Noto Sans", "PingFang TC", sans-serif',
+  serif: 'Georgia, "Noto Serif TC", "Songti TC", serif',
 };
 
 /**
@@ -94,6 +100,7 @@ export function readHudFonts(): HudFonts {
   const mono = read("--font-mono");
   const phonetic = read("--font-phonetic");
   return {
+    serif: FALLBACK_FONTS.serif,
     sans: latin && cjk ? `${latin}, ${cjk}` : latin || cjk || FALLBACK_FONTS.sans,
     mono: mono ? `${mono}, ${FALLBACK_FONTS.mono}` : FALLBACK_FONTS.mono,
     phonetic: phonetic || FALLBACK_FONTS.phonetic,
@@ -104,7 +111,8 @@ export function readHudFonts(): HudFonts {
 export async function loadHudFonts(fonts: HudFonts, text: string): Promise<void> {
   if (typeof document === "undefined" || !document.fonts?.load) return;
   await Promise.all([
-    document.fonts.load(`${WEIGHT.display} 64px ${fonts.sans}`, text),
+    document.fonts.load(`${WEIGHT.display} 64px ${fonts.serif}`, text),
+    document.fonts.load(`600 24px ${fonts.sans}`, text.toLocaleUpperCase()),
     document.fonts.load(`${WEIGHT.text} 32px ${fonts.sans}`, text),
     document.fonts.load(`${WEIGHT.label} 32px ${fonts.sans}`, text),
     document.fonts.load(`${WEIGHT.figure} 64px ${fonts.mono}`, "0123456789/%—–:WK"),
@@ -114,14 +122,36 @@ export async function loadHudFonts(fonts: HudFonts, text: string): Promise<void>
 }
 
 /**
- * The cards' weights (Chi, 2026-11-15: 字體秀氣有設計感, not heavy): a light
- * display face for titles and greetings, light figures, regular text, and
- * medium only for the small labels that must hold at a glance.
+ * The cards' type (Chi, 2026-11-15: 字體秀氣有設計感, then 使用這種字體,
+ * pointing at the home's greeting and a page title): titles, greetings and
+ * words in the app's serif at its regular weight; light mono figures;
+ * regular sans text; small labels as a page's eyebrow, tracked small caps.
  */
-export const WEIGHT = { display: 300, figure: 300, word: 400, text: 400, code: 400, label: 500 } as const;
+export const WEIGHT = { display: 400, figure: 300, word: 400, text: 400, code: 400, label: 500, eyebrow: 600 } as const;
 
 export const sans = (fonts: HudFonts, size: number, weight: number = WEIGHT.text) => `${weight} ${size}px ${fonts.sans}`;
 export const mono = (fonts: HudFonts, size: number, weight: number = WEIGHT.code) => `${weight} ${size}px ${fonts.mono}`;
+export const serif = (fonts: HudFonts, size: number, weight: number = WEIGHT.display) => `${weight} ${size}px ${fonts.serif}`;
+
+/**
+ * A label as a page's eyebrow draws it (PageTitle): small capitals, tracked
+ * out, in brass on paper. Returns where it ends, for a rule after it.
+ */
+export function eyebrow(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  size: number,
+  colors: HudColors,
+  fonts: HudFonts,
+  align: "left" | "right" = "left",
+) {
+  ctx.fillStyle = colors.eyebrow;
+  ctx.font = sans(fonts, size, WEIGHT.eyebrow);
+  const width = tracked(ctx, text.toLocaleUpperCase(), x, y, size * 0.2, align);
+  return align === "left" ? x + width : x - width;
+}
 
 /** Text cut to fit a width, with an ellipsis. */
 export function fitText(ctx: CanvasRenderingContext2D, text: string, width: number) {
@@ -284,21 +314,27 @@ export function hudFrame(
     ctx.fillRect(width - inset + 2 - (long ? 18 : 9), y, long ? 18 : 9, 2);
   }
 
-  /* The header strip. */
+  /* The header strip, as a page's eyebrow: a status light, the brand in
+     small caps, and a hairline on to the code at the right. */
   const y = header.top;
-  led(ctx, 86, y - 9, 7, colors.accent, cosmic);
-  ctx.fillStyle = colors.ink;
-  ctx.font = mono(fonts, 24, WEIGHT.label);
   ctx.textBaseline = "alphabetic";
-  tracked(ctx, "EXCHANGE NOTES", 108, y, 6);
+  led(ctx, 86, y - 8, 7, colors.accent, cosmic);
+  const end = eyebrow(ctx, "Exchange Notes", 108, y, 22, colors, fonts);
+  let ruleEnd = width - 84;
   if (header.right) {
-    ctx.fillStyle = colors.accent;
-    tracked(ctx, header.right, width - 84, y, 4, "right");
+    ctx.fillStyle = colors.soft;
+    ctx.font = mono(fonts, 22);
+    ruleEnd = width - 84 - tracked(ctx, header.right, width - 84, y, 3, "right") - 24;
   }
-  ctx.fillStyle = colors.line;
-  ctx.fillRect(72, y + 26, width - 144, 2);
-  ctx.fillStyle = colors.accent;
-  ctx.fillRect(72, y + 24, 132, 6);
+  if (ruleEnd > end + 24) {
+    const rule = ctx.createLinearGradient(end + 20, 0, ruleEnd, 0);
+    rule.addColorStop(0, colors.eyebrow);
+    rule.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = rule;
+    ctx.globalAlpha = 0.6;
+    ctx.fillRect(end + 20, y - 9, ruleEnd - end - 20, 2);
+    ctx.globalAlpha = 1;
+  }
 }
 
 /**

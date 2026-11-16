@@ -3,6 +3,7 @@
 import {
   decodeText,
   drawYumi,
+  eyebrow,
   fitText,
   hudBackdrop,
   hudColors,
@@ -13,6 +14,7 @@ import {
   readHudFonts,
   reticle,
   sans,
+  serif,
   SHARE_SIZES,
   wrapText,
   type HudColors,
@@ -94,7 +96,7 @@ function wordPanels(
   const gap = 20;
   const layoutAt = (size: number) =>
     sides.map((side) => {
-      ctx.font = sans(fonts, size, WEIGHT.word);
+      ctx.font = serif(fonts, size, WEIGHT.word);
       const lines = wrapText(measure, side.text, inner, 2);
       const height = 52 + size + 10 + (lines.length - 1) * (size + 8) + (side.reading ? 42 : 0) + 34;
       return { ...side, lines, height };
@@ -102,7 +104,7 @@ function wordPanels(
   const total = (layout: ReturnType<typeof layoutAt>) => layout.reduce((sum, side) => sum + side.height, 0) + gap * (layout.length - 1);
   let size = sizes.max;
   while (size > sizes.min) {
-    ctx.font = sans(fonts, size, WEIGHT.word);
+    ctx.font = serif(fonts, size, WEIGHT.word);
     if (sides.every((side) => measure(side.text) <= inner)) break;
     size -= 4;
   }
@@ -115,15 +117,14 @@ function wordPanels(
   let y = top;
   layout.forEach((side, index) => {
     hudPanel(ctx, x, y, width, side.height, colors, { rail: true });
-    ctx.fillStyle = colors.accent;
-    ctx.font = sans(fonts, 24, WEIGHT.label);
-    ctx.fillText(fitText(ctx, side.name.toUpperCase(), inner - 60), x + 44, y + 50);
+    eyebrow(ctx, side.name, x + 44, y + 50, 22, colors, fonts);
+    ctx.fillStyle = colors.faint;
     ctx.font = mono(fonts, 24);
     ctx.textAlign = "right";
     ctx.fillText(side.mark, x + width - 40, y + 50);
     ctx.textAlign = "left";
     ctx.fillStyle = colors.ink;
-    ctx.font = sans(fonts, size, WEIGHT.word);
+    ctx.font = serif(fonts, size, WEIGHT.word);
     /* While it decodes, one line; settled, its own lines. */
     const lines = texts[index] === side.text ? side.lines : [fitText(ctx, texts[index], inner)];
     lines.forEach((line, row) => ctx.fillText(line, x + 44, y + 52 + size + 4 + row * (size + 8)));
@@ -151,13 +152,8 @@ export function drawHelloCard(ctx: CanvasRenderingContext2D, input: HelloCardInp
 
   const story = input.format === "story";
   hudBackdrop(ctx, width, height, colors, cosmic);
-  hudFrame(ctx, width, height, colors, fonts, cosmic, { top: story ? 104 : 96 });
-  /* Who it is from, by the ID no one else can hold. */
-  ctx.fillStyle = colors.accent;
-  ctx.font = mono(fonts, 24);
-  ctx.textAlign = "right";
-  ctx.fillText(fitText(ctx, `@${hello.sender.exchangeId}`, 420), width - 84, story ? 104 : 96);
-  ctx.textAlign = "left";
+  /* Who it is from, by the ID no one else can hold, at the header's right. */
+  hudFrame(ctx, width, height, colors, fonts, cosmic, { top: story ? 104 : 96, right: `@${hello.sender.exchangeId}` });
 
   const [a, b] = hello.pair;
   const sides: Side[] = ([
@@ -183,7 +179,7 @@ export function drawHelloCard(ctx: CanvasRenderingContext2D, input: HelloCardInp
 
   if (story) {
     ctx.fillStyle = colors.ink;
-    ctx.font = sans(fonts, 62, WEIGHT.display);
+    ctx.font = serif(fonts, 64);
     const greeting = wrapText(measure, input.greeting, 912, 2);
     greeting.forEach((line, index) => ctx.fillText(line, 84, 236 + index * 72));
     const giftY = 236 + (greeting.length - 1) * 72 + 60;
@@ -210,7 +206,7 @@ export function drawHelloCard(ctx: CanvasRenderingContext2D, input: HelloCardInp
   }
 
   ctx.fillStyle = colors.ink;
-  ctx.font = sans(fonts, 50, WEIGHT.display);
+  ctx.font = serif(fonts, 52);
   const greeting = wrapText(measure, input.greeting, 560, 2);
   greeting.forEach((line, index) => ctx.fillText(line, 84, 196 + index * 58));
   const giftY = 196 + (greeting.length - 1) * 58 + 50;

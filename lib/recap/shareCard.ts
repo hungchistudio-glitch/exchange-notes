@@ -22,6 +22,7 @@
 import {
   decodeText,
   drawYumi,
+  eyebrow,
   fitText,
   fittedLine,
   hudBackdrop,
@@ -35,8 +36,8 @@ import {
   reticle,
   sans,
   segments,
+  serif,
   SHARE_SIZES,
-  tracked,
   type HudColors,
   type HudFonts,
   type ShareFormat,
@@ -56,7 +57,7 @@ export type ShareCardInput = {
   /** The app's faces (readHudFonts); the system's when absent. */
   fonts?: HudFonts;
   title: string;
-  /** In figures: "11/09 – 11/15". */
+  /** The week, as the page's subtitle gives it: "Nov 9 – Nov 15". */
   range: string;
   /** The header's code: "WK 46". */
   code?: string;
@@ -148,11 +149,9 @@ function lessonPanel(
   const s = (value: number) => Math.round(value * scale);
   hudPanel(ctx, x, y, width, lessonHeight(lesson, scale), colors, { rail: true });
   led(ctx, x + s(44), y + s(46), s(7), colors.accent, cosmic);
-  ctx.fillStyle = colors.accent;
-  ctx.font = sans(fonts, s(26), WEIGHT.label);
-  ctx.fillText(fitText(ctx, lesson.label, width - s(100)), x + s(64), y + s(55));
+  eyebrow(ctx, lesson.label, x + s(64), y + s(54), s(22), colors, fonts);
   ctx.fillStyle = colors.ink;
-  ctx.font = sans(fonts, s(70), WEIGHT.word);
+  ctx.font = serif(fonts, s(72), WEIGHT.word);
   ctx.fillText(fitText(ctx, word, width - s(80)), x + s(40), y + s(132));
   let line = y + s(132);
   if (lesson.reading) {
@@ -217,11 +216,11 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, input: ShareCardInp
 
   if (story) {
     ctx.fillStyle = colors.ink;
-    ctx.font = sans(fonts, 104, WEIGHT.display);
-    ctx.fillText(fitText(ctx, title, width - 168), 84, 236);
+    ctx.font = serif(fonts, 104);
+    ctx.fillText(fitText(ctx, title, width - 168), 80, 240);
     ctx.fillStyle = colors.soft;
-    ctx.font = mono(fonts, 30);
-    tracked(ctx, input.range, 86, 288, 2);
+    ctx.font = sans(fonts, 30);
+    ctx.fillText(input.range, 84, 290);
     if (input.headline) headlineTag(ctx, input.headline, 84, 316, 30, 400, colors, fonts, input.cosmic);
 
     reticle(ctx, 540, 700, 260, colors, fonts, input.spin ?? 0);
@@ -251,11 +250,11 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, input: ShareCardInp
   }
 
   ctx.fillStyle = colors.ink;
-  ctx.font = sans(fonts, 78, WEIGHT.display);
-  ctx.fillText(fitText(ctx, title, 560), 84, 214);
+  ctx.font = serif(fonts, 80);
+  ctx.fillText(fitText(ctx, title, 560), 80, 216);
   ctx.fillStyle = colors.soft;
-  ctx.font = mono(fonts, 26);
-  tracked(ctx, input.range, 86, 258, 2);
+  ctx.font = sans(fonts, 26);
+  ctx.fillText(input.range, 84, 258);
   if (input.headline) headlineTag(ctx, input.headline, 84, 282, 24, 520, colors, fonts, input.cosmic);
 
   reticle(ctx, 836, 340, 150, colors, fonts, input.spin ?? 0);

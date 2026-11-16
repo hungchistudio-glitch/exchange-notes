@@ -128,8 +128,6 @@ export default function WeeklyRecap() {
 
   const date = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" });
   const range = recap ? fill(copy.range, { from: date.format(recap.from), to: date.format(recap.to) }) : "";
-  const figures = new Intl.DateTimeFormat(locale, { month: "2-digit", day: "2-digit" });
-  const cardRange = recap ? `${figures.format(recap.from)} – ${figures.format(recap.to)}` : "";
   const headline = milestone
     ? fill(milestone.kind === "words" ? copy.milestoneWords : copy.milestoneStreak, { n: milestone.value })
     : null;
@@ -157,7 +155,7 @@ export default function WeeklyRecap() {
       cosmic,
       fonts: fonts.current ?? undefined,
       title: copy.title,
-      range: cardRange,
+      range,
       code: recap ? `WK ${String(isoWeek(recap.to)).padStart(2, "0")}` : undefined,
       headline,
       stats,
@@ -172,7 +170,7 @@ export default function WeeklyRecap() {
     const read = (fonts.current ??= readHudFonts());
     await loadHudFonts(read, [copy.title, headline, footer, lessonWord, lessonMeaning, copy.lessonLabel, ...stats.map((stat) => stat.label)].join(""));
   };
-  const version = JSON.stringify([cosmic, cardRange, headline, stats, lesson, footer, inviteUrl, host, turns]);
+  const version = JSON.stringify([cosmic, range, headline, stats, lesson, footer, inviteUrl, host, turns]);
   const tag = getLanguage(learningLanguage).speechTag;
 
   return (

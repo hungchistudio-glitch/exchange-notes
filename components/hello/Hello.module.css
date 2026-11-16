@@ -31,6 +31,9 @@
   --on-accent: #fbf8f1;
   --grid: rgb(29 27 23 / 0.045);
   --grid-strong: rgb(29 27 23 / 0.085);
+  /* A page's eyebrow and title, as the app sets them (app/tactile.css). */
+  --eyebrow: #94733a;
+  --serif: Georgia, "Noto Serif TC", "Songti TC", serif;
   --cut: 1.25rem;
   --cut-small: 0.75rem;
 
@@ -58,6 +61,7 @@
   --on-accent: #070b10;
   --grid: rgb(134 216 210 / 0.05);
   --grid-strong: rgb(134 216 210 / 0.1);
+  --eyebrow: #b8e8e5;
 }
 
 /* The editor's preview: the same pass, without a page around it. */
@@ -134,16 +138,17 @@
   box-shadow: 0 0 0.5rem var(--brass);
 }
 
+/* As a page's eyebrow: small capitals, tracked out, brass on paper. */
 .mark,
 .brand {
-  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.6875rem;
-  letter-spacing: 0.18em;
+  font-weight: 600;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
 
 .mark {
-  color: var(--brass);
+  color: var(--eyebrow);
 }
 
 .brand {
@@ -155,13 +160,15 @@
   padding: 0.75rem 1.5rem 0;
 }
 
-/* Light and large (Chi, 2026-11-15: 字體秀氣有設計感), as the shared card's. */
+/* In the app's title serif at its regular weight, as the home's greeting
+   (Chi, 2026-11-15: 使用這種字體), and as the shared card. */
 .greetingLine {
   margin: 0;
-  font-size: 1.75rem;
-  font-weight: 300;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
+  font-family: var(--serif);
+  font-size: 1.875rem;
+  font-weight: 400;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
   /* An Exchange ID has no spaces to break at, and a phone is narrow. */
   overflow-wrap: anywhere;
 }
@@ -383,14 +390,16 @@
 .sideLanguage {
   margin: 0;
   font-size: 0.6875rem;
-  letter-spacing: 0.1em;
+  font-weight: 600;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--eyebrow);
 }
 
 .word {
   margin: 0;
-  font-size: 2rem;
+  font-family: var(--serif);
+  font-size: 2.125rem;
   font-weight: 400;
   letter-spacing: -0.01em;
   line-height: 1.2;
