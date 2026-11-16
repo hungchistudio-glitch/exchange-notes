@@ -34,7 +34,10 @@ export function languageCodeFor(lang: string): LanguageCode {
  * word the next two sections send to a friend and bring back for review.
  */
 export default function NotesShowcase({ copy }: { copy: NotesCopy }) {
-  const [shown, setShown] = useState<LanguageCode>(() => languageCodeFor(copy.translationLang));
+  /* The reader's pick, or else the dictionary's own note language, so a
+     switch of interface language brings the note along with it. */
+  const [picked, setShown] = useState<LanguageCode | null>(null);
+  const shown = picked ?? languageCodeFor(copy.translationLang);
   const [open, setOpen] = useState<LanguageCode | null>(null);
   const speaker = useSpeaker();
   const lookupId = useId();

@@ -1,7 +1,7 @@
 "use client";
 
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { getLanguage } from "@/lib/languages";
+import { getLanguage, getLanguageName } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
 import { useState } from "react";
 import {
@@ -21,7 +21,7 @@ import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useKnownWords from "@/hooks/useKnownWords";
 import { SpeakKey, SpokenText, WordByWordSwitch } from "@/components/speech/Spoken";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { plural } from "@/lib/i18n/format";
+import { fill, plural } from "@/lib/i18n/format";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import { DISCOVER_COLORS, type DailyNewsCard } from "./types";
@@ -67,7 +67,7 @@ export default function StoryDetailSheet({
 
   // Above the early return: a hook cannot be called conditionally.
   const { pair } = useDisplayLanguages();
-  const { t, locale } = useTranslation();
+  const { t, locale, language: interfaceLanguage } = useTranslation();
   /*
    * The two languages the reader chose, and only those. A card that cannot
    * lead in the language being learned is filtered out upstream rather than
@@ -230,7 +230,7 @@ export default function StoryDetailSheet({
               text={card.titles[primaryLanguage] ?? ""}
               lang={primarySpeech}
               rate={speechRate}
-              label={copy.readEnglishAriaLabel}
+              label={fill(copy.readEnglishAriaLabel, { language: getLanguageName(primaryLanguage, interfaceLanguage) })}
               iconSize={13}
               className={titleKey}
             />
@@ -245,7 +245,7 @@ export default function StoryDetailSheet({
               text={card.titles[secondaryLanguage] ?? ""}
               lang={secondarySpeech}
               rate={speechRate}
-              label={copy.readChineseAriaLabel}
+              label={fill(copy.readChineseAriaLabel, { language: getLanguageName(secondaryLanguage, interfaceLanguage) })}
               iconSize={13}
               className={titleKey}
             />
@@ -270,7 +270,7 @@ export default function StoryDetailSheet({
               text={card.summaries[primaryLanguage] ?? ""}
               lang={primarySpeech}
               rate={speechRate}
-              label={copy.readEnglishAriaLabel}
+              label={fill(copy.readEnglishAriaLabel, { language: getLanguageName(primaryLanguage, interfaceLanguage) })}
               iconSize={12}
               className={summaryKey}
             />
@@ -285,7 +285,7 @@ export default function StoryDetailSheet({
               text={card.summaries[secondaryLanguage] ?? ""}
               lang={secondarySpeech}
               rate={speechRate}
-              label={copy.readChineseAriaLabel}
+              label={fill(copy.readChineseAriaLabel, { language: getLanguageName(secondaryLanguage, interfaceLanguage) })}
               iconSize={12}
               className={summaryKey}
             />

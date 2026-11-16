@@ -18,7 +18,7 @@ import { applyShellFinish, buildThumbnailObject, buildableIds, createOutfitRig, 
    shelves and apart from the Mythic Vault's 33; worn like any other piece
    once owned. What must hold (handoffs/yumi-starweaver/DESIGN.md §7):
      - 17, in the book's slots (3 finishes, 6 earrings, 3 brow, 3
-       necklaces, 2 head), five names each, the Chinese Traditional;
+       necklaces, 2 head), seven names each, the Chinese Traditional;
      - the database rows (the migration) limited, unavailable, from the
        'starweaver' pool, in the same slots;
      - every one builds on the real rig, jewellery under 5,000 triangles
@@ -70,16 +70,16 @@ describe("the relics' catalogue", () => {
     expect(STARWEAVER_ITEMS.map(item => item.seal)).toEqual(Array.from({ length: 17 }, (_, i) => String(i + 1).padStart(2, "0")));
     for (const item of STARWEAVER_ITEMS) {
       expect(item.id.startsWith("sw-"), item.id).toBe(true);
-      expect(Object.values(item.names).filter(name => name.trim()), item.id).toHaveLength(5);
+      expect(Object.values(item.names).filter(name => name.trim()), item.id).toHaveLength(7);
       expect(SIMPLIFIED.test(item.names["traditional-chinese"]), item.names["traditional-chinese"]).toBe(false);
     }
   });
 
-  it("says a line about each, in all five languages, the Chinese Traditional (Chi, 2026-11-11)", () => {
+  it("says a line about each, in all seven languages, the Chinese Traditional (Chi, 2026-11-11)", () => {
     for (const item of STARWEAVER_ITEMS) {
       const intros = Object.values(item.intro);
-      expect(intros.filter(line => line.trim().length > 12), item.id).toHaveLength(5);
-      expect(new Set(intros).size, item.id).toBe(5);
+      expect(intros.filter(line => line.trim().length > 12), item.id).toHaveLength(7);
+      expect(new Set(intros).size, item.id).toBe(7);
       expect(SIMPLIFIED.test(item.intro["traditional-chinese"]), item.intro["traditional-chinese"]).toBe(false);
       /* One or two sentences: short enough to read as it turns. */
       expect(item.intro.english.length, item.id).toBeLessThan(150);

@@ -29,21 +29,51 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
  * BCP-47, and every hand-rolled mapping between the two encodings is a
  * place to get it wrong.
  */
-export type LanguageCode = "en" | "zh-TW" | "es" | "fr" | "it";
+export type LanguageCode = "en" | "zh-TW" | "es" | "fr" | "it" | "ja" | "ko";
 
 /**
  * A phonetic annotation system. Deliberately a closed union of the real
  * systems rather than a generalized "pronunciation guide" abstraction:
  * pinyin and zhuyin are Chinese-specific, and what Spanish/French/Italian
  * need is stress placement and liaison, not an analogue of pinyin.
+ *
+ * Japanese and Korean (Chi, 2026-11-16):
+ *   kana    the hiragana reading of a Japanese word, drawn as furigana over
+ *           its kanji only — never over kana, which already says itself
+ *   romaji  the same reading in Latin letters (modified Hepburn), one muted
+ *           line, on single-word cards only
+ *   rr      Korean in the Revised Romanization, after the sound changes
+ *           (한국어 → hangugeo); a tap swaps the line to IPA
  */
-export type PhoneticSystem = "ipa" | "pinyin" | "zhuyin";
+export type PhoneticSystem =
+  | "ipa"
+  | "pinyin"
+  | "zhuyin"
+  | "kana"
+  | "romaji"
+  | "rr";
+
+/**
+ * The writing systems a language is written in.
+ *
+ * What detection and search ask instead of the font: Japanese shares Han
+ * characters with Chinese, so "is this text in a CJK script" and "which font
+ * draws it" stopped being one question when Japanese arrived.
+ */
+export type WritingScript = "latin" | "han" | "kana" | "hangul";
 
 /**
  * The BCP-47 tags handed to speechSynthesis, as a closed union so a caller
  * cannot ask for a language the app has no voice strategy for.
  */
-export type SpeechTag = "en-US" | "zh-TW" | "es-ES" | "fr-FR" | "it-IT";
+export type SpeechTag =
+  | "en-US"
+  | "zh-TW"
+  | "es-ES"
+  | "fr-FR"
+  | "it-IT"
+  | "ja-JP"
+  | "ko-KR";
 
 export type LanguageMetadata = {
   code: LanguageCode;
@@ -84,7 +114,7 @@ export type LanguageMetadata = {
    * the table rather than from a `language === "fr" && "🇫🇷"` ladder in each
    * card, and so a sixth language arrives by adding a row plus one glyph.
    */
-  representativeRegion: "US" | "TW" | "ES" | "FR" | "IT";
+  representativeRegion: "US" | "TW" | "ES" | "FR" | "IT" | "JP" | "KR";
 
   /**
    * BCP-47 tag handed to speechSynthesis. Separate from `htmlLang` on
@@ -121,7 +151,10 @@ export type LanguageMetadata = {
    * added to fix, so callers should set the stack from here rather than
    * relying on `font-sans`.
    */
-  fontVariable: "--font-latin" | "--font-cjk";
+  fontVariable: "--font-latin" | "--font-cjk" | "--font-ja" | "--font-ko";
+
+  /** The scripts its text is written in. See WritingScript. */
+  scripts: readonly WritingScript[];
 
   /** Phonetic annotations available for this language, best-first. Empty
    *  means the app offers none and callers should render nothing rather
@@ -164,6 +197,8 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       spanish: "Inglés",
       french: "Anglais",
       italian: "Inglese",
+      japanese: "英語",
+      korean: "영어",
     },
     endonym: "English",
     voiceSample: "Hello, welcome to Exchange Notes.",
@@ -174,6 +209,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     htmlLang: "en",
     direction: "ltr",
     fontVariable: "--font-latin",
+    scripts: ["latin"],
     phonetics: ["ipa"],
     requiresTraditionalNormalization: false,
     availableAsInterface: true,
@@ -187,6 +223,8 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       spanish: "Chino tradicional",
       french: "Chinois traditionnel",
       italian: "Cinese tradizionale",
+      japanese: "繁体字中国語",
+      korean: "중국어(번체)",
     },
     endonym: "繁體中文",
     voiceSample: "你好，歡迎使用 Exchange Notes。",
@@ -197,6 +235,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     htmlLang: "zh-Hant",
     direction: "ltr",
     fontVariable: "--font-cjk",
+    scripts: ["han"],
     phonetics: ["pinyin", "zhuyin"],
     requiresTraditionalNormalization: true,
     availableAsInterface: true,
@@ -210,6 +249,8 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       spanish: "Español",
       french: "Espagnol",
       italian: "Spagnolo",
+      japanese: "スペイン語",
+      korean: "스페인어",
     },
     endonym: "Español",
     voiceSample: "Hola, te damos la bienvenida a Exchange Notes.",
@@ -220,6 +261,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     htmlLang: "es",
     direction: "ltr",
     fontVariable: "--font-latin",
+    scripts: ["latin"],
     phonetics: ["ipa"],
     requiresTraditionalNormalization: false,
     availableAsInterface: true,
@@ -233,6 +275,8 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       spanish: "Francés",
       french: "Français",
       italian: "Francese",
+      japanese: "フランス語",
+      korean: "프랑스어",
     },
     endonym: "Français",
     voiceSample: "Bonjour, bienvenue sur Exchange Notes.",
@@ -243,6 +287,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     htmlLang: "fr",
     direction: "ltr",
     fontVariable: "--font-latin",
+    scripts: ["latin"],
     phonetics: ["ipa"],
     requiresTraditionalNormalization: false,
     availableAsInterface: true,
@@ -256,6 +301,8 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       spanish: "Italiano",
       french: "Italien",
       italian: "Italiano",
+      japanese: "イタリア語",
+      korean: "이탈리아어",
     },
     endonym: "Italiano",
     voiceSample: "Ciao, ti diamo il benvenuto su Exchange Notes.",
@@ -266,7 +313,60 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     htmlLang: "it",
     direction: "ltr",
     fontVariable: "--font-latin",
+    scripts: ["latin"],
     phonetics: ["ipa"],
+    requiresTraditionalNormalization: false,
+    availableAsInterface: true,
+    availableAsLearning: true,
+  },
+  ja: {
+    code: "ja",
+    name: {
+      english: "Japanese",
+      "traditional-chinese": "日文",
+      spanish: "Japonés",
+      french: "Japonais",
+      italian: "Giapponese",
+      japanese: "日本語",
+      korean: "일본어",
+    },
+    endonym: "日本語",
+    voiceSample: "こんにちは。Exchange Notes へようこそ。",
+    badge: "あ",
+    representativeRegion: "JP",
+    speechTag: "ja-JP",
+    voiceTagFallbacks: [],
+    htmlLang: "ja",
+    direction: "ltr",
+    fontVariable: "--font-ja",
+    scripts: ["han", "kana"],
+    phonetics: ["kana", "romaji"],
+    requiresTraditionalNormalization: false,
+    availableAsInterface: true,
+    availableAsLearning: true,
+  },
+  ko: {
+    code: "ko",
+    name: {
+      english: "Korean",
+      "traditional-chinese": "韓文",
+      spanish: "Coreano",
+      french: "Coréen",
+      italian: "Coreano",
+      japanese: "韓国語",
+      korean: "한국어",
+    },
+    endonym: "한국어",
+    voiceSample: "안녕하세요. Exchange Notes에 오신 것을 환영합니다.",
+    badge: "한",
+    representativeRegion: "KR",
+    speechTag: "ko-KR",
+    voiceTagFallbacks: [],
+    htmlLang: "ko",
+    direction: "ltr",
+    fontVariable: "--font-ko",
+    scripts: ["hangul"],
+    phonetics: ["rr", "ipa"],
     requiresTraditionalNormalization: false,
     availableAsInterface: true,
     availableAsLearning: true,
@@ -285,8 +385,8 @@ export type ProfileLanguagePair = readonly [
  * Every profile pairing the product officially supports.
  *
  * Direction matters: learning Spanish with French support is a different
- * experience from learning French with Spanish support. Five languages with
- * no same-language pair therefore produce 5 × 4 = 20 combinations.
+ * experience from learning French with Spanish support. Seven languages with
+ * no same-language pair therefore produce 7 × 6 = 42 combinations.
  */
 export const SUPPORTED_PROFILE_LANGUAGE_PAIRS: readonly ProfileLanguagePair[] =
   Object.freeze(
@@ -502,8 +602,13 @@ export function getInterfaceLanguages(): LanguageMetadata[] {
  */
 export function isUnreadableScript(code: LanguageCode): boolean {
   return LANGUAGES[code].phonetics.some(
-    (system) => system === "pinyin" || system === "zhuyin",
+    (system) => system === "pinyin" || system === "zhuyin" || system === "kana",
   );
+}
+
+/** Whether the language is written in this script (see WritingScript). */
+export function usesScript(code: LanguageCode, script: WritingScript): boolean {
+  return LANGUAGES[code].scripts.includes(script);
 }
 
 export function hasPhonetics(
@@ -654,6 +759,8 @@ export const INTERFACE_LANGUAGE_CODE: Record<InterfaceLanguage, LanguageCode> =
     spanish: "es",
     french: "fr",
     italian: "it",
+    japanese: "ja",
+    korean: "ko",
   };
 
 /**

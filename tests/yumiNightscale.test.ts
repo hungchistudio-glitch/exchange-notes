@@ -25,7 +25,7 @@ import { buildThumbnailObject, buildableIds, disposeObject } from "@/lib/yumi3d/
    Unlocked by every third word won in Hangyumi; never on the 333 shelves,
    apart from the vault's 33 and the relics' 17; worn like any other piece
    once owned. A tribute told in symbols only, so what must hold:
-     - 24, two in every one of the twelve slots, five names and a line
+     - 24, two in every one of the twelve slots, seven names and a line
        about each, the Chinese Traditional;
      - nowhere, in any language, a person's name or a registered mark:
        not on a piece, not on the shelf (Chi drew the line: symbols and
@@ -75,18 +75,18 @@ describe("Nightscale's catalogue", () => {
     expect(NIGHTSCALE_ITEMS.map(item => item.seal)).toEqual(Array.from({ length: 24 }, (_, i) => String(i + 1).padStart(2, "0")));
     for (const item of NIGHTSCALE_ITEMS) {
       expect(item.id.startsWith("ns-"), item.id).toBe(true);
-      expect(Object.values(item.names).filter(name => name.trim()), item.id).toHaveLength(5);
+      expect(Object.values(item.names).filter(name => name.trim()), item.id).toHaveLength(7);
       expect(SIMPLIFIED.test(item.names["traditional-chinese"]), item.names["traditional-chinese"]).toBe(false);
     }
     expect(WINS_PER_PIECE).toBe(3);
     expect(nightscaleItem("ns-two-banners")?.seal).toBe("24");
   });
 
-  it("says a line about each, in all five languages, the Chinese Traditional", () => {
+  it("says a line about each, in all seven languages, the Chinese Traditional", () => {
     for (const item of NIGHTSCALE_ITEMS) {
       const intros = Object.values(item.intro);
-      expect(intros.filter(line => line.trim().length > 12), item.id).toHaveLength(5);
-      expect(new Set(intros).size, item.id).toBe(5);
+      expect(intros.filter(line => line.trim().length > 12), item.id).toHaveLength(7);
+      expect(new Set(intros).size, item.id).toBe(7);
       expect(SIMPLIFIED.test(item.intro["traditional-chinese"]), item.intro["traditional-chinese"]).toBe(false);
       expect(item.intro.english.length, item.id).toBeLessThan(150);
     }

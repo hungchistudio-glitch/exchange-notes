@@ -340,13 +340,90 @@
      (font-latin / font-cjk / font-phonetic / font-zhuyin) — use whichever
      matches the text being rendered. */
   --font-latin: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  --font-cjk:
-    "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Heiti TC",
-    sans-serif;
+  /* Follows the text's language (see "Han characters by language" below):
+     Traditional Chinese by default, Japanese or Korean under [lang]. */
+  --font-cjk: var(--cjk-sans);
   --font-phonetic: "Noto Sans", "PingFang TC", "Microsoft JhengHei", sans-serif;
   --font-zhuyin:
     "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Heiti TC",
     sans-serif;
+}
+
+/* =====================================================================
+   Han characters by language (Japanese and Korean, 2026-11-16)
+
+   One Han character is drawn differently in Taiwan and in Japan (直, 骨,
+   次, 角), and Hangul is not in the Traditional Chinese fonts at all. So the
+   CJK face is chosen by the text's language rather than written once:
+   `--cjk-sans` and `--cjk-serif` hold the face for whatever [lang] the
+   element is in, and every stack that names a CJK face reads them.
+
+   A custom property's var() is resolved where it is declared, and
+   font-family is inherited as a resolved list, so redefining the variables
+   on a [lang] element changes nothing below it by itself: an element in
+   Japanese or Korean inside a page in another language also sets its own
+   font-family. Headings keep the title serif; Standard's heading rule
+   (tactile.css) reads `--font-display`, and the hello card `--serif`
+   (Hello.module.css), so both are redefined here as well.
+
+   The system faces come first: Hiragino and Apple SD Gothic Neo on Apple
+   devices, Yu Gothic / Meiryo and Malgun Gothic on Windows. Android draws
+   the generic family by [lang], which is why each stack ends in it rather
+   than in a Traditional Chinese face.
+   ===================================================================== */
+@layer base {
+  :root {
+    --cjk-sans:
+      "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Heiti TC",
+      sans-serif;
+    --cjk-serif: "Noto Serif TC", "Songti TC";
+  }
+
+  [lang|="zh"] {
+    --cjk-sans:
+      "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Heiti TC",
+      sans-serif;
+    --cjk-serif: "Noto Serif TC", "Songti TC";
+    --font-display: Georgia, "Noto Serif TC", "Songti TC", serif;
+    --serif: Georgia, "Noto Serif TC", "Songti TC", serif;
+  }
+
+  [lang|="ja"] {
+    --cjk-sans:
+      "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic,
+      Meiryo, "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+    --cjk-serif:
+      "Hiragino Mincho ProN", "Yu Mincho", YuMincho, "Noto Serif JP",
+      "Noto Serif CJK JP";
+    --font-display:
+      Georgia, "Hiragino Mincho ProN", "Yu Mincho", YuMincho, "Noto Serif JP",
+      serif;
+    --serif:
+      Georgia, "Hiragino Mincho ProN", "Yu Mincho", YuMincho, "Noto Serif JP",
+      serif;
+  }
+
+  [lang|="ko"] {
+    --cjk-sans:
+      "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR",
+      "Noto Sans CJK KR", sans-serif;
+    --cjk-serif: AppleMyungjo, "Nanum Myeongjo", "Noto Serif KR", "Noto Serif CJK KR";
+    --font-display:
+      Georgia, AppleMyungjo, "Nanum Myeongjo", "Noto Serif KR", serif;
+    --serif: Georgia, AppleMyungjo, "Nanum Myeongjo", "Noto Serif KR", serif;
+  }
+
+  /* An element in Japanese or Korean (or Chinese inside a Japanese or
+     Korean page) sets its own face, since the inherited one was resolved
+     for the page's language. Not inside a heading, which keeps the serif. */
+  :is([lang|="ja"], [lang|="ko"]):not(html, :is(h1, h2, h3) *),
+  html:is([lang|="ja"], [lang|="ko"]) [lang|="zh"]:not(:is(h1, h2, h3) *) {
+    font-family: var(--font-geist-sans), var(--cjk-sans);
+  }
+
+  html:not([data-interface-mode="yumi-cosmic"]) :is(h1, h2, h3) :is([lang|="ja"], [lang|="ko"], [lang|="zh"]) {
+    font-family: var(--font-display);
+  }
 }
 
 /* Latin text uses Geist. Traditional Chinese glyphs fall through to a
@@ -365,13 +442,7 @@ body {
   color: var(--foreground);
   font-family:
     var(--font-sans),
-    "PingFang TC",
-    "Microsoft JhengHei",
-    "Noto Sans TC",
-    "Heiti TC",
-    Arial,
-    Helvetica,
-    sans-serif;
+    var(--cjk-sans);
 }
 
 html {
@@ -629,4 +700,39 @@ html[data-launching="true"] :is([data-app-viewport], [data-app-ambience]) *::aft
   width: max(100%, 44px);
   height: max(100%, 44px);
   transform: translate(-50%, -50%);
+}
+
+/* =====================================================================
+   Furigana (Chi, 2026-11-16): small hiragana over a Japanese word's kanji,
+   never over its kana (components/speech/Furigana.tsx). Half the word's
+   size and a step quieter, so the word stays the thing being read; the
+   line height leaves the reading room without moving a card's layout.
+   ===================================================================== */
+ruby.furigana {
+  ruby-position: over;
+  ruby-align: center;
+}
+
+ruby.furigana > rt {
+  font-size: 0.5em;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0;
+  color: var(--ink-soft);
+  font-family: var(--font-geist-sans), var(--cjk-sans);
+  user-select: none;
+}
+
+html[data-interface-mode="yumi-cosmic"] ruby.furigana > rt {
+  color: var(--cosmic-ice, #b8e8e5);
+  opacity: 0.8;
+}
+
+/* Korean breaks lines between words, at its spaces, never inside one: a
+   line that ends "다" and starts the next with "른" has split 다른 in two.
+   keep-all does that for Hangul and leaves Latin as it was; break-word
+   still lets a long unbroken string (a link) wrap rather than overflow. */
+:lang(ko) {
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }

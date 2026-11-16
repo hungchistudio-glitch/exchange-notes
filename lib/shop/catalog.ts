@@ -1,4 +1,5 @@
 import { COLLECTION03_ITEMS } from "./collection03";
+import { sevenNames } from "./jaKoNames";
 import { COLLECTION04_ITEMS } from "./collection04";
 import { CULTURAL_ITEMS } from "./culturalCollection";
 import { MYTHIC_ITEMS } from "./mythicCollection";
@@ -227,7 +228,7 @@ const ROWS: Record<ShopCountry, Row[]> = {
 export const SHOP_ITEMS: readonly ShopItem[] = [...SHOP_COUNTRIES.flatMap(country =>
   ROWS[country].map(([id, slot, price, tone, zh, en, fr, it, es]) => ({
     id, country, slot, price, tone,
-    names: { "traditional-chinese": zh, english: en, french: fr, italian: it, spanish: es },
+    names: sevenNames(id, { "traditional-chinese": zh, english: en, french: fr, italian: it, spanish: es }),
   })),
 ), ...CULTURAL_ITEMS, ...COLLECTION03_ITEMS, ...COLLECTION04_ITEMS];
 

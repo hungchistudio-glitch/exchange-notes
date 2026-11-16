@@ -15,7 +15,7 @@ import {
 import { tryModels } from "@/lib/ai/tryModels";
 import { tidyChineseDeep } from "@/lib/chinese/tidyChinese";
 import { LANGUAGE_CODES, isLanguageCode, type LanguageCode } from "@/lib/languages";
-import { getPhonetics } from "@/lib/pronunciation";
+import { getPhonetics, japaneseReadings } from "@/lib/pronunciation";
 import { transcribe } from "@/lib/pronunciation/ipaSource";
 import { cleanOutfit, sameOutfit, type YumiOutfit } from "@/lib/shop/catalog";
 
@@ -55,7 +55,7 @@ function cleanPhonetic(value: unknown): HelloSide["phonetic"] | undefined {
   if (!value || typeof value !== "object") return undefined;
   const source = value as Record<string, unknown>;
   const phonetic: NonNullable<HelloSide["phonetic"]> = {};
-  for (const key of ["ipa", "zhuyin", "pinyin"] as const) {
+  for (const key of ["ipa", "zhuyin", "pinyin", "kana", "romaji", "rr"] as const) {
     const text = cleanText(source[key], MAX_PHONETIC);
     if (text) phonetic[key] = text;
   }
@@ -147,7 +147,7 @@ export function lookupFromRpc(value: unknown): HelloLookup {
   return { status: "active", hello: snapshot };
 }
 
-/* ── Putting a sense into the five languages ──────────────────────────── */
+/* ── Putting a sense into the seven languages ─────────────────────────── */
 
 type Budget = { consume: () => Promise<boolean>; refund: () => Promise<void> };
 
@@ -156,9 +156,20 @@ async function phoneticFor(text: string, language: LanguageCode, budget?: Budget
     const { zhuyin, pinyin } = getPhonetics(text, "zh-TW");
     return zhuyin || pinyin ? { ...(zhuyin ? { zhuyin } : {}), ...(pinyin ? { pinyin } : {}) } : undefined;
   }
+  /* Korean is read by rule: romanization and IPA, nothing to ask. */
+  if (language === "ko") {
+    const { rr, ipa } = getPhonetics(text, "ko");
+    return rr || ipa ? { ...(rr ? { rr } : {}), ...(ipa ? { ipa } : {}) } : undefined;
+  }
   try {
     const { found } = await transcribe([text], language, budget);
-    const ipa = [...found.values()][0];
+    const answer = [...found.values()][0];
+    /* Japanese comes back as its kana reading, completed with romaji. */
+    if (language === "ja") {
+      const { kana, romaji } = japaneseReadings(answer);
+      return kana ? { kana, ...(romaji ? { romaji } : {}) } : undefined;
+    }
+    const ipa = answer;
     return ipa ? { ipa } : undefined;
   } catch {
     return undefined;

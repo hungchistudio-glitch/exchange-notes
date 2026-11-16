@@ -1,11 +1,11 @@
 import { promptLanguageName, whenScriptRuleApplies } from "@/lib/ai/languagePrompt";
-import type { LanguageCode } from "@/lib/languages";
+import { LANGUAGE_CODES, type LanguageCode } from "@/lib/languages";
 import { HELLO_TEXT_MAX } from "@/lib/hello/text";
 
 /*
  * One sense, in the languages it is missing — for Yumi's hello (lib/hello).
  *
- * A hello shows one word in any two of the five languages, and a visitor may
+ * A hello shows one word in any two of the seven languages, and a visitor may
  * switch to any other two. Every side is made here, once, when the hello is
  * created, so a visitor never reaches a model at all.
  *
@@ -41,7 +41,7 @@ export const HELLO_SENSE_SCHEMA = {
         type: "object",
         additionalProperties: false,
         properties: {
-          language: { type: "string", enum: ["en", "zh-TW", "es", "fr", "it"] },
+          language: { type: "string", enum: [...LANGUAGE_CODES] },
           text: { type: "string", minLength: 1, maxLength: HELLO_TEXT_MAX },
           partOfSpeech: { type: "string", enum: [...HELLO_PARTS_OF_SPEECH] },
         },

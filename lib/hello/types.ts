@@ -28,7 +28,7 @@ export type HelloSide = {
   /** Normalized part of speech (lib/vocabulary/partOfSpeech.ts), if known. */
   partOfSpeech?: string;
   /** How it is written phonetically, where the language has a system. */
-  phonetic?: { ipa?: string; zhuyin?: string; pinyin?: string };
+  phonetic?: { ipa?: string; zhuyin?: string; pinyin?: string; kana?: string; romaji?: string; rr?: string };
 };
 
 /**

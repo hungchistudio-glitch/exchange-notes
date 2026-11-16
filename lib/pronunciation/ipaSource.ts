@@ -4,6 +4,8 @@ import { GoogleGenAI } from "@google/genai";
 
 import { getTextModelCandidates } from "@/lib/ai/modelConfig";
 import { getLanguage, hasPhonetics, type LanguageCode } from "@/lib/languages";
+import { isAllKana, toHiragana } from "@/lib/japanese/kana";
+import { koreanIpa } from "@/lib/korean/romanize";
 import { builtinIpa } from "@/lib/pronunciation/builtinIpa";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -69,6 +71,17 @@ const RESULT_SCHEMA = {
   required: ["words"],
 } as const;
 
+/**
+ * Whether this file has anything to say for a language. Japanese is here
+ * for its reading rather than IPA (2026-11-16): the same cache, the same
+ * one background model, but the answer is the word in hiragana — what the
+ * furigana and the romaji line are made from. In the cache a Japanese row's
+ * `ipa` column holds that kana.
+ */
+function transcribes(language: LanguageCode): boolean {
+  return hasPhonetics(language, "ipa") || hasPhonetics(language, "kana");
+}
+
 function cacheKey(text: string): string {
   return text.trim();
 }
@@ -133,7 +146,7 @@ export async function rememberIpa(
 ): Promise<void> {
   const word = cacheKey(text);
   const value = ipa.trim();
-  if (!word || !value || !hasPhonetics(language, "ipa")) return;
+  if (!word || !value || !transcribes(language)) return;
   if (process.env.NODE_ENV === "test") return;
 
   await writeCache(language, new Map([[word, value]]), "model");
@@ -233,7 +246,17 @@ async function fromModel(
         model,
         signal,
         timeoutMs,
-        input: [
+        input: language === "ja" ? [
+          `Give the reading of each Japanese word or phrase below, in hiragana.`,
+          ``,
+          `Rules:`,
+          `- Hiragana only, the reading a dictionary gives for this word in standard Tokyo Japanese.`,
+          `- Read every kanji; keep kana as it is (katakana in hiragana); no spaces, no romaji.`,
+          `- Return the words in the same order, with "text" copied exactly as given, the reading in "ipa".`,
+          `- If a word is not Japanese or you are unsure of its reading, return an empty "ipa" rather than guessing.`,
+          ``,
+          ...texts.map((text, index) => `${index + 1}. ${text}`),
+        ].join("\n") : [
           `Give the IPA transcription of each ${meta.name.english} word or phrase below.`,
           ``,
           `Rules:`,
@@ -275,7 +298,12 @@ async function fromModel(
       const echoed = answer.text?.trim();
       if (echoed && echoed !== asked) return;
 
-      const ipa = answer.ipa?.trim();
+      let ipa = answer.ipa?.trim();
+      /* A Japanese reading has to be kana and nothing else. */
+      if (ipa && language === "ja") {
+        ipa = toHiragana(ipa.replace(/\s+/g, ""));
+        if (!isAllKana(ipa)) ipa = "";
+      }
       if (ipa) out.set(asked, ipa);
     });
 
@@ -307,17 +335,32 @@ export async function transcribe(
 }> {
   const wanted = [...new Set(texts.map(cacheKey))].filter(Boolean);
 
-  if (wanted.length === 0 || !hasPhonetics(language, "ipa")) {
+  if (wanted.length === 0 || !transcribes(language)) {
     return { found: new Map(), unavailable: [], limited: [] };
   }
 
+  /* Korean is read by rule (lib/korean/romanize.ts): nothing to look up. */
+  if (language === "ko") {
+    const found = new Map<string, string>();
+    for (const text of wanted) {
+      const ipa = koreanIpa(text);
+      if (ipa) found.set(text, ipa);
+    }
+    return { found, unavailable: [], limited: [] };
+  }
+
   /*
-   * The built-in dictionary's own transcriptions first: no database, no
-   * network, no quota (builtinIpa.ts). Only what it does not know goes on
-   * to the cache, the dictionary and the model.
+   * What is known without asking anyone: the built-in dictionary's
+   * transcriptions (builtinIpa.ts) — and, for Japanese, a word written all
+   * in kana, which is its own reading. Only the rest goes on to the cache,
+   * the dictionary and the model.
    */
   const found = new Map<string, string>();
   for (const text of wanted) {
+    if (language === "ja") {
+      if (isAllKana(text)) found.set(text, toHiragana(text));
+      continue;
+    }
     const ipa = builtinIpa(text, language);
     if (ipa) found.set(text, ipa);
   }

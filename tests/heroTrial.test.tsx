@@ -125,12 +125,12 @@ describe("Understand", () => {
     expect(utterance.rate).toBeLessThan(1);
   });
 
-  it("compares the idea across five languages, with its own language picker", () => {
+  it("compares the idea across seven languages, with its own language picker", () => {
     const { trial } = renderTrial();
     fireEvent.click(within(trial).getByRole("tab", { name: /Understand/ }));
 
     const languages = within(trial).getByRole("group", { name: english.trial.compare.label });
-    expect(within(languages).getAllByRole("button")).toHaveLength(5);
+    expect(within(languages).getAllByRole("button")).toHaveLength(7);
     // Opens in the reader's language.
     expect(within(languages).getByRole("button", { name: "English" })).toHaveAttribute("aria-pressed", "true");
 

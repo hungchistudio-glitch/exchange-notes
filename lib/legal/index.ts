@@ -21,6 +21,8 @@ const LOADERS: Record<InterfaceLanguage, () => Promise<{ default: LegalCopy }>> 
   spanish: () => import("@/lib/legal/es"),
   french: () => import("@/lib/legal/fr"),
   italian: () => import("@/lib/legal/it"),
+  japanese: () => import("@/lib/legal/ja"),
+  korean: () => import("@/lib/legal/ko"),
 };
 
 const cache = new Map<InterfaceLanguage, LegalCopy>();

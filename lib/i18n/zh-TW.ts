@@ -43,7 +43,7 @@ const traditionalChinese: TranslationDictionary = {
   meta: {
     landingTitle: "Exchange Notes：留住值得記住的字詞",
     landingDescription: "和 Yumi 一起查字、練習、收藏，並分享值得記住的字詞。",
-    appDescription: "用五種語言查任何字詞，留下值得記住的那些。",
+    appDescription: "用七種語言查任何字詞，留下值得記住的那些。",
   },
   notFound: {
     title: "找不到這個頁面",
@@ -95,7 +95,7 @@ const traditionalChinese: TranslationDictionary = {
         keepTitle: "連同當下一起留下",
         keepDescription: "在哪裡遇見、為什麼記住它，都和字句放在一起。把筆記改成你的，再留下來。",
         understandTitle: "和 Yumi 一起讀懂",
-        understandDescription: "用你的語言看懂意思、語氣與文化——是一起思考的參考，不是標準答案。聽聽發音，再看看五種語言怎麼說。",
+        understandDescription: "用你的語言看懂意思、語氣與文化——是一起思考的參考，不是標準答案。聽聽發音，再看看七種語言怎麼說。",
         exchangeTitle: "交換它，換個角度看",
         exchangeDescription: "把它傳給來自其他地方的朋友，聽聽同一句話在他們心裡的意思。",
         reviewTitle: "在快忘記前想起來",
@@ -135,7 +135,7 @@ const traditionalChinese: TranslationDictionary = {
           noVoice: "這台裝置沒有安裝{language}的聲音，瀏覽器會自動選一個。",
         },
         compare: {
-          title: "同一個意思，五種語言",
+          title: "同一個意思，七種語言",
           label: "顯示語言",
         },
         exchange: {
@@ -561,6 +561,10 @@ const traditionalChinese: TranslationDictionary = {
             "設定：改語言，或到「說明與關於」重看教學。",
           action: "去看看設定",
         },
+        readings: {
+          body: "日文、韓文加入了，現在共有七種語言。設定裡的「讀音顯示」決定要看哪些讀音：振假名、羅馬字、韓文羅馬拼音或 IPA、注音與拼音。",
+          action: "去看讀音顯示",
+        },
         pocket: {
           body:
             "在 iPhone 主畫面長按，加入 Exchange Notes 小工具，一點就能查字。在別的 App 選取文字，按「分享」→ Exchange Notes，也能查、也能收藏。",
@@ -852,7 +856,7 @@ const traditionalChinese: TranslationDictionary = {
     knownWordsHint: "發光的是你學過的字・長按任何字可以查",
     title: "探索",
     eyebrow: "Exchange Notes",
-    subtitle: "從今日的重要新聞學英文。",
+    subtitle: "從今日的重要新聞學{language}。",
 
     dailyNewsTitle: "每日新聞",
     speechSpeed: "朗讀速度",
@@ -878,10 +882,10 @@ const traditionalChinese: TranslationDictionary = {
     hoursAgo: "{count} 小時前",
     recently: "近期",
 
-    readEnglishAriaLabel: "朗讀英文新聞",
-    readChineseAriaLabel: "朗讀中文新聞",
+    readEnglishAriaLabel: "用{language}朗讀這則新聞",
+    readChineseAriaLabel: "用{language}朗讀這則新聞",
     readVocabWordAriaLabel: "朗讀 {word} 與其例句",
-    readVocabChineseAriaLabel: "朗讀 {translation} 與中文例句",
+    readVocabChineseAriaLabel: "朗讀{translation}和例句",
 
     loadingNewStories: "載入中…",
     sendToFriendAriaLabel: "傳送給朋友",
@@ -2660,6 +2664,8 @@ const traditionalChinese: TranslationDictionary = {
         spanish: "以西班牙文顯示 App 介面。",
         french: "以法文顯示 App 介面。",
         italian: "以義大利文顯示 App 介面。",
+        japanese: "以日文顯示 App 介面。",
+        korean: "以韓文顯示 App 介面。",
       },
     },
 
@@ -2896,6 +2902,24 @@ const traditionalChinese: TranslationDictionary = {
         medium: { label: "中" },
         large: { label: "大" },
       },
+    },
+    readingDisplay: {
+      rowTitle: "讀音顯示",
+      rowDescription: "振假名、羅馬字、韓文拼音、注音與拼音",
+      sheetTitle: "讀音顯示",
+      sheetDescription: "選擇單字旁要顯示哪些讀音。學到後面可以自己拿掉。",
+      furigana: "振假名",
+      always: "永遠",
+      cards: "只在單字卡",
+      off: "關",
+      on: "開",
+      romaji: "羅馬字",
+      romanization: "羅馬拼音",
+      ipa: "IPA",
+      zhuyin: "注音",
+      pinyin: "拼音",
+      swapToIpa: "顯示 IPA",
+      swapToRomanization: "顯示羅馬拼音",
     },
 
     pronunciation: {

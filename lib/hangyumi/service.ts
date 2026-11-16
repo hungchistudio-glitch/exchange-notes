@@ -7,7 +7,7 @@ import { NIGHTSCALE_ITEMS, WINS_PER_PIECE } from "@/lib/shop/nightscaleCollectio
 import { STARWEAVER_ITEMS, VOYAGES_PER_RELIC } from "@/lib/shop/starweaverCollection";
 
 import {
-  DAILY_CAP, MAX_MISSES, REWARDS, readGuess, readStart, readTodayState,
+  DAILY_CAP, MAX_MISSES, REWARDS, isTileLanguage, readGuess, readStart, readTodayState,
   type ChestReward, type ChestTier, type HangyumiCard, type HangyumiGame, type HangyumiGuessResult, type HangyumiLevel, type HangyumiRound, type HangyumiStart, type PartOfSpeech,
   type NightscaleAward, type StarweaverAward,
 } from "./rules";
@@ -295,9 +295,15 @@ export function createPreviewHangyumi(options: {
       if (!choices.length) return { status: "missing", language, level };
       const word = choices[turn++ % choices.length];
       let keyboard: string[] | null = null;
-      if (language === "zh-TW") {
+      if (isTileLanguage(language)) {
         const answerChars = [...new Set([...word.answer].filter(isLetter))];
-        const extra = [..."山海光日月星雲風心學文天地時人路城夜雨花"].filter(c => !answerChars.includes(c));
+        /* The same decoys the database falls back on (*_japanese_korean.sql). */
+        const decoys = language === "ja"
+          ? "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもらりるれろ"
+          : language === "ko"
+            ? "가나다라마바사아자차카타파하고노도로모보소오조호구누두루무부수우주"
+            : "山海光日月星雲風心學文天地時人路城夜雨花";
+        const extra = [...decoys].filter(c => !answerChars.includes(c));
         keyboard = [...answerChars, ...extra.slice(0, Math.max(0, 16 - answerChars.length))].sort(() => Math.random() - 0.5);
       }
       /* The server's rules (private.hangyumi_start): a Wordvault word left

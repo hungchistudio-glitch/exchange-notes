@@ -20,7 +20,7 @@ import { applyShellFinish, buildThumbnailObject, createOutfitRig, disposeObject 
    Treasures, in every slot, priced in tiers the slot already uses. What
    must hold for them to be sold and worn:
 
-     - the counts, the collections they file under, five names each;
+     - the counts, the collections they file under, seven names each;
      - every one builds on the real rig: finite, bounded, inside the
        phone's 20,000-triangle budget;
      - hanging pieces hang from the attachment point, earrings on the
@@ -72,13 +72,13 @@ describe("the catalogue", () => {
     expect(SHOP_ITEMS.filter((item) => inShopCollection(item, "collection03"))).toHaveLength(112);
   });
 
-  it("covers every slot as planned, belongs to no country, and names each piece in five languages", () => {
+  it("covers every slot as planned, belongs to no country, and names each piece in seven languages", () => {
     for (const [slot, count] of Object.entries(SLOT_COUNTS)) {
       expect(COLLECTION04_ITEMS.filter((item) => item.slot === slot), slot).toHaveLength(count);
     }
     for (const item of COLLECTION04_ITEMS) {
       expect(item.country, item.id).toBe("basic");
-      expect(Object.values(item.names).filter((name) => name.trim()), item.id).toHaveLength(5);
+      expect(Object.values(item.names).filter((name) => name.trim()), item.id).toHaveLength(7);
       expect(item.price % 3, item.id).toBe(0);
     }
   });

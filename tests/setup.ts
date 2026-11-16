@@ -24,6 +24,8 @@ import english from "@/lib/i18n/en";
 import spanish from "@/lib/i18n/es";
 import french from "@/lib/i18n/fr";
 import italian from "@/lib/i18n/it";
+import japanese from "@/lib/i18n/ja";
+import korean from "@/lib/i18n/ko";
 import traditionalChinese from "@/lib/i18n/zh-TW";
 
 primeTranslations("english", english);
@@ -31,6 +33,8 @@ primeTranslations("traditional-chinese", traditionalChinese);
 primeTranslations("spanish", spanish);
 primeTranslations("french", french);
 primeTranslations("italian", italian);
+primeTranslations("japanese", japanese);
+primeTranslations("korean", korean);
 
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";

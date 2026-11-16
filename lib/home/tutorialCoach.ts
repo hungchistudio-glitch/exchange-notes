@@ -51,11 +51,13 @@ const SEEN = "yumi-coach-seen";
  * 3 (2026-11-13, Chi: 重新更新實際教學介紹): speaking a word, the library's
  * Daily Focus and Yumi's halo there, the games, and on an iPhone the pocket
  * lookup.
+ * 4 (2026-11-16, Chi: 七種語言): Japanese and Korean, and 讀音顯示 in
+ * Settings.
  *
  * Bump it when steps are marked `since` the new number, and readers who
  * finished an earlier edition are shown the steps newer than theirs.
  */
-export const COACH_EDITION = 3;
+export const COACH_EDITION = 4;
 
 /** Past the last step. Stored as the number so one key carries both. */
 export const COACH_FINISHED = 99;

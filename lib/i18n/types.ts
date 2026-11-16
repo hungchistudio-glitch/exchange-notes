@@ -584,6 +584,8 @@ export type TranslationDictionary = {
         notes: { body: string; action: string };
         discover: { body: string; action: string };
         settings: { body: string; action: string };
+        /** Edition 4: Japanese and Korean, and 讀音顯示 in Settings. */
+        readings: { body: string; action: string };
         /** Inside the iPhone app only: the widget and the share sheet. */
         pocket: { body: string };
         /* The shop: what cookies are for (on Home, at the shop key), then
@@ -2876,6 +2878,26 @@ export type TranslationDictionary = {
         medium: { label: string };
         large: { label: string };
       };
+    };
+
+    /** Which readings show with words (lib/preferences/readingDisplay.ts; Chi, 2026-11-16). */
+    readingDisplay: {
+      rowTitle: string;
+      rowDescription: string;
+      sheetTitle: string;
+      sheetDescription: string;
+      furigana: string;
+      always: string;
+      cards: string;
+      off: string;
+      on: string;
+      romaji: string;
+      romanization: string;
+      ipa: string;
+      zhuyin: string;
+      pinyin: string;
+      swapToIpa: string;
+      swapToRomanization: string;
     };
 
     pronunciation: {

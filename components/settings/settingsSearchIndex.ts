@@ -57,6 +57,12 @@ export function buildSettingsSearchIndex(
       keywords: ["pronunciation", "voice", "speed", "speech", "audio", "rate"],
     },
     {
+      id: "setting-reading-display",
+      title: settings.readingDisplay.rowTitle,
+      section: sections.learning,
+      keywords: ["reading", "readings", "furigana", "romaji", "romanization", "ipa", "zhuyin", "pinyin", "ふりがな", "注音", "拼音", "로마자"],
+    },
+    {
       id: "setting-yumi-hellos",
       title: t.hello.manageTitle,
       section: sections.yumi,
@@ -84,7 +90,7 @@ export function buildSettingsSearchIndex(
       id: "setting-app-language",
       title: settings.appLanguage.rowTitle,
       section: sections.app,
-      keywords: ["app", "language", "interface", "english", "chinese"],
+      keywords: ["app", "language", "interface", "english", "chinese", "spanish", "french", "italian", "japanese", "korean", "日本語", "한국어"],
     },
     {
       id: "setting-font-size",

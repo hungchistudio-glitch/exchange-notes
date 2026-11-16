@@ -181,7 +181,7 @@ describe("where these pages sit in the app", () => {
   it("names Chi's service planet in every language", () => {
     for (const language of i18n.TRANSLATION_LANGUAGES) {
       const planet = i18n.getTranslations(language)!.info.about.planet;
-      expect(planet).toMatch(/earth|tierra|terre|terra|地球/i);
+      expect(planet).toMatch(/earth|tierra|terre|terra|地球|지구/i);
     }
   });
 });

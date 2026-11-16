@@ -1,9 +1,9 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { KEYBOARDS, LEVELS, PARTS_OF_SPEECH } from "@/lib/hangyumi/rules";
+import { KEYBOARDS, LEVELS, PARTS_OF_SPEECH, isTileLanguage } from "@/lib/hangyumi/rules";
 import { LANGUAGE_CODES, type LanguageCode } from "@/lib/languages";
 
 /* =========================================================
@@ -21,7 +21,19 @@ const root = join(__dirname, "..");
 type Row = [string, string, string, ...string[]];
 type BankFile = { language: string; source: string; columns: string[]; words: Row[] };
 
-const bank = Object.fromEntries(LANGUAGE_CODES.map(language => [
+/*
+ * The languages with a drafted bank. Japanese and Korean (2026-11-16) are
+ * being drafted for Chi's review page; until a file lands, the game says
+ * "no approved words yet" for them, which is what a bank with none does.
+ * The five clue columns stay the five they were written in: a clue in
+ * Japanese or Korean is optional, and the game falls back to English.
+ */
+const BANKED = LANGUAGE_CODES.filter(language =>
+  existsSync(join(root, "supabase/hangyumi", `${language}.json`)),
+);
+const CLUE_LANGUAGES = ["en", "zh-TW", "es", "fr", "it"] as const;
+
+const bank = Object.fromEntries(BANKED.map(language => [
   language,
   JSON.parse(readFileSync(join(root, "supabase/hangyumi", `${language}.json`), "utf8")) as BankFile,
 ])) as Record<LanguageCode, BankFile>;
@@ -35,10 +47,10 @@ const SIMPLIFIED = "们这说时为国过还样学发经么见对东头长门问
 const SIMPLIFIED_RE = new RegExp(`[${SIMPLIFIED}]`);
 
 describe("the drafted bank", () => {
-  it.each(LANGUAGE_CODES)("%s has 60 words a level, each once", language => {
+  it.each(BANKED)("%s has 60 words a level, each once", language => {
     const file = bank[language];
     expect(file.language).toBe(language);
-    expect(file.columns).toEqual(["level", "answer", "partOfSpeech", ...LANGUAGE_CODES]);
+    expect(file.columns.slice(0, 3 + CLUE_LANGUAGES.length)).toEqual(["level", "answer", "partOfSpeech", ...CLUE_LANGUAGES]);
     expect(file.source.length).toBeGreaterThan(10);
     for (const level of LEVELS) {
       expect(file.words.filter(([lvl]) => lvl === level)).toHaveLength(60);
@@ -47,7 +59,7 @@ describe("the drafted bank", () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it.each(LANGUAGE_CODES)("%s's answers are clean, guessable and of a known part of speech", language => {
+  it.each(BANKED)("%s's answers are clean, guessable and of a known part of speech", language => {
     for (const [level, answer, partOfSpeech] of bank[language].words) {
       expect(LEVELS).toContain(level);
       expect(PARTS_OF_SPEECH).toContain(partOfSpeech);
@@ -55,13 +67,13 @@ describe("the drafted bank", () => {
       expect(answer).toBe(answer.trim());
       const letters = [...key(answer)].filter(char => /\p{L}/u.test(char));
       expect(letters.length).toBeGreaterThan(0);
-      if (language === "zh-TW") {
+      if (isTileLanguage(language)) {
         for (const char of letters) {
           expect(char, answer).toMatch(/\p{Script=Han}/u);
           expect(SIMPLIFIED, `${answer} is not Traditional`).not.toContain(char);
         }
       } else {
-        const keyboard = KEYBOARDS[language];
+        const keyboard = KEYBOARDS[language as Exclude<typeof language, "zh-TW" | "ja" | "ko">];
         for (const char of letters) {
           expect([...keyboard.letters, ...keyboard.accents], `${answer}: no key for ${char}`).toContain(char);
         }
@@ -69,11 +81,11 @@ describe("the drafted bank", () => {
     }
   });
 
-  it.each(LANGUAGE_CODES)("%s's clues are all there, Traditional, and never name the word", language => {
+  it.each(BANKED)("%s's clues are all there, Traditional, and never name the word", language => {
     for (const [, answer, , ...clues] of bank[language].words) {
-      expect(clues).toHaveLength(5);
+      expect(clues.length).toBeGreaterThanOrEqual(CLUE_LANGUAGES.length);
       clues.forEach((clue, index) => {
-        const clueLanguage = LANGUAGE_CODES[index];
+        const clueLanguage = bank[language].columns[3 + index];
         expect(clue.trim().length, `${answer} (${clueLanguage})`).toBeGreaterThan(0);
         expect(key(clue), `${answer} is in its ${clueLanguage} clue`).not.toContain(key(answer));
         if (clueLanguage === "zh-TW") {
@@ -88,7 +100,7 @@ describe("the drafted bank", () => {
     }
   });
 
-  it.each(LANGUAGE_CODES)("%s has a complete card for every word: its reading, and the word in the other four with theirs", language => {
+  it.each(BANKED)("%s has a complete card for every word: its reading, and the word in the other four with theirs", language => {
     const cards = JSON.parse(readFileSync(join(root, "supabase/hangyumi/cards", `${language}.json`), "utf8")) as Record<string, Record<string, unknown>>;
     const reads = (side: Record<string, unknown>, as: LanguageCode) => as === "zh-TW"
       ? typeof side.pinyin === "string" && typeof side.zhuyin === "string" && side.pinyin !== "" && side.zhuyin !== ""
@@ -98,7 +110,9 @@ describe("the drafted bank", () => {
       const card = cards[answer];
       if (!card || !reads(card, language)) { gaps.push(`${answer}: reading`); continue; }
       const translations = (card.translations ?? {}) as Record<string, Record<string, unknown>>;
-      for (const other of LANGUAGE_CODES.filter(code => code !== language)) {
+      /* The card's other sides: the languages it was written with. Japanese
+         and Korean sides are optional until the banks are extended. */
+      for (const other of CLUE_LANGUAGES.filter(code => code !== language)) {
         const side = translations[other];
         if (!side || typeof side.text !== "string" || !side.text.trim() || !reads(side, other)) gaps.push(`${answer}: ${other}`);
         else if (other === "zh-TW" && SIMPLIFIED_RE.test(side.text)) gaps.push(`${answer}: Simplified ${side.text}`);

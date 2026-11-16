@@ -13,7 +13,7 @@ struct PocketReviewScreen: View {
             HStack {
                 Toggle("Cosmic",isOn:Binding(get:{model.preferences.cosmic},set:{model.preferences.appMode = $0 ? "cosmic" : "standard"}))
                 Picker("Interface language",selection:$model.preferences.interfaceLanguage) {
-                    ForEach(["english","traditional-chinese","spanish","french","italian"],id:\.self){Text($0).tag($0)}
+                    ForEach(PocketPreferences.interfaceLanguages,id:\.self){Text($0).tag($0)}
                 }.pickerStyle(.menu)
             }.padding(.horizontal)
             Picker("Preview",selection:$tab){Text("Widget").tag(0);Text("Share").tag(1)}.pickerStyle(.segmented).padding(.horizontal)

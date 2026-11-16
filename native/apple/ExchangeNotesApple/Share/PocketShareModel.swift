@@ -163,6 +163,8 @@ enum PocketAPI {
         case "spanish": "es"
         case "french": "fr"
         case "italian": "it"
+        case "japanese": "ja"
+        case "korean": "ko"
         default: "en"
         }
     }

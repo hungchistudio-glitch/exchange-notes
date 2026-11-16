@@ -374,7 +374,9 @@ export type InterfaceLanguage =
   | "traditional-chinese"
   | "spanish"
   | "french"
-  | "italian";
+  | "italian"
+  | "japanese"
+  | "korean";
 
 const INTERFACE_LANGUAGES: readonly InterfaceLanguage[] = [
   "english",
@@ -382,6 +384,8 @@ const INTERFACE_LANGUAGES: readonly InterfaceLanguage[] = [
   "spanish",
   "french",
   "italian",
+  "japanese",
+  "korean",
 ];
 
 /*

@@ -157,7 +157,7 @@
   color:#24211b; }
 .cardHeader { color:#8b8170; }
 .wordRow h2 { font:500 2.6rem/1.1 Georgia,"Songti TC",serif; letter-spacing:-.01em; margin:8px 0 6px; }
-.translation { font:1.5rem/1.45 "Songti TC","PingFang TC",Georgia,serif; color:#2b2720; }
+.translation { font:1.5rem/1.45 var(--cjk-serif),Georgia,serif; color:#2b2720; }
 .language { color:#8b8170; letter-spacing:.04em; }
 .readings { font:italic 1rem/1.5 Georgia,"Songti TC",serif; color:#6f6658; }
 .speaker { width:48px; height:48px; border:1px solid #ffffff; background:linear-gradient(160deg,#fffdf8,#ece5d6); color:#3a352c;

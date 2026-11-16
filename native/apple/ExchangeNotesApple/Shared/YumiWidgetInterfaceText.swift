@@ -6,10 +6,11 @@ import Foundation
 /// Group payload, written by the web app's i18n dictionaries. These few
 /// strings are drawn by the widget itself — button labels, VoiceOver
 /// sentences, and the placeholder shown before the first sync — so they live
-/// here, worded to match `lib/i18n/{en,zh-TW,es,fr,it}.ts`.
+/// here, worded to match `lib/i18n/{en,zh-TW,es,fr,it,ja,ko}.ts`.
 ///
 /// Keys are the app's interface-language form (`english`,
-/// `traditional-chinese`, `spanish`, `french`, `italian`). An unknown value
+/// `traditional-chinese`, `spanish`, `french`, `italian`, `japanese`,
+/// `korean`). An unknown value
 /// falls back to English rather than trapping.
 enum YumiWidgetInterfaceText {
     /// The app's interface language guessed from the device, for the moments
@@ -22,6 +23,8 @@ enum YumiWidgetInterfaceText {
             if code.hasPrefix("es") { return "spanish" }
             if code.hasPrefix("fr") { return "french" }
             if code.hasPrefix("it") { return "italian" }
+            if code.hasPrefix("ja") { return "japanese" }
+            if code.hasPrefix("ko") { return "korean" }
             if code.hasPrefix("en") { return "english" }
         }
 
@@ -34,6 +37,8 @@ enum YumiWidgetInterfaceText {
         case "spanish": return "Añadir palabra"
         case "french": return "Ajouter un mot"
         case "italian": return "Aggiungi parola"
+        case "japanese": return "単語を追加"
+        case "korean": return "단어 추가"
         default: return "Add word"
         }
     }
@@ -44,6 +49,8 @@ enum YumiWidgetInterfaceText {
         case "spanish": return "Identificar con la cámara"
         case "french": return "Identifier avec l'appareil photo"
         case "italian": return "Riconosci con la fotocamera"
+        case "japanese": return "カメラで識別"
+        case "korean": return "카메라로 알아보기"
         default: return "Identify with camera"
         }
     }
@@ -54,6 +61,8 @@ enum YumiWidgetInterfaceText {
         case "spanish": return "Palabra anterior"
         case "french": return "Mot précédent"
         case "italian": return "Parola precedente"
+        case "japanese": return "前の単語"
+        case "korean": return "이전 단어"
         default: return "Previous word"
         }
     }
@@ -64,6 +73,8 @@ enum YumiWidgetInterfaceText {
         case "spanish": return "Palabra siguiente"
         case "french": return "Mot suivant"
         case "italian": return "Parola successiva"
+        case "japanese": return "次の単語"
+        case "korean": return "다음 단어"
         default: return "Next word"
         }
     }
@@ -97,6 +108,20 @@ enum YumiWidgetInterfaceText {
                 headline: "Yumi vuole scoprire la parola di oggi",
                 hint: "Ne provi un'altra?",
                 emptyWord: "Ancora nessuna parola di oggi",
+                cookieUnit: ""
+            )
+        case "japanese":
+            return YumiWidgetLocalizedText(
+                headline: "Yumi は今日の単語に興味しんしん",
+                hint: "もうひとつ覚えてみる？",
+                emptyWord: "今日の単語はまだありません",
+                cookieUnit: ""
+            )
+        case "korean":
+            return YumiWidgetLocalizedText(
+                headline: "Yumi가 오늘의 단어를 궁금해해요",
+                hint: "하나 더 배워 볼까요?",
+                emptyWord: "아직 오늘의 단어가 없어요",
                 cookieUnit: ""
             )
         default:
@@ -138,6 +163,20 @@ enum YumiWidgetInterfaceText {
                 headline: "Apri Exchange Notes",
                 hint: "Apri l'app per sincronizzare Yumi",
                 emptyWord: "Yumi è in attesa della sincronizzazione",
+                cookieUnit: ""
+            )
+        case "japanese":
+            return YumiWidgetLocalizedText(
+                headline: "Exchange Notes を開く",
+                hint: "アプリを開いて Yumi を同期",
+                emptyWord: "Yumi は同期を待っています",
+                cookieUnit: ""
+            )
+        case "korean":
+            return YumiWidgetLocalizedText(
+                headline: "Exchange Notes 열기",
+                hint: "앱을 열어 Yumi를 동기화하세요",
+                emptyWord: "Yumi가 동기화를 기다리고 있어요",
                 cookieUnit: ""
             )
         default:

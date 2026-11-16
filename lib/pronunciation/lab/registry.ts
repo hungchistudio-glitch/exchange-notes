@@ -3,6 +3,8 @@ import { LANGUAGE_CODES, type LanguageCode } from "@/lib/languages";
 import { englishPronunciationPack } from "./packs/en";
 import { frenchPronunciationPack } from "./packs/fr";
 import { italianPronunciationPack } from "./packs/it";
+import { japanesePronunciationPack } from "./packs/ja";
+import { koreanPronunciationPack } from "./packs/ko";
 import { spanishPronunciationPack } from "./packs/es";
 import { traditionalChinesePronunciationPack } from "./packs/zh-TW";
 import type {
@@ -31,6 +33,8 @@ export const pronunciationLanguageRegistry: Record<
   es: spanishPronunciationPack,
   fr: frenchPronunciationPack,
   it: italianPronunciationPack,
+  ja: japanesePronunciationPack,
+  ko: koreanPronunciationPack,
 };
 
 export function getPronunciationPack(

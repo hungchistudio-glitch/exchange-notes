@@ -2,7 +2,8 @@
 
 
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { getLanguage, type LanguageCode } from "@/lib/languages";
+import { getLanguage, getLanguageName, type LanguageCode } from "@/lib/languages";
+import { fill } from "@/lib/i18n/format";
 import { STORES, readRecord, writeRecord } from "@/lib/offline/db";
 import { Headphones, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
@@ -215,7 +216,7 @@ function storyRun(id: string) {
 }
 
 export default function DailyNews() {
-  const { t, locale } = useTranslation();
+  const { t, locale, language: interfaceLanguage } = useTranslation();
   const copy = t.discover;
 
   const { learningLanguage, pair } = useDisplayLanguages();
@@ -830,7 +831,7 @@ export default function DailyNews() {
           flush
           eyebrow={t.navigation.discover}
           title={copy.dailyNewsTitle}
-          subtitle={copy.subtitle}
+          subtitle={fill(copy.subtitle, { language: getLanguageName(learningLanguage, interfaceLanguage) })}
           action={
           <div className="flex items-center gap-1">
             <YumiSignalRadar controller={radar} copy={copy} />

@@ -43,7 +43,7 @@ const spanish: TranslationDictionary = {
   meta: {
     landingTitle: "Exchange Notes: guarda las palabras que vale la pena recordar",
     landingDescription: "Busca, practica, guarda y comparte las palabras que vale la pena recordar, con Yumi a tu lado.",
-    appDescription: "Busca cualquier palabra en cinco idiomas y guarda las que vale la pena recordar.",
+    appDescription: "Busca cualquier palabra en siete idiomas y guarda las que vale la pena recordar.",
   },
   notFound: {
     title: "No se encontró la página",
@@ -97,7 +97,7 @@ const spanish: TranslationDictionary = {
         keepTitle: "Guárdala con su momento",
         keepDescription: "Dónde la encontraste y por qué se te quedó se guardan con las palabras. Haz tuya la nota y guárdala.",
         understandTitle: "Entiéndela con Yumi",
-        understandDescription: "Significado, tono y cultura en tu idioma: algo con lo que pensar, no un veredicto. Escúchala y mírala en cinco idiomas.",
+        understandDescription: "Significado, tono y cultura en tu idioma: algo con lo que pensar, no un veredicto. Escúchala y mírala en siete idiomas.",
         exchangeTitle: "Intercámbiala y mírala de nuevo",
         exchangeDescription: "Envíasela a una amistad de otro lugar y escucha lo que esas mismas palabras significan para ella.",
         reviewTitle: "Recupérala antes de que se borre",
@@ -137,7 +137,7 @@ const spanish: TranslationDictionary = {
           noVoice: "Este dispositivo no tiene ninguna voz en {language}, así que el navegador elegirá una.",
         },
         compare: {
-          title: "La misma idea en cinco idiomas",
+          title: "La misma idea en siete idiomas",
           label: "Mostrar en",
         },
         exchange: {
@@ -564,6 +564,10 @@ const spanish: TranslationDictionary = {
             "Ajustes: cambia los idiomas o repite este recorrido desde Ayuda e información.",
           action: "Abrir Ajustes",
         },
+        readings: {
+          body: "Llegan el japonés y el coreano: ya son siete idiomas. En Ajustes, Lecturas elige qué ves: furigana, romaji, romanización o AFI del coreano, zhuyin y pinyin.",
+          action: "Abrir Lecturas",
+        },
         pocket: {
           body:
             "En la pantalla de inicio del iPhone, mantén pulsado y añade el widget de Exchange Notes para buscar una palabra con un toque. En otra app, selecciona un texto y compártelo con Exchange Notes para buscarlo y guardarlo.",
@@ -858,7 +862,7 @@ const spanish: TranslationDictionary = {
     knownWordsHint: "Las palabras que guardaste brillan. Mantén pulsada cualquiera para buscarla.",
     title: "Descubrir",
     eyebrow: "Exchange Notes",
-    subtitle: "Aprende con las historias más importantes de hoy.",
+    subtitle: "{language}: aprende con las historias más importantes de hoy.",
 
     dailyNewsTitle: "Noticias del día",
     speechSpeed: "Velocidad de lectura",
@@ -885,10 +889,10 @@ const spanish: TranslationDictionary = {
     hoursAgo: "hace {count} h",
     recently: "Hace poco",
 
-    readEnglishAriaLabel: "Leer la historia en inglés en voz alta",
-    readChineseAriaLabel: "Leer la historia en chino en voz alta",
+    readEnglishAriaLabel: "Leer la noticia en voz alta en {language}",
+    readChineseAriaLabel: "Leer la noticia en voz alta en {language}",
     readVocabWordAriaLabel: "Leer {word} y su ejemplo",
-    readVocabChineseAriaLabel: "Leer {translation} y su ejemplo en chino",
+    readVocabChineseAriaLabel: "Leer {translation} y su ejemplo",
 
     loadingNewStories: "Cargando",
     sendToFriendAriaLabel: "Enviar a alguien",
@@ -2697,6 +2701,8 @@ const spanish: TranslationDictionary = {
         spanish: "Mostrar la interfaz en español.",
         french: "Mostrar la interfaz en francés.",
         italian: "Mostrar la interfaz en italiano.",
+        japanese: "Muestra la interfaz de la app en japonés.",
+        korean: "Muestra la interfaz de la app en coreano.",
       },
     },
 
@@ -2934,6 +2940,24 @@ const spanish: TranslationDictionary = {
         medium: { label: "Mediano" },
         large: { label: "Grande" },
       },
+    },
+    readingDisplay: {
+      rowTitle: "Lecturas",
+      rowDescription: "Furigana, romaji, romanización, zhuyin y pinyin",
+      sheetTitle: "Lecturas",
+      sheetDescription: "Elige qué lecturas aparecen con las palabras. Puedes quitarlas a medida que aprendes.",
+      furigana: "Furigana",
+      always: "Siempre",
+      cards: "Solo en tarjetas",
+      off: "No",
+      on: "Sí",
+      romaji: "Romaji",
+      romanization: "Romanización",
+      ipa: "AFI",
+      zhuyin: "Zhuyin",
+      pinyin: "Pinyin",
+      swapToIpa: "Mostrar AFI",
+      swapToRomanization: "Mostrar romanización",
     },
 
     pronunciation: {

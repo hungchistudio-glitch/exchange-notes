@@ -1,3 +1,4 @@
+import { sevenIntros, sevenNames } from "./jaKoNames";
 import type { ShopItem } from "./catalog";
 
 /* =========================================================
@@ -254,8 +255,8 @@ export const NIGHTSCALE_ITEMS: readonly NightscaleItem[] = ROWS.map(([id, slot, 
     country: "basic",
     /* Never sold; the database will not sell it either. */
     price: 0,
-    names: { "traditional-chinese": zh, english: en, french: fr, italian: it, spanish: es },
-    intro: { "traditional-chinese": izh, english: ien, french: ifr, italian: iit, spanish: ies },
+    names: sevenNames(id, { "traditional-chinese": zh, english: en, french: fr, italian: it, spanish: es }),
+    intro: sevenIntros(id, { "traditional-chinese": izh, english: ien, french: ifr, italian: iit, spanish: ies }),
   };
 });
 

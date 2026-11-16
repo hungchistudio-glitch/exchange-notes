@@ -13,7 +13,7 @@ import { applyShellFinish, buildThumbnailObject, buildableIds, createOutfitRig, 
 
    Won only from Wordvault's premium chest; never on the 333 shelves;
    worn like any other piece once owned. What must hold:
-     - 33, apart from the 333, five names each, the Chinese Traditional;
+     - 33, apart from the 333, seven names each, the Chinese Traditional;
      - every one builds on the real rig inside the phone's budget;
      - hanging pieces hang from the attachment point, the earring on the
        left only, lenses in front of the eye;
@@ -53,7 +53,7 @@ describe("the vault's catalogue", () => {
     expect(SHOP_ITEMS.some(item => isMythic(item.id))).toBe(false);
     for (const item of MYTHIC_ITEMS) {
       expect(item.id.startsWith("myth-"), item.id).toBe(true);
-      expect(Object.values(item.names).filter(name => name.trim()), item.id).toHaveLength(5);
+      expect(Object.values(item.names).filter(name => name.trim()), item.id).toHaveLength(7);
       expect(SIMPLIFIED.test(item.names["traditional-chinese"]), item.names["traditional-chinese"]).toBe(false);
     }
   });
@@ -80,11 +80,11 @@ describe("the vault's catalogue", () => {
 });
 
 describe("the vault's reveal (2026-11-11)", () => {
-  it("says a line about each piece, in all five languages, the Chinese Traditional", () => {
+  it("says a line about each piece, in all seven languages, the Chinese Traditional", () => {
     for (const item of MYTHIC_ITEMS) {
       const intros = Object.values(item.intro);
-      expect(intros.filter(line => line.trim().length > 12), item.id).toHaveLength(5);
-      expect(new Set(intros).size, item.id).toBe(5);
+      expect(intros.filter(line => line.trim().length > 12), item.id).toHaveLength(7);
+      expect(new Set(intros).size, item.id).toBe(7);
       expect(SIMPLIFIED.test(item.intro["traditional-chinese"]), item.intro["traditional-chinese"]).toBe(false);
       expect(item.intro.english.length, item.id).toBeLessThan(150);
     }

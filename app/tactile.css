@@ -110,7 +110,7 @@ html:not([data-interface-mode="yumi-cosmic"]) {
      the ground); this is 5.3:1. */
   --brass-ink: #7a5e2e;
 
-  --font-display: Georgia, "Noto Serif TC", "Songti TC", serif;
+  --font-display: Georgia, var(--cjk-serif), serif;
 
   /* The dock: a strip of paper with one inked key. */
   --dock-surface: #fbf7ee;

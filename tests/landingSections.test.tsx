@@ -51,10 +51,10 @@ afterEach(() => {
 const lastSpoken = () => speak.mock.calls.at(-1)![0] as SpeechSynthesisUtterance;
 
 describe("Keep: a bilingual note", () => {
-  it("keeps both lines and shows the second in any of the five languages, each with its own voice", () => {
+  it("keeps both lines and shows the second in any of the seven languages, each with its own voice", () => {
     render(<NotesShowcase copy={en.notes} />);
     const languages = screen.getByRole("group", { name: en.notes.viewLabel });
-    expect(within(languages).getAllByRole("button")).toHaveLength(5);
+    expect(within(languages).getAllByRole("button")).toHaveLength(7);
 
     // An English reader's note opens with its Chinese line.
     expect(within(languages).getByRole("button", { name: "繁體中文" })).toHaveAttribute("aria-pressed", "true");

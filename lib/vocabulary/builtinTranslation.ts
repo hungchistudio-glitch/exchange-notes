@@ -42,7 +42,7 @@ export function findBuiltinWord(
   return {
     partOfSpeech: "noun",
     forms: Object.fromEntries(
-      LANGUAGE_CODES.map((code) => [code, [object[code]] as const]),
+      LANGUAGE_CODES.map((code) => [code, object[code] ? [object[code]] : []]),
     ) as Record<string, readonly string[]> as Record<LanguageCode, readonly string[]>,
   };
 }
@@ -54,7 +54,7 @@ export function builtinTranslation(
   to: LanguageCode,
 ): string | null {
   if (from === to) return null;
-  return findBuiltinWord(text, from)?.forms[to][0] ?? null;
+  return findBuiltinWord(text, from)?.forms[to]?.[0] || null;
 }
 
 const TYPED_PARTS = new Set(["noun", "verb", "adjective"]);

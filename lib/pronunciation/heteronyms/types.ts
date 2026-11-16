@@ -19,7 +19,8 @@ import type { LocalizedText } from "../localizedText";
    ========================================================= */
 
 export type HeteronymReading = {
-  /** zhuyin for zh-TW ("ㄏㄤˊ"); IPA for the rest ("/ˈrɛkərd/"). */
+  /** zhuyin for zh-TW ("ㄏㄤˊ"); hiragana for Japanese ("きょう"); IPA for
+   *  the rest ("/ˈrɛkərd/"). */
   phonetic: string;
   /** zh-TW only: the same reading in pinyin. */
   pinyin?: string;
@@ -46,13 +47,17 @@ export type Heteronym = {
   readings: readonly HeteronymReading[];
 };
 
-/** Five interface languages, in one call: en, zh-TW, es, fr, it. */
+/** Five interface languages, in one call: en, zh-TW, es, fr, it — and
+ *  Japanese and Korean where they are written (2026-11-16); a meaning
+ *  without them reads in English on a Japanese or Korean screen. */
 export function meaning(
   english: string,
   chinese: string,
   spanish: string,
   french: string,
   italian: string,
+  japanese?: string,
+  korean?: string,
 ): LocalizedText {
   return {
     english,
@@ -60,5 +65,7 @@ export function meaning(
     spanish,
     french,
     italian,
+    ...(japanese ? { japanese } : {}),
+    ...(korean ? { korean } : {}),
   };
 }

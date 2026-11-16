@@ -20,6 +20,8 @@ const text: Record<LanguageCode, string> = {
   es: "hola",
   fr: "bonjour",
   it: "ciao",
+  ja: "こんにちは",
+  ko: "안녕하세요",
 };
 
 function genericPayload(primary: LanguageCode, secondary: LanguageCode) {
@@ -75,9 +77,9 @@ function genericPayload(primary: LanguageCode, secondary: LanguageCode) {
   };
 }
 
-describe("Yumi widget five-language payload", () => {
+describe("Yumi widget seven-language payload", () => {
   it("preserves every directed pair without relabelling it English/Chinese", () => {
-    expect(SUPPORTED_PROFILE_LANGUAGE_PAIRS).toHaveLength(20);
+    expect(SUPPORTED_PROFILE_LANGUAGE_PAIRS).toHaveLength(42);
 
     for (const [primary, secondary] of SUPPORTED_PROFILE_LANGUAGE_PAIRS) {
       const normalized = normalizeYumiWidgetPayload(
@@ -152,7 +154,7 @@ describe("Yumi widget five-language payload", () => {
    The Swift copy of the language table has to agree with this one
 
    The widget extension cannot read lib/languages.ts, so
-   Shared/YumiWidgetLanguage.swift keeps the same five rows by hand. That is
+   Shared/YumiWidgetLanguage.swift keeps the same seven rows by hand. That is
    a deliberate choice over generating the file — the table changes about
    once a year — and it is only safe with something comparing the two.
 

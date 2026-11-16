@@ -1,6 +1,9 @@
+import { toHiragana } from "@/lib/japanese/kana";
+import { foldLatinAccents } from "@/lib/lexicon/normalize";
 import type { LanguageCode } from "@/lib/languages";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 
+import { JA_HETERONYMS, KO_HETERONYMS } from "./cjkLatecomers";
 import { EN_HETERONYMS } from "./en";
 import { ES_HETERONYMS, FR_HETERONYMS, IT_HETERONYMS } from "./romance";
 import type { Heteronym, HeteronymReading } from "./types";
@@ -32,6 +35,8 @@ const HETERONYMS: Readonly<Record<LanguageCode, readonly Heteronym[]>> = {
   es: ES_HETERONYMS,
   fr: FR_HETERONYMS,
   it: IT_HETERONYMS,
+  ja: JA_HETERONYMS,
+  ko: KO_HETERONYMS,
 };
 
 /** Every listed word of a language, for the Lab. */
@@ -54,6 +59,8 @@ export type ReadingContext = {
   ipa?: string | null;
   /** Zhuyin for the text, one syllable per character, when known. */
   zhuyin?: string | null;
+  /** Japanese: the text's reading in kana, when known. */
+  kana?: string | null;
 };
 
 /** At most this many characters of a Chinese word are explained at once. */
@@ -61,7 +68,7 @@ const MAX_CHARACTERS = 3;
 const CJK = /[一-鿿]/;
 
 const fold = (text: string) =>
-  text.normalize("NFD").replace(/\p{M}/gu, "").trim().toLocaleLowerCase();
+  foldLatinAccents(text).trim().toLocaleLowerCase();
 
 const exact = (text: string) => text.normalize("NFC").trim().toLocaleLowerCase();
 
@@ -99,6 +106,12 @@ function usedInWord(text: string, heteronym: Heteronym, context: ReadingContext)
   const written = exact(text);
   const bySpelling = indexWhere(readings, (reading) => reading.spelling !== undefined && exact(reading.spelling) === written);
   if (bySpelling !== null) return bySpelling;
+
+  if (context.kana) {
+    const said = toHiragana(context.kana.trim());
+    const byKana = indexWhere(readings, (reading) => reading.phonetic === said);
+    if (byKana !== null) return byKana;
+  }
 
   if (context.ipa) {
     const said = bareIpa(context.ipa);
