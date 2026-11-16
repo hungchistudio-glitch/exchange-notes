@@ -6,6 +6,17 @@ import type { TranslationLanguage } from "@/lib/i18n/types";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import { createPreviewWallet, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 
+
+/*
+ * Whole-screen flows, played in real time: the shop's sheets open and its
+ * saves settle on the shop's own timers, and each test renders the whole
+ * shop. Alone they take 0.4 to 2.8 s. When the whole suite runs, three
+ * hundred files share the machine and they crossed the default 5 s and
+ * failed though nothing was wrong (2026-11-16). They get the time a busy
+ * machine needs.
+ */
+vi.setConfig({ testTimeout: 20_000 });
+
 /* =========================================================
    Trying on is free; buying asks first, charges once and dresses her
 

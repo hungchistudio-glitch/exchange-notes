@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { GUARDIAN_FEEDS, NEWS_SLOTS, type NewsArticle } from "@/lib/news/sources";
+import { GUARDIAN_FEEDS, NEWS_SLOTS, RSS_SOURCES, type NewsArticle } from "@/lib/news/sources";
 
 const mocks = vi.hoisted(() => ({ rss: vi.fn() }));
 vi.mock("@/lib/news/rss", async (original) => ({
@@ -72,6 +72,50 @@ describe("a refused key", () => {
     );
     const chosen = await selectTodaysArticles(() => false);
     expect(chosen.some((article) => article.category === "Taiwan")).toBe(false);
+  });
+});
+
+describe("Taiwan, every day (2026-11-16)", () => {
+  /* The Guardian covers Taiwan about once a week or two, and the slot had
+     never filled; Focus Taiwan stands behind it. */
+  const taiwanSlot = NEWS_SLOTS.find((slot) => slot.category === "Taiwan")!;
+
+  it("is read after the Guardian", () => {
+    expect(taiwanSlot.thenRss).toBe(RSS_SOURCES.focusTaiwan);
+  });
+
+  it("takes Focus Taiwan's story when the Guardian has nothing new", async () => {
+    vi.stubEnv("GUARDIAN_API_KEY", "");
+    const used = `${GUARDIAN_FEEDS.taiwan.url}#used`;
+    mocks.rss.mockImplementation(async (source: { url: string }, category: string) =>
+      source.url === GUARDIAN_FEEDS.taiwan.url ? [story(used, "Taiwan holds a drill", category)]
+        : source.url === RSS_SOURCES.focusTaiwan.url ? [story("https://focustaiwan.tw/society/1", "Cold front reaches Taipei", category)]
+          : [],
+    );
+    const chosen = await selectTodaysArticles((url) => url === used);
+    expect(chosen.filter((article) => article.category === "Taiwan").map((article) => article.url)).toEqual(["https://focustaiwan.tw/society/1"]);
+  });
+
+  it("still takes the Guardian's first when it has a new one", async () => {
+    vi.stubEnv("GUARDIAN_API_KEY", "");
+    mocks.rss.mockImplementation(async (source: { url: string }, category: string) =>
+      source.url === GUARDIAN_FEEDS.taiwan.url ? [story(`${source.url}#new`, "Taiwan holds a drill", category)]
+        : source.url === RSS_SOURCES.focusTaiwan.url ? [story("https://focustaiwan.tw/society/1", "Cold front reaches Taipei", category)]
+          : [],
+    );
+    const chosen = await selectTodaysArticles(() => false);
+    expect(chosen.find((article) => article.category === "Taiwan")?.url).toBe(`${GUARDIAN_FEEDS.taiwan.url}#new`);
+  });
+
+  it("keeps Focus Taiwan when the Guardian's feed fails", async () => {
+    vi.stubEnv("GUARDIAN_API_KEY", "");
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    mocks.rss.mockImplementation(async (source: { url: string }, category: string) => {
+      if (source.url === GUARDIAN_FEEDS.taiwan.url) throw new Error("timeout");
+      return source.url === RSS_SOURCES.focusTaiwan.url ? [story("https://focustaiwan.tw/politics/2", "Taiwan's cabinet meets", category)] : [];
+    });
+    const chosen = await selectTodaysArticles(() => false);
+    expect(chosen.find((article) => article.category === "Taiwan")?.url).toBe("https://focustaiwan.tw/politics/2");
   });
 });
 

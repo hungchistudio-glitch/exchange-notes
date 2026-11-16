@@ -5,6 +5,16 @@ import HangyumiGame from "@/components/hangyumi/HangyumiGame";
 import type { HangyumiCard } from "@/lib/hangyumi/rules";
 import { createPreviewHangyumi, type PracticeWord, type SaveWord } from "@/lib/hangyumi/service";
 
+/*
+ * Whole-screen flows, played in real time: the cookies land 640 ms after a
+ * paid guess, Yumi's arrival settles in 900 ms and the page's entrance takes
+ * a second, and each test renders the whole game (or shop). Alone they take
+ * 0.2 to 2.8 s. When the whole suite runs, three hundred files share the
+ * machine and they crossed the default 5 s and failed though nothing was
+ * wrong (2026-11-16). They get the time a busy machine needs.
+ */
+vi.setConfig({ testTimeout: 20_000 });
+
 /* =========================================================
    Hangyumi, the screen
 

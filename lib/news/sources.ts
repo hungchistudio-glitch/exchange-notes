@@ -48,6 +48,12 @@ export const RSS_SOURCES = {
     articleHosts: ["fashionunited.com"], imageHosts: ["r.fashionunited.com"],
     minimumExcerptLength: 350,
   },
+  /* Taiwan's national news agency in English (CNA), a few dozen stories a
+     day. Its feed carries a short summary and no pictures. */
+  focusTaiwan: {
+    name: "Focus Taiwan", url: "https://feeds.feedburner.com/rsscna/engnews/",
+    articleHosts: ["focustaiwan.tw"], imageHosts: [],
+  },
 } as const satisfies Record<string, RssSource>;
 
 /*
@@ -89,6 +95,11 @@ export type NewsSlot = {
   rss?: RssSource;
   /** Read when the Guardian's API cannot be: no key, or a key it refuses. */
   rssFallback?: RssSource;
+  /**
+   * Read after the Guardian, always: its stories come first when it has a
+   * new one, and this one's otherwise.
+   */
+  thenRss?: RssSource;
 };
 
 /** Twelve cards, still at most four model batches; focused topics go first. */
@@ -104,10 +115,16 @@ export const NEWS_SLOTS: NewsSlot[] = [
   { category: "World", section: "world", rssFallback: GUARDIAN_FEEDS.world },
   { category: "Science", section: "science", rssFallback: GUARDIAN_FEEDS.science },
   { category: "Environment", section: "environment", rssFallback: GUARDIAN_FEEDS.environment },
+  /*
+   * The Guardian covers Taiwan about once in one or two weeks, and the
+   * slot had never filled: none of its stories was new enough or unused
+   * (2026-11-16). Focus Taiwan publishes every day, so it stands behind it.
+   */
   {
     category: "Taiwan",
     query: "Taiwan",
     headlineMustMention: ["taiwan", "taipei", "taiwanese"],
     rssFallback: GUARDIAN_FEEDS.taiwan,
+    thenRss: RSS_SOURCES.focusTaiwan,
   },
 ];

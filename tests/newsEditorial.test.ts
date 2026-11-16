@@ -76,8 +76,11 @@ describe("C2 multilingual editorial generation", () => {
     const result = (await selectTodaysArticles(url => url.endsWith("/old")))
       // With no Guardian key, the Guardian's slots read its feeds (tests/guardianFallback).
       .filter(a => a.sourceName !== "The Guardian");
-    expect(result).toHaveLength(4);
+    /* Hyperallergic, ARTnews, Ars Technica, FashionUnited, and Focus Taiwan
+       behind the Guardian's Taiwan feed, whose headline here names no Taiwan. */
+    expect(result).toHaveLength(5);
     expect(result.every(a => a.url.endsWith("/new"))).toBe(true);
     expect(result.some(a => a.sourceName === "Ars Technica")).toBe(true);
+    expect(result.find(a => a.category === "Taiwan")?.sourceName).toBe("Focus Taiwan");
   });
 });

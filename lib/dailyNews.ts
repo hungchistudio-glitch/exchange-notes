@@ -447,27 +447,40 @@ export async function selectTodaysArticles(
 ): Promise<NewsArticle[]> {
   const guardianApiKey = process.env.GUARDIAN_API_KEY;
 
+  const guardianFor = async (slot: NewsSlot): Promise<NewsArticle[]> => {
+    const viaApi = guardianApiKey ? await fetchSlotCandidates(slot, guardianApiKey) : null;
+    if (viaApi) return viaApi;
+    /* No key, or one the Guardian refuses: its public feed stands in, so
+       World, Science, Environment and Taiwan never drop out (Chi,
+       2026-11-15). The same headline rule holds for the Taiwan feed. */
+    if (!slot.rssFallback) return [];
+    const viaFeed = await fetchRssArticles(slot.rssFallback, slot.category);
+    return slot.headlineMustMention
+      ? viaFeed.filter((article) =>
+          slot.headlineMustMention!.some((term) => article.title.toLowerCase().includes(term)),
+        )
+      : viaFeed;
+  };
+  /* Each source on its own: a publisher timeout or malformed feed must not
+     lose the whole day, nor the other source of the same slot. */
+  const safely = async (label: string, read: () => Promise<NewsArticle[]>) => {
+    try {
+      return await read();
+    } catch (error) {
+      console.warn(`News source unavailable: ${label}`, error instanceof Error ? error.message : "Fetch failed");
+      return [];
+    }
+  };
+
   const candidateLists = await Promise.all(
     NEWS_SLOTS.map(async slot => {
-      try {
-        if (slot.rss) return await fetchRssArticles(slot.rss, slot.category);
-        const viaApi = guardianApiKey ? await fetchSlotCandidates(slot, guardianApiKey) : null;
-        if (viaApi) return viaApi;
-        /* No key, or one the Guardian refuses: its public feed stands in, so
-           World, Science, Environment and Taiwan never drop out (Chi,
-           2026-11-15). The same headline rule holds for the Taiwan feed. */
-        if (!slot.rssFallback) return [];
-        const viaFeed = await fetchRssArticles(slot.rssFallback, slot.category);
-        return slot.headlineMustMention
-          ? viaFeed.filter((article) =>
-              slot.headlineMustMention!.some((term) => article.title.toLowerCase().includes(term)),
-            )
-          : viaFeed;
-      } catch (error) {
-        // A publisher timeout or malformed feed must not lose the whole day.
-        console.warn(`News source unavailable: ${slot.rss?.name ?? slot.section ?? slot.query}`, error instanceof Error ? error.message : "Fetch failed");
-        return [];
-      }
+      if (slot.rss) return safely(slot.rss.name, () => fetchRssArticles(slot.rss!, slot.category));
+      const [first, then] = await Promise.all([
+        safely(slot.section ?? slot.query ?? slot.category, () => guardianFor(slot)),
+        /* The Guardian's first when it has something new; this otherwise. */
+        slot.thenRss ? safely(slot.thenRss.name, () => fetchRssArticles(slot.thenRss!, slot.category)) : Promise.resolve([]),
+      ]);
+      return [...first, ...then];
     }),
   );
 

@@ -67,6 +67,12 @@ npx next build      # ~20s with a warm cache, longer cold
   average is high, rerun the suite with `npx vitest run --maxWorkers=4`.
 - `tests/vocabularyListVirtualised.test.tsx` takes ~15s by design and is the
   first to time out under load.
+- `tests/hangyumiGame`, `wordvaultGame` and `yumiShopFlow` play whole screens
+  on the games' and shop's real animation timers (0.2–2.8 s a test alone).
+  They used to cross 5 s in nearly every full run. Since 2026-11-16 each file
+  sets `vi.setConfig({ testTimeout: 20_000 })`, so a timeout there now means
+  something is really stuck. Give a new whole-screen flow test file the same
+  setting, with the reason, rather than raising the global limit.
 - **"Vitest caught N unhandled errors" fails CI even when every test passed.**
   The usual cause is a timer or listener in a test that fires after the
   test's document was torn down. Clear timers in `afterEach`.
