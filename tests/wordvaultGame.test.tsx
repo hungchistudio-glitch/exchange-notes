@@ -234,6 +234,9 @@ describe("a guess answered after the reader moved on", () => {
     };
     play(service);
     await screen.findByText("lasting a very short time");
+    /* No guess is taken until the stage has said it arrived, which can be
+       a moment after the clue is drawn (npm run test:late-react). */
+    await waitFor(() => expect(document.querySelector("[data-arrival]")).not.toHaveAttribute("data-arrival", "waiting"));
     fireEvent.click(screen.getByRole("button", { name: "Guess é" }));
     await waitFor(() => expect(release).not.toBeNull());
     // While it is out, the reader switches to English.
