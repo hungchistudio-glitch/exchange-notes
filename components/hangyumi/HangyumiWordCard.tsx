@@ -3,10 +3,13 @@
 import { LoaderCircle, Play, Square } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useReadingDisplay } from "@/components/speech/Furigana";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import usePhonetics from "@/hooks/usePhonetics";
 import type { HangyumiReading } from "@/lib/hangyumi/rules";
+import { alignFurigana, hasKanji } from "@/lib/japanese/kana";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
+import { readingLines, showsFurigana } from "@/lib/preferences/readingDisplay";
 import { SpokenText } from "@/components/speech/Spoken";
 import { playSpoken, stopSpoken } from "@/lib/spokenWords";
 
@@ -20,8 +23,10 @@ import styles from "./Hangyumi.module.css";
    in the reader's language, each with its own speaker (Chi, 2026-10-26).
 
    Each side's reading comes with the word's card, written ahead beside
-   the word bank (IPA, or zhuyin and pinyin), so every side of every word
-   has one; only a side without it asks the phonetics service.
+   the word bank (IPA; zhuyin and pinyin; kana and romaji; or Korean
+   romanization and IPA), so every side of every word has one; only a side
+   without it asks the phonetics service. Which of them show is the
+   reader's 讀音顯示, and a Japanese word's kana sits over its kanji.
 
    A speaker speaks only when it is pressed. iOS Safari lets speech start
    only inside the tap that asked for it; the word used to be spoken on
@@ -33,7 +38,7 @@ export type WordCardSide = { text: string; language: LanguageCode; reading?: Han
 
 /** A reading with nothing in it is no reading: the service is asked instead. */
 const hasReading = (reading?: HangyumiReading): reading is HangyumiReading =>
-  !!reading && Boolean(reading.ipa || reading.pinyin || reading.zhuyin);
+  !!reading && Boolean(reading.ipa || reading.pinyin || reading.zhuyin || reading.kana || reading.rr);
 
 export default function HangyumiWordCard({ sides, pending }: {
   /** The word first, then its gloss. */
@@ -43,6 +48,7 @@ export default function HangyumiWordCard({ sides, pending }: {
 }) {
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.hangyumi;
+  const display = useReadingDisplay();
   const shown = useMemo(() => sides.filter(side => side.text.trim()), [sides]);
   const unread = useMemo(() => shown.filter(side => !hasReading(side.reading)), [shown]);
   const phoneticsFor = usePhonetics(unread);
@@ -107,14 +113,18 @@ export default function HangyumiWordCard({ sides, pending }: {
     <div className={styles.wordCard}>
       {shown.map((side, index) => {
         const phonetics = hasReading(side.reading) ? side.reading : phoneticsFor(side);
-        const readings = [phonetics?.zhuyin, phonetics?.pinyin, phonetics?.ipa].filter(Boolean).join(" · ");
+        const readings = readingLines(side.language, phonetics, display).join(" · ");
+        const ruby =
+          side.language === "ja" && phonetics?.kana && hasKanji(side.text) && showsFurigana(display, "card")
+            ? alignFurigana(side.text, phonetics.kana)
+            : undefined;
         const playing = audio?.index === index;
         return (
           <div className={styles.wordSide} key={`${side.language}:${index}`} data-side={index === 0 ? "word" : "gloss"}>
             <div className={styles.wordSideText}>
               <span className={styles.wordSideLanguage}>{getLanguage(side.language).name[interfaceLanguage]}</span>
               <span className={index === 0 ? styles.wordSideWord : styles.wordSideGloss} lang={getLanguage(side.language).htmlLang}>
-                <SpokenText text={side.text} lang={getLanguage(side.language).speechTag} />
+                <SpokenText text={side.text} lang={getLanguage(side.language).speechTag} ruby={ruby} />
               </span>
               {readings && <span className={styles.wordSideReadings}>{readings}</span>}
             </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { getLanguage } from "@/lib/languages";
 import { localize } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 import type {
   PronunciationMastery,
   PronunciationUnit,
@@ -59,6 +60,7 @@ export default function SoundTile({
   masteryLabel,
 }: SoundTileProps) {
   const { language } = useTranslation();
+  useLabText(language);
   const meta = getLanguage(unit.language);
   const displayLabel = unit.displayLabel
     ? localize(unit.displayLabel, language)

@@ -1,0 +1,4 @@
+// Pocket lookup shortcuts
+"intent.pocket.title" = "Yumi 포켓 사전";
+"intent.pocket.description" = "Exchange Notes에서 단어를 찾아요.";
+"intent.pocket.voice" = "음성으로 찾기";

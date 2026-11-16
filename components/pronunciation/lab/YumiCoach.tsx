@@ -9,6 +9,7 @@ import { fill } from "@/lib/i18n/format";
 import { describeMoment, type MomentDescription } from "@/lib/pronunciation/articulationNotes";
 import type { ArticulationTimeline } from "@/lib/pronunciation/articulationTimeline";
 import { localize } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 import {
   YUMI_IDLE_POSE,
   type YumiAnimationState,
@@ -177,6 +178,7 @@ export default function YumiCoach({
   trace: showTrace = true,
 }: YumiCoachProps) {
   const { t, language } = useTranslation();
+  useLabText(language);
   const copy = t.pronunciation.lab.coach;
   const timelineCopy = t.pronunciation.lab.timeline;
 

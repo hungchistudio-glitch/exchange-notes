@@ -1,0 +1,24 @@
+/* Widget gallery and legacy labels */
+"widget.gallery.name" = "Yumi デイリー";
+"widget.gallery.description" = "学習の相棒と、毎日やさしくひと息。";
+"widget.action.addWord" = "単語を追加";
+"widget.action.camera" = "カメラで調べる";
+"widget.progress.today" = "今日の学習";
+
+/* App Intents (Shortcuts and widget buttons) */
+"intent.speakCard.title" = "Yumi の発音を再生";
+"intent.speakCard.description" = "保存した単語を、Exchange Notes を開かずにその言語で再生します。";
+"intent.speakEnglish.title" = "Yumi の英語の発音を再生";
+"intent.speakEnglish.description" = "保存した英語の単語を、Exchange Notes を開かずに再生します。";
+"intent.speakChinese.title" = "Yumi の繁体字中国語の発音を再生";
+"intent.speakChinese.description" = "保存した繁体字中国語の単語を、Exchange Notes を開かずに再生します。";
+"intent.browseWords.title" = "保存した単語を見る";
+"intent.browseWords.description" = "前または次の単語カードを表示します。";
+"intent.parameter.text" = "テキスト";
+"intent.parameter.language" = "言語";
+"intent.parameter.direction" = "方向";
+
+// Pocket lookup shortcuts
+"intent.pocket.title" = "Yumi ポケット辞書";
+"intent.pocket.description" = "Exchange Notes で単語を調べます。";
+"intent.pocket.voice" = "音声で調べる";

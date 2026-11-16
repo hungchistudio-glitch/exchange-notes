@@ -15,6 +15,7 @@ import type { TermReading } from "@/lib/lexicon/types";
 import { findHeteronyms, type HeteronymMatch } from "@/lib/pronunciation/heteronyms";
 import type { AudioSource } from "@/lib/pronunciation/lab/audio";
 import { localize } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 
 /* =========================================================
    "This word reads more than one way"
@@ -69,6 +70,7 @@ export default function OtherReadings({
   className = "",
 }: OtherReadingsProps) {
   const { t, language: interfaceLanguage } = useTranslation();
+  useLabText(interfaceLanguage);
   const copy = t.pronunciation.heteronyms;
   const [open, setOpen] = useState(false);
   const panelId = useId();

@@ -11,6 +11,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { fill } from "@/lib/i18n/format";
 import { groupsForModule } from "@/lib/pronunciation/lab/registry";
 import { localize } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 
 const ALL = "__all";
 
@@ -24,6 +25,7 @@ const ALL = "__all";
  */
 export default function SoundsModule() {
   const { t, language: interfaceLanguage } = useTranslation();
+  useLabText(interfaceLanguage);
   const copy = t.pronunciation.lab;
 
   const { pack, progress } = usePronunciationLab();

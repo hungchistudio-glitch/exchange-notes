@@ -1,0 +1,17 @@
+/* App Intents (Shortcuts) */
+"intent.speakCard.title" = "Yumi 발음 재생";
+"intent.speakCard.description" = "저장한 단어를 Exchange Notes를 열지 않고 그 언어로 재생해요.";
+"intent.speakEnglish.title" = "Yumi 영어 발음 재생";
+"intent.speakEnglish.description" = "저장한 영어 단어를 Exchange Notes를 열지 않고 재생해요.";
+"intent.speakChinese.title" = "Yumi 번체 중국어 발음 재생";
+"intent.speakChinese.description" = "저장한 번체 중국어 단어를 Exchange Notes를 열지 않고 재생해요.";
+"intent.browseWords.title" = "저장한 단어 보기";
+"intent.browseWords.description" = "이전 또는 다음 단어 카드를 보여 줘요.";
+"intent.parameter.text" = "텍스트";
+"intent.parameter.language" = "언어";
+"intent.parameter.direction" = "방향";
+
+// Pocket lookup shortcuts
+"intent.pocket.title" = "Yumi 포켓 사전";
+"intent.pocket.description" = "Exchange Notes에서 단어를 찾아요.";
+"intent.pocket.voice" = "음성으로 찾기";

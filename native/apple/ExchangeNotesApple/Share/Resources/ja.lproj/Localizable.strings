@@ -1,0 +1,4 @@
+// Pocket lookup shortcuts
+"intent.pocket.title" = "Yumi ポケット辞書";
+"intent.pocket.description" = "Exchange Notes で単語を調べます。";
+"intent.pocket.voice" = "音声で調べる";

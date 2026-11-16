@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
 /* =========================================================
-   The built-in five-language dictionary (Chi, 2026-09-28)
+   The built-in seven-language dictionary (Chi, 2026-09-28; Japanese and
+   Korean 2026-11-16)
 
    When every model is busy and the basic translation service is out too,
-   a typed word in any of the app's five languages should still get a card.
+   a typed word in any of the app's seven languages should still get a card.
    These pin the data's shape, how a word is matched the way a reader types
    it, and that the offline lookup answers from it without asking anyone.
    ========================================================= */
@@ -26,10 +27,10 @@ describe("the data", () => {
     expect(CORE_LEXICON_SIZE).toBeGreaterThan(4_000);
   });
 
-  it("has every entry in all five languages, with no empty form", () => {
+  it("has every entry in all seven languages, with no empty form", () => {
     for (const line of lines) {
       const fields = line.split("|");
-      expect(fields, line).toHaveLength(7);
+      expect(fields, line).toHaveLength(9);
       for (const field of fields.slice(2)) {
         for (const form of field.split(";")) {
           expect(form.trim(), line).not.toBe("");
@@ -181,5 +182,22 @@ describe("the offline lookup, with every model busy", () => {
 
     expect(entry.term).toBe("grazie");
     expect(entry.translation).toBe("thank you");
+  });
+});
+
+describe("Japanese and Korean (2026-11-16)", () => {
+  it("finds a word as a Japanese or Korean reader writes it", () => {
+    expect(findCoreWord("良い", "ja")?.forms.en[0]).toBe("good");
+    expect(findCoreWord("いい", "ja")?.forms["zh-TW"][0]).toBe("好");
+    expect(findCoreWord("좋다", "ko")?.forms.en[0]).toBe("good");
+    expect(findCoreWord("도서관", "ko")).toBeNull();
+    expect(findCoreWord("図書館", "ja")).toBeNull();
+  });
+
+  it("answers between Japanese and Korean, and from them into the other five", () => {
+    const word = findCoreWord("ありがとう", "ja");
+    expect(word?.forms.ko).toContain("고마워요");
+    expect(word?.forms.en[0]).toBe("thank you");
+    expect(findCoreWord("감사합니다", "ko")?.forms.ja[0]).toBe("ありがとう");
   });
 });

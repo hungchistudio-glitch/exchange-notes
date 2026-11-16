@@ -104,3 +104,30 @@ export function showsFurigana(display: ReadingDisplay, place: FuriganaPlace): bo
   if (display.furigana === "off") return false;
   return place === "card" || display.furigana === "always";
 }
+
+/** A word's readings, from wherever they came: a card written ahead, or a lookup. */
+export type ReadingParts = {
+  ipa?: string;
+  pinyin?: string;
+  zhuyin?: string;
+  kana?: string;
+  romaji?: string;
+  rr?: string;
+};
+
+/**
+ * The reading lines a word in this language shows on a card, in order, as
+ * the reader has set them: romaji for Japanese (its kana goes over the
+ * kanji as furigana); romanization or IPA for Korean; zhuyin and pinyin for
+ * Chinese; IPA for everything else.
+ */
+export function readingLines(language: string, reading: ReadingParts | undefined, display: ReadingDisplay): string[] {
+  if (!reading) return [];
+  const lines =
+    language === "ja"
+      ? [display.romaji ? reading.romaji : undefined]
+      : language === "ko"
+        ? [display.korean === "ipa" ? reading.ipa : display.korean === "rr" ? reading.rr : undefined]
+        : [display.zhuyin ? reading.zhuyin : undefined, display.pinyin ? reading.pinyin : undefined, reading.ipa];
+  return lines.filter((line): line is string => Boolean(line));
+}

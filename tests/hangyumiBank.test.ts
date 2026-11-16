@@ -10,9 +10,9 @@ import { LANGUAGE_CODES, type LanguageCode } from "@/lib/languages";
    Hangyumi's drafted word bank (supabase/hangyumi/*.json)
 
    Chi chose a bank written in advance and approved on a review page:
-   60 words a level in each of the five languages (30 until Chi asked
-   for more on 2026-10-26), every one with a clue
-   in all five that does not give the word away. Every Chinese character
+   60 words a level in each of the seven languages (30 until Chi asked
+   for more on 2026-10-26; Japanese and Korean from 2026-11-16), every
+   one with a clue in all seven that does not give the word away. Every Chinese character
    in it must be Traditional. And no page may import it, or the answers
    would ship to the browser.
    ========================================================= */
@@ -22,16 +22,22 @@ type Row = [string, string, string, ...string[]];
 type BankFile = { language: string; source: string; columns: string[]; words: Row[] };
 
 /*
- * The languages with a drafted bank. Japanese and Korean (2026-11-16) are
- * being drafted for Chi's review page; until a file lands, the game says
- * "no approved words yet" for them, which is what a bank with none does.
- * The five clue columns stay the five they were written in: a clue in
- * Japanese or Korean is optional, and the game falls back to English.
+ * Every language has a bank: Japanese and Korean joined on 2026-11-16,
+ * 240 words each, and every word in every bank has a clue in all seven
+ * languages and a card side in the other six (Chi: 七種語言補齊).
  */
 const BANKED = LANGUAGE_CODES.filter(language =>
   existsSync(join(root, "supabase/hangyumi", `${language}.json`)),
 );
-const CLUE_LANGUAGES = ["en", "zh-TW", "es", "fr", "it"] as const;
+const CLUE_LANGUAGES = LANGUAGE_CODES;
+
+/* What a tile may carry, per tile language: Traditional Chinese characters;
+   Japanese kanji and kana (and the long-vowel mark); Korean syllable blocks. */
+const TILE_SCRIPT: Record<"zh-TW" | "ja" | "ko", RegExp> = {
+  "zh-TW": /\p{Script=Han}/u,
+  ja: /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー]/u,
+  ko: /\p{Script=Hangul}/u,
+};
 
 const bank = Object.fromEntries(BANKED.map(language => [
   language,
@@ -69,8 +75,8 @@ describe("the drafted bank", () => {
       expect(letters.length).toBeGreaterThan(0);
       if (isTileLanguage(language)) {
         for (const char of letters) {
-          expect(char, answer).toMatch(/\p{Script=Han}/u);
-          expect(SIMPLIFIED, `${answer} is not Traditional`).not.toContain(char);
+          expect(char, answer).toMatch(TILE_SCRIPT[language]);
+          if (language === "zh-TW") expect(SIMPLIFIED, `${answer} is not Traditional`).not.toContain(char);
         }
       } else {
         const keyboard = KEYBOARDS[language as Exclude<typeof language, "zh-TW" | "ja" | "ko">];
@@ -97,21 +103,29 @@ describe("the drafted bank", () => {
       if (language === "zh-TW") {
         for (const char of answer) expect(clues[1], answer).not.toContain(char);
       }
+      // A Japanese word's own clue shares none of its kanji, for the same
+      // reason; its kana are too common to keep out of a sentence.
+      if (language === "ja") {
+        for (const char of answer) if (/\p{Script=Han}/u.test(char)) expect(clues[5], answer).not.toContain(char);
+      }
     }
   });
 
-  it.each(BANKED)("%s has a complete card for every word: its reading, and the word in the other four with theirs", language => {
+  it.each(BANKED)("%s has a complete card for every word: its reading, and the word in the other six with theirs", language => {
     const cards = JSON.parse(readFileSync(join(root, "supabase/hangyumi/cards", `${language}.json`), "utf8")) as Record<string, Record<string, unknown>>;
-    const reads = (side: Record<string, unknown>, as: LanguageCode) => as === "zh-TW"
-      ? typeof side.pinyin === "string" && typeof side.zhuyin === "string" && side.pinyin !== "" && side.zhuyin !== ""
-      : typeof side.ipa === "string" && /^\/[^/]+\/$/.test(side.ipa);
+    const text = (value: unknown) => typeof value === "string" && value.trim() !== "";
+    const ipa = (value: unknown) => typeof value === "string" && /^\/[^/]+\/$/.test(value);
+    const reads = (side: Record<string, unknown>, as: LanguageCode) =>
+      as === "zh-TW" ? text(side.pinyin) && text(side.zhuyin)
+        : as === "ja" ? typeof side.kana === "string" && /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u.test(side.kana) && text(side.romaji)
+          : as === "ko" ? text(side.rr) && ipa(side.ipa)
+            : ipa(side.ipa);
     const gaps: string[] = [];
     for (const [, answer] of bank[language].words) {
       const card = cards[answer];
       if (!card || !reads(card, language)) { gaps.push(`${answer}: reading`); continue; }
       const translations = (card.translations ?? {}) as Record<string, Record<string, unknown>>;
-      /* The card's other sides: the languages it was written with. Japanese
-         and Korean sides are optional until the banks are extended. */
+      /* The card's other six sides, each with its own reading. */
       for (const other of CLUE_LANGUAGES.filter(code => code !== language)) {
         const side = translations[other];
         if (!side || typeof side.text !== "string" || !side.text.trim() || !reads(side, other)) gaps.push(`${answer}: ${other}`);

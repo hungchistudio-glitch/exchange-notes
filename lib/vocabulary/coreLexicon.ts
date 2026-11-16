@@ -8,7 +8,7 @@ import type { VocabularyCategory } from "@/lib/types/app";
 import { CORE_LEXICON_SOURCE } from "@/lib/vocabulary/coreLexiconData";
 
 /* =========================================================
-   The built-in five-language dictionary — looking a word up
+   The built-in seven-language dictionary — looking a word up
 
    The last answer the server has when Gemini is busy and the basic
    translation service (MyMemory) is too: see lookupOffline. The data and
@@ -32,10 +32,10 @@ export type CoreWord = {
 };
 
 /**
- * The columns of a data line, in order. Japanese and Korean were added
- * after the first 4,126 lines were written in five: a line with five
- * language columns still parses, and its Japanese and Korean are empty
- * (a language with no form is a language this entry cannot answer in).
+ * The columns of a data line, in order. Japanese and Korean were added to
+ * all 4,126 lines on 2026-11-16; a line with five language columns still
+ * parses, and its Japanese and Korean are empty (a language with no form
+ * is a language this entry cannot answer in).
  */
 const LANGUAGE_ORDER: readonly LanguageCode[] = ["en", "zh-TW", "es", "fr", "it", "ja", "ko"];
 

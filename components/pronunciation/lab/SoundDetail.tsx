@@ -19,6 +19,7 @@ import { isCharByChar, spokenKey } from "@/lib/spokenWords";
 import { exampleAudio, unitAudio } from "@/lib/pronunciation/lab/audio";
 import { findUnit } from "@/lib/pronunciation/lab/registry";
 import { localize, type LocalizedText } from "@/lib/pronunciation/localizedText";
+import useLabText from "@/hooks/useLabText";
 import { deriveRigPose } from "@/lib/pronunciation/yumiRig";
 import { deriveTeachingSteps } from "@/lib/pronunciation/teachingSteps";
 import type { ArticulationNotes } from "@/lib/pronunciation/lab/types";
@@ -31,6 +32,7 @@ const noSubscription = () => () => {};
 
 export default function SoundDetail({ unitId }: { unitId: string }) {
   const { t, language: interfaceLanguage } = useTranslation();
+  useLabText(interfaceLanguage);
   const copy = t.pronunciation.lab;
 
   const { pack, progress, recordAttempt } = usePronunciationLab();
@@ -505,6 +507,7 @@ function SpokenExample({ text, match, lang }: { text: string; match?: string; la
 
 function ArticulationList({ notes }: { notes: ArticulationNotes }) {
   const { t, language } = useTranslation();
+  useLabText(language);
   const copy = t.pronunciation.lab.detail;
 
   const rows: Array<[string, LocalizedText | undefined]> = [
