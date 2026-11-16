@@ -1347,7 +1347,7 @@ const italian: TranslationDictionary = {
     previewAlt: "La scheda come verrà condivisa",
     shareImage: "Condividi immagine",
     downloadImage: "Salva immagine",
-    saveVideo: "Crea un video di 3 secondi",
+    saveVideo: "Crea un video di Yumi che fa un giro (6 s)",
     recording: "Creazione del video…",
     shareVideo: "Condividi video",
     downloadVideo: "Salva video",

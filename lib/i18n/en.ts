@@ -1400,7 +1400,7 @@ const english: TranslationDictionary = {
     previewAlt: "The card as it will be shared",
     shareImage: "Share image",
     downloadImage: "Save image",
-    saveVideo: "Make a 3-second video",
+    saveVideo: "Make a video of Yumi's full turn (6 s)",
     recording: "Making the video…",
     shareVideo: "Share video",
     downloadVideo: "Save video",

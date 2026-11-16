@@ -1385,7 +1385,7 @@ const traditionalChinese: TranslationDictionary = {
     previewAlt: "分享卡預覽",
     shareImage: "分享圖片",
     downloadImage: "下載圖片",
-    saveVideo: "製作 3 秒動態卡",
+    saveVideo: "製作 Yumi 轉一圈影片（6 秒）",
     recording: "影片製作中…",
     shareVideo: "分享影片",
     downloadVideo: "下載影片",

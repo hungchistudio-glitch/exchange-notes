@@ -18,12 +18,13 @@ import {
   type HudColors,
   type HudFonts,
   type ShareFormat,
+  WEIGHT,
 } from "@/lib/share/hud";
 
 import type { HelloSnapshot } from "./types";
 
 /* =========================================================
-   The hello as one picture, or three seconds of video
+   The hello as one picture, or a video of Yumi's one full turn
 
    The same hello as the page — Yumi in the outfit saved with it, the same
    two words, the same name — with a QR code for the link, for sharing
@@ -93,7 +94,7 @@ function wordPanels(
   const gap = 20;
   const layoutAt = (size: number) =>
     sides.map((side) => {
-      ctx.font = sans(fonts, size, 800);
+      ctx.font = sans(fonts, size, WEIGHT.word);
       const lines = wrapText(measure, side.text, inner, 2);
       const height = 52 + size + 10 + (lines.length - 1) * (size + 8) + (side.reading ? 42 : 0) + 34;
       return { ...side, lines, height };
@@ -101,7 +102,7 @@ function wordPanels(
   const total = (layout: ReturnType<typeof layoutAt>) => layout.reduce((sum, side) => sum + side.height, 0) + gap * (layout.length - 1);
   let size = sizes.max;
   while (size > sizes.min) {
-    ctx.font = sans(fonts, size, 800);
+    ctx.font = sans(fonts, size, WEIGHT.word);
     if (sides.every((side) => measure(side.text) <= inner)) break;
     size -= 4;
   }
@@ -115,14 +116,14 @@ function wordPanels(
   layout.forEach((side, index) => {
     hudPanel(ctx, x, y, width, side.height, colors, { rail: true });
     ctx.fillStyle = colors.accent;
-    ctx.font = sans(fonts, 24, 700);
+    ctx.font = sans(fonts, 24, WEIGHT.label);
     ctx.fillText(fitText(ctx, side.name.toUpperCase(), inner - 60), x + 44, y + 50);
-    ctx.font = mono(fonts, 24, 700);
+    ctx.font = mono(fonts, 24);
     ctx.textAlign = "right";
     ctx.fillText(side.mark, x + width - 40, y + 50);
     ctx.textAlign = "left";
     ctx.fillStyle = colors.ink;
-    ctx.font = sans(fonts, size, 800);
+    ctx.font = sans(fonts, size, WEIGHT.word);
     /* While it decodes, one line; settled, its own lines. */
     const lines = texts[index] === side.text ? side.lines : [fitText(ctx, texts[index], inner)];
     lines.forEach((line, row) => ctx.fillText(line, x + 44, y + 52 + size + 4 + row * (size + 8)));
@@ -153,7 +154,7 @@ export function drawHelloCard(ctx: CanvasRenderingContext2D, input: HelloCardInp
   hudFrame(ctx, width, height, colors, fonts, cosmic, { top: story ? 104 : 96 });
   /* Who it is from, by the ID no one else can hold. */
   ctx.fillStyle = colors.accent;
-  ctx.font = mono(fonts, 24, 600);
+  ctx.font = mono(fonts, 24);
   ctx.textAlign = "right";
   ctx.fillText(fitText(ctx, `@${hello.sender.exchangeId}`, 420), width - 84, story ? 104 : 96);
   ctx.textAlign = "left";
@@ -182,12 +183,12 @@ export function drawHelloCard(ctx: CanvasRenderingContext2D, input: HelloCardInp
 
   if (story) {
     ctx.fillStyle = colors.ink;
-    ctx.font = sans(fonts, 60, 800);
+    ctx.font = sans(fonts, 62, WEIGHT.display);
     const greeting = wrapText(measure, input.greeting, 912, 2);
     greeting.forEach((line, index) => ctx.fillText(line, 84, 236 + index * 72));
     const giftY = 236 + (greeting.length - 1) * 72 + 60;
     ctx.fillStyle = colors.soft;
-    ctx.font = sans(fonts, 36, 500);
+    ctx.font = sans(fonts, 36);
     ctx.fillText(fitText(ctx, input.gift, 912), 84, giftY);
 
     reticle(ctx, 540, 770, 270, colors, fonts, input.spin ?? 0);
@@ -200,7 +201,7 @@ export function drawHelloCard(ctx: CanvasRenderingContext2D, input: HelloCardInp
     qrPlate(ctx, input.qr, qrX, 1640, qrSize, colors);
     const textWidth = qrX - 40 - 84 - 30;
     ctx.fillStyle = colors.ink;
-    ctx.font = sans(fonts, 34, 700);
+    ctx.font = sans(fonts, 34, WEIGHT.label);
     const caption = wrapText(measure, `${input.scanCaption} →`, textWidth, 2);
     caption.forEach((line, index) => ctx.fillText(line, 84, 1690 + index * 44));
     ctx.fillStyle = colors.faint;
@@ -209,12 +210,12 @@ export function drawHelloCard(ctx: CanvasRenderingContext2D, input: HelloCardInp
   }
 
   ctx.fillStyle = colors.ink;
-  ctx.font = sans(fonts, 48, 800);
+  ctx.font = sans(fonts, 50, WEIGHT.display);
   const greeting = wrapText(measure, input.greeting, 560, 2);
   greeting.forEach((line, index) => ctx.fillText(line, 84, 196 + index * 58));
   const giftY = 196 + (greeting.length - 1) * 58 + 50;
   ctx.fillStyle = colors.soft;
-  ctx.font = sans(fonts, 30, 500);
+  ctx.font = sans(fonts, 30);
   ctx.fillText(fitText(ctx, input.gift, 560), 84, giftY);
 
   reticle(ctx, 836, 330, 150, colors, fonts, input.spin ?? 0);
@@ -226,7 +227,7 @@ export function drawHelloCard(ctx: CanvasRenderingContext2D, input: HelloCardInp
   const qrX = width - 84 - qrSize;
   qrPlate(ctx, input.qr, qrX, 600, qrSize, colors);
   ctx.fillStyle = colors.ink;
-  ctx.font = sans(fonts, 22, 700);
+  ctx.font = sans(fonts, 22, WEIGHT.label);
   ctx.textAlign = "center";
   wrapText(measure, input.scanCaption, qrSize + 28, 2).forEach((line, index) => ctx.fillText(line, qrX + qrSize / 2, 852 + index * 30));
   ctx.textAlign = "left";
@@ -242,17 +243,17 @@ export function drawHelloCard(ctx: CanvasRenderingContext2D, input: HelloCardInp
 function linkLine(ctx: CanvasRenderingContext2D, url: string, x: number, y: number, width: number, max: number, fonts: HudFonts) {
   const link = url.replace(/^https?:\/\//, "");
   let size = max;
-  ctx.font = mono(fonts, size, 500);
+  ctx.font = mono(fonts, size);
   while (size > 18 && ctx.measureText(link).width > width) {
     size -= 1;
-    ctx.font = mono(fonts, size, 500);
+    ctx.font = mono(fonts, size);
   }
   if (ctx.measureText(link).width <= width) {
     ctx.fillText(link, x, y);
     return;
   }
   size = max;
-  ctx.font = mono(fonts, size, 500);
+  ctx.font = mono(fonts, size);
   let cut = link.length;
   while (cut > 1 && ctx.measureText(link.slice(0, cut)).width > width) cut -= 1;
   const slash = link.lastIndexOf("/", cut - 1);

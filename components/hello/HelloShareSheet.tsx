@@ -25,7 +25,7 @@ import { senderName } from "./HelloInvitation";
    Since 2026-11-15 the card is the shared cards' (Chi: 送一個字的分享圖換
    新卡): Yumi stands here in the outfit saved with the hello, and is drawn
    as the sharer turns her, in a story's 9:16 or a post's 1:1, as a
-   picture or three seconds of video (components/share/ShareStudio). Where
+   picture or a video of her one full turn (components/share/ShareStudio). Where
    the live figure cannot be had, her picture taken with the hello stands
    in, never another Yumi.
 

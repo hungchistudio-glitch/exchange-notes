@@ -1,7 +1,7 @@
 /* =========================================================
    The weekly recap, drawn to share (Chi, 2026-11-15)
 
-   One drawing for both the image and the three-second video: the video
+   One drawing for both the image and the video of one turn: the video
    draws it once a frame, with the numbers counting up, the title decoding,
    the reticle's arcs turning and Yumi making one turn. Drawn from the
    numbers on a canvas, not photographed from the page, so it looks the
@@ -40,6 +40,7 @@ import {
   type HudColors,
   type HudFonts,
   type ShareFormat,
+  WEIGHT,
 } from "@/lib/share/hud";
 
 export { SHARE_SIZES, type ShareFormat };
@@ -117,17 +118,17 @@ function statsPanel(
     const cx = x + (index % columns) * columnWidth;
     const cy = y + Math.floor(index / columns) * rowHeight;
     ctx.fillStyle = colors.accent;
-    ctx.font = mono(fonts, Math.round(valueSize * 0.28), 600);
+    ctx.font = mono(fonts, Math.round(valueSize * 0.28));
     ctx.fillText(String(index + 1).padStart(2, "0"), cx + pad, cy + Math.round(rowHeight * 0.26));
     if (stat.days) {
       const lit = stat.days.map((on, day) => on && progress * stat.days!.length >= day + 0.5);
       segments(ctx, cx + pad + valueSize * 0.62, cy + Math.round(rowHeight * 0.26) - 13, columnWidth - pad * 2 - valueSize * 0.62, 12, lit, colors);
     }
     ctx.fillStyle = colors.ink;
-    ctx.font = mono(fonts, valueSize, 700);
+    ctx.font = mono(fonts, valueSize, WEIGHT.figure);
     ctx.fillText(countUp(stat.value, progress), cx + pad, cy + Math.round(rowHeight * 0.7));
     ctx.fillStyle = colors.soft;
-    ctx.font = sans(fonts, Math.round(valueSize * 0.33), 600);
+    ctx.font = sans(fonts, Math.round(valueSize * 0.33));
     ctx.fillText(fitText(ctx, stat.label, columnWidth - pad * 2), cx + pad, cy + Math.round(rowHeight * 0.89));
   });
 }
@@ -148,10 +149,10 @@ function lessonPanel(
   hudPanel(ctx, x, y, width, lessonHeight(lesson, scale), colors, { rail: true });
   led(ctx, x + s(44), y + s(46), s(7), colors.accent, cosmic);
   ctx.fillStyle = colors.accent;
-  ctx.font = sans(fonts, s(26), 700);
+  ctx.font = sans(fonts, s(26), WEIGHT.label);
   ctx.fillText(fitText(ctx, lesson.label, width - s(100)), x + s(64), y + s(55));
   ctx.fillStyle = colors.ink;
-  ctx.font = sans(fonts, s(70), 800);
+  ctx.font = sans(fonts, s(70), WEIGHT.word);
   ctx.fillText(fitText(ctx, word, width - s(80)), x + s(40), y + s(132));
   let line = y + s(132);
   if (lesson.reading) {
@@ -163,7 +164,7 @@ function lessonPanel(
   if (lesson.meaning) {
     line += s(46);
     ctx.fillStyle = colors.ink;
-    ctx.font = sans(fonts, s(34), 600);
+    ctx.font = sans(fonts, s(34));
     ctx.fillText(fitText(ctx, lesson.meaning, width - s(80)), x + s(40), line);
   }
 }
@@ -180,7 +181,7 @@ function headlineTag(
   fonts: HudFonts,
   cosmic: boolean,
 ) {
-  ctx.font = sans(fonts, size, 800);
+  ctx.font = sans(fonts, size, WEIGHT.label);
   const label = fitText(ctx, text, maxWidth - size * 2.2);
   const width = ctx.measureText(label).width + size * 2.2;
   const height = Math.round(size * 1.7);
@@ -216,10 +217,10 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, input: ShareCardInp
 
   if (story) {
     ctx.fillStyle = colors.ink;
-    ctx.font = sans(fonts, 96, 800);
+    ctx.font = sans(fonts, 104, WEIGHT.display);
     ctx.fillText(fitText(ctx, title, width - 168), 84, 236);
     ctx.fillStyle = colors.soft;
-    ctx.font = mono(fonts, 30, 500);
+    ctx.font = mono(fonts, 30);
     tracked(ctx, input.range, 86, 288, 2);
     if (input.headline) headlineTag(ctx, input.headline, 84, 316, 30, 400, colors, fonts, input.cosmic);
 
@@ -234,15 +235,15 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, input: ShareCardInp
     const textWidth = qrX - 40 - 84 - 30;
     if (input.qr && input.qrLabel) {
       ctx.fillStyle = colors.accent;
-      ctx.font = sans(fonts, 34, 800);
+      ctx.font = sans(fonts, 34, WEIGHT.label);
       ctx.fillText(fitText(ctx, `${input.qrLabel} →`, textWidth), 84, 1716);
     }
     ctx.fillStyle = colors.soft;
-    ctx.font = sans(fonts, 28, 600);
+    ctx.font = sans(fonts, 28);
     ctx.fillText(fitText(ctx, input.footer, textWidth), 84, 1762);
     if (input.link) {
       ctx.fillStyle = colors.faint;
-      ctx.font = mono(fonts, 22, 500);
+      ctx.font = mono(fonts, 22);
       ctx.fillText(fitText(ctx, input.link, textWidth), 84, 1804);
     }
     if (input.qr) qrPlate(ctx, input.qr, qrX, 1668, qrSize, colors);
@@ -250,10 +251,10 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, input: ShareCardInp
   }
 
   ctx.fillStyle = colors.ink;
-  ctx.font = sans(fonts, 72, 800);
+  ctx.font = sans(fonts, 78, WEIGHT.display);
   ctx.fillText(fitText(ctx, title, 560), 84, 214);
   ctx.fillStyle = colors.soft;
-  ctx.font = mono(fonts, 26, 500);
+  ctx.font = mono(fonts, 26);
   tracked(ctx, input.range, 86, 258, 2);
   if (input.headline) headlineTag(ctx, input.headline, 84, 282, 24, 520, colors, fonts, input.cosmic);
 
@@ -269,15 +270,15 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, input: ShareCardInp
   if (input.qr && input.qrLabel) {
     ctx.fillStyle = colors.accent;
     ctx.textAlign = "center";
-    fittedLine(ctx, input.qrLabel, qrX + qrSize / 2, 862, qrSize + 28, { max: 24, min: 18, weight: 800 }, fonts);
+    fittedLine(ctx, input.qrLabel, qrX + qrSize / 2, 862, qrSize + 28, { max: 24, min: 18 }, fonts);
     ctx.textAlign = "left";
   }
   ctx.fillStyle = colors.soft;
-  ctx.font = sans(fonts, 24, 600);
+  ctx.font = sans(fonts, 24);
   ctx.fillText(fitText(ctx, input.footer, 560), 84, 966);
   if (input.link) {
     ctx.fillStyle = colors.faint;
-    ctx.font = mono(fonts, 20, 500);
+    ctx.font = mono(fonts, 20);
     ctx.fillText(fitText(ctx, input.link, 560), 84, 1002);
   }
 }

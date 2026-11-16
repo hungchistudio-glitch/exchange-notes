@@ -1399,7 +1399,7 @@ const spanish: TranslationDictionary = {
     previewAlt: "La tarjeta tal como se compartirá",
     shareImage: "Compartir imagen",
     downloadImage: "Guardar imagen",
-    saveVideo: "Crear un vídeo de 3 segundos",
+    saveVideo: "Crear un vídeo de Yumi dando una vuelta (6 s)",
     recording: "Creando el vídeo…",
     shareVideo: "Compartir vídeo",
     downloadVideo: "Guardar vídeo",

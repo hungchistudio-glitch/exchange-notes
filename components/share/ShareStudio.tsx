@@ -13,7 +13,7 @@ import type { ShareFormat } from "@/lib/share/hud";
    Both shared cards go out through this: the weekly recap and a word sent
    with Yumi (送一個字). The caller draws; this chooses the shape (a story's
    9:16 or a post's 1:1), keeps the picture ready, shows it, and shares or
-   saves it, or records three seconds of it as a video.
+   saves it, or records it as a video of Yumi making one full turn.
 
    The picture is made ahead, whenever what it shows changes (the shape,
    the caller's `version`: its data, Yumi coming live, a turn of her ended),
@@ -22,15 +22,24 @@ import type { ShareFormat } from "@/lib/share/hud";
    Yumi's canvas is read in the same task she is drawn in, before WebGL
    clears it (YumiCamera).
 
-   The video takes three seconds to record, so it is offered afterwards,
+   The video takes six seconds to record, so it is offered afterwards,
    with keys of its own, rather than shared from the tap that started it.
    ========================================================= */
 
-const VIDEO_MS = 3000;
-/** The opening's share of the video: the numbers count up, the words decode. */
-const OPENING_SHARE = 0.4;
-/** One full turn over the video: lib/yumi3d/scene turns 0.012 rad a pixel. */
-const TURN_PX_PER_MS = (Math.PI * 2) / 0.012 / VIDEO_MS;
+/**
+ * The video is one full turn of Yumi at an even speed, from the angle the
+ * reader left her back to it, so a story replaying it loops without a seam
+ * (Chi, 2026-11-15: 影片長度＝轉一圈, 6 秒, 等速).
+ */
+const VIDEO_MS = 6000;
+/** The opening, kept short: the numbers count up and the words decode. */
+const OPENING_MS = 1200;
+/** One full turn in the scene's drag pixels: lib/yumi3d/scene turns 0.012 rad a pixel. */
+const TURN_PX = (Math.PI * 2) / 0.012;
+/** One frame of the recording's 30 a second. */
+const FRAME_MS = 1000 / 30;
+/** How long the recorder is given to take the last frames before it stops. */
+const FLUSH_MS = 400;
 
 export type ShareFrame = {
   format: ShareFormat;
@@ -187,23 +196,34 @@ export default function ShareStudio({
       });
       recorder.start(250);
 
-      /* Three seconds: the opening counts and decodes while Yumi makes one turn. */
+      /* One turn: the opening counts and decodes, and Yumi turns throughout,
+         to where the clock says she should be, so she ends exactly where she
+         began however the frames fall. */
+      let turned = 0;
       await new Promise<void>((resolve) => {
         const started = performance.now();
-        let last = started;
         let tick = 0;
         const step = (now: number) => {
-          const elapsed = Math.min(VIDEO_MS, now - started);
-          camera.current?.rotateBy(TURN_PX_PER_MS * (now - last), 0);
-          last = now;
+          /* The last frame is the one before the turn closes: the first
+             frame is that same angle, and a loop needs it only once. */
+          const elapsed = Math.min(VIDEO_MS - FRAME_MS, now - started);
+          const due = TURN_PX * (elapsed / VIDEO_MS);
+          camera.current?.rotateBy(due - turned, 0);
+          turned = due;
           camera.current?.draw(now);
-          drawRef.current(ctx, { format, progress: elapsed / (VIDEO_MS * OPENING_SHARE), spin: elapsed / VIDEO_MS, tick: tick++ });
-          if (elapsed < VIDEO_MS) requestAnimationFrame(step);
+          drawRef.current(ctx, { format, progress: elapsed / OPENING_MS, spin: elapsed / VIDEO_MS, tick: tick++ });
+          if (elapsed < VIDEO_MS - FRAME_MS) requestAnimationFrame(step);
           else resolve();
         };
         requestAnimationFrame(step);
       });
+      /* Back to the angle she was left at, for the picture and the next video. */
+      camera.current?.rotateBy(TURN_PX - turned, 0);
+      camera.current?.draw();
 
+      /* The recorder trails the canvas by a few frames; stopped at once, it
+         loses the end of the turn and the loop jumps. */
+      await new Promise((resolve) => window.setTimeout(resolve, FLUSH_MS));
       recorder.stop();
       await stopped;
       stream.getTracks().forEach((track) => track.stop());

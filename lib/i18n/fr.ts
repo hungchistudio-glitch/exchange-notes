@@ -1347,7 +1347,7 @@ const french: TranslationDictionary = {
     previewAlt: "La carte telle qu'elle sera partagée",
     shareImage: "Partager l'image",
     downloadImage: "Enregistrer l'image",
-    saveVideo: "Créer une vidéo de 3 secondes",
+    saveVideo: "Créer une vidéo de Yumi faisant un tour (6 s)",
     recording: "Création de la vidéo…",
     shareVideo: "Partager la vidéo",
     downloadVideo: "Enregistrer la vidéo",

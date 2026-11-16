@@ -34,7 +34,7 @@ import type { VocabularyItem } from "@/lib/types/app";
    The last seven days in numbers (lib/recap/weekly.ts), with the reader's
    own Yumi standing on the card in what they have bought her; she can be
    turned, and the card keeps her as she was turned. It goes out through
-   ShareStudio as an image or a three-second video (lib/recap/shareCard.ts),
+   ShareStudio as an image or a six-second video of her one turn (lib/recap/shareCard.ts),
    9:16 for a story or 1:1 for a post, with the week's word as a small
    lesson and a QR code that adds the reader as a friend, so that what is
    shared brings people in. The word is the one reviewed most unless the

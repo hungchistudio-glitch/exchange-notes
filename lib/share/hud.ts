@@ -104,16 +104,24 @@ export function readHudFonts(): HudFonts {
 export async function loadHudFonts(fonts: HudFonts, text: string): Promise<void> {
   if (typeof document === "undefined" || !document.fonts?.load) return;
   await Promise.all([
-    document.fonts.load(`800 64px ${fonts.sans}`, text),
-    document.fonts.load(`600 32px ${fonts.sans}`, text),
-    document.fonts.load(`700 64px ${fonts.mono}`, "0123456789/%—–:WK"),
-    document.fonts.load(`500 24px ${fonts.mono}`, "EXCHANGE NOTES 0123456789"),
-    document.fonts.load(`500 30px ${fonts.phonetic}`, text),
+    document.fonts.load(`${WEIGHT.display} 64px ${fonts.sans}`, text),
+    document.fonts.load(`${WEIGHT.text} 32px ${fonts.sans}`, text),
+    document.fonts.load(`${WEIGHT.label} 32px ${fonts.sans}`, text),
+    document.fonts.load(`${WEIGHT.figure} 64px ${fonts.mono}`, "0123456789/%—–:WK"),
+    document.fonts.load(`${WEIGHT.code} 24px ${fonts.mono}`, "EXCHANGE NOTES @_0123456789"),
+    document.fonts.load(`400 30px ${fonts.phonetic}`, text),
   ]).catch(() => undefined);
 }
 
-export const sans = (fonts: HudFonts, size: number, weight = 600) => `${weight} ${size}px ${fonts.sans}`;
-export const mono = (fonts: HudFonts, size: number, weight = 600) => `${weight} ${size}px ${fonts.mono}`;
+/**
+ * The cards' weights (Chi, 2026-11-15: 字體秀氣有設計感, not heavy): a light
+ * display face for titles and greetings, light figures, regular text, and
+ * medium only for the small labels that must hold at a glance.
+ */
+export const WEIGHT = { display: 300, figure: 300, word: 400, text: 400, code: 400, label: 500 } as const;
+
+export const sans = (fonts: HudFonts, size: number, weight: number = WEIGHT.text) => `${weight} ${size}px ${fonts.sans}`;
+export const mono = (fonts: HudFonts, size: number, weight: number = WEIGHT.code) => `${weight} ${size}px ${fonts.mono}`;
 
 /** Text cut to fit a width, with an ellipsis. */
 export function fitText(ctx: CanvasRenderingContext2D, text: string, width: number) {
@@ -280,9 +288,9 @@ export function hudFrame(
   const y = header.top;
   led(ctx, 86, y - 9, 7, colors.accent, cosmic);
   ctx.fillStyle = colors.ink;
-  ctx.font = mono(fonts, 24, 600);
+  ctx.font = mono(fonts, 24, WEIGHT.label);
   ctx.textBaseline = "alphabetic";
-  tracked(ctx, "EXCHANGE NOTES", 108, y, 5);
+  tracked(ctx, "EXCHANGE NOTES", 108, y, 6);
   if (header.right) {
     ctx.fillStyle = colors.accent;
     tracked(ctx, header.right, width - 84, y, 4, "right");
@@ -362,7 +370,7 @@ export function reticle(
 
 function quarterFigures(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number, colors: HudColors, fonts: HudFonts) {
   ctx.fillStyle = colors.faint;
-  ctx.font = mono(fonts, 20, 500);
+  ctx.font = mono(fonts, 20);
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const label = radius + 64;
@@ -387,10 +395,10 @@ export function fittedLine(
   fonts: HudFonts,
 ) {
   let size = sizes.max;
-  ctx.font = sans(fonts, size, sizes.weight ?? 700);
+  ctx.font = sans(fonts, size, sizes.weight ?? WEIGHT.label);
   while (size > sizes.min && ctx.measureText(text).width > width) {
     size -= 1;
-    ctx.font = sans(fonts, size, sizes.weight ?? 700);
+    ctx.font = sans(fonts, size, sizes.weight ?? WEIGHT.label);
   }
   ctx.fillText(fitText(ctx, text, width), x, y);
 }
