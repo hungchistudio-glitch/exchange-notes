@@ -195,6 +195,12 @@ describe("a round of Hangyumi", () => {
   it("takes letters from a real keyboard too", async () => {
     play();
     await screen.findByText("lasting a very short time");
+    /* The game takes no guess until its stage has said it arrived, which
+       can come a moment after the clue is on screen (npm run
+       test:late-react): a key pressed before then is rightly ignored. */
+    await waitFor(() =>
+      expect(document.querySelector("[data-own-arrival]")).not.toHaveAttribute("data-arrival", "waiting"),
+    );
     await act(async () => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "P" }));
     });

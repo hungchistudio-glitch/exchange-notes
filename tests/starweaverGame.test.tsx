@@ -222,7 +222,10 @@ describe("the screen", () => {
     play(service({ voyages: 6 }));
     await screen.findByText("a round fruit");
     for (const char of ["a", "p", "l", "e"]) await guess(char);
-    await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog");
+    /* Escape is listened for from the effect that also brings focus in, a
+       moment after the dialog is drawn (npm run test:late-react). */
+    await waitFor(() => expect(dialog).toContainElement(document.activeElement as HTMLElement));
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
