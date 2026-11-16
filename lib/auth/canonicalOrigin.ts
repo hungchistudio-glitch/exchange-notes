@@ -1,8 +1,13 @@
 export const APP_ORIGIN = "https://exchange-notes-app.vercel.app";
 
 // Explicit production aliases only: preview deployments and localhost stay usable.
+// Vercel names two of them after the team's URL, which became hung-chi-studio on
+// 2026-11-16 (Chi renamed the team Hung Chi Studio); the old names are kept for as
+// long as earlier deployments answer to them.
 const LEGACY_HOSTS = new Set([
   "v0-language-exchange-app-bychi.vercel.app",
+  "exchange-notes-app-hung-chi-studio.vercel.app",
+  "exchange-notes-app-git-main-hung-chi-studio.vercel.app",
   "exchange-notes-app-hungchistudio-7883s-projects.vercel.app",
   "exchange-notes-app-git-main-hungchistudio-7883s-projects.vercel.app",
 ]);
