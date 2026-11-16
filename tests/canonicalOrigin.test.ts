@@ -8,6 +8,8 @@ import { proxy } from "@/proxy";
 
 const aliases = [
   "v0-language-exchange-app-bychi.vercel.app",
+  "exchange-notes-app-hung-chi-studio.vercel.app",
+  "exchange-notes-app-git-main-hung-chi-studio.vercel.app",
   "exchange-notes-app-hungchistudio-7883s-projects.vercel.app",
   "exchange-notes-app-git-main-hungchistudio-7883s-projects.vercel.app",
 ];
