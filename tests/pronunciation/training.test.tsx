@@ -115,7 +115,9 @@ describe("Today's training", () => {
 
     // A fresh Italian session, not the Spanish one continued.
     expect(await screen.findByText(/1 of \d+/)).toBeInTheDocument();
-    expect(loadSession("es")).toBeNull();
+    /* The Spanish one is let go by an effect, a moment after the Italian
+       one is drawn (npm run test:late-react). */
+    await waitFor(() => expect(loadSession("es")).toBeNull());
   });
 
   it("clears the stored session once it is finished", async () => {
@@ -127,7 +129,8 @@ describe("Today's training", () => {
     await screen.findByText("Session complete", {}, { timeout: 3000 });
 
     // Otherwise the Lab would offer to resume something already over.
-    expect(loadSession("es")).toBeNull();
+    // Let go by an effect, a moment after the end is drawn (npm run test:late-react).
+    await waitFor(() => expect(loadSession("es")).toBeNull());
   });
 
   it("counts a skip separately from a wrong answer", async () => {

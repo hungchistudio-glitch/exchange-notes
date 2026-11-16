@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import GamesHub, { ENTRANCE_MS, MOST_WAIT_MS } from "@/components/games/GamesHub";
@@ -83,7 +83,9 @@ describe("the games hub", () => {
       <GamesHub loadToday={async () => 0} loadProgress={async () => null} hrefs={hrefs} backHref="/home" />,
     );
     await screen.findByText("0 / 333 cookies today");
-    expect(container.querySelectorAll("[role=img]")).toHaveLength(0);
+    /* Each row is drawn as a placeholder until the progress has answered,
+       which can be a moment after today's count (npm run test:late-react). */
+    await waitFor(() => expect(container.querySelectorAll("[role=img]")).toHaveLength(0));
     expect(screen.queryByText(/Nightscale \d/)).not.toBeInTheDocument();
   });
 
