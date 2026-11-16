@@ -4,7 +4,8 @@
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { STORES, readRecord, writeRecord } from "@/lib/offline/db";
-import { SlidersHorizontal } from "lucide-react";
+import { Headphones, SlidersHorizontal } from "lucide-react";
+import Link from "next/link";
 
 import SignalControlSheet from "@/components/discover/SignalControlSheet";
 import YumiSignalRadar from "@/components/discover/YumiSignalRadar";
@@ -833,6 +834,17 @@ export default function DailyNews() {
           action={
           <div className="flex items-center gap-1">
             <YumiSignalRadar controller={radar} copy={copy} />
+
+            {/* Today's stories read aloud, one after another (Chi, 2026-11-15). */}
+            <Link
+              href="/listen?from=news"
+              aria-label={t.listen.title}
+              title={t.listen.title}
+              className="flex h-9 w-9 items-center justify-center rounded-full"
+              style={{ color: DISCOVER_COLORS.textSecondary }}
+            >
+              <Headphones size={15} strokeWidth={1.9} aria-hidden="true" />
+            </Link>
 
             {/*
               The same sheet the long press opens, reachable without a gesture.

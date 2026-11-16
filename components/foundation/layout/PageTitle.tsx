@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+
+import { decodeElement } from "@/lib/motion/pageArrival";
 
 /**
  * Where a back arrow goes: a page (a link) or a step back within one.
@@ -46,6 +48,43 @@ export const PAGE_TITLE_CLASS =
 const BACK_CLASS =
   "-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-black/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black";
 
+/**
+ * A title that runs its letters into place each time it appears (Chi,
+ * 2026-11-15: 進入每一頁都要有跑字母定位的動畫): on a page change, on the first
+ * page the app opens on, and when a title arrives after its data. It runs
+ * itself as it mounts, so no page can miss it; the real text stays for a
+ * screen reader under the scramble (decodeElement, lib/motion/pageArrival).
+ * Used by PageTitle and by the themed signs that keep their own look.
+ */
+export function TitleText({
+  text,
+  className,
+  clipped = false,
+}: {
+  text: string;
+  className?: string;
+  /**
+   * For lettering painted by its parent's background clipped to the text
+   * (the gilt signs of the games and the shop). The clip paints every glyph
+   * inside it, the scramble's and the real text's alike, so the real text
+   * is set aside while the scramble runs.
+   */
+  clipped?: boolean;
+}) {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || !text.trim()) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+    return decodeElement(element);
+  }, [text]);
+  return (
+    <span ref={ref} className={className} data-title-text="" data-title-clipped={clipped ? "" : undefined}>
+      {clipped ? <span data-title-real="">{text}</span> : text}
+    </span>
+  );
+}
+
 export default function PageTitle({
   title,
   eyebrow,
@@ -84,11 +123,9 @@ export default function PageTitle({
             </p>
           ) : null}
 
-          {/* `data-title-text` is what decodes as the page arrives
-              (decodeTitle in lib/motion/pageArrival.ts). */}
           <h1 className={`mt-1 flex items-center gap-2.5 ${PAGE_TITLE_CLASS}`}>
             {mark}
-            <span className="min-w-0" data-title-text="">{title}</span>
+            <TitleText text={title} className="min-w-0" />
           </h1>
 
           {subtitle ? (

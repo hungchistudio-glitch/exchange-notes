@@ -233,9 +233,14 @@ describe("what the heaviest tabs drag in with them", () => {
    * and word-by-word switch every speaker shares, and the one file it reaches
    * that the tab did not load already — lib/spokenWords.ts, which imports
    * only lib/speech.ts, or hooks/useCosmicMode.ts, which imports only React.
+   * Raised vocabulary 175 → 177 (2026-11-15): the library wears the page
+   * title every page does (Chi: 單字庫加標題). components/foundation/layout/
+   * PageTitle, which imports only React, next/link and the icons, and
+   * lib/motion/pageArrival.ts, whose decodeElement runs the title's letters
+   * into place; it imports nothing.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 175],
+    ["vocabulary", TABS.vocabulary, 177],
     ["home", TABS.home, 194],
   ] as const)(
     "keeps %s's static graph inside its ceiling",

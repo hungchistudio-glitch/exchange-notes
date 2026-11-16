@@ -29,7 +29,7 @@ import {
 } from "@/components/messages/CosmicCommsHero";
 import YumiCommsMark from "@/components/messages/YumiCommsMark";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
-import { PAGE_TITLE_CLASS } from "@/components/foundation/layout/PageTitle";
+import { PAGE_TITLE_CLASS, TitleText } from "@/components/foundation/layout/PageTitle";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { fill } from "@/lib/i18n/format";
 import {
@@ -659,14 +659,18 @@ export default function MessagesHub() {
               rules out. Raising the text is cheaper than shrinking the scene.
             */}
             <div className="relative z-20 min-w-0">
+              {/* The title every page wears, in the place this page's band
+                  gives it: the eyebrow's status light, and the letters
+                  running into place as it appears (Chi, 2026-11-15). */}
               <p
-                className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em]"
+                className="flex items-center gap-2 text-[0.6875rem] font-semibold uppercase tracking-[0.2em]"
                 style={{ color: "var(--msg-accent)" }}
               >
+                <span className="hud-led" aria-hidden="true" />
                 {copy.hub.eyebrow}
               </p>
-              <h1 className={`mt-1.5 ${PAGE_TITLE_CLASS}`}>
-                {copy.title}
+              <h1 className={`mt-1 ${PAGE_TITLE_CLASS}`}>
+                <TitleText text={copy.title} />
               </h1>
               <p
                 className="mt-2 text-[0.8125rem] leading-5 sm:text-sm sm:leading-6"

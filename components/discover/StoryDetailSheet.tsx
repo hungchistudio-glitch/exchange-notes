@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import useKnownWords from "@/hooks/useKnownWords";
 import { SpeakKey, SpokenText, WordByWordSwitch } from "@/components/speech/Spoken";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { plural } from "@/lib/i18n/format";
@@ -62,6 +63,7 @@ export default function StoryDetailSheet({
   onHide,
 }: StoryDetailSheetProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { marksFor, lookUp } = useKnownWords();
 
   // Above the early return: a hook cannot be called conditionally.
   const { pair } = useDisplayLanguages();
@@ -221,7 +223,7 @@ export default function StoryDetailSheet({
         <div>
           <div className="flex items-start gap-2">
             <h3 className="min-w-0 flex-1 text-[1.3125rem] font-bold leading-[1.25] tracking-[-0.02em] text-black">
-              <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={primarySpeech} tapToStart />
+              <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={primarySpeech} tapToStart marks={marksFor(card.titles[primaryLanguage] ?? "", primarySpeech)} onLongPressWord={lookUp} />
             </h3>
 
             <SpeakKey
@@ -236,7 +238,7 @@ export default function StoryDetailSheet({
 
           <div className="mt-2 flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[0.9375rem] font-medium leading-[1.6] text-ink-soft">
-              <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={secondarySpeech} tapToStart />
+              <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={secondarySpeech} tapToStart marks={marksFor(card.titles[secondaryLanguage] ?? "", secondarySpeech)} onLongPressWord={lookUp} />
             </p>
 
             <SpeakKey
@@ -251,13 +253,17 @@ export default function StoryDetailSheet({
         </div>
 
         <div className="space-y-2.5">
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
+            {/* What the glow means, and what a held word does (Chi, 2026-11-15). */}
+            <p className="min-w-0 text-[0.6875rem] leading-4 text-ink-faint">
+              {copy.knownWordsHint}
+            </p>
             <WordByWordSwitch />
           </div>
 
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[0.9375rem] leading-[1.7] text-ink-strong">
-              <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={primarySpeech} tapToStart />
+              <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={primarySpeech} tapToStart marks={marksFor(card.summaries[primaryLanguage] ?? "", primarySpeech)} onLongPressWord={lookUp} />
             </p>
 
             <SpeakKey
@@ -272,7 +278,7 @@ export default function StoryDetailSheet({
 
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[0.875rem] leading-[1.7] text-ink-soft">
-              <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={secondarySpeech} tapToStart />
+              <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={secondarySpeech} tapToStart marks={marksFor(card.summaries[secondaryLanguage] ?? "", secondarySpeech)} onLongPressWord={lookUp} />
             </p>
 
             <SpeakKey

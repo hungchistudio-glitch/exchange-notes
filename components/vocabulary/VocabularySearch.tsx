@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useState } from "react";
 import {
   ArrowRight,
   ChevronDown,
@@ -11,6 +12,7 @@ import {
   LoaderCircle,
   Search,
   SlidersHorizontal,
+  Sparkle,
   X,
 } from "lucide-react";
 
@@ -34,6 +36,8 @@ import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
 /* The listening sea is its own chunk: none of it is needed until a
    microphone opens (tests/routeImportWeight.test.ts). */
 const VoiceSea = dynamic(() => import("@/components/voice/VoiceSea"), { ssr: false });
+/* The star chart loads when it is opened (Chi, 2026-11-15: 單字星圖). */
+const VocabularyStarMap = dynamic(() => import("@/components/vocabulary/VocabularyStarMap"), { ssr: false });
 
 type QuickFilter = {
   value: "all" | VocabularyStatus;
@@ -79,6 +83,7 @@ export default function VocabularySearch({
   languageCount,
 }: VocabularySearchProps) {
   const { t, locale } = useTranslation();
+  const [starMapOpen, setStarMapOpen] = useState(false);
   const { learningLanguage } = useLearningLanguageContext();
   const { openSearch } = useLexiconSearchSheet();
   const search = t.vocabulary.search;
@@ -406,11 +411,23 @@ export default function VocabularySearch({
           line now that the language control shares the row above: three
           44pt controls and a language pill leave no room to read a sentence
           beside them on a narrow phone. */}
-      <p className="mt-2 min-w-0 truncate font-sans text-[0.6875rem] font-medium tracking-[-0.01em] text-ink-faint">
-        {visibleCount} {plural(visibleCount, locale, search.word, search.words)}
-        <span aria-hidden="true"> · </span>
-        <span className="text-ink-soft">{sortLabels[sortMode]}</span>
-      </p>
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <p className="min-w-0 truncate font-sans text-[0.6875rem] font-medium tracking-[-0.01em] text-ink-faint">
+          {visibleCount} {plural(visibleCount, locale, search.word, search.words)}
+          <span aria-hidden="true"> · </span>
+          <span className="text-ink-soft">{sortLabels[sortMode]}</span>
+        </p>
+        {/* The library as a star chart (Chi, 2026-11-15: 單字星圖). */}
+        <button
+          type="button"
+          onClick={() => setStarMapOpen(true)}
+          className="star-map-entry flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-black/[0.07] bg-white px-3 text-[0.75rem] font-semibold text-ink-soft"
+        >
+          <Sparkle size={13} strokeWidth={1.9} aria-hidden="true" />
+          {t.starMap.open}
+        </button>
+      </div>
+      {starMapOpen ? <VocabularyStarMap onClose={() => setStarMapOpen(false)} /> : null}
     </section>
   );
 }

@@ -1,45 +1,51 @@
 "use client";
 
-import { Check, Copy, Download, Image as ImageIcon, LoaderCircle, Share2 } from "lucide-react";
+import { Check, Copy, Share2 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import ShareStudio, { type ShareFrame } from "@/components/share/ShareStudio";
+import Yumi3DFigure, { type YumiCamera } from "@/components/yumi3d/Yumi3DFigure";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { fill } from "@/lib/i18n/format";
-import { composeShareImage } from "@/lib/hello/shareImage";
+import { drawHelloCard } from "@/lib/hello/shareImage";
 import type { HelloSnapshot } from "@/lib/hello/types";
 import { getLanguageName } from "@/lib/languages";
+import { loadHudFonts, readHudFonts, type HudFonts } from "@/lib/share/hud";
 
 import { senderName } from "./HelloInvitation";
 
 /* =========================================================
    Sending a hello
 
-   The link first — it always works — then the picture, made here from the
-   same Yumi picture, words and name as the page (lib/hello/shareImage.ts),
-   with the QR code drawn below at a size its modules can be read at.
+   The link first — it always works — then the card, made here from the
+   same Yumi, words and name as the page (lib/hello/shareImage.ts), with
+   the QR code drawn on it at a size its modules can be read at.
+
+   Since 2026-11-15 the card is the shared cards' (Chi: 送一個字的分享圖換
+   新卡): Yumi stands here in the outfit saved with the hello, and is drawn
+   as the sharer turns her, in a story's 9:16 or a post's 1:1, as a
+   picture or a video of her one full turn (components/share/ShareStudio). Where
+   the live figure cannot be had, her picture taken with the hello stands
+   in, never another Yumi.
 
    The link itself is not written out on this screen (Chi: a long address
-   reads like a scam): the QR, the buttons and the picture carry it. When
+   reads like a scam): the QR, the buttons and the card carry it. When
    it goes out it goes with who it is from and the word it brings, so the
    person receiving it knows what it is before they open it.
 
      share link     the system sheet where there is one, else copy
-     share image    only where this device can share a file; elsewhere
-                    the picture is downloaded and the link copied instead
-     download       the picture, as a file
      copy           the link; if the clipboard refuses, the link is shown
                     selected so it can be copied by hand
+     the card       shared where this device can share a file, else saved
 
    Cancelling the system sheet is neither a success nor a failure: nothing
-   is said. A picture that fails to make leaves the link working and offers
+   is said. A card that fails to make leaves the link working and offers
    to try again; it never makes another hello.
    ========================================================= */
 
 /** Pixels per QR module the shared picture keeps at least. */
 const QR_PIXELS = 296;
-
-type ImageState = { status: "preparing" } | { status: "ready"; blob: Blob; url: string } | { status: "failed" };
 
 function isCancel(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
@@ -63,64 +69,67 @@ export default function HelloShareSheet({
   const word = [hello.sense[hello.pair[0]]?.text, hello.sense[hello.pair[1]]?.text].filter(Boolean).join(" · ");
   const message = fill(copy.shareText, { name, word });
   const qrRef = useRef<HTMLCanvasElement>(null);
-  const [image, setImage] = useState<ImageState>({ status: "preparing" });
+  const camera = useRef<YumiCamera | null>(null);
+  const fonts = useRef<HudFonts | null>(null);
+  const [picture, setPicture] = useState<CanvasImageSource | null>(null);
+  /* Counts Yumi coming live and each turn of her ending: the card is made again. */
+  const [turns, setTurns] = useState(0);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
-  const [attempt, setAttempt] = useState(0);
 
+  /* Her picture, for where the live figure cannot be had. */
   useEffect(() => {
     let cancelled = false;
-    let made: string | null = null;
-
     void (async () => {
-      try {
-        const qr = qrRef.current;
-        if (!qr) throw new Error("No QR");
-        let decoded: CanvasImageSource | null = null;
-        if (poster) {
-          decoded = await createImageBitmap(poster);
-        } else if (hello.yumi.posterUrl) {
-          const picture = new Image();
-          picture.crossOrigin = "anonymous";
-          picture.src = hello.yumi.posterUrl;
-          await picture.decode();
-          decoded = picture;
-        }
-        const blob = await composeShareImage({
-          hello,
-          poster: decoded,
-          qr,
-          greeting: fill(copy.greeting, { name }),
-          gift: copy.gift,
-          scanCaption: copy.scanCaption,
-          languageNames: [getLanguageName(hello.pair[0], language), getLanguageName(hello.pair[1], language)],
-          url,
-        });
-        if (cancelled) return;
-        made = URL.createObjectURL(blob);
-        setImage({ status: "ready", blob, url: made });
-      } catch {
-        if (!cancelled) setImage({ status: "failed" });
+      if (poster) {
+        const bitmap = await createImageBitmap(poster);
+        if (!cancelled) setPicture(bitmap);
+      } else if (hello.yumi.posterUrl) {
+        const image = new Image();
+        image.crossOrigin = "anonymous";
+        image.src = hello.yumi.posterUrl;
+        await image.decode();
+        if (!cancelled) setPicture(image);
       }
-    })();
-
+    })().catch(() => undefined);
     return () => {
       cancelled = true;
-      if (made) URL.revokeObjectURL(made);
     };
-  }, [attempt, copy.gift, copy.greeting, copy.scanCaption, hello, language, name, poster, url]);
+  }, [hello.yumi.posterUrl, poster]);
 
-  const file = image.status === "ready" ? new File([image.blob], `yumi-hello-${hello.id}.png`, { type: "image/png" }) : null;
-  const canShareFile =
-    file !== null && typeof navigator !== "undefined" && Boolean(navigator.canShare?.({ files: [file] }));
+  const greeting = fill(copy.greeting, { name });
+  const languageNames = [getLanguageName(hello.pair[0], language), getLanguageName(hello.pair[1], language)] as const;
+  const draw = (ctx: CanvasRenderingContext2D, frame: ShareFrame) => {
+    const qr = qrRef.current;
+    if (!qr) throw new Error("No QR");
+    const live = camera.current?.canvas ?? null;
+    drawHelloCard(ctx, {
+      ...frame,
+      hello,
+      fonts: fonts.current ?? undefined,
+      yumi: live ?? picture,
+      yumiIsPoster: !live,
+      qr,
+      greeting,
+      gift: copy.gift,
+      scanCaption: copy.scanCaption,
+      languageNames,
+      url,
+    });
+  };
+  const prepare = async () => {
+    const read = (fonts.current ??= readHudFonts());
+    await loadHudFonts(read, [greeting, copy.gift, copy.scanCaption, word, ...languageNames].join(""));
+  };
+  const version = JSON.stringify([hello.id, hello.yumi.mode, greeting, languageNames, url, Boolean(picture), turns]);
 
-  const copyLink = useCallback(async () => {
+  const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(url);
       setCopyState("copied");
     } catch {
       setCopyState("failed");
     }
-  }, [url]);
+  };
 
   const shareLink = async () => {
     if (!navigator.share) return copyLink();
@@ -128,15 +137,6 @@ export default function HelloShareSheet({
       await navigator.share({ title: fill(copy.pageTitle, { name }), text: message, url });
     } catch (error) {
       if (!isCancel(error)) await copyLink();
-    }
-  };
-
-  const shareImage = async () => {
-    if (!file) return;
-    try {
-      await navigator.share({ files: [file], title: fill(copy.pageTitle, { name }), text: `${message}\n${url}` });
-    } catch {
-      /* Cancelled, or the sheet would not take it: download and copy remain. */
     }
   };
 
@@ -175,18 +175,6 @@ export default function HelloShareSheet({
           {copyState === "copied" ? <Check size={17} aria-hidden="true" /> : <Copy size={17} aria-hidden="true" />}
           {copyState === "copied" ? copy.copied : copy.copyLink}
         </button>
-        {canShareFile ? (
-          <button type="button" className={button} onClick={() => void shareImage()}>
-            <ImageIcon size={17} aria-hidden="true" />
-            {copy.shareImage}
-          </button>
-        ) : null}
-        {image.status === "ready" ? (
-          <a className={button} href={image.url} download={`yumi-hello-${hello.id}.png`}>
-            <Download size={17} aria-hidden="true" />
-            {copy.downloadImage}
-          </a>
-        ) : null}
       </div>
 
       {copyState === "failed" ? (
@@ -201,33 +189,27 @@ export default function HelloShareSheet({
         </div>
       ) : null}
 
-      <div role="status" className="text-[0.8125rem] text-ink-soft">
-        {image.status === "preparing" ? (
-          <span className="inline-flex items-center gap-2">
-            <LoaderCircle size={15} className="animate-spin" aria-hidden="true" />
-            {copy.imagePreparing}
-          </span>
-        ) : image.status === "failed" ? (
-          <span className="flex flex-wrap items-center gap-2">
-            {copy.imageFailed}
-            <button
-              type="button"
-              className="font-semibold underline underline-offset-2"
-              onClick={() => {
-                setImage({ status: "preparing" });
-                setAttempt((value) => value + 1);
-              }}
-            >
-              {copy.retryImage}
-            </button>
-          </span>
-        ) : null}
-      </div>
-
-      {image.status === "ready" ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={image.url} alt={copy.imageAlt} className="w-full rounded-2xl ring-1 ring-black/[0.06]" />
+      {/* Her, in the outfit saved with the hello: turned here, drawn as turned.
+          A piece gone from the shop would dress the live figure differently
+          from the hello sent, so then only her picture is drawn. */}
+      {hello.yumi.complete ? (
+        <>
+          <div className="hello-share-yumi relative -mx-1 h-[220px]" onPointerUp={() => setTurns((count) => count + 1)}>
+            <Yumi3DFigure inspect outfit={hello.yumi.outfit} cameraRef={camera} fill={0.36} onLive={() => setTurns((count) => count + 1)} />
+          </div>
+          <p className="-mt-2 text-center text-[0.6875rem] text-ink-faint">{t.shareStudio.turnHint}</p>
+        </>
       ) : null}
+
+      <ShareStudio
+        draw={draw}
+        camera={camera}
+        version={version}
+        prepare={prepare}
+        fileStem={`yumi-hello-${hello.id}`}
+        shareTitle={fill(copy.pageTitle, { name })}
+        shareText={`${message}\n${url}`}
+      />
     </section>
   );
 }

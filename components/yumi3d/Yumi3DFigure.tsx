@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from "react";
 
 import { prepareWhenIdle } from "@/lib/yumi3d/prepareWhenIdle";
+import type { YumiOutfit } from "@/lib/shop/catalog";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
 import YumiLoading from "./YumiLoading";
@@ -51,7 +52,26 @@ export type Yumi3DFigureProps = {
    * until she is about a screen away.
    */
   prepare?: "near" | "idle";
+  /** Every drag turns her and nothing pulls her eye, as on the shop's stand. */
+  inspect?: boolean;
+  /** What she wears; omitted, she wears nothing (the landing page). */
+  outfit?: YumiOutfit;
+  /**
+   * Filled once she is live, for a caller that draws her elsewhere (the
+   * weekly recap's share image and video; Chi, 2026-11-15): draw a frame
+   * now and read the canvas in the same task, and turn her.
+   */
+  cameraRef?: MutableRefObject<YumiCamera | null>;
+  /** Fired once she is live: a card drawn with her can be drawn again. */
+  onLive?: () => void;
   className?: string;
+};
+
+export type YumiCamera = {
+  canvas: HTMLCanvasElement;
+  /** Draws her now, so the canvas can be read before the next frame clears it. */
+  draw: (nowMs?: number) => void;
+  rotateBy: (dxPx: number, dyPx: number) => void;
 };
 
 export default function Yumi3DFigure({
@@ -61,6 +81,10 @@ export default function Yumi3DFigure({
   gaze = null,
   reach,
   prepare = "near",
+  inspect = false,
+  outfit,
+  cameraRef,
+  onLive,
   className,
 }: Yumi3DFigureProps) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -72,14 +96,26 @@ export default function Yumi3DFigure({
   const live = status === "live";
 
   const prepareRef = useRef(prepare);
+  const inspectRef = useRef(inspect);
   const onPullOpenRef = useRef(onPullOpen);
   const fillRef = useRef(fill);
   const gazeRef = useRef(gaze);
+  const outfitRef = useRef(outfit);
+  const cameraRefRef = useRef(cameraRef);
+  const onLiveRef = useRef(onLive);
   useEffect(() => {
     onPullOpenRef.current = onPullOpen;
     fillRef.current = fill;
     gazeRef.current = gaze;
-  }, [fill, gaze, onPullOpen]);
+    cameraRefRef.current = cameraRef;
+    onLiveRef.current = onLive;
+  }, [fill, gaze, onPullOpen, cameraRef, onLive]);
+
+  /* Dressed when she is live, and again whenever the outfit changes. */
+  useEffect(() => {
+    outfitRef.current = outfit;
+    if (outfit && live) sceneRef.current?.setOutfit?.(outfit);
+  }, [outfit, live]);
 
   const reachKey = reach?.key ?? 0;
   const reachTarget = reach?.target;
@@ -176,6 +212,7 @@ export default function Yumi3DFigure({
             const made = createYumiScene(canvas, {
               reducedMotion: reduced,
               embedded: true,
+              inspect: inspectRef.current,
               onPullOpen: () => onPullOpenRef.current?.(),
             });
             if (!made) {
@@ -195,8 +232,25 @@ export default function Yumi3DFigure({
               }
               handle = made;
               sceneRef.current = made;
+              if (outfitRef.current) made.setOutfit?.(outfitRef.current);
+              const camera = cameraRefRef.current;
+              if (camera) {
+                camera.current = {
+                  canvas,
+                  draw: (nowMs = performance.now()) => {
+                    made.setScreenAnchor(
+                      size.width / 2,
+                      size.height / 2,
+                      Math.min(size.width, size.height) * fillRef.current,
+                    );
+                    made.frame(nowMs);
+                  },
+                  rotateBy: (dx, dy) => made.rotateBy?.(dx, dy),
+                };
+              }
               setStatus("live");
               run();
+              onLiveRef.current?.();
             });
           });
         })
@@ -260,6 +314,7 @@ export default function Yumi3DFigure({
       resizer?.disconnect();
       if (!resizer) window.removeEventListener("resize", onResize);
       sceneRef.current = null;
+      if (cameraRefRef.current) cameraRefRef.current.current = null;
       pending?.dispose();
       handle?.dispose();
     };

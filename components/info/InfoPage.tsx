@@ -1,5 +1,6 @@
 "use client";
 
+import { PAGE_TITLE_CLASS, TitleText } from "@/components/foundation/layout/PageTitle";
 import Link from "next/link";
 import { useId } from "react";
 import {
@@ -93,7 +94,11 @@ export default function InfoPage({ page, publicView = false, legal }: InfoPagePr
             <span aria-hidden="true" />
             Exchange Notes
           </div>
-          <h1>{copy.nav[page]}</h1>
+          {/* The same title every page wears, its letters running into place
+              (Chi, 2026-11-15). */}
+          <h1 className={PAGE_TITLE_CLASS}>
+            <TitleText text={copy.nav[page]} />
+          </h1>
 
           {page === "about" ? (
             <>

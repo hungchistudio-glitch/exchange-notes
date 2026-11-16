@@ -200,6 +200,12 @@ html[data-interface-mode="yumi-cosmic"] .hud-led {
   color: transparent;
 }
 
+/* Gilt lettering (background clipped to the text) paints the scramble's
+   glyphs and the real ones alike: the real ones step aside meanwhile. */
+[data-title-clipped][data-decoding] > [data-title-real] {
+  visibility: hidden;
+}
+
 [data-title-decode] {
   position: absolute;
   inset: 0;
@@ -337,4 +343,291 @@ html[data-interface-mode="yumi-cosmic"] [data-holo-word] {
   html[data-interface-mode="yumi-cosmic"] [data-holo] {
     animation: none;
   }
+}
+
+/* =========================================================
+   Listening mode (Chi, 2026-11-15: 通勤收聽模式)
+
+   One key carries the page, so in Cosmic it is the bright thing on it: an
+   ice lens with a halo. The chosen sources and the item playing take the
+   ice hairline the other Cosmic choices wear.
+   ========================================================= */
+
+html[data-interface-mode="yumi-cosmic"] .listen-play {
+  background: radial-gradient(circle at 35% 30%, #e8faf8, #86d8d2 55%, #2b6f6b);
+  color: #0b1418;
+  box-shadow: 0 0 0 1px rgb(184 232 229 / 0.6), 0 0 28px rgb(134 216 210 / 0.45);
+}
+
+html[data-interface-mode="yumi-cosmic"] .listen-source[data-on] {
+  background: transparent;
+  border-color: var(--hud-tick);
+  color: var(--hud-tick);
+}
+
+html[data-interface-mode="yumi-cosmic"] .listen-row-now {
+  background: rgb(184 232 229 / 0.08);
+  box-shadow: inset 2px 0 0 var(--hud-tick);
+}
+
+/* =========================================================
+   The weak-spot radar (Chi, 2026-11-15: 弱點雷達)
+
+   Ink on paper in Standard; ice on obsidian in Cosmic, the shape glowing.
+   The weakest measure is the one amber point, the HUD's alert colour.
+   ========================================================= */
+
+.weak-radar-ring,
+.weak-radar-spoke {
+  fill: none;
+  stroke: rgb(0 0 0 / 0.1);
+  stroke-width: 1;
+}
+
+.weak-radar-shape {
+  fill: rgb(29 158 117 / 0.16);
+  stroke: rgb(29 158 117 / 0.8);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.weak-radar-dot {
+  fill: rgb(29 158 117);
+}
+
+.weak-radar-dot-weakest {
+  fill: var(--hud-alert);
+}
+
+.weak-radar-label {
+  fill: currentColor;
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.weak-radar-label-empty {
+  opacity: 0.45;
+}
+
+.weak-radar-label-weakest {
+  fill: var(--hud-alert);
+}
+
+html[data-interface-mode="yumi-cosmic"] .weak-radar-ring,
+html[data-interface-mode="yumi-cosmic"] .weak-radar-spoke {
+  stroke: var(--hud-line);
+}
+
+html[data-interface-mode="yumi-cosmic"] .weak-radar-shape {
+  fill: rgb(134 216 210 / 0.14);
+  stroke: var(--hud-tick);
+  filter: drop-shadow(0 0 6px rgb(134 216 210 / 0.55));
+}
+
+html[data-interface-mode="yumi-cosmic"] .weak-radar-dot {
+  fill: var(--hud-tick);
+}
+
+html[data-interface-mode="yumi-cosmic"] .weak-radar-dot-weakest {
+  fill: var(--hud-alert);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .weak-radar-shape {
+    animation: weakRadarIn 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: 50% 50%;
+    transform-box: view-box;
+  }
+}
+
+@keyframes weakRadarIn {
+  from { transform: scale(0.2); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* =========================================================
+   The star chart of the library (Chi, 2026-11-15: 單字星圖)
+
+   Standard: ink on warm paper, a mastered word a filled dot, a new one an
+   open ring. Cosmic: a night sky, stars glowing and slowly twinkling, the
+   constellation lines in ice. Brighter means better known, in both.
+   ========================================================= */
+
+.star-map {
+  background: #f6f1e7;
+  color: #1d1b17;
+}
+
+.star-map-key,
+.star-map-entry {
+  border: 1px solid rgb(0 0 0 / 0.1);
+  background: rgb(255 255 255 / 0.85);
+}
+
+.star-map-card {
+  background: #fffdf8;
+  border: 1px solid rgb(0 0 0 / 0.08);
+  box-shadow: 0 -8px 30px rgb(0 0 0 / 0.08);
+}
+
+.star-map-open {
+  background: #1d1b17;
+  color: #fffdf8;
+}
+
+.star-line {
+  stroke: rgb(29 27 23 / 0.28);
+  stroke-width: 0.8;
+}
+
+.star-line-root {
+  stroke: rgb(181 119 42 / 0.55);
+  stroke-dasharray: 3 4;
+}
+
+.star {
+  fill: #1d1b17;
+  stroke: #1d1b17;
+  stroke-width: 1;
+}
+
+.star-new {
+  fill: transparent;
+  opacity: 0.6;
+}
+
+.star-learning {
+  fill: rgb(29 27 23 / 0.55);
+}
+
+.star-selected {
+  stroke: var(--hud-alert);
+  stroke-width: 2.5;
+}
+
+.star-hit {
+  fill: transparent;
+}
+
+.star-point {
+  cursor: pointer;
+  outline: none;
+}
+
+.star-point:focus-visible .star {
+  stroke: var(--hud-alert);
+  stroke-width: 2.5;
+}
+
+.star-label {
+  fill: currentColor;
+  font-size: 0.5625rem;
+  opacity: 0.72;
+}
+
+.star-group-name {
+  fill: currentColor;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+html[data-interface-mode="yumi-cosmic"] .star-map {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgb(64 92 120 / 0.35), transparent 60%),
+    radial-gradient(ellipse at 75% 70%, rgb(120 70 140 / 0.22), transparent 55%),
+    #070b10;
+  color: #e4ecee;
+}
+
+html[data-interface-mode="yumi-cosmic"] .star-map-key,
+html[data-interface-mode="yumi-cosmic"] .star-map-entry {
+  border-color: var(--hud-line);
+  background: rgb(16 24 32 / 0.85);
+  color: #e4ecee;
+}
+
+html[data-interface-mode="yumi-cosmic"] .star-map-card {
+  background: rgb(16 24 32 / 0.92);
+  border-color: var(--hud-line);
+  box-shadow: 0 -8px 30px rgb(0 0 0 / 0.5);
+}
+
+html[data-interface-mode="yumi-cosmic"] .star-map-open {
+  background: transparent;
+  border: 1px solid var(--hud-tick);
+  color: var(--hud-tick);
+}
+
+html[data-interface-mode="yumi-cosmic"] .star-line {
+  stroke: rgb(134 216 210 / 0.35);
+}
+
+html[data-interface-mode="yumi-cosmic"] .star-line-root {
+  stroke: rgb(233 197 126 / 0.45);
+}
+
+html[data-interface-mode="yumi-cosmic"] .star {
+  fill: #f4fbff;
+  stroke: none;
+  filter: drop-shadow(0 0 3px rgb(184 232 229 / 0.9));
+}
+
+html[data-interface-mode="yumi-cosmic"] .star-new {
+  fill: #7d97a6;
+  opacity: 0.7;
+  filter: none;
+}
+
+html[data-interface-mode="yumi-cosmic"] .star-learning {
+  fill: #b8e8e5;
+}
+
+html[data-interface-mode="yumi-cosmic"] .star-mastered {
+  filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 9px rgb(134 216 210 / 0.9));
+}
+
+html[data-interface-mode="yumi-cosmic"] .star-selected {
+  stroke: var(--hud-alert);
+  stroke-width: 2.5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-interface-mode="yumi-cosmic"] .star-mastered,
+  html[data-interface-mode="yumi-cosmic"] .star-learning {
+    animation: starTwinkle 3.6s ease-in-out infinite;
+  }
+}
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* The recap's milestone line, its seven days and its word picker
+   (Chi, 2026-11-15). */
+.recap-headline {
+  color: var(--hud-ok);
+}
+
+.recap-days > span {
+  background: var(--hud-line, rgb(29 27 23 / 0.12));
+}
+
+.recap-days > span[data-on] {
+  background: var(--hud-ok);
+}
+
+.recap-choice[aria-pressed="true"] {
+  border-color: var(--hud-ok);
+  background: color-mix(in oklab, var(--hud-ok) 14%, transparent);
+  color: var(--hud-ok);
+}
+
+/* A shared card's shape choice and keys (components/share/ShareStudio). */
+html[data-interface-mode="yumi-cosmic"] .share-format[data-on] {
+  background: transparent;
+  border-color: var(--hud-tick);
+  color: var(--hud-tick);
 }

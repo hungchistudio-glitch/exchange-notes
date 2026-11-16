@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import Link from "next/link";
+import { Headphones } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 import MissionCompleteStage from "@/components/cosmic/MissionCompleteStage";
 import MissionLaunchStage from "@/components/cosmic/MissionLaunchStage";
-import PageTitle from "@/components/foundation/layout/PageTitle";
+import PageTitle, { PAGE_TITLE_CLASS, TitleText } from "@/components/foundation/layout/PageTitle";
 import Screen from "@/components/foundation/layout/Screen";
 import ReviewCelebration, { riseClassName } from "@/components/review/ReviewCelebration";
 import useCardMotion, { NEXT_CARD, TURN_OVER } from "@/components/review/useCardMotion";
@@ -18,6 +19,8 @@ import {
 import { beginReviewRound, saveReviewResult } from "@/lib/review/saveReviewResult";
 import type { ReviewGrade } from "@/types/vocabulary";
 import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
+import MilestoneBanner from "@/components/review/MilestoneBanner";
+import WeakSpotRadar from "@/components/review/WeakSpotRadar";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
@@ -30,7 +33,8 @@ type Phase = "landing" | "session" | "complete";
 
 /** How many of today's due words the slab names before "+N more". */
 const DUE_WORDS_SHOWN = 6;
-type Mode = "due" | "all";
+/* "weak": only the words the weak-spot radar names (Chi, 2026-11-15). */
+type Mode = "due" | "all" | "weak";
 
 function BackIcon() {
   return (
@@ -103,6 +107,10 @@ const GRADE_OPTIONS: {
   },
 ];
 
+const noSubscription = () => () => undefined;
+/** Sunday or Monday on the reader's clock: the week's card is fresh. */
+const isRecapDay = () => [0, 1].includes(new Date().getDay());
+
 export default function ReviewPage() {
   const { t, locale } = useTranslation();
   const copy = t.review;
@@ -123,6 +131,7 @@ export default function ReviewPage() {
    * string, and treating it as a destination would be an open redirect.
    */
   const cameFromVocabulary = searchParams.get("from") === "vocabulary";
+  const recapDay = useSyncExternalStore(noSubscription, isRecapDay, () => false);
   const exitHref = cameFromVocabulary ? "/vocabulary" : "/home";
 
   const [phase, setPhase] = useState<Phase>("landing");
@@ -214,10 +223,14 @@ export default function ReviewPage() {
   const allInLanguage = allWords.filter(inReviewLanguage);
 
   const startSession = useCallback(
-    async (selectedMode: Mode) => {
+    async (selectedMode: Mode, only?: readonly string[]) => {
       if (startingRef.current) return;
       const source = (
-        selectedMode === "due" ? dueWords : allWords
+        selectedMode === "due"
+          ? dueWords
+          : selectedMode === "weak"
+            ? allWords.filter((word) => only?.includes(word.id))
+            : allWords
       ).filter(
         (word) => !reviewLanguage || word.termLanguage === reviewLanguage,
       );
@@ -317,11 +330,14 @@ export default function ReviewPage() {
 
           <div className="mt-3 flex items-start justify-between gap-3">
             <div>
-              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              {/* The title every page wears, here for the session (Chi,
+                  2026-11-15). */}
+              <p className="flex items-center gap-2 text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+                <span className="hud-led" aria-hidden="true" />
                 {copy.sessionEyebrow}
               </p>
-              <h1 className="mt-1 text-[1.625rem] font-bold tracking-[-0.02em]">
-                {copy.sessionTitle}
+              <h1 className={`mt-1 ${PAGE_TITLE_CLASS}`}>
+                <TitleText text={copy.sessionTitle} />
               </h1>
             </div>
 
@@ -545,7 +561,9 @@ export default function ReviewPage() {
             ? t.cosmic.mission.completeEyebrow
             : mode === "due"
               ? copy.today
-              : copy.freePractice}
+              : mode === "weak"
+                ? t.weakSpots.title
+                : copy.freePractice}
         </p>
         <h1 {...rise(1, "mt-1 text-2xl font-bold")}>{copy.completeTitle}</h1>
         <p {...rise(2, "mt-2 max-w-xs text-ink-soft")}>
@@ -598,6 +616,16 @@ export default function ReviewPage() {
         subtitle={copy.subtitle}
         /* Practice's key lands here from Yumi's halo (Chi, 2026-11-12). */
         mark={<FeatureMark feature="review" />}
+        /* Today's words read aloud, for a walk or a ride (Chi, 2026-11-15). */
+        action={
+          <Link
+            href="/listen"
+            className="listen-entry flex h-9 items-center gap-1.5 rounded-full border border-line px-3 text-[0.75rem] font-semibold"
+          >
+            <Headphones size={14} strokeWidth={1.9} aria-hidden="true" />
+            {t.listen.open}
+          </Link>
+        }
       />
       <div className="px-4 sm:px-6">
 
@@ -606,6 +634,24 @@ export default function ReviewPage() {
             {errorMessage}
           </p>
         )}
+
+        {/* A milestone worth sharing, offered once (Chi, 2026-11-15). */}
+        <MilestoneBanner />
+
+        {/* On Sundays and Mondays, the week's card is ready (Chi, 2026-11-15:
+            每週回顧卡). Read from the reader's own clock, after hydration. */}
+        {recapDay ? (
+          <Link
+            href="/recap"
+            className="hud-panel recap-banner mt-4 flex items-center justify-between gap-3 rounded-[22px] border border-line bg-white px-5 py-4"
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold">
+              <span className="hud-led" data-state="alert" aria-hidden="true" />
+              {t.recap.banner}
+            </span>
+            <span className="text-[0.8125rem] font-semibold text-ink-soft">{t.recap.open} →</span>
+          </Link>
+        ) : null}
 
         {/*
           Which language this session is in — shown only once there is more
@@ -757,6 +803,12 @@ export default function ReviewPage() {
           </button>
         </div>
 
+        {/* Where the reader is weakest, and a key for just those words. */}
+        <WeakSpotRadar
+          onPractice={(ids) => void startSession("weak", ids)}
+          disabled={loading || starting}
+        />
+
         <div className="mt-7">
           <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.queueData}
@@ -775,6 +827,10 @@ export default function ReviewPage() {
                 {loading ? "…" : allInLanguage.length}
               </span>
             </div>
+            <Link href="/recap" className="flex items-center justify-between py-3 text-sm">
+              <span className="text-ink-soft">{t.recap.open}</span>
+              <span className="font-bold">→</span>
+            </Link>
           </div>
         </div>
       </div>

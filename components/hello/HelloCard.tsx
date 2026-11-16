@@ -241,7 +241,8 @@ function SideView({
   return (
     <article className={styles.side} lang={meta.htmlLang}>
       <p className={styles.sideLanguage}>{languageName}</p>
-      <p className={styles.word} style={{ fontFamily: `var(${meta.fontVariable})` }}>
+      {/* The title serif, Georgia with Noto Serif TC for Chinese (Hello.module.css). */}
+      <p className={styles.word}>
         <SpokenText text={side.text.trim()} lang={meta.speechTag} />
       </p>
       {partOfSpeech ? <p className={styles.partOfSpeech}>{partOfSpeech}</p> : null}

@@ -1,9 +1,10 @@
 "use client";
 
+import PageTitle from "@/components/foundation/layout/PageTitle";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, BookOpen, Trash2 } from "lucide-react";
+import { BookOpen, Trash2 } from "lucide-react";
 
 import Screen from "@/components/foundation/layout/Screen";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
@@ -101,27 +102,20 @@ export default function CollectionDetailPage() {
 
   return (
     <Screen>
-      <div
-        className="px-4"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)" }}
-      >
-        <Link
-          href="/vocabulary/collections"
-          aria-label={copy.backToCollections}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
-        >
-          <ArrowLeft size={20} strokeWidth={1.9} />
-        </Link>
-
-        <div className="mt-3 flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow-sm">
+      {/* The title every page wears (Chi, 2026-11-15). The name waits for
+          its collection, so its letters run into place once, as the name. */}
+      <PageTitle
+        back={{ href: "/vocabulary/collections", label: copy.backToCollections }}
+        eyebrow={t.vocabulary.collections.title}
+        title={collection?.name ?? (loading ? "" : copy.fallbackTitle)}
+        mark={
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-xl shadow-sm">
             {collection?.emoji ?? "📚"}
           </span>
-          <h1 className="text-[1.5rem] font-bold tracking-[-0.02em]">
-            {collection?.name ?? copy.fallbackTitle}
-          </h1>
-        </div>
+        }
+      />
 
+      <div className="px-4">
         {!loading && items.length > 0 && (
           <p className="mt-2 text-sm text-ink-faint">
             {items.length} {plural(items.length, locale, copy.word, copy.words)}{" "}

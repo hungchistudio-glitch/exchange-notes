@@ -1,6 +1,8 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+"use client";
+
 import type { ReactNode } from "react";
+
+import PageTitle from "@/components/foundation/layout/PageTitle";
 
 type AppHeaderProps = {
   title: string;
@@ -14,6 +16,16 @@ type AppHeaderProps = {
   className?: string;
 };
 
+/**
+ * A sub-screen's heading: a note, Settings' Devices and Help, the menu
+ * scanner's result.
+ *
+ * It was a compact sticky bar with a 20px title. Since 2026-11-15 every page
+ * wears the same title, a sub-screen included (Chi: 每一頁的主題頁面字體及大小
+ * 統一, 副頁和主頁一樣大), so this is PageTitle with a way back: same face,
+ * same size, the eyebrow's status light, and the letters running into place
+ * as it appears.
+ */
 export default function AppHeader({
   title,
   eyebrow,
@@ -23,59 +35,16 @@ export default function AppHeader({
   backLabel,
   className = "",
 }: AppHeaderProps) {
+  const label = backLabel ?? "";
+  const back = backHref
+    ? { href: backHref, label }
+    : onBack
+      ? { onClick: onBack, label }
+      : undefined;
+
   return (
-    <header
-      /*
-       * Opaque, and no backdrop-filter.
-       *
-       * This is sticky over the app's one scrolling viewport, so a
-       * backdrop-filter here is not paid once — it is re-sampled and
-       * re-blurred on every frame of every scroll, on every screen that has
-       * a header. At 90% opacity a tenth of that blur ever reached anyone,
-       * and against high-contrast content it read as a smudge rather than
-       * as glass.
-       */
-      className={`cosmic-header sticky top-0 z-30 border-b border-black/[0.05] bg-surface px-4 ${className}`}
-      style={{
-        paddingTop: "env(safe-area-inset-top)",
-      }}
-    >
-      <div className="flex h-16 items-center justify-between gap-3">
-        {backHref || onBack ? (
-          onBack ? (
-            <button
-              type="button"
-              onClick={onBack}
-              aria-label={backLabel}
-              className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-strong transition-colors duration-100 hover:bg-black/[0.04] active:bg-black/[0.07]"
-            >
-              <ArrowLeft size={20} strokeWidth={1.9} />
-            </button>
-          ) : (
-            <Link
-              href={backHref!}
-              aria-label={backLabel}
-              className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-strong transition-colors duration-100 hover:bg-black/[0.04] active:bg-black/[0.07]"
-            >
-              <ArrowLeft size={20} strokeWidth={1.9} />
-            </Link>
-          )
-        ) : null}
-
-        <div className="min-w-0 flex-1">
-          {eyebrow && (
-            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
-              {eyebrow}
-            </p>
-          )}
-
-          <h1 className="mt-0.5 truncate text-xl font-bold tracking-[-0.025em]">
-            {title}
-          </h1>
-        </div>
-
-        {action && <div className="shrink-0">{action}</div>}
-      </div>
-    </header>
+    <div className={className}>
+      <PageTitle title={title} eyebrow={eyebrow} action={action} back={back} />
+    </div>
   );
 }

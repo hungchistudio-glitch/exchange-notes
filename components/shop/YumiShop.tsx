@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleText } from "@/components/foundation/layout/PageTitle";
 import { ArrowLeft, BookmarkPlus, Check, ChevronRight, Globe, Layers, Lock, Moon, SlidersHorizontal, Sun, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -690,7 +691,8 @@ export default function YumiShop({
           <div className={styles.signArea}>
             <h1 ref={signRef} className={styles.sign} data-holo-frame="">
               <span className={styles.signHooks} aria-hidden="true" />
-              <span className={styles.signName}>{copy.title}</span>
+              {/* The gilt name runs its letters into place (Chi, 2026-11-15). */}
+              <span className={styles.signName}><TitleText text={copy.title} clipped /></span>
               <span className={styles.signOrbit} aria-hidden="true">
                 <span className={styles.signLights}><i /><i /><i /></span>
                 {copy.station.orbit}
