@@ -25,13 +25,15 @@ import type { LanguageCode } from "@/lib/languages";
 const ENDPOINT = "https://api.mymemory.translated.net/get";
 const TIMEOUT_MS = 4_000;
 
-/** MyMemory's codes for the five languages the app teaches. */
+/** MyMemory's codes for the seven languages the app teaches. */
 const CODES: Record<LanguageCode, string> = {
   en: "en-GB",
   "zh-TW": "zh-TW",
   es: "es-ES",
   fr: "fr-FR",
   it: "it-IT",
+  ja: "ja-JP",
+  ko: "ko-KR",
 };
 
 const HAN = /\p{Script=Han}/u;

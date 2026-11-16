@@ -238,10 +238,18 @@ describe("what the heaviest tabs drag in with them", () => {
    * PageTitle, which imports only React, next/link and the icons, and
    * lib/motion/pageArrival.ts, whose decodeElement runs the title's letters
    * into place; it imports nothing.
+   * Raised vocabulary 177 → 182 and home 194 → 199 (2026-11-16): Japanese
+   * and Korean (Chi: 七種語言). Every lit text draws furigana over Japanese
+   * kanji, and every word card prints Korean romanization and IPA, so the
+   * shared speaker file reaches components/speech/Furigana.tsx and the four
+   * small files it needs — lib/japanese/kana.ts, lib/korean/romanize.ts,
+   * lib/pronunciation/localReadings.ts and lib/preferences/readingDisplay.ts
+   * — none of which imports anything outside them. Kept off pinyin-pro on
+   * purpose (lib/pronunciation/index.ts stays behind useLocalPhonetics).
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 177],
-    ["home", TABS.home, 194],
+    ["vocabulary", TABS.vocabulary, 182],
+    ["home", TABS.home, 199],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

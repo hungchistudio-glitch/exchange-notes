@@ -4,9 +4,9 @@ import type {
 } from "@/lib/i18n/types";
 
 /* =========================================================
-   One dictionary per reader, not five
+   One dictionary per reader, not seven
 
-   A dictionary is about 21 KB gzipped and there are five of them. Imported
+   A dictionary is about 21 KB gzipped and there are seven of them. Imported
    statically, all five landed in one chunk that every page pulled on its
    critical path — 97 KB gzipped on the sign-in screen, whose only control is
    a Google button, of which 76 KB was four languages the reader had not
@@ -30,7 +30,7 @@ import type {
      hydration       receives that same dictionary with the server markup
      switching       the picker loads its dictionary chunk before changing
                      the synchronous preference store
-     tests           tests/setup.ts primes all five up front
+     tests           tests/setup.ts primes all seven up front
 
    React 19 does not support creating an uncached Promise from a Client
    Component render. Keeping all loads in server work, effects, or event
@@ -39,9 +39,9 @@ import type {
    ========================================================= */
 
 /**
- * How each dictionary is fetched. Written as five literal `import()` calls
+ * How each dictionary is fetched. Written as seven literal `import()` calls
  * rather than a template path because a bundler can only split what it can
- * see — `import("./" + language)` produces one chunk containing all five,
+ * see — `import("./" + language)` produces one chunk containing all seven,
  * which is the thing this file exists to undo.
  */
 const LOADERS: Record<
@@ -53,6 +53,8 @@ const LOADERS: Record<
   spanish: () => import("@/lib/i18n/es"),
   french: () => import("@/lib/i18n/fr"),
   italian: () => import("@/lib/i18n/it"),
+  japanese: () => import("@/lib/i18n/ja"),
+  korean: () => import("@/lib/i18n/ko"),
 };
 
 export const TRANSLATION_LANGUAGES = Object.keys(
@@ -124,7 +126,7 @@ export function loadTranslations(
  * Puts a dictionary in the cache without fetching it.
  *
  * For the two callers that already hold one: the test setup, which imports
- * all five directly, and any future server path that has resolved one and
+ * all seven directly, and any future server path that has resolved one and
  * wants to hand it over rather than have it fetched twice.
  */
 export function primeTranslations(
@@ -140,11 +142,11 @@ export function primeTranslations(
  * Switching the app's language is a synchronous, in-place re-render — the
  * setting is a `useSyncExternalStore` and every screen changes in the same
  * commit. That only stays true if the dictionary is already here, so the
- * other four are fetched once the device has nothing better to do.
+ * other six are fetched once the device has nothing better to do.
  *
  * Idle rather than immediate, and after the active language, because the
  * point of the split is that the first paint carries one dictionary. Calling
- * this during the critical path would put all five back on it by a longer
+ * this during the critical path would put all seven back on it by a longer
  * route.
  */
 export function prefetchTranslations(active: TranslationLanguage): void {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
-import { getPhonetics, type Phonetics } from "@/lib/pronunciation";
+import { getPhonetics, japaneseReadings, type Phonetics } from "@/lib/pronunciation";
 import { transcribe } from "@/lib/pronunciation/ipaSource";
 import { isLanguageCode, type LanguageCode } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/server";
@@ -41,6 +41,20 @@ const MAX_REQUESTS_PER_DAY = readBoundedInteger(
  */
 
 /** Everything this app can annotate `text` with, given its language. */
+/**
+ * What `transcribe` found, filed where it belongs: IPA for most languages,
+ * the kana reading (and its romaji) for Japanese.
+ */
+function withTranscription(
+  local: Phonetics,
+  found: string | undefined,
+  code: LanguageCode,
+): Phonetics {
+  if (!found) return local;
+  if (code === "ja") return { ...local, ...japaneseReadings(found) };
+  return { ...local, ipa: found };
+}
+
 async function annotate(
   text: string,
   code: LanguageCode,
@@ -49,7 +63,7 @@ async function annotate(
     refund: () => Promise<void>;
   },
 ): Promise<{
-  phonetics: Phonetics & { ipa?: string };
+  phonetics: Phonetics;
   limited: boolean;
 }> {
   const trimmed = text.trim();
@@ -60,10 +74,9 @@ async function annotate(
   const local = getPhonetics(trimmed, code);
 
   const transcription = await transcribe([trimmed], code, budget);
-  const ipa = transcription.found.get(trimmed);
 
   return {
-    phonetics: ipa ? { ...local, ipa } : local,
+    phonetics: withTranscription(local, transcription.found.get(trimmed), code),
     limited: transcription.limited.length > 0,
   };
 }
@@ -151,8 +164,7 @@ export async function POST(request: Request) {
         phonetics: Object.fromEntries(
           texts.map((text) => {
             const local = getPhonetics(text, language);
-            const ipa = found.get(text);
-            return [text, ipa ? { ...local, ipa } : local];
+            return [text, withTranscription(local, found.get(text), language)];
           }),
         ),
         /*

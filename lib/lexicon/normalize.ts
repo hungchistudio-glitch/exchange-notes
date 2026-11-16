@@ -40,6 +40,23 @@ export function normalizeQuery(value: string): string {
 }
 
 /**
+ * Removes the accents of Latin letters (é → e) and nothing else.
+ *
+ * Not `\p{M}` or `\p{Diacritic}`: in NFD a Japanese が is か plus a combining
+ * voiced mark (U+3099), and both properties count that mark, so folding with
+ * them made ガラス (glass) and カラス (crow) one word. The combining blocks
+ * listed here are the ones Latin, Greek and Cyrillic accents come from; kana
+ * marks and Hangul jamo are outside them, so Japanese and Korean come back
+ * exactly as they went in.
+ */
+export function foldLatinAccents(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f]/g, "")
+    .normalize("NFC");
+}
+
+/**
  * Lower-cased, accent-folded, punctuation-stripped. For matching only.
  *
  * NFD splits a letter from its accent so the combining marks can be removed
@@ -53,7 +70,7 @@ export function matchKey(value: string): string {
   return normalizeQuery(value)
     .toLocaleLowerCase("en-US")
     .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f]/g, "")
     .normalize("NFC")
     .replace(/[‘’]/g, "'")
     .replace(/[^\p{Letter}\p{Number}' ]/gu, "")
@@ -121,7 +138,7 @@ export function canonicalTerm(typed: string, fromDictionary: string): string {
  * under.
  */
 export function searchKey(value: string, language?: LanguageCode): string {
-  if (language && getLanguage(language).fontVariable === "--font-cjk") {
+  if (language && !getLanguage(language).scripts.includes("latin")) {
     return normalizeQuery(value);
   }
 

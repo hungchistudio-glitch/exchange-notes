@@ -1,5 +1,6 @@
 "use client";
 
+import { alignFurigana } from "@/lib/japanese/kana";
 import { AlertCircle, ArrowLeftRight, LoaderCircle, RotateCcw } from "lucide-react";
 import { SpeakGlyph, SpokenText } from "@/components/speech/Spoken";
 import { useSyncExternalStore } from "react";
@@ -236,14 +237,24 @@ function SideView({
   const partOfSpeech = side.partOfSpeech
     ? t.vocabulary.detail.partOfSpeech[normalizePartOfSpeech(side.partOfSpeech)]
     : null;
-  const readings = [side.phonetic?.zhuyin, side.phonetic?.pinyin, side.phonetic?.ipa].filter(Boolean);
+  const phonetic = side.phonetic;
+  /* Japanese shows its kana as furigana over the word and romaji here;
+     Korean its romanization and IPA; the rest as before. */
+  const readings = (
+    meta.code === "ja"
+      ? [phonetic?.romaji]
+      : meta.code === "ko"
+        ? [phonetic?.rr, phonetic?.ipa]
+        : [phonetic?.zhuyin, phonetic?.pinyin, phonetic?.ipa]
+  ).filter(Boolean);
+  const ruby = meta.code === "ja" && phonetic?.kana ? alignFurigana(side.text.trim(), phonetic.kana) : undefined;
 
   return (
     <article className={styles.side} lang={meta.htmlLang}>
       <p className={styles.sideLanguage}>{languageName}</p>
       {/* The title serif, Georgia with Noto Serif TC for Chinese (Hello.module.css). */}
       <p className={styles.word}>
-        <SpokenText text={side.text.trim()} lang={meta.speechTag} />
+        <SpokenText text={side.text.trim()} lang={meta.speechTag} ruby={ruby} />
       </p>
       {partOfSpeech ? <p className={styles.partOfSpeech}>{partOfSpeech}</p> : null}
       {readings.length ? (

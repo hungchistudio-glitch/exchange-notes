@@ -1,7 +1,7 @@
 import type { LanguageCode } from "@/lib/languages";
 
 /* =========================================================
-   The landing page's note, in all five languages
+   The landing page's note, in all seven languages
 
    The note under "Keep" shows one sentence and its translation, and the
    reader chooses the translation's language, as a note's "view in" does in
@@ -18,7 +18,8 @@ export type NoteSample = {
   sentence: string;
   /** The word for the feeling, exactly as it appears in the sentence. */
   word: string;
-  /** How to say it: pinyin for Chinese, IPA for the rest. */
+  /** How to say it: pinyin for Chinese, romaji for Japanese, Revised
+   *  Romanization for Korean, IPA for the rest. */
   reading: string;
 };
 
@@ -47,6 +48,16 @@ export const NOTE_SAMPLES: Record<LanguageCode, NoteSample> = {
     sentence: "Ho finalmente trovato la parola per quella sensazione: agrodolce.",
     word: "agrodolce",
     reading: "/a.ɡroˈdol.tʃe/",
+  },
+  ja: {
+    sentence: "あの気持ちにぴったりの言葉を、やっと見つけた。ほろ苦い。",
+    word: "ほろ苦い",
+    reading: "horonigai",
+  },
+  ko: {
+    sentence: "그 기분을 나타내는 말을 드디어 찾았어. 달콤씁쓸하다.",
+    word: "달콤씁쓸하다",
+    reading: "dalkomsseupsseulhada",
   },
 };
 

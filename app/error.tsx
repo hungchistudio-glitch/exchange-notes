@@ -28,7 +28,7 @@ import { learningLanguageList } from "@/lib/languages";
    Its own copy rather than the dictionaries. useTranslation throws when the
    active dictionary has not loaded, and a boundary that can throw while
    rendering a thrown error escalates to global-error — which is the blank
-   white page this exists to avoid. So the five languages are written out
+   white page this exists to avoid. So the seven languages are written out
    here and picked by the interface setting, which is a stored preference
    and cannot fail to load. It was fixed English-and-Chinese text, which a
    reader who had chosen Spanish, French or Italian could read neither of.
@@ -62,6 +62,16 @@ const COPY: Record<
     title: "Qualcosa è andato storto",
     body: "Di solito è temporaneo e la tua sessione è ancora attiva. Riprova.",
     retry: "Riprova",
+  },
+  japanese: {
+    title: "問題が発生しました",
+    body: "たいていは一時的なもので、サインインしたままです。もう一度お試しください。",
+    retry: "もう一度試す",
+  },
+  korean: {
+    title: "문제가 생겼어요",
+    body: "대개 일시적인 문제이고, 로그인 상태는 그대로예요. 다시 시도해 주세요.",
+    retry: "다시 시도",
   },
 };
 

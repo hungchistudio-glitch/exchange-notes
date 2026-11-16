@@ -2,14 +2,14 @@ import Foundation
 
 /// How the widget names and sounds each language.
 ///
-/// A deliberate hand-kept copy of the five rows in `lib/languages.ts`. The
+/// A deliberate hand-kept copy of the seven rows in `lib/languages.ts`. The
 /// widget extension cannot read the app's TypeScript, and the alternative —
 /// generating this file — would add a build step to a table that changes once
 /// a year. `tests/yumiWidgetLanguages.test.ts` compares the two so a drift
 /// fails in CI rather than on someone's home screen.
 ///
 /// Everything here takes a BCP-47 content code (`en`, `zh-TW`, `es`, `fr`,
-/// `it`) and answers for an unknown one rather than trapping: a widget is the
+/// `it`, `ja`, `ko`) and answers for an unknown one rather than trapping: a widget is the
 /// worst place to crash, and an App Group file written by a newer build than
 /// the installed extension is a normal thing to meet.
 enum YumiWidgetLanguage {
@@ -22,6 +22,8 @@ enum YumiWidgetLanguage {
         case "es": return "Es"
         case "fr": return "Fr"
         case "it": return "It"
+        case "ja": return "あ"
+        case "ko": return "한"
         default: return "·"
         }
     }
@@ -34,6 +36,8 @@ enum YumiWidgetLanguage {
         case "es": return "es-ES"
         case "fr": return "fr-FR"
         case "it": return "it-IT"
+        case "ja": return "ja-JP"
+        case "ko": return "ko-KR"
         default: return "en-US"
         }
     }
@@ -65,6 +69,8 @@ enum YumiWidgetLanguage {
         case "spanish": return "Reproducir la pronunciación en \(language)"
         case "french": return "Écouter la prononciation en \(language)"
         case "italian": return "Ascolta la pronuncia in \(language)"
+        case "japanese": return "\(language)の発音を再生"
+        case "korean": return "\(language) 발음 재생"
         default: return "Play \(language) pronunciation"
         }
     }
@@ -79,6 +85,8 @@ enum YumiWidgetLanguage {
         case "spanish": return "es"
         case "french": return "fr"
         case "italian": return "it"
+        case "japanese": return "ja"
+        case "korean": return "ko"
         default: return code
         }
     }
@@ -90,6 +98,8 @@ enum YumiWidgetLanguage {
             "spanish": "Inglés",
             "french": "Anglais",
             "italian": "Inglese",
+            "japanese": "英語",
+            "korean": "영어",
         ],
         "zh-TW": [
             "english": "Traditional Chinese",
@@ -97,6 +107,8 @@ enum YumiWidgetLanguage {
             "spanish": "Chino tradicional",
             "french": "Chinois traditionnel",
             "italian": "Cinese tradizionale",
+            "japanese": "繁体字中国語",
+            "korean": "중국어(번체)",
         ],
         "es": [
             "english": "Spanish",
@@ -104,6 +116,8 @@ enum YumiWidgetLanguage {
             "spanish": "Español",
             "french": "Espagnol",
             "italian": "Spagnolo",
+            "japanese": "スペイン語",
+            "korean": "스페인어",
         ],
         "fr": [
             "english": "French",
@@ -111,6 +125,8 @@ enum YumiWidgetLanguage {
             "spanish": "Francés",
             "french": "Français",
             "italian": "Francese",
+            "japanese": "フランス語",
+            "korean": "프랑스어",
         ],
         "it": [
             "english": "Italian",
@@ -118,6 +134,26 @@ enum YumiWidgetLanguage {
             "spanish": "Italiano",
             "french": "Italien",
             "italian": "Italiano",
+            "japanese": "イタリア語",
+            "korean": "이탈리아어",
+        ],
+        "ja": [
+            "english": "Japanese",
+            "traditional-chinese": "日文",
+            "spanish": "Japonés",
+            "french": "Japonais",
+            "italian": "Giapponese",
+            "japanese": "日本語",
+            "korean": "일본어",
+        ],
+        "ko": [
+            "english": "Korean",
+            "traditional-chinese": "韓文",
+            "spanish": "Coreano",
+            "french": "Coréen",
+            "italian": "Coreano",
+            "japanese": "韓国語",
+            "korean": "한국어",
         ],
     ]
 }

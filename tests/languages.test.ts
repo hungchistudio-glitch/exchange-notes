@@ -54,7 +54,7 @@ describe("resolveLanguageCode", () => {
 });
 
 describe("what the app offers", () => {
-  it("officially enumerates all 20 directed learning → native pairs", () => {
+  it("officially enumerates all 42 directed learning → native pairs", () => {
     const expected = LANGUAGE_CODES.flatMap((learning) =>
       LANGUAGE_CODES.filter((native) => native !== learning).map(
         (native) => `${learning}->${native}`,
@@ -64,8 +64,8 @@ describe("what the app offers", () => {
       ([learning, native]) => `${learning}->${native}`,
     );
 
-    expect(actual).toHaveLength(20);
-    expect(new Set(actual).size).toBe(20);
+    expect(actual).toHaveLength(42);
+    expect(new Set(actual).size).toBe(42);
     expect(actual).toEqual(expected);
   });
 

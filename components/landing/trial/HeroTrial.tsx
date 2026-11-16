@@ -266,7 +266,10 @@ export default function HeroTrial({
   const [whereDraft, setWhere] = useState<string | null>(null);
   const [whyDraft, setWhy] = useState<string | null>(null);
   const [notebook, setNotebook] = useState<Kept[]>([]);
-  const [compare, setCompare] = useState<LanguageCode>(INTERFACE_LANGUAGE_CODE[language]);
+  /* The reader's own pick, or else the interface's language — followed when
+     the interface changes, since the page is read in place in any of seven. */
+  const [picked, setCompare] = useState<LanguageCode | null>(null);
+  const compare = picked ?? INTERFACE_LANGUAGE_CODE[language];
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const [pending, setPending] = useState<Array<Kept["id"]>>([]);
   const [phase, setPhase] = useState<"recall" | "answer" | "again" | "gotIt">("recall");

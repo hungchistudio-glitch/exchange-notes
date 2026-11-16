@@ -68,7 +68,7 @@ const EVIDENCE_SATURATION = 6;
 type Scores = Record<LanguageCode, number>;
 
 function emptyScores(): Scores {
-  return { en: 0, "zh-TW": 0, es: 0, fr: 0, it: 0 };
+  return { en: 0, "zh-TW": 0, es: 0, fr: 0, it: 0, ja: 0, ko: 0 };
 }
 
 /*
@@ -162,6 +162,9 @@ const FUNCTION_WORDS: Record<LanguageCode, ReadonlySet<string>> = {
     "from", "but", "very", "my", "your", "his", "her", "their",
   ]),
   "zh-TW": new Set(),
+  /* Japanese and Korean are told apart by their scripts, never by words. */
+  ja: new Set(),
+  ko: new Set(),
   es: new Set([
     "el", "la", "los", "las", "un", "una", "unos", "unas", "de", "del",
     "y", "o", "que", "es", "son", "en", "con", "para", "por", "no", "se",
@@ -184,13 +187,26 @@ const FUNCTION_WORDS: Record<LanguageCode, ReadonlySet<string>> = {
 
 /** Languages whose writing this detector reaches by evidence rather than script. */
 const LATIN_LANGUAGES: readonly LanguageCode[] = LANGUAGE_CODES.filter(
-  (code) => LANGUAGES[code].fontVariable === "--font-latin",
+  (code) => LANGUAGES[code].scripts.includes("latin"),
 );
 
 /** Languages this detector recognises by script alone. */
-const CJK_LANGUAGES: readonly LanguageCode[] = LANGUAGE_CODES.filter(
-  (code) => LANGUAGES[code].fontVariable === "--font-cjk",
+/** Languages written with Han characters: Chinese, and Japanese's kanji. */
+const HAN_LANGUAGES: readonly LanguageCode[] = LANGUAGE_CODES.filter(
+  (code) => LANGUAGES[code].scripts.includes("han"),
 );
+
+/** The first allowed language written in a script, if any. */
+function byScript(
+  script: "kana" | "hangul",
+  allowed: ReadonlySet<LanguageCode>,
+): LanguageCode | null {
+  return (
+    LANGUAGE_CODES.find(
+      (code) => allowed.has(code) && LANGUAGES[code].scripts.includes(script),
+    ) ?? null
+  );
+}
 
 function addEvidence(
   scores: Scores,
@@ -250,15 +266,44 @@ export function detectLanguage(
    * they are a different writing system, and no amount of Latin-alphabet
    * scoring should be able to outvote them.
    */
-  if (/\p{Script=Han}/u.test(trimmed)) {
-    const chinese = CJK_LANGUAGES.filter((code) => allowed.has(code));
+  /*
+   * Hangul is only Korean, and kana is only Japanese: either one settles it,
+   * kanji or not (日本語 with a single の is Japanese). Han characters alone
+   * are Chinese or Japanese, and nothing in four characters says which, so
+   * both are candidates and the answer admits it is a guess — the caller's
+   * `among` (the reader's own pair) is what usually decides.
+   */
+  if (/\p{Script=Hangul}/u.test(trimmed)) {
+    const korean = byScript("hangul", allowed);
+    if (korean) {
+      return { language: korean, confidence: 0.99, candidates: [korean], ambiguous: false };
+    }
+  }
 
-    if (chinese.length > 0) {
+  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(trimmed)) {
+    const japanese = byScript("kana", allowed);
+    if (japanese) {
+      return { language: japanese, confidence: 0.99, candidates: [japanese], ambiguous: false };
+    }
+  }
+
+  if (/\p{Script=Han}/u.test(trimmed)) {
+    const han = HAN_LANGUAGES.filter((code) => allowed.has(code));
+
+    /*
+     * Only a caller that named both — a reader who studies or speaks both
+     * Chinese and Japanese — has a real question here, and is asked it.
+     * Asked of every language, kanji with no kana is Chinese, as it was
+     * before Japanese arrived: Japanese text almost always carries kana.
+     */
+    const narrowed = among.length > 0 && among.length < LANGUAGE_CODES.length;
+    if (han.length > 0) {
+      const ambiguous = han.length > 1 && narrowed;
       return {
-        language: chinese[0],
-        confidence: chinese.length === 1 ? 0.99 : 0.8,
-        candidates: chinese,
-        ambiguous: chinese.length > 1,
+        language: han[0],
+        confidence: ambiguous ? 0.8 : 0.99,
+        candidates: ambiguous ? han : [han[0]],
+        ambiguous,
       };
     }
   }

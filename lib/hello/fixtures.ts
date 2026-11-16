@@ -37,6 +37,8 @@ export const FIXTURE_LIBRARY: HelloSnapshot = {
     es: { text: "biblioteca", partOfSpeech: "noun", phonetic: { ipa: "/bi.βli.oˈte.ka/" } },
     fr: { text: "bibliothèque", partOfSpeech: "noun", phonetic: { ipa: "/bi.bli.jɔ.tɛk/" } },
     it: { text: "biblioteca", partOfSpeech: "noun", phonetic: { ipa: "/bi.bljoˈtɛ.ka/" } },
+    ja: { text: "図書館", partOfSpeech: "noun", phonetic: { kana: "としょかん", romaji: "toshokan" } },
+    ko: { text: "도서관", partOfSpeech: "noun", phonetic: { rr: "doseogwan", ipa: "/to.sʌ.ɡwan/" } },
   },
 };
 
@@ -58,6 +60,8 @@ export const FIXTURE_STAR_COSMIC: HelloSnapshot = {
     fr: { text: "étoile", partOfSpeech: "noun", phonetic: { ipa: "/e.twal/" } },
     en: { text: "star", partOfSpeech: "noun", phonetic: { ipa: "/stɑr/" } },
     "zh-TW": { text: "星星", partOfSpeech: "noun", phonetic: { zhuyin: "ㄒㄧㄥ ㄒㄧㄥ˙", pinyin: "xīng xing" } },
+    ja: { text: "星", partOfSpeech: "noun", phonetic: { kana: "ほし", romaji: "hoshi" } },
+    ko: { text: "별", partOfSpeech: "noun", phonetic: { rr: "byeol", ipa: "/pjʌl/" } },
     /* Italian deliberately absent: the missing state. */
   },
 };
@@ -76,6 +80,8 @@ export const FIXTURE_LONG_PHRASE: HelloSnapshot = {
     en: { text: "make yourself at home", partOfSpeech: "phrase", phonetic: { ipa: "/meɪk jɔrˈsɛlf æt hoʊm/" } },
     es: { text: "estás en tu casa", partOfSpeech: "phrase", phonetic: { ipa: "/esˈtas en tu ˈka.sa/" } },
     "zh-TW": { text: "把這裡當自己家", partOfSpeech: "phrase", phonetic: { zhuyin: "ㄅㄚˇ ㄓㄜˋ ㄌㄧˇ ㄉㄤ ㄗˋ ㄐㄧˇ ㄐㄧㄚ", pinyin: "bǎ zhè lǐ dāng zì jǐ jiā" } },
+    ja: { text: "くつろいでください", partOfSpeech: "phrase", phonetic: { kana: "くつろいでください", romaji: "kutsuroidekudasai" } },
+    ko: { text: "편하게 계세요", partOfSpeech: "phrase", phonetic: { rr: "pyeonhage gyeseyo", ipa: "/pʰjʌn.ha.ɡe kje.se.jo/" } },
   },
 };
 

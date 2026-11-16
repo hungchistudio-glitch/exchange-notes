@@ -45,6 +45,12 @@ const RULES: Record<LanguageCode, readonly Rule[]> = {
     [/e$/, "a"], // case → casa, sedie → sedia
   ],
   "zh-TW": [],
+  /* Japanese verbs and adjectives do inflect, but not by a suffix a rule this
+     simple can undo (食べた → 食べる needs to know the verb class); and
+     Korean endings attach to a stem that changes with them. Both are left to
+     the dictionary and the model rather than guessed at here. */
+  ja: [],
+  ko: [],
 };
 
 /** Possible dictionary forms of `text`, most likely first; never `text` itself. */

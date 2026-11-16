@@ -1,4 +1,6 @@
 import { chineseReadings } from "@/lib/chinese/taiwanReadings";
+import { isAllKana } from "@/lib/japanese/kana";
+import { japaneseReadings, koreanReadings } from "@/lib/pronunciation/localReadings";
 import { hasPhonetics, type LanguageCode } from "@/lib/languages";
 
 export type PronunciationData = {
@@ -14,7 +16,11 @@ export type PronunciationData = {
  * has no pinyin key at all rather than an empty one, so a caller cannot
  * render a blank pinyin row for a language that has never had pinyin.
  */
-export type Phonetics = Partial<Record<"pinyin" | "zhuyin", string>>;
+export type Phonetics = Partial<
+  Record<"pinyin" | "zhuyin" | "kana" | "romaji" | "rr" | "ipa", string>
+>;
+
+export { japaneseReadings, koreanReadings } from "@/lib/pronunciation/localReadings";
 
 /**
  * The annotations this app can compute locally for a language.
@@ -27,6 +33,12 @@ export type Phonetics = Partial<Record<"pinyin" | "zhuyin", string>>;
 export function getPhonetics(text: string, code: LanguageCode): Phonetics {
   const trimmed = text.trim();
   if (!trimmed) return {};
+
+  if (code === "ko") return koreanReadings(trimmed);
+
+  /* Japanese written all in kana already says how it is read; anything
+     with kanji needs a reading from a lookup or the phonetics route. */
+  if (code === "ja") return isAllKana(trimmed) ? japaneseReadings(trimmed) : {};
 
   if (!hasPhonetics(code, "pinyin") && !hasPhonetics(code, "zhuyin")) {
     return {};

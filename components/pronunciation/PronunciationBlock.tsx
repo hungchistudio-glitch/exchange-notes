@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
+import { setReadingDisplay, useReadingDisplay } from "@/components/speech/Furigana";
 import { SpokenReading, useSpeakToggle } from "@/components/speech/Spoken";
 import type { SpeechLanguage } from "@/lib/speech";
 import usePhonetics from "@/hooks/usePhonetics";
@@ -19,6 +20,10 @@ import { insertValues } from "@/lib/utils";
  *
  *   en · es · fr · it   IPA
  *   zh-TW               zhuyin and pinyin
+ *   ja                  romaji (the kana is furigana over the word itself)
+ *   ko                  Revised Romanization or IPA, one line, swapped by ⇄
+ *
+ * Which of them show is the reader's choice (讀音顯示, Chi, 2026-11-16).
  *
  * All three are looked up together, by the hook, in one request per language
  * per tick. Chinese used to be computed here instead — which meant every
@@ -53,6 +58,7 @@ export default function PronunciationBlock({
 }: PronunciationBlockProps) {
   const { t } = useTranslation();
   const phoneticsFor = usePhonetics(entries);
+  const display = useReadingDisplay();
 
   const groups = useMemo(
     () =>
@@ -78,15 +84,25 @@ export default function PronunciationBlock({
          * language is one button now, and the readings are what is printed
          * on it.
          */
-        const readings = ([
-          ["zhuyin", phonetics?.zhuyin],
-          ["pinyin", phonetics?.pinyin],
-          ["ipa", ipa],
-        ] as const).flatMap(([script, label]) => label ? [{ script, label }] : []);
+        const lines: [ReadingScript, string | undefined][] =
+          entry.language === "ja"
+            ? [["romaji", display.romaji ? phonetics?.romaji : undefined]]
+            : entry.language === "ko"
+              ? display.korean === "off"
+                ? []
+                : display.korean === "ipa"
+                  ? [["ipa", ipa]]
+                  : [["rr", phonetics?.rr]]
+              : [
+                  ["zhuyin", display.zhuyin ? phonetics?.zhuyin : undefined],
+                  ["pinyin", display.pinyin ? phonetics?.pinyin : undefined],
+                  ["ipa", ipa],
+                ];
+        const readings = lines.flatMap(([script, label]) => (label ? [{ script, label }] : []));
 
         return readings.length ? [{ readings, text, speechTag, language: entry.language }] : [];
       }),
-    [entries, phoneticsFor],
+    [entries, phoneticsFor, display],
   );
 
   if (groups.length === 0) return null;
@@ -95,21 +111,47 @@ export default function PronunciationBlock({
     <div
       className={`space-y-1.5 break-words font-sans text-[0.6875rem] font-normal leading-[1.5] tracking-[-0.01em] text-ink-soft ${className}`}
     >
-      {groups.map((group) => (
-        <ReadingKey
-          key={`${group.language}-${group.text}`}
-          group={group}
-          label={insertValues(t.vocabulary.detail.listenAriaLabel, {
-            text: group.text,
-          })}
-        />
-      ))}
+      {groups.map((group) => {
+        const key = (
+          <ReadingKey
+            key={`${group.language}-${group.text}`}
+            group={group}
+            label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+              text: group.text,
+            })}
+          />
+        );
+        if (group.language !== "ko") return key;
+        /* Korean's one line swaps between romanization and IPA (Chi,
+           2026-11-16: 同一行點一下互換), and the choice is remembered. */
+        const ipaShown = display.korean === "ipa";
+        return (
+          <span key={`${group.language}-${group.text}`} className="flex items-center gap-1.5">
+            {key}
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setReadingDisplay({ korean: ipaShown ? "rr" : "ipa" });
+              }}
+              aria-label={ipaShown ? t.settings.readingDisplay.swapToRomanization : t.settings.readingDisplay.swapToIpa}
+              title={ipaShown ? t.settings.readingDisplay.swapToRomanization : t.settings.readingDisplay.swapToIpa}
+              className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[0.75rem] text-ink-faint transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30"
+            >
+              ⇄
+            </button>
+          </span>
+        );
+      })}
     </div>
   );
 }
 
+type ReadingScript = "zhuyin" | "pinyin" | "ipa" | "romaji" | "rr";
+
 type ReadingGroup = {
-  readings: { script: "zhuyin" | "pinyin" | "ipa"; label: string }[];
+  readings: { script: ReadingScript; label: string }[];
   text: string;
   speechTag: SpeechLanguage;
   language: LanguageCode;
@@ -146,7 +188,15 @@ function ReadingKey({ group, label }: { group: ReadingGroup; label: string }) {
            * "tú shū guǎn" and a screen reader from spelling it out
            * character by character in Chinese.
            */
-          lang={reading.script === "pinyin" ? "zh-Latn" : group.language}
+          lang={
+            reading.script === "pinyin"
+              ? "zh-Latn"
+              : reading.script === "romaji"
+                ? "ja-Latn"
+                : reading.script === "rr"
+                  ? "ko-Latn"
+                  : group.language
+          }
           className={`block break-words ${reading.script === "zhuyin" ? "font-zhuyin" : "font-phonetic"}`}
         >
           <SpokenReading reading={reading.label} text={group.text} lang={group.speechTag} />

@@ -1,3 +1,4 @@
+import { foldLatinAccents } from "@/lib/lexicon/normalize";
 import "server-only";
 
 import type { LanguageCode } from "@/lib/languages";
@@ -30,7 +31,18 @@ export type CoreWord = {
   forms: Record<LanguageCode, readonly string[]>;
 };
 
-const LANGUAGE_ORDER: readonly LanguageCode[] = ["en", "zh-TW", "es", "fr", "it"];
+/**
+ * The columns of a data line, in order. Japanese and Korean were added
+ * after the first 4,126 lines were written in five: a line with five
+ * language columns still parses, and its Japanese and Korean are empty
+ * (a language with no form is a language this entry cannot answer in).
+ */
+const LANGUAGE_ORDER: readonly LanguageCode[] = ["en", "zh-TW", "es", "fr", "it", "ja", "ko"];
+
+/** Whether the entry has a form in this language at all. */
+export function hasCoreForm(word: CoreWord, language: LanguageCode): boolean {
+  return word.forms[language].length > 0;
+}
 
 const PARTS_OF_SPEECH = new Set(["noun", "verb", "adjective", "phrase", "other"]);
 const CATEGORIES = new Set(["people", "objects", "actions", "other"]);
@@ -40,7 +52,7 @@ function parse(source: string): CoreWord[] {
 
   for (const line of source.split("\n")) {
     const fields = line.trim().split("|");
-    if (fields.length !== 7) continue;
+    if (fields.length !== 7 && fields.length !== 9) continue;
 
     const [partOfSpeech, category, ...languages] = fields;
     if (!PARTS_OF_SPEECH.has(partOfSpeech) || !CATEGORIES.has(category)) continue;
@@ -51,7 +63,7 @@ function parse(source: string): CoreWord[] {
       forms: Object.fromEntries(
         LANGUAGE_ORDER.map((language, index) => [
           language,
-          languages[index]
+          (languages[index] ?? "")
             .split(";")
             .map((form) => form.trim())
             .filter(Boolean),
@@ -71,6 +83,8 @@ const LEADING_ARTICLE: Record<LanguageCode, RegExp | null> = {
   es: /^(?:el|la|los|las|un|una|unos|unas)\s+/,
   fr: /^(?:(?:le|la|les|un|une|des|du|de la)\s+|l'|de l')/,
   it: /^(?:(?:il|lo|la|i|gli|le|un|uno|una)\s+|l'|un')/,
+  ja: null,
+  ko: null,
 };
 
 /** Case, width, spacing, curly apostrophes and trailing punctuation. */
@@ -91,7 +105,7 @@ function withoutArticle(text: string, language: LanguageCode): string {
 }
 
 function withoutAccents(text: string): string {
-  return text.normalize("NFD").replace(/\p{M}/gu, "").normalize("NFC");
+  return foldLatinAccents(text);
 }
 
 /* ---------- the index ---------- */

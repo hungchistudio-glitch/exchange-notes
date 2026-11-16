@@ -94,12 +94,60 @@ function Italy() {
   );
 }
 
+function Japan() {
+  return (
+    <>
+      <rect width={W} height={H} fill="#F7F7F7" />
+      <circle cx={W / 2} cy={H / 2} r={H * 0.3} fill="#BC002D" />
+    </>
+  );
+}
+
+/**
+ * South Korea: the taegeuk and, at this size, a suggestion of the four
+ * trigrams as short bars in the corners — the full trigrams are a grey
+ * smudge at 20 by 14, as the US flag's fifty stars are.
+ */
+function Korea() {
+  const r = H * 0.25;
+  const cx = W / 2;
+  const cy = H / 2;
+  return (
+    <>
+      <rect width={W} height={H} fill="#F7F7F7" />
+      <circle cx={cx} cy={cy} r={r} fill="#003478" />
+      <path
+        d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy} A ${r / 2} ${r / 2} 0 0 1 ${cx} ${cy} A ${r / 2} ${r / 2} 0 0 0 ${cx - r} ${cy} Z`}
+        fill="#C60C30"
+      />
+      {[
+        [3.2, 2.6, -33.7],
+        [16.8, 11.4, -33.7],
+        [16.8, 2.6, 33.7],
+        [3.2, 11.4, 33.7],
+      ].map(([x, y, angle]) => (
+        <rect
+          key={`${x}-${y}`}
+          x={x - 1.6}
+          y={y - 0.9}
+          width={3.2}
+          height={1.8}
+          fill="#1A1A1A"
+          transform={`rotate(${angle} ${x} ${y})`}
+        />
+      ))}
+    </>
+  );
+}
+
 const GLYPHS: Record<Region, () => ReactElement> = {
   US: UnitedStates,
   TW: Taiwan,
   ES: Spain,
   FR: France,
   IT: Italy,
+  JP: Japan,
+  KR: Korea,
 };
 
 /**

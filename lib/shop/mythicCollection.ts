@@ -1,3 +1,4 @@
+import { sevenIntros, sevenNames } from "./jaKoNames";
 import type { ShopItem } from "./catalog";
 
 /* =========================================================
@@ -317,11 +318,11 @@ const INTROS: Record<string, Intro> = {
 
 export const MYTHIC_ITEMS: readonly MythicItem[] = ROWS.map(([id, slot, origin, tone, zh, en, fr, it, es]) => ({
   id, slot, origin, tone,
-  intro: (([izh, ien, ifr, iit, ies]) => ({ "traditional-chinese": izh, english: ien, french: ifr, italian: iit, spanish: ies }))(INTROS[id]),
+  intro: (([izh, ien, ifr, iit, ies]) => sevenIntros(id, { "traditional-chinese": izh, english: ien, french: ifr, italian: iit, spanish: ies }))(INTROS[id]),
   country: "basic",
   /* Never sold; the database will not sell it either. */
   price: 0,
-  names: { "traditional-chinese": zh, english: en, french: fr, italian: it, spanish: es },
+  names: sevenNames(id, { "traditional-chinese": zh, english: en, french: fr, italian: it, spanish: es }),
 }));
 
 const MYTHIC_IDS = new Set(MYTHIC_ITEMS.map(item => item.id));

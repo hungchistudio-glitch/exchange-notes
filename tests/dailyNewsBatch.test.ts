@@ -28,7 +28,17 @@ describe("articlesPerBatch", () => {
       // Rounding means it cannot land exactly on the budget every time; what
       // matters is that it never drifts into a request several times the size
       // of the one that was measured against the timeout.
-      expect(work).toBeLessThanOrEqual(budget * 1.5);
+      //
+      // Six and seven languages (Japanese and Korean, 2026-11-16) cannot keep
+      // both promises: three articles a batch is the floor that keeps the
+      // night under the free tier's request allowance (below), and three
+      // articles in seven languages is 21 article-languages, not 18. The
+      // allowance wins, because the free tier refuses outright while a slow
+      // request is bounded by BATCH_DEADLINE_MS and retried by the next
+      // half-hourly catch-up. The pool only covers languages someone uses,
+      // so this is reached only once readers study all seven.
+      const allowance = languages <= 5 ? 1.5 : 1.75;
+      expect(work).toBeLessThanOrEqual(budget * allowance);
     }
   });
 

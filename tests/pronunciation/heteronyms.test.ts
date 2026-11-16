@@ -145,9 +145,16 @@ describe("the lists", () => {
         const phonetics = heteronym.readings.map((reading) => reading.phonetic);
         expect(new Set(phonetics).size, heteronym.word).toBe(phonetics.length);
         for (const reading of heteronym.readings) {
-          expect(Object.keys(reading.meaning).sort(), `${heteronym.word} meaning`).toEqual(
-            ["english", "french", "italian", "spanish", "traditional-chinese"],
+          // Every list carries the first five; Japanese and Korean, written
+          // after them, carry all seven.
+          expect(Object.keys(reading.meaning), `${heteronym.word} meaning`).toEqual(
+            expect.arrayContaining(["english", "french", "italian", "spanish", "traditional-chinese"]),
           );
+          if (language === "ja" || language === "ko") {
+            expect(Object.keys(reading.meaning).sort(), `${heteronym.word} meaning`).toEqual(
+              ["english", "french", "italian", "japanese", "korean", "spanish", "traditional-chinese"],
+            );
+          }
           expect(reading.example.trim()).not.toBe("");
         }
       }

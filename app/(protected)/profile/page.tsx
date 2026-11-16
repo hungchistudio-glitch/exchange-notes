@@ -37,6 +37,7 @@ import NewsSourceHealthRow from "@/components/settings/NewsSourceHealthRow";
 import ProfileLanguageSettingsButton from "@/components/settings/ProfileLanguageSettingsButton";
 import DailyGoalSettingsButton from "@/components/settings/DailyGoalSettingsButton";
 import PronunciationSettingsButton from "@/components/settings/PronunciationSettingsButton";
+import ReadingDisplaySettingsButton from "@/components/settings/ReadingDisplaySettingsButton";
 import FontSizeSettingsButton from "@/components/settings/FontSizeSettingsButton";
 import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettingsButton";
 import InterfaceModeSettingsButton from "@/components/settings/InterfaceModeSettingsButton";
@@ -514,6 +515,10 @@ export default function ProfilePage() {
 
             <SettingsAnchor id="setting-pronunciation">
               <PronunciationSettingsButton />
+            </SettingsAnchor>
+
+            <SettingsAnchor id="setting-reading-display">
+              <ReadingDisplaySettingsButton />
             </SettingsAnchor>
           </SettingsSection>
 

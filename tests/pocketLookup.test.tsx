@@ -47,14 +47,16 @@ describe("Preference bridge",()=>{
  });
 });
 describe("Review API uses real dictionary without authentication or AI",()=>{
- const words:Record<LanguageCode,string>={en:"thank you","zh-TW":"謝謝",es:"gracias",fr:"merci",it:"grazie"};
+ /* The built-in dictionary was written in five languages; Japanese and
+    Korean answer null rather than a broken card until its columns arrive. */
+ const words:Partial<Record<LanguageCode,string>>={en:"thank you","zh-TW":"謝謝",es:"gracias",fr:"merci",it:"grazie"};
  for(const [source,query] of Object.entries(words)) for(const [target,translation] of Object.entries(words)) if(source!==target){
   it(`${source} → ${target}`,async()=>{
    const response=await POST(new Request("http://localhost/api/pocket-lookup-review",{method:"POST",body:JSON.stringify({query,source,target})}));
    expect(response.status).toBe(200);expect((await response.json()).entry.translation).toBe(translation);expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
  }
- it.each([{query:"x",source:"en",target:"en"},{query:"x",source:"ja",target:"fr"},{query:"x".repeat(201),source:"en",target:"fr"},null])("rejects invalid input %j",async body=>{
+ it.each([{query:"x",source:"en",target:"en"},{query:"x",source:"xx",target:"fr"},{query:"x".repeat(201),source:"en",target:"fr"},null])("rejects invalid input %j",async body=>{
   const response=await POST(new Request("http://localhost/api/pocket-lookup-review",{method:"POST",body:JSON.stringify(body)}));expect(response.status).toBe(400);
  });
  it("cannot bypass the production guard",async()=>{

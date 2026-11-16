@@ -11,7 +11,7 @@ enum YumiWidgetStore { static let suiteName = "pocket-verification-\(ProcessInfo
         precondition(preferences.saveIfChanged())
         precondition(!preferences.saveIfChanged(), "Identical settings must not reload WidgetKit")
         precondition(PocketPreferences.load() == preferences)
-        for (key,value) in [("version",2 as Any),("appMode","invalid"),("interfaceLanguage","zh-CN"),("learningLanguageCode","ja"),("translationLanguageCode","fr")] {
+        for (key,value) in [("version",2 as Any),("appMode","invalid"),("interfaceLanguage","zh-CN"),("learningLanguageCode","xx"),("translationLanguageCode","fr")] {
             var invalid=payload; invalid[key]=value
             precondition(PocketPreferences(payload:invalid) == nil, "Reject invalid \(key)")
         }

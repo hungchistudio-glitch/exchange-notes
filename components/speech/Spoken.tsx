@@ -12,7 +12,10 @@ import {
   type ReactNode,
 } from "react";
 
+import { RubyRange, isWordLike, useWordFurigana } from "@/components/speech/Furigana";
+import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { hasKanji, type FuriganaSegment } from "@/lib/japanese/kana";
 import useCosmicMode from "@/hooks/useCosmicMode";
 import type { SpeechLanguage } from "@/lib/speech";
 import type { TextRange } from "@/lib/vocabulary/knownWords";
@@ -262,6 +265,12 @@ type SpokenTextProps = {
   marks?: readonly TextRange[];
   /** A word held down: looked up where the reader is (Chi, 2026-11-15). */
   onLongPressWord?: (word: string) => void;
+  /**
+   * Japanese furigana for this text, its segments' plain text being `text`
+   * (useWordFurigana, useTextFurigana). Drawn whether or not it is
+   * sounding, so the reading lights with its kanji (Chi, 2026-11-16).
+   */
+  ruby?: readonly FuriganaSegment[];
   className?: string;
 };
 
@@ -291,13 +300,39 @@ function markedRuns(text: string, marks: readonly TextRange[]) {
  * this text is sounding, so a page full of sentences is not a page full of
  * spans for nothing.
  */
-export function SpokenText({
+export function SpokenText(props: SpokenTextProps) {
+  const interfaceLanguage = useInterfaceLanguage();
+  /*
+   * Japanese with kanji gets furigana on its own (Chi, 2026-11-16) — a
+   * word's reading fetched like any card's, running text sentence by
+   * sentence — unless the app itself is in Japanese: a reader who reads the
+   * interface in Japanese does not need the kanji spelled out for them.
+   * Asked of the interface rather than the account's languages, because
+   * this renders outside the signed-in providers too (a hello, the landing).
+   */
+  const wantsReading =
+    !props.ruby &&
+    interfaceLanguage !== "japanese" &&
+    props.lang.toLowerCase().startsWith("ja") &&
+    hasKanji(props.text);
+  return wantsReading ? <SpokenTextWithReading {...props} /> : <SpokenTextInner {...props} />;
+}
+
+function SpokenTextWithReading(props: SpokenTextProps) {
+  /* A word is read as a card's word; anything longer, sentence by sentence,
+     and only if furigana is on for running text too. */
+  const ruby = useWordFurigana(props.text, "ja", isWordLike(props.text) ? "card" : "text");
+  return <SpokenTextInner {...props} ruby={ruby} />;
+}
+
+function SpokenTextInner({
   text,
   lang,
   tapToStart = false,
   tappable = true,
   marks,
   onLongPressWord,
+  ruby,
   className,
 }: SpokenTextProps) {
   const key = spokenKey(text, lang);
@@ -413,7 +448,9 @@ export function SpokenText({
       className={className}
     >
       {segment === null
-        ? marks?.length
+        ? ruby?.length
+          ? <RubyRange segments={ruby} />
+          : marks?.length
           ? markedRuns(text, marks).map((run) =>
               run.known ? (
                 <span key={run.start} className="known-word" data-known="">{run.text}</span>
@@ -430,7 +467,7 @@ export function SpokenText({
                 data-spoken-now=""
                 data-segment={index}
               >
-                {part.text}
+                {ruby?.length ? <RubyRange segments={ruby} start={part.start} end={part.end} /> : part.text}
               </mark>
             ) : (
               <span
@@ -439,7 +476,7 @@ export function SpokenText({
                 className={part.word && known(part.start, part.end) ? "known-word" : undefined}
                 data-known={part.word && known(part.start, part.end) ? "" : undefined}
               >
-                {part.text}
+                {ruby?.length ? <RubyRange segments={ruby} start={part.start} end={part.end} /> : part.text}
               </span>
             ),
           )}

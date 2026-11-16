@@ -1,4 +1,4 @@
-import type { LanguageCode } from "@/lib/languages";
+import { isLanguageCode, type LanguageCode } from "@/lib/languages";
 
 /* =========================================================
    Hangyumi: Hangman with Yumi (Chi, 2026-10-25)
@@ -45,7 +45,22 @@ export function isLevel(value: unknown): value is HangyumiLevel {
  * own (é is not e), so each has its own key; case is not (É is é).
  */
 const LATIN = [..."abcdefghijklmnopqrstuvwxyz"];
-export const KEYBOARDS: Record<Exclude<LanguageCode, "zh-TW">, { letters: string[]; accents: string[] }> = {
+
+/**
+ * The languages played with tiles rather than a keyboard: the server deals
+ * sixteen — the answer's characters and look-alike decoys — because there is
+ * no alphabet to lay out (Chinese), or because one would give the word away
+ * (Japanese kana, and Korean, whose tiles are whole syllable blocks: 한, 국;
+ * Chi, 2026-11-16).
+ */
+export const TILE_LANGUAGES = ["zh-TW", "ja", "ko"] as const satisfies readonly LanguageCode[];
+export type TileLanguage = (typeof TILE_LANGUAGES)[number];
+
+export function isTileLanguage(language: LanguageCode): language is TileLanguage {
+  return (TILE_LANGUAGES as readonly LanguageCode[]).includes(language);
+}
+
+export const KEYBOARDS: Record<Exclude<LanguageCode, TileLanguage>, { letters: string[]; accents: string[] }> = {
   en: { letters: LATIN, accents: [] },
   es: { letters: LATIN, accents: [..."áéíóúüñ"] },
   fr: { letters: LATIN, accents: [..."àâæçéèêëîïôœùûüÿ"] },
@@ -68,7 +83,7 @@ export type HangyumiStatus = "playing" | "won" | "lost";
 export type HangyumiToday = { day: string; earned: number; cap: number; remaining: number };
 
 /** How one side of the word card reads: IPA, or pinyin and zhuyin for Chinese. */
-export type HangyumiReading = { ipa?: string; pinyin?: string; zhuyin?: string };
+export type HangyumiReading = { ipa?: string; pinyin?: string; zhuyin?: string; kana?: string; romaji?: string; rr?: string };
 
 /** The finished word's card: its reading, and the word in the other four
     languages with theirs, written ahead beside the word bank. */
@@ -168,9 +183,9 @@ export type HangyumiGuessResult = HangyumiRound & {
 
 export type HangyumiStart = { status: "missing"; language: LanguageCode; level: HangyumiLevel } | HangyumiRound;
 
-const LANGUAGE_CODES: readonly string[] = ["en", "zh-TW", "es", "fr", "it"];
-const isLanguage = (value: unknown): value is LanguageCode =>
-  typeof value === "string" && LANGUAGE_CODES.includes(value);
+/* Every language the app teaches, from the one table (lib/languages.ts):
+   a hand-written five here once meant a Japanese round read back as none. */
+const isLanguage = (value: unknown): value is LanguageCode => isLanguageCode(value);
 
 const count = (value: unknown) => {
   const n = Number(value);

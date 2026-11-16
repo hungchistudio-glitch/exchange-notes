@@ -1,4 +1,5 @@
 import type { ShopItem } from "./catalog";
+import { type FiveNamedItem, withSevenNames } from "./jaKoNames";
 
 /* =========================================================
    Station 33 · Collection 04 — the 333 expansion (113 pieces)
@@ -19,7 +20,7 @@ import type { ShopItem } from "./catalog";
    Tones are the vivid swatch shown until a thumbnail loads.
    ========================================================= */
 
-export const COLLECTION04_ITEMS: ShopItem[] = [
+const ITEMS: FiveNamedItem<ShopItem>[] = [
   {
     "id": "s33v4-orbital-zellige",
     "country": "basic",
@@ -1603,6 +1604,8 @@ export const COLLECTION04_ITEMS: ShopItem[] = [
     "price": 66
   }
 ];
+
+export const COLLECTION04_ITEMS: ShopItem[] = ITEMS.map(withSevenNames);
 
 export const isCollection04Orbital = (id: string) => id.startsWith("s33v4-orbital-");
 export const isCollection04Space = (id: string) => id.startsWith("s33v4-space-");

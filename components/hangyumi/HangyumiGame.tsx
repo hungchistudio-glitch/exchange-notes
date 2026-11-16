@@ -12,8 +12,8 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import useOnline from "@/hooks/useOnline";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import {
-  KEYBOARDS, LEVELS, MAX_MISSES, PIECES, REWARDS, isLevel, normalizeGuess,
-  type HangyumiLevel, type HangyumiReading, type HangyumiRound,
+  KEYBOARDS, LEVELS, MAX_MISSES, PIECES, REWARDS, isLevel, isTileLanguage, normalizeGuess,
+  type HangyumiLevel, type HangyumiReading, type HangyumiRound, type TileLanguage,
 } from "@/lib/hangyumi/rules";
 import { HangyumiClosedError, type HangyumiService, type SaveWord } from "@/lib/hangyumi/service";
 import { setSoundsOn, sounds, soundsOn, unlockSounds } from "@/lib/hangyumi/sounds";
@@ -622,14 +622,16 @@ export default function HangyumiGame({
   /* What the language key shows: the next word's, as the level key does. */
   const shownLanguage = queuedLanguage ?? learningLanguage;
   const shownLevel = queuedLevel ?? level;
-  const isChinese = learningLanguage === "zh-TW";
+  /* Chinese, Japanese and Korean are played with the sixteen tiles the
+     server deals (isTileLanguage); the attribute keeps its old name. */
+  const isChinese = isTileLanguage(learningLanguage);
   const hits = useMemo(() => new Set(round?.guessed.filter(g => !round.wrong.includes(g)) ?? []), [round]);
   const wrong = useMemo(() => new Set(round?.wrong ?? []), [round]);
 
   const chineseKeys = round?.keyboard ?? null;
   const rows = useMemo(() => {
     if (isChinese) return chineseKeys ? [chineseKeys] : [];
-    const layout = KEYBOARDS[learningLanguage as Exclude<LanguageCode, "zh-TW">];
+    const layout = KEYBOARDS[learningLanguage as Exclude<LanguageCode, TileLanguage>];
     return [...QWERTY.map(row => [...row]), ...(layout.accents.length ? [layout.accents] : [])];
   }, [isChinese, chineseKeys, learningLanguage]);
 
@@ -1238,7 +1240,7 @@ export default function HangyumiGame({
                 return {
                   item: {
                     ...shelf,
-                    intro: { "traditional-chinese": line, english: line, french: line, italian: line, spanish: line },
+                    intro: { "traditional-chinese": line, english: line, french: line, italian: line, spanish: line, japanese: line, korean: line },
                   },
                   collection: "chest" as const,
                   title: t.wordvault.rewardTitle,

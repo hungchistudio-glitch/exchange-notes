@@ -1,7 +1,8 @@
 import type { ShopItem } from "./catalog";
+import { type FiveNamedItem, withSevenNames } from "./jaKoNames";
 
 /** Collection 03: proposed prices for review, not applied to production. */
-export const COLLECTION03_ITEMS = [
+const ITEMS = [
   {
     "id": "s33v3-window-lattice",
     "country": "tw",
@@ -800,6 +801,8 @@ export const COLLECTION03_ITEMS = [
     },
     "price": 63
   }
-] as const satisfies readonly ShopItem[];
+] as const satisfies readonly FiveNamedItem<ShopItem>[];
+
+export const COLLECTION03_ITEMS: readonly ShopItem[] = ITEMS.map((item) => withSevenNames<ShopItem>(item));
 
 export const isCollection03 = (id: string) => id.startsWith("s33v3-");

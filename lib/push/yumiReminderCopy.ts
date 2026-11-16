@@ -41,6 +41,8 @@ const DICTIONARY_FOR: Record<LanguageCode, TranslationLanguage> = {
   es: "spanish",
   fr: "french",
   it: "italian",
+  ja: "japanese",
+  ko: "korean",
 };
 
 function dictionaryFor(code: LanguageCode): TranslationLanguage {

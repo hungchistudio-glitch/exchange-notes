@@ -2,7 +2,7 @@
 
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { getLanguage } from "@/lib/languages";
+import { getLanguage, getLanguageName } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
 import { useState } from "react";
 import { Bookmark, BookmarkCheck, LoaderCircle } from "lucide-react";
@@ -100,7 +100,7 @@ export default function VocabularyDrawer({
   copy,
   speechRate,
 }: VocabularyDrawerProps) {
-  const { t } = useTranslation();
+  const { t, language: interfaceLanguage } = useTranslation();
   const { pair } = useDisplayLanguages();
 
 
@@ -367,7 +367,7 @@ export default function VocabularyDrawer({
                   text={item.examples[primaryLanguage] ?? ""}
                   lang={getLanguage(primaryLanguage).speechTag}
                   rate={speechRate}
-                  ariaLabel={copy.readEnglishAriaLabel}
+                  ariaLabel={copy.readEnglishAriaLabel.replace("{language}", getLanguageName(primaryLanguage, interfaceLanguage))}
                 />
               </div>
             );

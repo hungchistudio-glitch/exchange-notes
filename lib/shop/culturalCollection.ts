@@ -1,7 +1,10 @@
 import type { ShopItem } from "./catalog";
+import { type FiveNamedItem, withSevenNames } from "./jaKoNames";
 
 /** Original orbital souvenirs, not reproductions of issued postal stamps. */
-export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
+type CulturalItem = ShopItem & { variant: number };
+
+const ITEMS: readonly FiveNamedItem<CulturalItem>[] = [
   {
     "id": "tea-pearl-earrings",
     "country": "tw",
@@ -753,3 +756,5 @@ export const CULTURAL_ITEMS: readonly (ShopItem & { variant: number })[] = [
     "variant": 9
   }
 ];
+
+export const CULTURAL_ITEMS: readonly CulturalItem[] = ITEMS.map(withSevenNames);

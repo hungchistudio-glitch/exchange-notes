@@ -43,7 +43,7 @@ const english: TranslationDictionary = {
   meta: {
     landingTitle: "Exchange Notes — Keep the words worth remembering",
     landingDescription: "Look up, practise, save, and share the words worth remembering — with Yumi beside you.",
-    appDescription: "Look up any word in five languages, and keep the ones worth remembering.",
+    appDescription: "Look up any word in seven languages, and keep the ones worth remembering.",
   },
   notFound: {
     title: "Page not found",
@@ -97,7 +97,7 @@ const english: TranslationDictionary = {
         keepTitle: "Keep it with its moment",
         keepDescription: "Where you met it and why it stayed with you are kept with the words. Make the note yours, then keep it.",
         understandTitle: "Understand it with Yumi",
-        understandDescription: "Meaning, tone and culture in your language — something to think with, not a verdict. Hear it, and see it in five languages.",
+        understandDescription: "Meaning, tone and culture in your language — something to think with, not a verdict. Hear it, and see it in seven languages.",
         exchangeTitle: "Exchange it, and see it anew",
         exchangeDescription: "Send it to a friend from somewhere else, and hear what the same words mean to them.",
         reviewTitle: "Bring it back before it fades",
@@ -137,7 +137,7 @@ const english: TranslationDictionary = {
           noVoice: "No {language} voice is installed on this device, so your browser will choose one.",
         },
         compare: {
-          title: "The same idea in five languages",
+          title: "The same idea in seven languages",
           label: "Show it in",
         },
         exchange: {
@@ -564,6 +564,10 @@ const english: TranslationDictionary = {
             "Settings: change languages, or replay this tour from Help & About.",
           action: "Open Settings",
         },
+        readings: {
+          body: "Japanese and Korean are here: seven languages now. Readings, in Settings, chooses which furigana, romaji, Korean romanization or IPA, zhuyin and pinyin you see.",
+          action: "Open Readings",
+        },
         pocket: {
           body:
             "On your iPhone's Home Screen, touch and hold, then add the Exchange Notes widget to look a word up in one tap. In another app, select some text and Share it to Exchange Notes to look it up and keep it.",
@@ -859,7 +863,7 @@ const english: TranslationDictionary = {
     knownWordsHint: "Words you've kept glow. Hold any word to look it up.",
     title: "Discover",
     eyebrow: "Exchange Notes",
-    subtitle: "Learn English from today's major stories.",
+    subtitle: "Learn {language} from today's major stories.",
 
     dailyNewsTitle: "Daily News",
     speechSpeed: "Speech speed",
@@ -886,10 +890,10 @@ const english: TranslationDictionary = {
     hoursAgo: "{count}h ago",
     recently: "Recently",
 
-    readEnglishAriaLabel: "Read English story aloud",
-    readChineseAriaLabel: "Read Chinese story aloud",
+    readEnglishAriaLabel: "Read the story aloud in {language}",
+    readChineseAriaLabel: "Read the story aloud in {language}",
     readVocabWordAriaLabel: "Read {word} and its example",
-    readVocabChineseAriaLabel: "Read {translation} and its Chinese example",
+    readVocabChineseAriaLabel: "Read {translation} and its example",
 
     loadingNewStories: "Loading",
     sendToFriendAriaLabel: "Send to a friend",
@@ -2701,6 +2705,8 @@ const english: TranslationDictionary = {
         spanish: "Display the app interface in Spanish.",
         french: "Display the app interface in French.",
         italian: "Display the app interface in Italian.",
+        japanese: "Display the app interface in Japanese.",
+        korean: "Display the app interface in Korean.",
       },
     },
 
@@ -2938,6 +2944,24 @@ const english: TranslationDictionary = {
         medium: { label: "Medium" },
         large: { label: "Large" },
       },
+    },
+    readingDisplay: {
+      rowTitle: "Readings",
+      rowDescription: "Furigana, romaji, romanization, zhuyin and pinyin",
+      sheetTitle: "Readings",
+      sheetDescription: "Choose which readings appear with words. You can take them away as you learn.",
+      furigana: "Furigana",
+      always: "Always",
+      cards: "Word cards only",
+      off: "Off",
+      on: "On",
+      romaji: "Romaji",
+      romanization: "Romanization",
+      ipa: "IPA",
+      zhuyin: "Zhuyin",
+      pinyin: "Pinyin",
+      swapToIpa: "Show IPA",
+      swapToRomanization: "Show romanization",
     },
 
     pronunciation: {

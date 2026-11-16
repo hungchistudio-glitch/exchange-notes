@@ -135,6 +135,7 @@ type StepKey =
   | "notes"
   | "discover"
   | "settings"
+  | "readings"
   | "pocket"
   | "cookies"
   | "tryOn"
@@ -241,8 +242,8 @@ const COSMIC: InterfaceMode = "yumi-cosmic";
 
 /*
  * One point each (Chi, 2026-10-18: "更簡潔重點帶過"): sixteen steps then,
- * twenty since the third edition (2026-11-13), the iPhone's one only in the
- * iPhone app. What
+ * twenty in the third edition (2026-11-13), twenty-one since the fourth
+ * (2026-11-16), the iPhone's one only in the iPhone app. What
  * used to be separate steps is said together where it happens together:
  * opening the dial and turning it; saving a word and what it earns; trying
  * a piece on, buying, and the balance; the whole of the deck in one card.
@@ -345,6 +346,16 @@ export const COACH_STEPS: readonly Step[] = [
   { key: "notes", chapter: "pages", route: "/notes", mode: STANDARD },
   { key: "discover", chapter: "pages", route: "/discover", mode: STANDARD },
   { key: "settings", chapter: "pages", route: "/profile", mode: STANDARD },
+  /* Seven languages (Chi, 2026-11-16): Japanese and Korean, and where the
+     reader chooses which readings they see. Said beside Settings, where the
+     choice lives. */
+  {
+    key: "readings",
+    chapter: "pages",
+    route: "/profile",
+    mode: STANDARD,
+    since: 4,
+  },
   /* The phone's own Home Screen and share sheet (Yumi Pocket Lookup,
      2026-11-12): said only inside the iPhone app, where both exist. */
   { key: "pocket", chapter: "pages", since: 3, iphoneApp: true },

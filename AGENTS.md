@@ -11,8 +11,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # Exchange Notes: where to start
 
 A language-learning PWA built on Next.js 16 (App Router, Turbopack), React 19,
-Supabase (auth and Postgres) and Vercel. The app teaches five languages
-everywhere: `en`, `zh-TW`, `es`, `fr`, `it`. Production is
+Supabase (auth and Postgres) and Vercel. The app teaches seven languages
+everywhere: `en`, `zh-TW`, `es`, `fr`, `it`, `ja`, `ko` (Japanese and Korean
+since 2026-11-16, on both axes: interface and learning). Production is
 https://exchange-notes-app.vercel.app, and **merging to `main` deploys it**.
 There is no staging.
 
@@ -28,6 +29,7 @@ searching further.
 | Sign-in (Google) | `components/auth/GoogleIdentityButton.tsx`, `app/auth/{callback,google}/route.ts`, `lib/auth/`. Their header comments explain the popup and redirect flows. |
 | Supabase clients | `lib/supabase/{client,server,proxy,service}.ts` |
 | Translations, language table | `lib/i18n/`, `lib/languages.ts` (see `lib/i18n/AGENTS.md`) |
+| Japanese and Korean readings (Chi, 2026-11-16) | Furigana over kanji only, a romaji line on word cards (`lib/japanese/kana.ts`, `components/speech/Furigana.tsx`); Korean Revised Romanization and IPA by rule, after the sound changes (`lib/korean/romanize.ts`), one line swapped by ⇄. `SpokenText` draws furigana for any Japanese with kanji unless the interface is Japanese; a word's kana comes through `/api/word-pronunciation` (cache, then one background model; a Japanese row's `ipa` column holds kana), running text sentence by sentence. Which readings show is the reader's, per device: 讀音顯示 in Settings (`lib/preferences/readingDisplay.ts`). CJK faces follow `[lang]` (`--cjk-sans`, `--cjk-serif` in `app/globals.css`) so Japanese kanji are never drawn in Taiwanese glyph forms. Shop pieces' Japanese and Korean names live in `lib/shop/jaKoNames.ts`, joined by id. |
 | Device preferences (language, mode, font size) | Cookies read on the server: `lib/appPreferences.ts`, `lib/preferences/` |
 | Yumi in 3D, the shop | `lib/yumi3d/`, `lib/shop/` (each has an `AGENTS.md`) |
 | Hangyumi (Hangman with Yumi) | `lib/hangyumi/` (rules, server calls, studio), `supabase/hangyumi/` (the drafted word bank, which no page may import), `scripts/hangyumi-seed.mjs`. Every third word won unlocks one of 24 Nightscale pieces (`lib/shop/nightscaleCollection.ts`, `reward_pool = 'nightscale'`), decided in `private.hangyumi_guess` (`*_hangyumi_nightscale.sql`; `supabase/tests/nightscale.sql` checks it). They are a tribute told in symbols only: **no name, likeness, quotation, team or brand, in any language** (`tests/yumiNightscale.test.ts` holds that). A piece unlocked in any game is shown whole by one reveal, `components/starweaver/RelicReveal.tsx`, after its stage sends it out (`present`/`onPresented` on Hangyumi's and Wordvault's stages; Starweaver's gate has its own); the page sets `present` only from a guess, so a reload never replays it. In Yumi Cosmic all three studios are at night (each studio's `cosmic` option, read by `hooks/useCosmicMode.ts`; Chi, 2026-11-12); a mode switch builds the studio again where the round stands. |

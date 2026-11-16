@@ -14,7 +14,7 @@ import type { VocabularyCategory } from "@/lib/types/app";
 import { lemmaCandidates } from "@/lib/lexicon/inflection";
 import { findObjectWord, objectWordEntry } from "@/lib/vision/objectLexicon";
 import { translateWithMyMemory } from "@/lib/translation/myMemory";
-import { coreWordEntry, findCoreWordIn } from "@/lib/vocabulary/coreLexicon";
+import { coreWordEntry, findCoreWordIn, hasCoreForm } from "@/lib/vocabulary/coreLexicon";
 
 /* =========================================================
    The dictionaries that are already on the disk
@@ -470,7 +470,11 @@ async function lookupDictionary(
         ? { source, gloss }
         : cardLanguagesFor(core.language, context);
 
-    if (card.source !== card.gloss) {
+    if (
+      card.source !== card.gloss &&
+      hasCoreForm(core.word, card.source) &&
+      hasCoreForm(core.word, card.gloss)
+    ) {
       return coreWordEntry(core.word, card.source, card.gloss, core.language);
     }
   }

@@ -262,14 +262,15 @@ describe("chapter two: around the app", () => {
 
     /* The iPhone's step is passed over in a browser, and not counted. */
     for (const [pathname, text, position] of [
-      ["/vocabulary", /Each cell in Daily focus is one word due for review today/, "1/8"],
-      ["/vocabulary", /Tap me here and my halo opens/, "2/8"],
-      ["/review", /A perfect round earns 3 energy cookies/, "3/8"],
-      ["/pronunciation", /Pronunciation Lab: watch how I shape each sound/, "4/8"],
-      ["/messages", /Messages: add a friend/, "5/8"],
-      ["/notes", /Notes: for what a single word can't hold/, "6/8"],
-      ["/discover", /Discover: a few news stories a day/, "7/8"],
-      ["/profile", /Settings: change languages/, "8/8"],
+      ["/vocabulary", /Each cell in Daily focus is one word due for review today/, "1/9"],
+      ["/vocabulary", /Tap me here and my halo opens/, "2/9"],
+      ["/review", /A perfect round earns 3 energy cookies/, "3/9"],
+      ["/pronunciation", /Pronunciation Lab: watch how I shape each sound/, "4/9"],
+      ["/messages", /Messages: add a friend/, "5/9"],
+      ["/notes", /Notes: for what a single word can't hold/, "6/9"],
+      ["/discover", /Discover: a few news stories a day/, "7/9"],
+      ["/profile", /Settings: change languages/, "8/9"],
+      ["/profile", /Japanese and Korean are here: seven languages now/, "9/9"],
     ] as const) {
       again(pathname);
       expect(screen.getByText(text)).toBeInTheDocument();
@@ -367,23 +368,23 @@ describe("the iPhone's step (Yumi Pocket Lookup)", () => {
     delete (window as BridgeWindow).webkit;
   });
 
-  it("is said inside the iPhone app, after Settings", async () => {
+  it("is said inside the iPhone app, after Settings and its readings", async () => {
     (window as BridgeWindow).webkit = { messageHandlers: { yumiPocketKey: { postMessage() {} } } };
-    setCoachStep(stepOf("settings"));
+    setCoachStep(stepOf("readings"));
 
     coach("/profile");
-    expect(screen.getByText("Chapter 2 · Around the app · 8/9")).toBeInTheDocument();
+    expect(screen.getByText("Chapter 2 · Around the app · 9/10")).toBeInTheDocument();
     await act(async () => {
       screen.getByRole("button", { name: "Next" }).click();
     });
 
     expect(getCoachStep()).toBe(stepOf("pocket"));
     expect(screen.getByText(/add the Exchange Notes widget/)).toBeInTheDocument();
-    expect(screen.getByText("Chapter 2 · Around the app · 9/9")).toBeInTheDocument();
+    expect(screen.getByText("Chapter 2 · Around the app · 10/10")).toBeInTheDocument();
   });
 
   it("is passed over in a browser", async () => {
-    setCoachStep(stepOf("settings"));
+    setCoachStep(stepOf("readings"));
 
     coach("/profile");
     await act(async () => {
@@ -579,13 +580,17 @@ describe("what's new, for a reader who had finished the tour", () => {
     });
 
   it("is only the steps this edition added, in tour order", () => {
-    expect(REFRESH_STEPS.map((step) => step.key)).toEqual([
-      "voice",
-      "library",
-      "halo",
-      "pocket",
-      "games",
-    ]);
+    /* The fourth edition (2026-11-16): seven languages, and 讀音顯示. */
+    expect(REFRESH_STEPS.map((step) => step.key)).toEqual(["readings"]);
+  });
+
+  it("shows a reader who finished the third edition only the readings, on Settings", () => {
+    finishedEdition(3);
+
+    coach("/home");
+    expect(getCoachTrack()).toBe("refresh");
+    expect(screen.getByText("What’s new · 1/1")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open Readings" })).toHaveAttribute("href", "/profile");
   });
 
   it("shows them, labelled as new, and then is done for good", async () => {
@@ -594,24 +599,31 @@ describe("what's new, for a reader who had finished the tour", () => {
     const { again, container } = coach("/home");
 
     expect(getCoachTrack()).toBe("refresh");
-    expect(screen.getByText("What’s new · 1/4")).toBeInTheDocument();
+    expect(screen.getByText("What’s new · 1/5")).toBeInTheDocument();
     expect(screen.getByText(/tap the microphone in the search field/)).toBeInTheDocument();
     await next();
 
     /* The library is somewhere else: a door, then the steps on arrival. */
     expect(screen.getByRole("link", { name: "Open Vocabulary" })).toHaveAttribute("href", "/vocabulary");
     again("/vocabulary");
-    expect(screen.getByText("What’s new · 2/4")).toBeInTheDocument();
+    expect(screen.getByText("What’s new · 2/5")).toBeInTheDocument();
     expect(screen.getByText(/Each cell in Daily focus/)).toBeInTheDocument();
     await next();
-    expect(screen.getByText("What’s new · 3/4")).toBeInTheDocument();
+    expect(screen.getByText("What’s new · 3/5")).toBeInTheDocument();
     expect(screen.getByText(/my halo opens/)).toBeInTheDocument();
+    await next();
+
+    /* The fourth edition's step, in Settings. */
+    expect(screen.getByRole("link", { name: "Open Readings" })).toHaveAttribute("href", "/profile");
+    again("/profile");
+    expect(screen.getByText("What’s new · 4/5")).toBeInTheDocument();
+    expect(screen.getByText(/seven languages now/)).toBeInTheDocument();
     await next();
 
     /* The iPhone's step is passed over in a browser; the games are on Home. */
     expect(screen.getByRole("link", { name: "Back to Home" })).toHaveAttribute("href", "/home");
     again("/home");
-    expect(screen.getByText("What’s new · 4/4")).toBeInTheDocument();
+    expect(screen.getByText("What’s new · 5/5")).toBeInTheDocument();
     expect(screen.getByText(/three word games/)).toBeInTheDocument();
 
     /* The last of them is done by going in. */
@@ -637,9 +649,10 @@ describe("what's new, for a reader who had finished the tour", () => {
 
     coach("/home");
 
-    /* meet, keep, voice, library, halo, pronunciation, cookies, games. */
+    /* meet, keep, voice, library, halo, pronunciation, readings, cookies,
+       games. */
     expect(getCoachTrack()).toBe("refresh");
-    expect(screen.getByText("What’s new · 1/8")).toBeInTheDocument();
+    expect(screen.getByText("What’s new · 1/9")).toBeInTheDocument();
     expect(screen.getByText(/Tap me to open the dial/)).toBeInTheDocument();
   });
 
@@ -652,7 +665,7 @@ describe("what's new, for a reader who had finished the tour", () => {
     coach("/home");
 
     expect(getCoachTrack()).toBe("refresh");
-    expect(screen.getByText("What’s new · 1/4")).toBeInTheDocument();
+    expect(screen.getByText("What’s new · 1/5")).toBeInTheDocument();
   });
 
   it("does not come back after being skipped", async () => {

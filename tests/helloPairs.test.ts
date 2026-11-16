@@ -18,7 +18,7 @@ import { LANGUAGE_CODES } from "@/lib/languages";
 /* =========================================================
    A hello's two languages
 
-   Any two different languages of the five, in either order — twenty
+   Any two different languages of the seven, in either order — forty-two
    pairs — starting as the sharer's own learning and native languages, and
    asking rather than guessing when those are not two. A visitor's changes
    are theirs for the visit: the sharer's pair is kept, and "back to the
@@ -27,9 +27,9 @@ import { LANGUAGE_CODES } from "@/lib/languages";
    ========================================================= */
 
 describe("hello pairs", () => {
-  it("are every ordered pair of two different languages — all twenty", () => {
+  it("are every ordered pair of two different languages — all forty-two", () => {
     const expected = LANGUAGE_CODES.flatMap((a) => LANGUAGE_CODES.filter((b) => b !== a).map((b) => `${a}>${b}`));
-    expect(HELLO_PAIRS).toHaveLength(20);
+    expect(HELLO_PAIRS).toHaveLength(42);
     expect(HELLO_PAIRS.map(([a, b]) => `${a}>${b}`).sort()).toEqual(expected.sort());
     for (const pair of HELLO_PAIRS) expect(isValidPair(pair)).toBe(true);
   });
@@ -56,7 +56,7 @@ describe("hello pairs", () => {
     expect(setSlot(["en", "fr"], 1, "it")).toEqual(["en", "it"]);
     const choices = choicesFor(["en", "fr"], 1);
     expect(choices.filter((choice) => choice.disabled).map((choice) => choice.language)).toEqual(["en"]);
-    expect(choices).toHaveLength(5);
+    expect(choices).toHaveLength(7);
   });
 
   it("swap both ways and back", () => {

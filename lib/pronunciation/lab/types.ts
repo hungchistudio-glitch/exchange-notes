@@ -338,7 +338,11 @@ export type YumiInstrument =
   | "tone-contour"
   | "syllable-pulse"
   | "nasal-resonance"
-  | "consonant-length";
+  | "consonant-length"
+  /* Japanese: the high and low of every beat (2026-11-16). */
+  | "pitch-accent"
+  /* Korean: the air after a consonant — plain, aspirated or tense. */
+  | "aspiration";
 
 export type YumiPronunciationCalibration = {
   instrument: YumiInstrument;

@@ -2,7 +2,9 @@
 
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
+import { isAllKana } from "@/lib/japanese/kana";
 import type { LanguageCode } from "@/lib/languages";
+import { japaneseReadings, koreanReadings } from "@/lib/pronunciation/localReadings";
 import { PHONETICS_STORE, hydrate, persist } from "@/lib/offline/annotations";
 import { createAnnotationBackoff } from "@/lib/offline/annotationBackoff";
 import { isOnline } from "@/hooks/useOnline";
@@ -43,7 +45,31 @@ export type WordPhonetics = {
   ipa?: string;
   pinyin?: string;
   zhuyin?: string;
+  /** Japanese: the reading in hiragana, for furigana. */
+  kana?: string;
+  /** Japanese: the same reading in romaji. */
+  romaji?: string;
+  /** Korean: Revised Romanization. */
+  rr?: string;
 };
+
+/**
+ * Readings worked out on the spot, never asked of the server: Korean by
+ * rule, and Japanese already written in kana. Memoised, since a card asks
+ * on every render.
+ */
+const localMemo = new Map<string, WordPhonetics>();
+function localReading(language: LanguageCode, text: string): WordPhonetics | null {
+  if (language !== "ko" && !(language === "ja" && isAllKana(text))) return null;
+  const id = `${language}:${text}`;
+  let found = localMemo.get(id);
+  if (!found) {
+    found = language === "ko" ? koreanReadings(text) : japaneseReadings(text);
+    if (localMemo.size > 2_000) localMemo.clear();
+    localMemo.set(id, found);
+  }
+  return found;
+}
 
 const cache = new Map<string, WordPhonetics>();
 const inFlight = new Set<string>();
@@ -226,6 +252,7 @@ async function flush() {
                 ipa: trimmed(answer?.ipa),
                 pinyin: trimmed(answer?.pinyin),
                 zhuyin: trimmed(answer?.zhuyin),
+                ...(language === "ja" ? japaneseReadings(trimmed(answer?.kana)) : {}),
               };
 
               cache.set(key(language, text), phonetics);
@@ -272,9 +299,9 @@ export function primePhonetics(
 ) {
   const id = key(language, text);
   if (!text.trim() || cache.has(id)) return;
-  if (!phonetics.ipa && !phonetics.pinyin && !phonetics.zhuyin) return;
+  if (!phonetics.ipa && !phonetics.pinyin && !phonetics.zhuyin && !phonetics.kana) return;
 
-  cache.set(id, phonetics);
+  cache.set(id, language === "ja" ? { ...phonetics, ...japaneseReadings(phonetics.kana) } : phonetics);
   void persist(PHONETICS_STORE, [[id, JSON.stringify(phonetics)]]);
   notify();
 }
@@ -355,13 +382,15 @@ export default function usePhonetics(
     [entries],
   );
 
-  for (const entry of wanted) request(entry.language, entry.text);
+  for (const entry of wanted) {
+    if (!localReading(entry.language, entry.text)) request(entry.language, entry.text);
+  }
 
   return useCallback(
     (entry: PhoneticRequest) => {
       const text = entry.text?.trim();
       if (!text) return undefined;
-      return phonetics.get(key(entry.language, text));
+      return localReading(entry.language, text) ?? phonetics.get(key(entry.language, text));
     },
     [phonetics],
   );

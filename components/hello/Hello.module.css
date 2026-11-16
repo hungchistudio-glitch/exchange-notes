@@ -33,7 +33,7 @@
   --grid-strong: rgb(29 27 23 / 0.085);
   /* A page's eyebrow and title, as the app sets them (app/tactile.css). */
   --eyebrow: #94733a;
-  --serif: Georgia, "Noto Serif TC", "Songti TC", serif;
+  --serif: Georgia, var(--cjk-serif), serif;
   --cut: 1.25rem;
   --cut-small: 0.75rem;
 

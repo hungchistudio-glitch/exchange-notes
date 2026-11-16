@@ -1,7 +1,11 @@
 # Exchange Notes
 
-A language-learning PWA for five languages (English, 繁體中文, Español,
-Français, Italiano), with Yumi, a companion built in three.js. Next.js 16,
+A language-learning PWA for seven languages (English, 繁體中文, Español,
+Français, Italiano, 日本語, 한국어), with Yumi, a companion built in three.js.
+Any of the seven can be the interface, the language you learn, or the one
+you already speak, and you can switch at any time. Words come with their
+readings: IPA, zhuyin and pinyin, furigana and romaji, and Korean
+romanization or IPA. Settings → Readings chooses which ones show. Next.js 16,
 React 19, Supabase and Vercel.
 
 Production: https://exchange-notes-app.vercel.app. Merging to `main` deploys

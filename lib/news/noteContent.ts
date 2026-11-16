@@ -29,6 +29,8 @@ const LABEL_COLON: Record<LanguageCode, string> = {
   es: ": ",
   fr: " : ",
   it: ": ",
+  ja: "：",
+  ko: ": ",
 };
 
 /**

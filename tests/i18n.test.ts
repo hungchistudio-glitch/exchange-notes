@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import english from "@/lib/i18n/en";
 import french from "@/lib/i18n/fr";
 import italian from "@/lib/i18n/it";
+import japanese from "@/lib/i18n/ja";
+import korean from "@/lib/i18n/ko";
 import spanish from "@/lib/i18n/es";
 import traditionalChinese from "@/lib/i18n/zh-TW";
 import { getTranslations } from "@/lib/i18n";
@@ -10,7 +12,7 @@ import { getInterfaceLanguages } from "@/lib/languages";
 import type { TranslationLanguage } from "@/lib/i18n/types";
 
 /* =========================================================
-   The five dictionaries, checked against each other
+   The seven dictionaries, checked against each other
 
    TypeScript already guarantees every key exists — TranslationDictionary is
    a complete type. What it cannot see is what is *inside* the strings: a
@@ -24,6 +26,8 @@ const DICTIONARIES: Record<TranslationLanguage, unknown> = {
   spanish,
   french,
   italian,
+  japanese,
+  korean,
 };
 
 function flatten(value: unknown, prefix = "", out: Record<string, string> = {}) {
@@ -107,7 +111,7 @@ describe("translation dictionaries", () => {
   it("ships a dictionary for exactly the languages the picker offers", () => {
     const offered = getInterfaceLanguages().map((meta) => meta.code).sort();
 
-    expect(offered).toEqual(["en", "es", "fr", "it", "zh-TW"]);
+    expect(offered).toEqual(["en", "es", "fr", "it", "ja", "ko", "zh-TW"]);
   });
 
   it("is not a copy of the English one", () => {
