@@ -42,6 +42,8 @@ describe("the week's recap", () => {
   it("counts the days with learning and the run up to today", () => {
     expect(recap.activeDays).toBe(5);
     expect(recap.streak).toBe(5);
+    /* Oldest first, today last: the card's row of seven lights. */
+    expect(recap.days).toEqual([false, false, true, true, true, true, true]);
   });
 
   it("names the word reviewed most", () => {

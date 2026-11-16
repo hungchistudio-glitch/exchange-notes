@@ -19,6 +19,7 @@ import {
 import { beginReviewRound, saveReviewResult } from "@/lib/review/saveReviewResult";
 import type { ReviewGrade } from "@/types/vocabulary";
 import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
+import MilestoneBanner from "@/components/review/MilestoneBanner";
 import WeakSpotRadar from "@/components/review/WeakSpotRadar";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
@@ -633,6 +634,9 @@ export default function ReviewPage() {
             {errorMessage}
           </p>
         )}
+
+        {/* A milestone worth sharing, offered once (Chi, 2026-11-15). */}
+        <MilestoneBanner />
 
         {/* On Sundays and Mondays, the week's card is ready (Chi, 2026-11-15:
             每週回顧卡). Read from the reader's own clock, after hydration. */}

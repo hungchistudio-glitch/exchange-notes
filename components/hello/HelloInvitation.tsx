@@ -2,6 +2,7 @@
 
 import { useReducer, type ReactNode } from "react";
 
+import { TitleText } from "@/components/foundation/layout/PageTitle";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { fill } from "@/lib/i18n/format";
 import { initialViewerPair, viewerPairReducer } from "@/lib/hello/pairs";
@@ -74,12 +75,15 @@ export default function HelloInvitation({
         {banner}
         <article className={styles.sheet} aria-labelledby={`hello-${hello.id}`}>
           <header className={styles.header}>
+            <span className={styles.led} aria-hidden="true" />
             <span className={styles.mark}>Station 33</span>
+            <span className={styles.brand}>Exchange Notes</span>
           </header>
 
           <div className={styles.greeting}>
+            {/* Decodes into place as the page arrives, as every title in the app does. */}
             <h1 id={`hello-${hello.id}`} className={styles.greetingLine}>
-              {fill(copy.greeting, { name })}
+              <TitleText text={fill(copy.greeting, { name })} />
             </h1>
             {/* Who it is from, by the ID no one else can hold, beside any nickname (lib/hello/text.ts). */}
             {hello.sender.name ? <p className={styles.handle}>@{hello.sender.exchangeId}</p> : null}
@@ -135,7 +139,9 @@ export function HelloGone({
     <main className={styles.look} data-look="standard">
       <div className={styles.pass}>
         <section className={`${styles.sheet} ${styles.gone}`} aria-busy={status === "checking" || undefined}>
-          <span className={styles.mark}>Station 33</span>
+          <span className={styles.mark}>
+            <span className={styles.led} aria-hidden="true" /> Station 33
+          </span>
           <h1>{status === "revoked" ? copy.revokedTitle : status === "missing" ? copy.missingTitle : copy.loading}</h1>
           {status === "checking" ? null : <p>{status === "revoked" ? copy.revokedBody : copy.missingBody}</p>}
           {action}

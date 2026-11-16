@@ -1,253 +1,262 @@
 "use client";
 
+import {
+  decodeText,
+  drawYumi,
+  fitText,
+  hudBackdrop,
+  hudColors,
+  hudFrame,
+  hudPanel,
+  mono,
+  qrPlate,
+  readHudFonts,
+  reticle,
+  sans,
+  SHARE_SIZES,
+  wrapText,
+  type HudColors,
+  type HudFonts,
+  type ShareFormat,
+} from "@/lib/share/hud";
+
 import type { HelloSnapshot } from "./types";
 
 /* =========================================================
-   The hello as one picture: 1080 × 1350
+   The hello as one picture, or three seconds of video
 
-   The same hello as the page — the same Yumi picture, the same two words,
-   the same name — with a QR code for the link, for sharing where a link
-   preview would not show, or for printing (Chi's hello brief, §9).
+   The same hello as the page — Yumi in the outfit saved with it, the same
+   two words, the same name — with a QR code for the link, for sharing
+   where a link preview would not show, or for printing (Chi's hello
+   brief, §9). Since 2026-11-15 in the shared cards' instrument look
+   (lib/share/hud.ts; Chi: 送一個字的分享圖換新卡), in a story's 9:16 or a
+   post's 1:1, with Yumi as the sharer turned her on the share screen, or
+   her picture where the live figure is not to be had.
+
+   The look is the one the hello was made in, as the page's is: paper in
+   Standard, obsidian in Cosmic.
 
    A picture, so nothing on it looks pressable: no speakers, no buttons.
    The QR is a standard one, drawn by the share screen at a size its
-   module count can be read at, on its own white panel with the full
-   quiet zone, in both looks — never tinted, rotated or overlaid.
-
-   Drawn only once the fonts have loaded and the Yumi picture has decoded,
-   so it never goes out with a fallback font or without her.
+   module count can be read at, on its own white plate with the full quiet
+   zone, in both looks — never tinted, rotated or overlaid. The link is
+   written out too, for whoever opens the picture on the phone that would
+   scan it.
    ========================================================= */
 
-export const SHARE_IMAGE = { width: 1080, height: 1350 } as const;
+export { wrapText };
 
-const LOOKS = {
-  standard: { page: "#efe8da", paper: "#fbf7ee", surface: "#fffdf8", ink: "#1c1a16", soft: "rgba(28,26,22,0.66)", faint: "rgba(28,26,22,0.46)", brass: "#a8843c", glow: "rgba(168,132,60,0.18)" },
-  "yumi-cosmic": { page: "#0a0f1f", paper: "#121a33", surface: "#172042", ink: "#f2efe8", soft: "rgba(242,239,232,0.72)", faint: "rgba(242,239,232,0.5)", brass: "#d6b26a", glow: "rgba(150,190,255,0.18)" },
-} as const;
-
-export type ShareImageInput = {
+export type HelloCardInput = {
   hello: HelloSnapshot;
-  /** Yumi's picture, decoded; null draws her frame empty, never another Yumi. */
-  poster: CanvasImageSource | null;
+  format: ShareFormat;
+  fonts?: HudFonts;
+  /** The live figure's canvas, or her picture; null leaves her reticle empty. */
+  yumi: CanvasImageSource | null;
+  /** True for her picture, which is framed already: drawn whole, not cut. */
+  yumiIsPoster?: boolean;
   /** The QR code, already drawn with its quiet zone on white. */
-  qr: HTMLCanvasElement;
+  qr: CanvasImageSource;
   greeting: string;
   gift: string;
   scanCaption: string;
   /** The two languages' names, in the reader's interface language. */
   languageNames: readonly [string, string];
   url: string;
+  /** 0 to 1 through the video's opening; 1, or absent, for the still image. */
+  progress?: number;
+  /** 0 to 1 through the whole video: the reticle's turn. */
+  spin?: number;
+  tick?: number;
 };
 
-function fontFamily(variable: string, fallback: string): string {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
-  return value || fallback;
-}
+type Side = { mark: string; name: string; text: string; reading: string | null; language: string };
 
-/** Lines that fit `width`, breaking at spaces, or anywhere in CJK text. */
-export function wrapText(measure: (text: string) => number, text: string, width: number, maxLines: number): string[] {
-  const cjk = /[　-鿿＀-￯]/.test(text);
-  const units = cjk ? [...text] : text.split(/(\s+)/);
-  const lines: string[] = [];
-  let line = "";
-  for (const unit of units) {
-    const next = line + unit;
-    if (measure(next.trimEnd()) <= width || !line.trim()) {
-      line = next;
-      continue;
-    }
-    lines.push(line.trim());
-    line = unit.trimStart();
-    if (lines.length === maxLines) break;
-  }
-  if (lines.length < maxLines && line.trim()) lines.push(line.trim());
-  if (lines.length === maxLines && lines.join(cjk ? "" : " ").length < text.trim().length) {
-    lines[maxLines - 1] = `${lines[maxLines - 1].replace(/\s*\S?$/, "")}…`;
-  }
-  return lines;
-}
-
-function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-
-export async function composeShareImage(input: ShareImageInput): Promise<Blob> {
-  const { hello } = input;
-  const look = LOOKS[hello.yumi.mode];
-  const latin = fontFamily("--font-latin", "system-ui, sans-serif");
-  const cjk = fontFamily("--font-cjk", "system-ui, sans-serif");
-  const mono = fontFamily("--font-mono", "ui-monospace, monospace");
-  const wordFont = (language: string) => (language === "zh-TW" ? cjk : latin);
-
-  /* Every face this picture uses, loaded with the text it will draw. */
-  const [a, b] = hello.pair;
-  const sideA = hello.sense[a];
-  const sideB = hello.sense[b];
-  await Promise.all([
-    document.fonts.load(`600 52px ${latin}`, input.greeting),
-    document.fonts.load(`600 52px ${cjk}`, `${input.greeting}${sideA?.text ?? ""}${sideB?.text ?? ""}`),
-    document.fonts.load(`500 26px ${mono}`, "STATION 33"),
-  ]).catch(() => undefined);
-  await document.fonts.ready;
-
-  const canvas = document.createElement("canvas");
-  canvas.width = SHARE_IMAGE.width;
-  canvas.height = SHARE_IMAGE.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("No 2D canvas");
-
-  /* Page and sheet. */
-  ctx.fillStyle = look.page;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  roundedRect(ctx, 40, 40, 1000, 1270, 56);
-  ctx.fillStyle = look.paper;
-  ctx.fill();
-
-  /* The orbital rules across the top. */
-  ctx.save();
-  roundedRect(ctx, 40, 40, 1000, 1270, 56);
-  ctx.clip();
-  ctx.fillStyle = look.brass;
-  ctx.globalAlpha = 0.55;
-  for (let x = 48; x < 1040; x += 16) ctx.fillRect(x, 40, 2, 12);
-  ctx.restore();
-
-  /* Header. */
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = look.brass;
-  ctx.font = `500 26px ${mono}`;
-  ctx.fillText("STATION 33", 96, 130);
-  /* Who it is from, by the ID no one else can hold, beside any nickname. */
-  if (hello.sender.name) {
-    ctx.fillStyle = look.soft;
-    ctx.textAlign = "right";
-    const handle = wrapText((text) => ctx.measureText(text).width, `@${hello.sender.exchangeId}`, 560, 1)[0];
-    ctx.fillText(handle, 984, 130);
-    ctx.textAlign = "left";
-  }
-
-  /* Greeting. */
-  ctx.fillStyle = look.ink;
-  ctx.font = `600 52px ${latin}, ${cjk}`;
-  const greetingLines = wrapText((text) => ctx.measureText(text).width, input.greeting, 888, 2);
-  greetingLines.forEach((line, index) => ctx.fillText(line, 96, 206 + index * 64));
-  const giftY = 206 + greetingLines.length * 64 + 4;
-  ctx.fillStyle = look.soft;
-  ctx.font = `400 32px ${latin}, ${cjk}`;
-  ctx.fillText(input.gift, 96, giftY);
-
-  /* Yumi, on a soft round glow: a filled circle, so it has no edge to show. */
-  const yumiTop = giftY + 30;
-  const yumiSize = 500;
-  const yumiX = (canvas.width - yumiSize) / 2;
-  const glowY = yumiTop + yumiSize * 0.6;
-  const glow = ctx.createRadialGradient(540, glowY, 10, 540, glowY, 280);
-  glow.addColorStop(0, look.glow);
-  glow.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(540, glowY, 280, 0, Math.PI * 2);
-  ctx.fill();
-  if (input.poster) ctx.drawImage(input.poster, yumiX, yumiTop, yumiSize, yumiSize);
-
-  /*
-   * The two words, on the left; the QR on the right. One size for both
-   * words, the largest at which each fits its column on one line if it
-   * can, and both, with their readings, fit above the link at the foot.
-   */
-  const blockTop = yumiTop + yumiSize + 30;
-  const qrSize = 300;
-  const qrX = 984 - qrSize;
-  const columnWidth = qrX - 40 - 96;
-  const wordsBottom = 1226;
-  const sides = ([[a, sideA, input.languageNames[0]], [b, sideB, input.languageNames[1]]] as const).map(
-    ([language, side, name]) => ({
-      language,
-      name,
-      text: side?.text ?? "—",
-      reading: side?.phonetic?.zhuyin ?? side?.phonetic?.ipa ?? null,
-    }),
-  );
+/**
+ * The two words, one panel each, stacked: one size for both, the largest
+ * at which each fits its panel in at most two lines and both, with their
+ * readings, fit above `bottom`.
+ */
+function wordPanels(
+  ctx: CanvasRenderingContext2D,
+  sides: Side[],
+  x: number,
+  top: number,
+  width: number,
+  bottom: number,
+  sizes: { max: number; min: number },
+  colors: HudColors,
+  fonts: HudFonts,
+  texts: string[],
+) {
   const measure = (text: string) => ctx.measureText(text).width;
+  const inner = width - 96;
+  const gap = 20;
   const layoutAt = (size: number) =>
     sides.map((side) => {
-      ctx.font = `600 ${size}px ${wordFont(side.language)}`;
-      const lines = wrapText(measure, side.text, columnWidth, 2);
-      const height = 22 + size + 8 + (lines.length - 1) * (size + 6) + (side.reading ? 38 : 0);
+      ctx.font = sans(fonts, size, 800);
+      const lines = wrapText(measure, side.text, inner, 2);
+      const height = 52 + size + 10 + (lines.length - 1) * (size + 8) + (side.reading ? 42 : 0) + 34;
       return { ...side, lines, height };
     });
-  const totalHeight = (layout: ReturnType<typeof layoutAt>) =>
-    layout.reduce((sum, side) => sum + side.height, 0) + 34 * (layout.length - 1);
-  const widest = (size: number) =>
-    Math.max(
-      ...sides.map((side) => {
-        ctx.font = `600 ${size}px ${wordFont(side.language)}`;
-        return measure(side.text);
-      }),
-    );
-  let size = 60;
-  while (size > 40 && widest(size) > columnWidth) size -= 4;
+  const total = (layout: ReturnType<typeof layoutAt>) => layout.reduce((sum, side) => sum + side.height, 0) + gap * (layout.length - 1);
+  let size = sizes.max;
+  while (size > sizes.min) {
+    ctx.font = sans(fonts, size, 800);
+    if (sides.every((side) => measure(side.text) <= inner)) break;
+    size -= 4;
+  }
   let layout = layoutAt(size);
-  while (size > 28 && blockTop + totalHeight(layout) > wordsBottom) {
+  while (size > sizes.min && top + total(layout) > bottom) {
     size -= 4;
     layout = layoutAt(size);
   }
 
-  let y = blockTop;
-  for (const side of layout) {
-    ctx.fillStyle = look.brass;
-    ctx.font = `600 22px ${latin}, ${cjk}`;
-    ctx.fillText(side.name.toUpperCase(), 96, y + 22);
-    ctx.fillStyle = look.ink;
-    ctx.font = `600 ${size}px ${wordFont(side.language)}`;
-    side.lines.forEach((line, index) => ctx.fillText(line, 96, y + 22 + size + 8 + index * (size + 6)));
+  let y = top;
+  layout.forEach((side, index) => {
+    hudPanel(ctx, x, y, width, side.height, colors, { rail: true });
+    ctx.fillStyle = colors.accent;
+    ctx.font = sans(fonts, 24, 700);
+    ctx.fillText(fitText(ctx, side.name.toUpperCase(), inner - 60), x + 44, y + 50);
+    ctx.font = mono(fonts, 24, 700);
+    ctx.textAlign = "right";
+    ctx.fillText(side.mark, x + width - 40, y + 50);
+    ctx.textAlign = "left";
+    ctx.fillStyle = colors.ink;
+    ctx.font = sans(fonts, size, 800);
+    /* While it decodes, one line; settled, its own lines. */
+    const lines = texts[index] === side.text ? side.lines : [fitText(ctx, texts[index], inner)];
+    lines.forEach((line, row) => ctx.fillText(line, x + 44, y + 52 + size + 4 + row * (size + 8)));
     if (side.reading) {
-      const readingY = y + 22 + size + 8 + (side.lines.length - 1) * (size + 6) + 38;
-      ctx.fillStyle = look.soft;
-      ctx.font = `400 26px ${side.language === "zh-TW" ? cjk : latin}`;
-      ctx.fillText(wrapText(measure, side.reading, columnWidth, 1)[0], 96, readingY);
+      ctx.fillStyle = colors.soft;
+      ctx.font = `500 28px ${fonts.phonetic}`;
+      ctx.fillText(fitText(ctx, side.reading, inner), x + 44, y + 52 + size + 4 + (side.lines.length - 1) * (size + 8) + 44);
     }
-    y += side.height + 34;
-  }
-
-  /* The QR, on white with its quiet zone, in both looks. */
-  const qrTop = blockTop;
-  roundedRect(ctx, qrX - 8, qrTop - 8, qrSize + 16, qrSize + 16, 20);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(input.qr, qrX, qrTop, qrSize, qrSize);
-  ctx.imageSmoothingEnabled = true;
-  ctx.fillStyle = look.soft;
-  ctx.font = `500 24px ${latin}, ${cjk}`;
-  ctx.textAlign = "center";
-  ctx.fillText(input.scanCaption, qrX + qrSize / 2, qrTop + qrSize + 48);
-  ctx.textAlign = "left";
-
-  /*
-   * The link, written out, for anyone who cannot scan — a picture opened
-   * on the phone that would scan it. Across the foot of the sheet, below
-   * both columns, at the largest size that fits the sheet's width.
-   */
-  const link = input.url.replace(/^https?:\/\//, "");
-  let linkSize = 22;
-  ctx.font = `400 ${linkSize}px ${mono}`;
-  while (linkSize > 14 && ctx.measureText(link).width > 888) {
-    linkSize -= 1;
-    ctx.font = `400 ${linkSize}px ${mono}`;
-  }
-  ctx.fillStyle = look.faint;
-  ctx.textAlign = "center";
-  ctx.fillText(link, 540, 1284);
-  ctx.textAlign = "left";
-
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("No image"))), "image/png");
+    y += side.height + gap;
   });
+}
+
+export function drawHelloCard(ctx: CanvasRenderingContext2D, input: HelloCardInput) {
+  const { hello } = input;
+  const { width, height } = SHARE_SIZES[input.format];
+  const cosmic = hello.yumi.mode === "yumi-cosmic";
+  const colors = hudColors(cosmic);
+  const fonts = input.fonts ?? readHudFonts();
+  const progress = input.progress ?? 1;
+  const tick = input.tick ?? 0;
+  if (ctx.canvas.width !== width) ctx.canvas.width = width;
+  if (ctx.canvas.height !== height) ctx.canvas.height = height;
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
+
+  const story = input.format === "story";
+  hudBackdrop(ctx, width, height, colors, cosmic);
+  hudFrame(ctx, width, height, colors, fonts, cosmic, { top: story ? 104 : 96 });
+  /* Who it is from, by the ID no one else can hold. */
+  ctx.fillStyle = colors.accent;
+  ctx.font = mono(fonts, 24, 600);
+  ctx.textAlign = "right";
+  ctx.fillText(fitText(ctx, `@${hello.sender.exchangeId}`, 420), width - 84, story ? 104 : 96);
+  ctx.textAlign = "left";
+
+  const [a, b] = hello.pair;
+  const sides: Side[] = ([
+    [a, "A", input.languageNames[0]],
+    [b, "B", input.languageNames[1]],
+  ] as const).map(([language, mark, name]) => {
+    const side = hello.sense[language];
+    return {
+      mark,
+      name,
+      language,
+      text: side?.text ?? "—",
+      reading: side?.phonetic?.zhuyin ?? side?.phonetic?.ipa ?? side?.phonetic?.pinyin ?? null,
+    };
+  });
+  const texts = sides.map((side, index) => decodeText(side.text, progress * 1.3 - 0.2 - index * 0.2, tick));
+  const measure = (text: string) => ctx.measureText(text).width;
+  const yumiAt = (cx: number, cy: number, size: number) => {
+    if (!input.yumi) return;
+    if (input.yumiIsPoster) ctx.drawImage(input.yumi, cx - size / 2, cy - size / 2, size, size);
+    else drawYumi(ctx, input.yumi, cx - size / 2, cy - size / 2, size);
+  };
+
+  if (story) {
+    ctx.fillStyle = colors.ink;
+    ctx.font = sans(fonts, 60, 800);
+    const greeting = wrapText(measure, input.greeting, 912, 2);
+    greeting.forEach((line, index) => ctx.fillText(line, 84, 236 + index * 72));
+    const giftY = 236 + (greeting.length - 1) * 72 + 60;
+    ctx.fillStyle = colors.soft;
+    ctx.font = sans(fonts, 36, 500);
+    ctx.fillText(fitText(ctx, input.gift, 912), 84, giftY);
+
+    reticle(ctx, 540, 770, 270, colors, fonts, input.spin ?? 0);
+    yumiAt(540, 770, 560);
+
+    wordPanels(ctx, sides, 72, 1150, 936, 1590, { max: 76, min: 40 }, colors, fonts, texts);
+
+    const qrSize = 200;
+    const qrX = width - 84 - qrSize;
+    qrPlate(ctx, input.qr, qrX, 1640, qrSize, colors);
+    const textWidth = qrX - 40 - 84 - 30;
+    ctx.fillStyle = colors.ink;
+    ctx.font = sans(fonts, 34, 700);
+    const caption = wrapText(measure, `${input.scanCaption} →`, textWidth, 2);
+    caption.forEach((line, index) => ctx.fillText(line, 84, 1690 + index * 44));
+    ctx.fillStyle = colors.faint;
+    linkLine(ctx, input.url, 84, 1690 + caption.length * 44 + 20, textWidth, 24, fonts);
+    return;
+  }
+
+  ctx.fillStyle = colors.ink;
+  ctx.font = sans(fonts, 48, 800);
+  const greeting = wrapText(measure, input.greeting, 560, 2);
+  greeting.forEach((line, index) => ctx.fillText(line, 84, 196 + index * 58));
+  const giftY = 196 + (greeting.length - 1) * 58 + 50;
+  ctx.fillStyle = colors.soft;
+  ctx.font = sans(fonts, 30, 500);
+  ctx.fillText(fitText(ctx, input.gift, 560), 84, giftY);
+
+  reticle(ctx, 836, 330, 150, colors, fonts, input.spin ?? 0);
+  yumiAt(836, 330, 316);
+
+  wordPanels(ctx, sides, 72, Math.max(380, giftY + 46), 570, 930, { max: 62, min: 32 }, colors, fonts, texts);
+
+  const qrSize = 180;
+  const qrX = width - 84 - qrSize;
+  qrPlate(ctx, input.qr, qrX, 600, qrSize, colors);
+  ctx.fillStyle = colors.ink;
+  ctx.font = sans(fonts, 22, 700);
+  ctx.textAlign = "center";
+  wrapText(measure, input.scanCaption, qrSize + 28, 2).forEach((line, index) => ctx.fillText(line, qrX + qrSize / 2, 852 + index * 30));
+  ctx.textAlign = "left";
+  ctx.fillStyle = colors.faint;
+  linkLine(ctx, input.url, 84, 990, 912, 22, fonts);
+}
+
+/**
+ * The link, written out whole: on one line at the largest size from `max`
+ * down to 18 that fits, else over two lines broken after a slash, so it
+ * stays large enough to type.
+ */
+function linkLine(ctx: CanvasRenderingContext2D, url: string, x: number, y: number, width: number, max: number, fonts: HudFonts) {
+  const link = url.replace(/^https?:\/\//, "");
+  let size = max;
+  ctx.font = mono(fonts, size, 500);
+  while (size > 18 && ctx.measureText(link).width > width) {
+    size -= 1;
+    ctx.font = mono(fonts, size, 500);
+  }
+  if (ctx.measureText(link).width <= width) {
+    ctx.fillText(link, x, y);
+    return;
+  }
+  size = max;
+  ctx.font = mono(fonts, size, 500);
+  let cut = link.length;
+  while (cut > 1 && ctx.measureText(link.slice(0, cut)).width > width) cut -= 1;
+  const slash = link.lastIndexOf("/", cut - 1);
+  if (slash > 0) cut = slash + 1;
+  ctx.fillText(link.slice(0, cut), x, y);
+  ctx.fillText(fitText(ctx, link.slice(cut), width), x, y + size + 8);
 }

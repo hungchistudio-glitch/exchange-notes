@@ -175,6 +175,7 @@ export default function HelloYumi({ outfit, complete = true, look, posterUrl, la
 
   return (
     <div className={styles.yumiFrame} data-live={live ? "true" : "false"}>
+      <span className={styles.arcs} aria-hidden="true" />
       {posterUrl ? (
         // A plain img: the poster is a public file with its own cache, and
         // must show before anything else on the page has loaded.

@@ -1399,9 +1399,36 @@ export type TranslationDictionary = {
     streak: string;
     topWordLine: string;
     footer: string;
-    share: string;
-    downloaded: string;
     quiet: string;
+    lessonLabel: string;
+    qrLabel: string;
+    qrHint: string;
+    milestoneWords: string;
+    milestoneStreak: string;
+    milestoneBanner: string;
+    milestoneShare: string;
+    pickWord: string;
+    pickWordSearch: string;
+    pickWordAuto: string;
+    pickWordEmpty: string;
+  };
+
+  shareStudio: {
+    format: string;
+    story: string;
+    square: string;
+    turnHint: string;
+    preparing: string;
+    failed: string;
+    retry: string;
+    previewAlt: string;
+    shareImage: string;
+    downloadImage: string;
+    saveVideo: string;
+    recording: string;
+    shareVideo: string;
+    downloadVideo: string;
+    videoUnsupported: string;
   };
 
   speakPage: {
@@ -3334,14 +3361,9 @@ export type TranslationDictionary = {
     createFailed: string;
     created: string;
     shareLink: string;
-    shareImage: string;
-    downloadImage: string;
     copyLink: string;
     copied: string;
     copyFailed: string;
-    imagePreparing: string;
-    imageFailed: string;
-    retryImage: string;
     done: string;
     manageTitle: string;
     manageEmpty: string;
@@ -3380,7 +3402,6 @@ export type TranslationDictionary = {
     fillOnCreate: string;
     chooseWord: string;
     previewBadge: string;
-    imageAlt: string;
     /** Sent with the link: who it is from and the word itself. */
     shareText: string;
   };

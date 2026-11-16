@@ -604,3 +604,30 @@ html[data-interface-mode="yumi-cosmic"] .star-selected {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.55; }
 }
+
+/* The recap's milestone line, its seven days and its word picker
+   (Chi, 2026-11-15). */
+.recap-headline {
+  color: var(--hud-ok);
+}
+
+.recap-days > span {
+  background: var(--hud-line, rgb(29 27 23 / 0.12));
+}
+
+.recap-days > span[data-on] {
+  background: var(--hud-ok);
+}
+
+.recap-choice[aria-pressed="true"] {
+  border-color: var(--hud-ok);
+  background: color-mix(in oklab, var(--hud-ok) 14%, transparent);
+  color: var(--hud-ok);
+}
+
+/* A shared card's shape choice and keys (components/share/ShareStudio). */
+html[data-interface-mode="yumi-cosmic"] .share-format[data-on] {
+  background: transparent;
+  border-color: var(--hud-tick);
+  color: var(--hud-tick);
+}

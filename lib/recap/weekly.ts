@@ -26,6 +26,8 @@ export type WeekRecap = {
   labScore: number | null;
   /** Of the seven days, how many had any learning. */
   activeDays: number;
+  /** The seven days, oldest first: whether each had any learning. */
+  days: boolean[];
   /** Days in a row with learning, up to today (or yesterday, if today has none yet). */
   streak: number;
   topWord: string | null;
@@ -73,10 +75,8 @@ export function buildWeekRecap({
     ...items.map((item) => dayKey(item.created_at)),
   ]);
 
-  let activeDays = 0;
-  for (let back = 0; back < 7; back++) {
-    if (activeKeys.has(dayKey(now - back * DAY_MS))) activeDays += 1;
-  }
+  const days = Array.from({ length: 7 }, (_, index) => activeKeys.has(dayKey(now - (6 - index) * DAY_MS)));
+  const activeDays = days.filter(Boolean).length;
 
   let streak = 0;
   let cursor = activeKeys.has(dayKey(now)) ? now : now - DAY_MS;
@@ -100,6 +100,7 @@ export function buildWeekRecap({
     labPractice: weekAttempts.length,
     labScore: scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null,
     activeDays,
+    days,
     streak,
     topWord: top ? ((top.texts as Record<string, string | undefined>)?.[learning] ?? top.word) : null,
   };
