@@ -7,6 +7,16 @@ import { createPreviewHangyumi, type HangyumiService, type PracticeWord } from "
 import { SHOP_ITEMS } from "@/lib/shop/catalog";
 import { MYTHIC_ITEMS } from "@/lib/shop/mythicCollection";
 
+/*
+ * Whole-screen flows, played in real time: the cookies land 640 ms after a
+ * paid guess, Yumi's arrival settles in 900 ms and the page's entrance takes
+ * a second, and each test renders the whole game (or shop). Alone they take
+ * 0.2 to 2.8 s. When the whole suite runs, three hundred files share the
+ * machine and they crossed the default 5 s and failed though nothing was
+ * wrong (2026-11-16). They get the time a busy machine needs.
+ */
+vi.setConfig({ testTimeout: 20_000 });
+
 /* =========================================================
    Yumi Wordvault, the screen: Hangyumi's own (components/hangyumi/
    HangyumiGame), playing `game="wordvault"`. Its stage is WebGL, which
