@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircle, Play, Square } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { useReadingDisplay } from "@/components/speech/Furigana";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -15,6 +15,9 @@ import { SpokenText } from "@/components/speech/Spoken";
 import { playSpoken, stopSpoken } from "@/lib/spokenWords";
 
 import styles from "./Hangyumi.module.css";
+
+/* Report a problem (Chi, 2026-11-16: 回報問題), loaded when a sheet first shows it. */
+const ReportProblem = lazy(() => import("@/components/reports/ReportProblem"));
 
 /* =========================================================
    A finished round's word, as a word card
@@ -149,6 +152,16 @@ export default function HangyumiWordCard({ sides, pending }: {
       })}
       {pending && shown.length < 2 && <span className={styles.wordSideGhost} aria-hidden="true" />}
       <p className={styles.soundStatus} role="status">{failed ? copy.soundFailed : ""}</p>
+      {!pending && shown.length > 0 && (
+        <Suspense fallback={null}>
+          <ReportProblem
+            surface="game"
+            itemKey={`${shown[0].language}:${shown[0].text}`}
+            quoted={shown.map((side) => side.text).join(" — ")}
+            language={shown[0].language}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

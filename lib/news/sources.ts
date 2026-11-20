@@ -54,6 +54,20 @@ export const RSS_SOURCES = {
     name: "Focus Taiwan", url: "https://feeds.feedburner.com/rsscna/engnews/",
     articleHosts: ["focustaiwan.tw"], imageHosts: [],
   },
+  /* Japan and Korea (Chi, 2026-11-16: 日韓在地新聞版位), each from a paper
+     of the country in English. The Japan Times' excerpts are a sentence or
+     two; its commentary, editorials and sport are left out. Kyodo, NHK
+     World and Japan Today had no feed a server could read (404, 403);
+     Yonhap's cuts every summary at eighty characters. */
+  japanTimes: {
+    name: "The Japan Times", url: "https://www.japantimes.co.jp/feed/",
+    articleHosts: ["www.japantimes.co.jp"], imageHosts: ["www.japantimes.co.jp"],
+    includeCategories: ["Japan", "Business", "Culture", "Environment"],
+  },
+  koreaHerald: {
+    name: "The Korea Herald", url: "https://www.koreaherald.com/rss/newsAll",
+    articleHosts: ["www.koreaherald.com"], imageHosts: ["wimg.heraldcorp.com"],
+  },
 } as const satisfies Record<string, RssSource>;
 
 /*
@@ -102,7 +116,13 @@ export type NewsSlot = {
   thenRss?: RssSource;
 };
 
-/** Twelve cards, still at most four model batches; focused topics go first. */
+/**
+ * Fourteen slots for twelve cards a night (DAILY_TARGET): a night's runs
+ * take each missing category's first story before a second story of any
+ * (lib/news/refillPool.ts), so Japan and Korea are in every night they
+ * have news, and the third Art and Fashion stories wait. Still at most
+ * four model batches; focused topics go first.
+ */
 export const NEWS_SLOTS: NewsSlot[] = [
   { category: "Art", rss: RSS_SOURCES.hyperallergic },
   { category: "Technology", rss: RSS_SOURCES.ars },
@@ -127,4 +147,6 @@ export const NEWS_SLOTS: NewsSlot[] = [
     rssFallback: GUARDIAN_FEEDS.taiwan,
     thenRss: RSS_SOURCES.focusTaiwan,
   },
+  { category: "Japan", rss: RSS_SOURCES.japanTimes },
+  { category: "Korea", rss: RSS_SOURCES.koreaHerald },
 ];

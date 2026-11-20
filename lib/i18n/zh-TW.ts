@@ -911,6 +911,8 @@ const traditionalChinese: TranslationDictionary = {
       politics: "政治",
       general: "新聞",
       taiwan: "台灣",
+      japan: "日本",
+      korea: "韓國",
     },
 
     latestStoriesLabel: "最新新聞",
@@ -2553,6 +2555,27 @@ const traditionalChinese: TranslationDictionary = {
       confidenceNote: "Yumi 對這一項沒有完全把握。",
       askRestaurant: "食材是 Yumi 依菜名推測的，不是廚房的說法。必須避開的成分請直接向餐廳確認。",
     },
+  },
+
+  reports: {
+    button: "回報問題",
+    title: "回報問題",
+    description: "告訴我們哪裡不對：翻譯、讀音或提示。只有 app 團隊會看到。",
+    quotedLabel: "關於",
+    noteLabel: "哪裡不對？（選填）",
+    notePlaceholder: "例如：這個讀音應該是…",
+    send: "送出",
+    sending: "送出中…",
+    sent: "謝謝，已送出。",
+    failed: "送不出去，請稍後再試。",
+    limited: "今天的回報已經夠多了，謝謝你！明天再來。",
+    reviewTitle: "內容回報",
+    reviewSubtitle: "讀者發現的問題，最新的在最上面。",
+    reviewEmpty: "沒有待處理的回報。",
+    resolve: "已處理",
+    ownerRow: "讀者回報",
+    ownerRowDescription: "{count} 則待處理",
+    surfaces: { word: "單字", news: "新聞", game: "文字遊戲", lab: "發音實驗室" },
   },
 
   settings: {

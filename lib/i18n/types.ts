@@ -930,6 +930,8 @@ export type TranslationDictionary = {
       politics: string;
       general: string;
       taiwan: string;
+      japan: string;
+      korea: string;
     };
 
     latestStoriesLabel: string;
@@ -2517,6 +2519,28 @@ export type TranslationDictionary = {
       confidenceNote: string;
       askRestaurant: string;
     };
+  };
+
+  /** Report a problem (components/reports/ReportProblem.tsx, /reports; Chi, 2026-11-16). ownerRowDescription: {count}. */
+  reports: {
+    button: string;
+    title: string;
+    description: string;
+    quotedLabel: string;
+    noteLabel: string;
+    notePlaceholder: string;
+    send: string;
+    sending: string;
+    sent: string;
+    failed: string;
+    limited: string;
+    reviewTitle: string;
+    reviewSubtitle: string;
+    reviewEmpty: string;
+    resolve: string;
+    ownerRow: string;
+    ownerRowDescription: string;
+    surfaces: { word: string; news: string; game: string; lab: string };
   };
 
   settings: {

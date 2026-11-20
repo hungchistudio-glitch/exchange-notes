@@ -36,6 +36,8 @@ import { lazy, Suspense } from "react";
 /* The word's other readings, when it has them — loaded when a card opens,
    not with the Vocabulary tab (tests/routeImportWeight.test.ts). */
 const OtherReadings = lazy(() => import("@/components/pronunciation/OtherReadings"));
+/* Report a problem (Chi, 2026-11-16: 回報問題), loaded with the sheet's other extras. */
+const ReportProblem = lazy(() => import("@/components/reports/ReportProblem"));
 
 function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
@@ -208,6 +210,13 @@ export default function VocabularyDetailSheet({
                     text={sides.primary.text}
                     language={sides.primary.language}
                     partOfSpeech={item.part_of_speech}
+                  />
+                  <ReportProblem
+                    surface="word"
+                    itemKey={`${sides.primary.language}:${sides.primary.text}`}
+                    quoted={`${sides.primary.text} — ${sides.secondary.text}`}
+                    language={sides.primary.language}
+                    className="-ml-2 mt-2"
                   />
                 </Suspense>
               </div>

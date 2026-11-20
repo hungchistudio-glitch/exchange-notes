@@ -304,3 +304,10 @@ the one above — should not need a human to unpick it first:
 Destructive statements — `drop table`, `drop column`, `truncate` — belong in
 their own migration, after the code that stopped reading the thing has been
 live for a while.
+
+`20261120215045_content_reports` (2026-11-20, readers' reports; Chi:
+回報問題) was applied before the merge, because it only adds a table the live
+code does not read, and the file was named from the version read back. The
+table is server-only: RLS is on with no policies, and anon and authenticated
+hold no privileges, which was checked with `has_table_privilege` right after.
+
