@@ -2984,6 +2984,8 @@ const english: TranslationDictionary = {
       pinyin: "Pinyin",
       swapToIpa: "Show IPA",
       swapToRomanization: "Show romanization",
+      hanja: "Hanja",
+      traditionalForms: "In Traditional Chinese",
     },
 
     pronunciation: {

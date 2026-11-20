@@ -2775,6 +2775,8 @@ const italian: TranslationDictionary = {
       pinyin: "Pinyin",
       swapToIpa: "Mostra l’AFI",
       swapToRomanization: "Mostra la romanizzazione",
+      hanja: "Hanja",
+      traditionalForms: "In cinese tradizionale",
     },
     pronunciation: {
       rowTitle: "Pronuncia",

@@ -2775,6 +2775,8 @@ const french: TranslationDictionary = {
       pinyin: "Pinyin",
       swapToIpa: "Afficher l’API",
       swapToRomanization: "Afficher la romanisation",
+      hanja: "Hanja",
+      traditionalForms: "En chinois traditionnel",
     },
     pronunciation: {
       rowTitle: "Prononciation",

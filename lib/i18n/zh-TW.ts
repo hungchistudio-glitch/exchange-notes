@@ -2942,6 +2942,8 @@ const traditionalChinese: TranslationDictionary = {
       pinyin: "拼音",
       swapToIpa: "顯示 IPA",
       swapToRomanization: "顯示羅馬拼音",
+      hanja: "漢字",
+      traditionalForms: "繁體",
     },
 
     pronunciation: {

@@ -2696,6 +2696,8 @@ const korean: TranslationDictionary = {
       pinyin: "병음",
       swapToIpa: "IPA 보기",
       swapToRomanization: "로마자 표기 보기",
+      hanja: "한자",
+      traditionalForms: "번체자",
     },
     pronunciation: {
       rowTitle: "발음",

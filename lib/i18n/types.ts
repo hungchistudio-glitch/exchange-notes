@@ -2900,6 +2900,9 @@ export type TranslationDictionary = {
       pinyin: string;
       swapToIpa: string;
       swapToRomanization: string;
+      /** The kanji bridge's labels (lib/kanjiBridge.ts): a Korean word's hanja, a Japanese word in Traditional forms. */
+      hanja: string;
+      traditionalForms: string;
     };
 
     pronunciation: {

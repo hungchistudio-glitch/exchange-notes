@@ -2696,6 +2696,8 @@ const japanese: TranslationDictionary = {
       pinyin: "ピンイン",
       swapToIpa: "IPA を表示",
       swapToRomanization: "ローマ字表記を表示",
+      hanja: "漢字",
+      traditionalForms: "繁体字",
     },
     pronunciation: {
       rowTitle: "発音",

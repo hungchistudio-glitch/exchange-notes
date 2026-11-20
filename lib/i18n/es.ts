@@ -2980,6 +2980,8 @@ const spanish: TranslationDictionary = {
       pinyin: "Pinyin",
       swapToIpa: "Mostrar AFI",
       swapToRomanization: "Mostrar romanización",
+      hanja: "Hanja",
+      traditionalForms: "En chino tradicional",
     },
 
     pronunciation: {

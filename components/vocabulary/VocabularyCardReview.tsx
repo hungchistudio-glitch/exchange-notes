@@ -61,21 +61,24 @@ function fixtures(count: number): VocabularyItem[] {
   }) as unknown as VocabularyItem[];
 }
 
-/* A Korean and a Japanese word first, for their reading lines (2026-11-16):
-   한국어 shows [한구거] beside its romanization; 図書館 its furigana. */
+/* Korean and Japanese words first, for their reading lines (2026-11-16):
+   한국어 shows [한구거] beside its romanization, 도서관 its hanja 圖書館,
+   and 経験 (glossed in English) its Traditional forms 經驗. */
 function eastAsian(): VocabularyItem[] {
   const [first] = fixtures(1);
   return [
-    ["ko", "한국어", "韓語", "한국어를 매일 공부해요."],
-    ["ja", "図書館", "圖書館", "毎日図書館で勉強します。"],
-  ].map(([language, word, translation, example], index) => ({
+    ["ko", "한국어", "zh-TW", "韓語", "한국어를 매일 공부해요."],
+    ["ko", "도서관", "zh-TW", "圖書館", "도서관에서 책을 읽었어요."],
+    ["ja", "経験", "en", "experience", "いい経験になりました。"],
+  ].map(([language, word, gloss, translation, example], index) => ({
     ...first,
-    id: `review-${language}`,
+    id: `review-${language}-${index}`,
     word,
     translation,
     language,
     word_language: language,
-    texts: { [language]: word, "zh-TW": translation },
+    translation_language: gloss,
+    texts: { [language]: word, [gloss]: translation },
     example_sentence: example,
     status: "new",
     created_at: new Date(Date.UTC(2026, 0, 3) + index).toISOString(),
