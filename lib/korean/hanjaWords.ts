@@ -2,7 +2,7 @@
    Korean words and their hanja, checked (generated 2026-11-16)
 
    Every Korean word in the offline dictionary (lib/vocabulary/
-   coreLexiconData.ts) and the word banks (supabase/hangyumi/cards/) whose
+   coreLexiconData.ts) and the word games' banks (their cards) whose
    Chinese or Japanese side is the same word in characters, syllable for
    syllable (isHanjaOf in lib/korean/hanja.ts): 1060 of them, each written
    as the Korean followed by its hanja. tests/kanjiBridge.test.ts checks
