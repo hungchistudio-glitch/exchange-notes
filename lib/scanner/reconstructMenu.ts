@@ -155,7 +155,7 @@ function fontStack(size: number) {
    * resolve rather than falling through to the missing-glyph box — the same
    * ordering problem this app fixed once already in CSS.
    */
-  return `600 ${size}px system-ui, -apple-system, "Helvetica Neue", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif`;
+  return `600 ${size}px system-ui, -apple-system, "Helvetica Neue", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Hiragino Sans", "Yu Gothic", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif`;
 }
 
 /** Largest size at or below `start` that fits `text` into `maxWidth`. */

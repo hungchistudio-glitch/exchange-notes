@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { koreanPronounced } from "@/lib/korean/romanize";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { setReadingDisplay, useReadingDisplay } from "@/components/speech/Furigana";
 import { SpokenReading, useSpeakToggle } from "@/components/speech/Spoken";
@@ -21,7 +22,9 @@ import { insertValues } from "@/lib/utils";
  *   en · es · fr · it   IPA
  *   zh-TW               zhuyin and pinyin
  *   ja                  romaji (the kana is furigana over the word itself)
- *   ko                  Revised Romanization or IPA, one line, swapped by ⇄
+ *   ko                  the pronounced Hangul ([한구거], when it differs from
+ *                       the spelling), then Revised Romanization or IPA,
+ *                       one line, swapped by ⇄
  *
  * Which of them show is the reader's choice (讀音顯示, Chi, 2026-11-16).
  *
@@ -90,9 +93,11 @@ export default function PronunciationBlock({
             : entry.language === "ko"
               ? display.korean === "off"
                 ? []
-                : display.korean === "ipa"
-                  ? [["ipa", ipa]]
-                  : [["rr", phonetics?.rr]]
+                : [
+                    /* The word as it is said, in Hangul: 한국어 [한구거]. */
+                    ["said", saidFor(text)],
+                    display.korean === "ipa" ? ["ipa", ipa] : ["rr", phonetics?.rr],
+                  ]
               : [
                   ["zhuyin", display.zhuyin ? phonetics?.zhuyin : undefined],
                   ["pinyin", display.pinyin ? phonetics?.pinyin : undefined],
@@ -148,7 +153,13 @@ export default function PronunciationBlock({
   );
 }
 
-type ReadingScript = "zhuyin" | "pinyin" | "ipa" | "romaji" | "rr";
+type ReadingScript = "zhuyin" | "pinyin" | "ipa" | "romaji" | "rr" | "said";
+
+/** 한국어 → "[한구거]", or nothing when it is said as it is spelt. */
+function saidFor(text: string): string | undefined {
+  const said = koreanPronounced(text);
+  return said ? `[${said}]` : undefined;
+}
 
 type ReadingGroup = {
   readings: { script: ReadingScript; label: string }[];
@@ -197,7 +208,7 @@ function ReadingKey({ group, label }: { group: ReadingGroup; label: string }) {
                   ? "ko-Latn"
                   : group.language
           }
-          className={`block break-words ${reading.script === "zhuyin" ? "font-zhuyin" : "font-phonetic"}`}
+          className={`block break-words ${reading.script === "zhuyin" ? "font-zhuyin" : reading.script === "said" ? "font-cjk" : "font-phonetic"}`}
         >
           <SpokenReading reading={reading.label} text={group.text} lang={group.speechTag} />
         </span>

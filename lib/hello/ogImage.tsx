@@ -27,10 +27,44 @@ export const HELLO_OG_SIZE = { width: 1200, height: 630 };
 
 const CACHE = { "cache-control": "public, max-age=60, s-maxage=60" };
 
-async function loadFont(text: string, weight: 500 | 700): Promise<ArrayBuffer | null> {
+/*
+ * Noto Sans TC has no Hangul, and draws a kanji in its Taiwanese form, so a
+ * Korean or Japanese side of a hello is drawn in its own Noto family
+ * (2026-11-16). Satori looks through every font it is given for a glyph the
+ * first one lacks, so the header's endonyms (日本語, 한국어) find theirs too.
+ */
+type Family = "Noto Sans TC" | "Noto Sans JP" | "Noto Sans KR";
+type LoadedFont = { name: Family; data: ArrayBuffer; weight: 500 | 700 };
+
+const familyFor = (language: string): Family =>
+  language === "ja" ? "Noto Sans JP" : language === "ko" ? "Noto Sans KR" : "Noto Sans TC";
+
+const HANGUL = /[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]/;
+const KANA = /[\u3040-\u30ff]/;
+
+/** The families a piece of text needs, Traditional Chinese always among them. */
+function familiesOf(text: string): Family[] {
+  return [
+    "Noto Sans TC",
+    ...(KANA.test(text) ? (["Noto Sans JP"] as const) : []),
+    ...(HANGUL.test(text) ? (["Noto Sans KR"] as const) : []),
+  ];
+}
+
+async function loadFamilies(text: string, weight: 500 | 700, families: readonly Family[]): Promise<LoadedFont[]> {
+  const loaded = await Promise.all(
+    [...new Set(families)].map(async (name) => {
+      const data = await loadFont(text, weight, name);
+      return data ? { name, data, weight } : null;
+    }),
+  );
+  return loaded.filter((font): font is LoadedFont => font !== null);
+}
+
+async function loadFont(text: string, weight: 500 | 700, family: Family = "Noto Sans TC"): Promise<ArrayBuffer | null> {
   try {
     const css = await fetch(
-      `https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@${weight}&text=${encodeURIComponent(text)}`,
+      `https://fonts.googleapis.com/css2?family=${family.replace(/ /g, "+")}:wght@${weight}&text=${encodeURIComponent(text)}`,
       { signal: AbortSignal.timeout(4000) },
     ).then((response) => (response.ok ? response.text() : ""));
     const source = css.match(/src: url\((.+?)\) format\('(opentype|truetype)'\)/)?.[1];
@@ -65,6 +99,9 @@ function fonts(medium: ArrayBuffer | null, bold: ArrayBuffer | null) {
     ...(bold ? [{ name: "Noto Sans TC", data: bold, weight: 700 as const, style: "normal" as const }] : []),
   ];
 }
+
+const asFonts = (loaded: readonly LoadedFont[]) =>
+  loaded.map((font) => ({ ...font, style: "normal" as const }));
 
 export async function helloOgImage(lookup: HelloLookup): Promise<ImageResponse> {
 
@@ -109,8 +146,8 @@ export async function helloOgImage(lookup: HelloLookup): Promise<ImageResponse> 
   const mediumText = `${header}${name}${sides.map((side) => side.label).join("")}`;
   const boldText = sides.map((side) => side.text).join("");
   const [medium, bold, poster] = await Promise.all([
-    loadFont(mediumText, 500),
-    loadFont(boldText, 700),
+    loadFamilies(mediumText, 500, familiesOf(mediumText)),
+    loadFamilies(boldText, 700, [...familiesOf(boldText), ...sides.map((side) => familyFor(side.language))]),
     loadPoster(hello.yumi.posterUrl),
   ]);
 
@@ -158,6 +195,7 @@ export async function helloOgImage(lookup: HelloLookup): Promise<ImageResponse> 
                     color: look.ink,
                     fontSize: side.text.length > 14 ? 52 : 72,
                     fontWeight: 700,
+                    fontFamily: familyFor(side.language),
                     lineHeight: 1.1,
                     marginTop: 4,
                   }}
@@ -170,6 +208,6 @@ export async function helloOgImage(lookup: HelloLookup): Promise<ImageResponse> 
         </div>
       </div>
     ),
-    { ...HELLO_OG_SIZE, fonts: fonts(medium, bold), headers: CACHE },
+    { ...HELLO_OG_SIZE, fonts: asFonts([...medium, ...bold]), headers: CACHE },
   );
 }

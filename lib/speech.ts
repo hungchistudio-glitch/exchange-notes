@@ -165,6 +165,13 @@ const FEMALE_NAME_HINTS = [
   "bobo",
   "lanlan",
   "panpan",
+  /* Japanese and Korean (2026-11-16): Apple's Kyoko and Yuna, Google's
+     and Microsoft's named voices. */
+  "kyoko",
+  "yuna",
+  "nanami",
+  "sun-hi",
+  "sunhi",
 ];
 const MALE_NAME_HINTS = [
   "male",
@@ -174,6 +181,15 @@ const MALE_NAME_HINTS = [
   "aaron",
   "宥树",
   "yu-shu",
+  /* Japanese and Korean, and the Eloquence men (Eddy, Reed, Rocko) that
+     iOS ships for every language. */
+  "otoya",
+  "hattori",
+  "keita",
+  "injoon",
+  "eddy",
+  "reed",
+  "rocko",
 ];
 
 // macOS/iOS ship a set of "novelty" system voices (Albert, Bad News, Bahh,

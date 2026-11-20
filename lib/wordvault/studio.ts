@@ -5,6 +5,7 @@ import { ARM_ROOT, EYE_REST, buildYumiActor } from "@/lib/yumi3d/actor";
 import { SHELL_RADIUS, TUBE_RADIUS } from "@/lib/yumi3d/anatomy";
 import { buildThumbnailObject, createOutfitRig, disposeObject } from "@/lib/yumi3d/outfit";
 import { makeHaloTexture, makeNightEnvironment, makeStudioEnvironment } from "@/lib/yumi3d/scene";
+import { cjkSerifFor } from "@/lib/fonts/cjkFaces";
 
 import type { VaultBeat } from "./presentation";
 
@@ -535,7 +536,8 @@ export function createWordvaultStudio(
       const ink = paper.getContext("2d");
       if (!ink) continue;
       ink.fillStyle = "#b8883a";
-      ink.font = "600 86px Georgia, 'Noto Serif TC', serif";
+      /* The answer's own script's faces: Hangul is in no Chinese face. */
+      ink.font = `600 86px Georgia, ${cjkSerifFor(answer)}, serif`;
       ink.textAlign = "center";
       ink.textBaseline = "middle";
       ink.fillText(char, 64, 68);

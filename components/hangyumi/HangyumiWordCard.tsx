@@ -9,6 +9,7 @@ import usePhonetics from "@/hooks/usePhonetics";
 import type { HangyumiReading } from "@/lib/hangyumi/rules";
 import { alignFurigana, hasKanji } from "@/lib/japanese/kana";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
+import { koreanPronounced } from "@/lib/korean/romanize";
 import { readingLines, showsFurigana } from "@/lib/preferences/readingDisplay";
 import { SpokenText } from "@/components/speech/Spoken";
 import { playSpoken, stopSpoken } from "@/lib/spokenWords";
@@ -113,7 +114,8 @@ export default function HangyumiWordCard({ sides, pending }: {
     <div className={styles.wordCard}>
       {shown.map((side, index) => {
         const phonetics = hasReading(side.reading) ? side.reading : phoneticsFor(side);
-        const readings = readingLines(side.language, phonetics, display).join(" · ");
+        const said = side.language === "ko" ? koreanPronounced(side.text) ?? undefined : undefined;
+        const readings = readingLines(side.language, phonetics && { ...phonetics, said }, display).join(" · ");
         const ruby =
           side.language === "ja" && phonetics?.kana && hasKanji(side.text) && showsFurigana(display, "card")
             ? alignFurigana(side.text, phonetics.kana)

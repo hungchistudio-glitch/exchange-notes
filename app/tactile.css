@@ -477,7 +477,7 @@ html:not([data-interface-mode="yumi-cosmic"]) .settings-progress dl > div dt > s
 }
 
 html:not([data-interface-mode="yumi-cosmic"]) .settings-progress dl > div dd:first-of-type {
-  font-family: "Noto Serif TC", Georgia, serif;
+  font-family: Georgia, var(--cjk-serif), serif;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--color-black);

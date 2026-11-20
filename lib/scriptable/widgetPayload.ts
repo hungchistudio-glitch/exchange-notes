@@ -6,7 +6,7 @@ import type {
   YumiWidgetWord,
 } from "@/lib/widget/yumiWidgetBridge";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
-import { isLanguageCode } from "@/lib/languages";
+import { interfaceLanguageForCode, isInterfaceLanguageValue, isLanguageCode } from "@/lib/languages";
 
 export const SCRIPTABLE_YUMI_SCHEMA_VERSION = 2 as const;
 export const SCRIPTABLE_YUMI_MAX_WORDS = 12;
@@ -92,23 +92,12 @@ function normalizeContentLanguage(
 function normalizeInterfaceLanguage(
   value: unknown,
 ): InterfaceLanguage {
-  switch (value) {
-    case "traditional-chinese":
-    case "spanish":
-    case "french":
-    case "italian":
-      return value;
-    case "zh-TW":
-      return "traditional-chinese";
-    case "es":
-      return "spanish";
-    case "fr":
-      return "french";
-    case "it":
-      return "italian";
-    default:
-      return "english";
-  }
+  /* Either axis's spelling: "japanese" or "ja". Every language the app
+     speaks, from the one table (Japanese and Korean, 2026-11-16, were
+     English here until this read the table instead of a list). */
+  if (isInterfaceLanguageValue(value)) return value;
+  if (isLanguageCode(value)) return interfaceLanguageForCode(value) ?? "english";
+  return "english";
 }
 
 function normalizeLocalizedText(

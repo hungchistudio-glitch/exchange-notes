@@ -113,13 +113,16 @@ export type ReadingParts = {
   kana?: string;
   romaji?: string;
   rr?: string;
+  /** Korean: the word as it is said, in Hangul (한국어 → 한구거), when that differs. */
+  said?: string;
 };
 
 /**
  * The reading lines a word in this language shows on a card, in order, as
  * the reader has set them: romaji for Japanese (its kana goes over the
- * kanji as furigana); romanization or IPA for Korean; zhuyin and pinyin for
- * Chinese; IPA for everything else.
+ * kanji as furigana); for Korean the pronounced Hangul in brackets, when it
+ * differs from the spelling, then romanization or IPA; zhuyin and pinyin
+ * for Chinese; IPA for everything else.
  */
 export function readingLines(language: string, reading: ReadingParts | undefined, display: ReadingDisplay): string[] {
   if (!reading) return [];
@@ -127,7 +130,9 @@ export function readingLines(language: string, reading: ReadingParts | undefined
     language === "ja"
       ? [display.romaji ? reading.romaji : undefined]
       : language === "ko"
-        ? [display.korean === "ipa" ? reading.ipa : display.korean === "rr" ? reading.rr : undefined]
+        ? display.korean === "off"
+          ? []
+          : [reading.said ? `[${reading.said}]` : undefined, display.korean === "ipa" ? reading.ipa : reading.rr]
         : [display.zhuyin ? reading.zhuyin : undefined, display.pinyin ? reading.pinyin : undefined, reading.ipa];
   return lines.filter((line): line is string => Boolean(line));
 }

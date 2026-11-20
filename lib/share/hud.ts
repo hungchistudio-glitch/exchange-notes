@@ -80,10 +80,10 @@ export function hudColors(cosmic: boolean): HudColors {
 export type HudFonts = { sans: string; mono: string; phonetic: string; serif: string };
 
 const FALLBACK_FONTS: HudFonts = {
-  sans: 'system-ui, -apple-system, "PingFang TC", "Noto Sans TC", sans-serif',
+  sans: 'system-ui, -apple-system, "PingFang TC", "Noto Sans TC", "Hiragino Sans", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif',
   mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
   phonetic: '"Noto Sans", "PingFang TC", sans-serif',
-  serif: 'Georgia, "Noto Serif TC", "Songti TC", serif',
+  serif: 'Georgia, "Noto Serif TC", "Songti TC", "Hiragino Mincho ProN", AppleMyungjo, "Noto Serif KR", serif',
 };
 
 /**

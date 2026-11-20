@@ -150,3 +150,24 @@ describe("cleanExampleSentence", () => {
     expect(cleanExampleSentence(undefined)).toBeUndefined();
   });
 });
+
+/* Japanese and Korean (2026-11-16): the same habits, in two more scripts. */
+describe("Japanese and Korean examples", () => {
+  it("drops a romanised gloss from a Korean or Japanese sentence", () => {
+    expect(stripRomanisation("도서관에서 책을 읽었어요. (doseogwan-eseo chaeg-eul ilgeosseoyo)")).toBe(
+      "도서관에서 책을 읽었어요.",
+    );
+    expect(stripRomanisation("図書館で本を読みました。（toshokan de hon o yomimashita）")).toBe(
+      "図書館で本を読みました。",
+    );
+  });
+
+  it("cuts a Korean sentence where another language's heading begins", () => {
+    expect(cleanExampleSentence("매일 아침 커피를 마셔요. English: I drink coffee every morning.")).toBe(
+      "매일 아침 커피를 마셔요.",
+    );
+    expect(cleanExampleSentence("毎朝コーヒーを飲みます。 'ko': 매일 아침 커피를 마셔요.")).toBe(
+      "毎朝コーヒーを飲みます。",
+    );
+  });
+});

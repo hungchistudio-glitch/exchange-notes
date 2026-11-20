@@ -11,7 +11,7 @@
 .disc b { position:absolute; right:-3px; top:-3px; min-width:1.125rem; border-radius:999px; background:#eed8a1; color:#272520; padding:2px 4px; font-size:0.6875rem; line-height:1; text-align:center; }
 /* Two lines at most, and never broken inside a word: "Impostazioni" and
    "Vocabolario" have to fit the 84px caption whole. */
-.label { width:100%; font-family:var(--font-geist-mono),"Noto Sans TC",monospace; font-size:0.6875rem; letter-spacing:.035em; font-weight:600; text-transform:uppercase; text-align:center; line-height:1.25; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; text-shadow:0 1px 3px #0009; }
+.label { width:100%; font-family:var(--font-geist-mono),var(--cjk-sans),monospace; font-size:0.6875rem; letter-spacing:.035em; font-weight:600; text-transform:uppercase; text-align:center; line-height:1.25; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; text-shadow:0 1px 3px #0009; }
 .dial button[data-selected=true] .disc { border-color:#f2dfae; background:linear-gradient(145deg,#ead6aa55,#ffffff17); scale:1.06; }
 .dial button[data-selected=true] .label { color:#f2dfae; }
 .dial button:focus-visible { outline:1px solid #f2dfae; outline-offset:5px; border-radius:20px; }

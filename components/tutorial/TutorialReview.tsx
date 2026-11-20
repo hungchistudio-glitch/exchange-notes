@@ -26,6 +26,8 @@ const LANGUAGES: ReadonlyArray<{ value: InterfaceLanguage; label: string }> = [
   { value: "spanish", label: "Español" },
   { value: "french", label: "Français" },
   { value: "italian", label: "Italiano" },
+  { value: "japanese", label: "日本語" },
+  { value: "korean", label: "한국어" },
 ];
 
 const WIDTHS = [320, 375, 430, 768] as const;

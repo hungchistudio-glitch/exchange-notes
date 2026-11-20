@@ -89,7 +89,8 @@ ${advanced ? "- Preserve the selected advanced or specialist sense in a new, sel
    checks too. Cheap, and it does not depend on the model having complied.
    ========================================================= */
 
-const CJK = /[\u3400-\u4dbf\u4e00-\u9fff\u3040-\u30ff]/;
+/* Chinese, Japanese kana and Korean Hangul (Korean since 2026-11-16). */
+const CJK = /[\u3400-\u4dbf\u4e00-\u9fff\u3040-\u30ff\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]/;
 const BRACKETED = /[（(][^）)]*[）)]/g;
 const LATIN_ISH = /[A-Za-z\u00c0-\u024f]/;
 const LATIN_ISH_ALL = /[A-Za-z\u00c0-\u024f]/g;
@@ -165,8 +166,8 @@ const ALWAYS_ENDS_IT = /\n/;
  * to protect.
  */
 const ENDS_A_CJK_SENTENCE = [
-  /\*?\s*(?:English|Spanish|French|Italian|Chinese|Traditional Chinese)\s*:/i,
-  /'(?:en|es|fr|it|zh-TW)'\s*:/,
+  /\*?\s*(?:English|Spanish|French|Italian|Chinese|Traditional Chinese|Japanese|Korean)\s*:/i,
+  /'(?:en|es|fr|it|zh-TW|ja|ko)'\s*:/,
   /\s->\s/,
   /\s?\[/,
   /\s(?:Wait|Actually|Correction|Note|Okay|Perfect)\b[,.:]/i,
