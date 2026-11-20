@@ -34,6 +34,7 @@ import PocketKeysSettingsButton from "@/components/settings/PocketKeysSettingsBu
 import SettingsSection from "@/components/settings/SettingsSection";
 import InterfaceSoundsSettingsButton from "@/components/settings/InterfaceSoundsSettingsButton";
 import NewsSourceHealthRow from "@/components/settings/NewsSourceHealthRow";
+import ReportsOwnerRow from "@/components/settings/ReportsOwnerRow";
 import ProfileLanguageSettingsButton from "@/components/settings/ProfileLanguageSettingsButton";
 import DailyGoalSettingsButton from "@/components/settings/DailyGoalSettingsButton";
 import PronunciationSettingsButton from "@/components/settings/PronunciationSettingsButton";
@@ -575,6 +576,9 @@ export default function ProfilePage() {
 
             {/* The owner's line when the news's Guardian key stops working. */}
             <NewsSourceHealthRow />
+
+            {/* The owner's way to readers' reports (回報問題). */}
+            <ReportsOwnerRow />
 
           </SettingsSection>
 

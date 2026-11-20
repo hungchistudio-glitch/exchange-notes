@@ -65,12 +65,18 @@ export async function refillDailyNewsPool(
   );
 
   const candidates = await selectTodaysArticles((url) => ingested.has(url));
-  /* The categories the night lacks first, so a catch-up fills World before a
-     third Art story; stable otherwise, keeping the slots' own order. */
+  /* The categories the night lacks first, one story each, so a run fills
+     World, Japan and Korea before a third Art story (fourteen slots, twelve
+     cards); stable otherwise, keeping the slots' own order. */
+  const firstOfItsKind = new Set<string>();
   const articles = limit === undefined
     ? candidates
     : candidates
-      .map((article, index) => ({ article, index, missing: !have.has(article.category) }))
+      .map((article, index) => {
+        const missing = !have.has(article.category) && !firstOfItsKind.has(article.category);
+        firstOfItsKind.add(article.category);
+        return { article, index, missing };
+      })
       .sort((a, b) => Number(b.missing) - Number(a.missing) || a.index - b.index)
       .slice(0, Math.max(0, limit))
       .map(({ article }) => article);

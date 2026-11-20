@@ -919,6 +919,8 @@ const english: TranslationDictionary = {
       politics: "Politics",
       general: "News",
       taiwan: "Taiwan",
+      japan: "Japan",
+      korea: "Korea",
     },
 
     latestStoriesLabel: "Latest stories",
@@ -2591,6 +2593,27 @@ const english: TranslationDictionary = {
       askRestaurant:
         "Ingredients are Yumi's reading of the name, not the kitchen's. Ask the restaurant about anything you must avoid.",
     },
+  },
+
+  reports: {
+    button: "Report a problem",
+    title: "Report a problem",
+    description: "Tell us what looks wrong: a translation, a reading, a clue. Only the app’s team reads it.",
+    quotedLabel: "About",
+    noteLabel: "What’s wrong? (optional)",
+    notePlaceholder: "e.g. this reading should be …",
+    send: "Send",
+    sending: "Sending…",
+    sent: "Thank you — sent.",
+    failed: "It couldn’t be sent. Try again in a moment.",
+    limited: "That’s today’s reports — thank you for all of them. Try again tomorrow.",
+    reviewTitle: "Reports",
+    reviewSubtitle: "What readers found wrong, newest first.",
+    reviewEmpty: "No open reports.",
+    resolve: "Done",
+    ownerRow: "Readers’ reports",
+    ownerRowDescription: "{count} open",
+    surfaces: { word: "Word", news: "News", game: "Word game", lab: "Pronunciation Lab" },
   },
 
   settings: {

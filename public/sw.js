@@ -61,6 +61,7 @@ const APP_PAGE_ROOTS = [
   "/profile",
   "/pronunciation",
   "/recap",
+  "/reports",
   "/review",
   "/scanner",
   "/shop",

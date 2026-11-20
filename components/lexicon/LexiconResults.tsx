@@ -37,6 +37,8 @@ import type { LexiconEntry, LexiconLanguages } from "@/lib/lexicon/types";
  * first paint should not carry (tests/routeImportWeight.test.ts).
  */
 const OtherReadings = lazy(() => import("@/components/pronunciation/OtherReadings"));
+/* Report a problem (Chi, 2026-11-16: 回報問題). */
+const ReportProblem = lazy(() => import("@/components/reports/ReportProblem"));
 import {
   INTERFACE_LANGUAGE_CODE,
   LANGUAGES,
@@ -593,6 +595,13 @@ export default function LexiconResults({
                       ipa={entry.termIpa}
                       suggested={entry.termReadings}
                       tone={tone}
+                    />
+                    <ReportProblem
+                      surface="word"
+                      itemKey={`${languages.sourceLanguage}:${entry.term}`}
+                      quoted={entry.translation ? `${entry.term} — ${entry.translation}` : entry.term}
+                      language={languages.sourceLanguage}
+                      className="-ml-2 mt-1.5"
                     />
                   </Suspense>
                 </div>

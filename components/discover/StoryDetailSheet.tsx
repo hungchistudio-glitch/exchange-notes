@@ -3,7 +3,7 @@
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage, getLanguageName } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import {
   Check,
   ChevronRight,
@@ -25,6 +25,9 @@ import { fill, plural } from "@/lib/i18n/format";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import { DISCOVER_COLORS, type DailyNewsCard } from "./types";
+
+/* Report a problem (Chi, 2026-11-16: 回報問題), loaded when a sheet first shows it. */
+const ReportProblem = lazy(() => import("@/components/reports/ReportProblem"));
 
 type StoryDetailSheetProps = {
   card: DailyNewsCard | null;
@@ -320,6 +323,16 @@ export default function StoryDetailSheet({
             className="shrink-0 text-ink-faint"
           />
         </button>
+
+        <Suspense fallback={null}>
+          <ReportProblem
+            surface="news"
+            itemKey={card.id}
+            quoted={card.titles[primaryLanguage] ?? ""}
+            language={primaryLanguage}
+            className="-ml-2"
+          />
+        </Suspense>
       </div>
     </BottomSheet>
   );

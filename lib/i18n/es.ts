@@ -918,6 +918,8 @@ const spanish: TranslationDictionary = {
       politics: "Política",
       general: "Actualidad",
       taiwan: "Taiwán",
+      japan: "Japón",
+      korea: "Corea",
     },
 
     latestStoriesLabel: "Últimas historias",
@@ -2587,6 +2589,27 @@ const spanish: TranslationDictionary = {
       askRestaurant:
         "Los ingredientes son la lectura que Yumi hace del nombre, no lo que dice la cocina. Pregunta en el restaurante por cualquier cosa que debas evitar.",
     },
+  },
+
+  reports: {
+    button: "Informar de un problema",
+    title: "Informar de un problema",
+    description: "Dinos qué parece estar mal: una traducción, una lectura, una pista. Solo lo lee el equipo de la app.",
+    quotedLabel: "Sobre",
+    noteLabel: "¿Qué está mal? (opcional)",
+    notePlaceholder: "p. ej., esta lectura debería ser…",
+    send: "Enviar",
+    sending: "Enviando…",
+    sent: "Gracias, enviado.",
+    failed: "No se pudo enviar. Inténtalo de nuevo en un momento.",
+    limited: "Ya son los informes de hoy; gracias por todos. Vuelve a intentarlo mañana.",
+    reviewTitle: "Informes",
+    reviewSubtitle: "Lo que los lectores encontraron mal, lo más reciente primero.",
+    reviewEmpty: "No hay informes pendientes.",
+    resolve: "Hecho",
+    ownerRow: "Informes de lectores",
+    ownerRowDescription: "{count} pendientes",
+    surfaces: { word: "Palabra", news: "Noticias", game: "Juego de palabras", lab: "Laboratorio de pronunciación" },
   },
 
   settings: {

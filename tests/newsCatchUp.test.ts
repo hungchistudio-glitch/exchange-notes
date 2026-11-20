@@ -120,6 +120,22 @@ describe("the night's catch-up", () => {
     expect(night.inserted.map((row) => row.category)).toEqual(["World", "Science", "Environment"]);
   });
 
+  it("takes each category's first story before any second one (2026-11-16)", async () => {
+    // Fourteen slots, twelve cards: Japan and Korea get in, a third Art and Fashion wait.
+    selectTodaysArticles.mockResolvedValue(
+      ["Art", "Technology", "Fashion", "Art", "Technology", "Fashion", "Art", "Fashion",
+        "World", "Science", "Environment", "Taiwan", "Japan", "Korea"].map(article),
+    );
+    const night: Night = { tonight: [], lockAt: null, lockWrites: 0, inserted: [] };
+    const result = await catchUpDailyNews(fakeSupabase(night), Date.now());
+
+    expect(result).toEqual({ decision: "ran", have: 0, added: 12 });
+    expect(night.inserted.map((row) => row.category)).toEqual([
+      "Art", "Technology", "Fashion", "World", "Science", "Environment", "Taiwan", "Japan", "Korea",
+      "Art", "Technology", "Fashion",
+    ]);
+  });
+
   it("turns away a second knock that lands within the same ten minutes", async () => {
     const night: Night = { tonight: ["Art"], lockAt: Date.now() - CATCH_UP_EVERY_MS / 2, lockWrites: 0, inserted: [] };
     const result = await catchUpDailyNews(fakeSupabase(night), Date.now());
