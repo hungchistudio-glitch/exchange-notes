@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { koreanPronounced } from "@/lib/korean/romanize";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { setReadingDisplay, useReadingDisplay } from "@/components/speech/Furigana";
 import { SpokenReading, useSpeakToggle } from "@/components/speech/Spoken";
 import type { SpeechLanguage } from "@/lib/speech";
 import usePhonetics from "@/hooks/usePhonetics";
+import type { Bridge, BridgeEntry } from "@/lib/kanjiBridge";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { insertValues } from "@/lib/utils";
 
@@ -62,10 +63,17 @@ export default function PronunciationBlock({
   const { t } = useTranslation();
   const phoneticsFor = usePhonetics(entries);
   const display = useReadingDisplay();
+  /* The kanji bridge: a Korean word's hanja, a Japanese one in Traditional
+     forms (Chi, 2026-11-16: 漢字橋樑). */
+  const bridgeEntries = useMemo(
+    () => entries.map((entry) => ({ text: entry.text?.trim() ?? "", language: entry.language })),
+    [entries],
+  );
+  const bridges = useKanjiBridge(bridgeEntries);
 
   const groups = useMemo(
     () =>
-      entries.flatMap((entry) => {
+      entries.flatMap((entry, index) => {
         const text = entry.text?.trim() ?? "";
         if (!text) return [];
 
@@ -104,10 +112,11 @@ export default function PronunciationBlock({
                   ["ipa", ipa],
                 ];
         const readings = lines.flatMap(([script, label]) => (label ? [{ script, label }] : []));
+        const bridge = bridges[index] ?? null;
 
-        return readings.length ? [{ readings, text, speechTag, language: entry.language }] : [];
+        return readings.length || bridge ? [{ readings, text, speechTag, language: entry.language, bridge }] : [];
       }),
-    [entries, phoneticsFor, display],
+    [entries, phoneticsFor, display, bridges],
   );
 
   if (groups.length === 0) return null;
@@ -117,39 +126,104 @@ export default function PronunciationBlock({
       className={`space-y-1.5 break-words font-sans text-[0.6875rem] font-normal leading-[1.5] tracking-[-0.01em] text-ink-soft ${className}`}
     >
       {groups.map((group) => {
-        const key = (
+        const id = `${group.language}-${group.text}`;
+        const key = group.readings.length ? (
           <ReadingKey
-            key={`${group.language}-${group.text}`}
             group={group}
             label={insertValues(t.vocabulary.detail.listenAriaLabel, {
               text: group.text,
             })}
           />
-        );
-        if (group.language !== "ko") return key;
+        ) : null;
         /* Korean's one line swaps between romanization and IPA (Chi,
            2026-11-16: 同一行點一下互換), and the choice is remembered. */
         const ipaShown = display.korean === "ipa";
+        const reading =
+          group.language === "ko" && key ? (
+            <span className="flex items-center gap-1.5">
+              {key}
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setReadingDisplay({ korean: ipaShown ? "rr" : "ipa" });
+                }}
+                aria-label={ipaShown ? t.settings.readingDisplay.swapToRomanization : t.settings.readingDisplay.swapToIpa}
+                title={ipaShown ? t.settings.readingDisplay.swapToRomanization : t.settings.readingDisplay.swapToIpa}
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[0.75rem] text-ink-faint transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30"
+              >
+                ⇄
+              </button>
+            </span>
+          ) : (
+            key
+          );
+        if (!group.bridge) return <Fragment key={id}>{reading}</Fragment>;
         return (
-          <span key={`${group.language}-${group.text}`} className="flex items-center gap-1.5">
-            {key}
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setReadingDisplay({ korean: ipaShown ? "rr" : "ipa" });
-              }}
-              aria-label={ipaShown ? t.settings.readingDisplay.swapToRomanization : t.settings.readingDisplay.swapToIpa}
-              title={ipaShown ? t.settings.readingDisplay.swapToRomanization : t.settings.readingDisplay.swapToIpa}
-              className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[0.75rem] text-ink-faint transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30"
-            >
-              ⇄
-            </button>
+          <span key={id} className="block">
+            {reading}
+            <BridgeLine
+              bridge={group.bridge}
+              label={group.bridge.kind === "hanja" ? t.settings.readingDisplay.hanja : t.settings.readingDisplay.traditionalForms}
+            />
           </span>
         );
       })}
     </div>
+  );
+}
+
+/* =========================================================
+   The kanji bridge for the words on a card (lib/kanjiBridge.ts)
+
+   Kept in this file rather than a hook of its own: every word card reaches
+   it, and tests/routeImportWeight.test.ts counts each file home and the
+   library parse. Its tables are fetched the first time a Japanese or
+   Korean word needs them, once for the whole session; a card in any other
+   language never loads them.
+   ========================================================= */
+
+type BridgeModule = typeof import("@/lib/kanjiBridge");
+
+let loaded: BridgeModule | null = null;
+let loading: Promise<BridgeModule> | null = null;
+
+function load(): Promise<BridgeModule> {
+  loading ??= import("@/lib/kanjiBridge").then((module) => (loaded = module));
+  return loading;
+}
+
+/** Whether a word could have a bridge at all, before the tables load. */
+function mayHaveBridge(entry: BridgeEntry): boolean {
+  if (entry.language === "ko") return /[가-힣]/.test(entry.text);
+  if (entry.language === "ja") return /\p{Script=Han}/u.test(entry.text);
+  return false;
+}
+
+/** Each entry's bridge, by position; null where there is none (yet). */
+function useKanjiBridge(entries: readonly BridgeEntry[]): (Bridge | null)[] {
+  const wanted = entries.some(mayHaveBridge);
+  const [module, setModule] = useState<BridgeModule | null>(loaded);
+
+  useEffect(() => {
+    if (!wanted || module) return;
+    let live = true;
+    load().then(
+      (found) => { if (live) setModule(found); },
+      () => { /* No bridge is fine; the card is whole without it. */ },
+    );
+    return () => { live = false; };
+  }, [wanted, module]);
+
+  return useMemo(
+    () =>
+      entries.map((entry, index) =>
+        module && mayHaveBridge(entry)
+          ? module.bridgeFor(entry, entries.filter((_, other) => other !== index))
+          : null,
+      ),
+    [entries, module],
   );
 }
 
@@ -166,7 +240,18 @@ type ReadingGroup = {
   text: string;
   speechTag: SpeechLanguage;
   language: LanguageCode;
+  bridge: Bridge | null;
 };
+
+/** 漢字 圖書館 under 도서관; 繁體 經驗 under 経験. */
+function BridgeLine({ bridge, label }: { bridge: Bridge; label: string }) {
+  return (
+    <span className="font-cjk mt-0.5 block text-ink-soft" data-kanji-bridge={bridge.kind}>
+      <span className="text-ink-faint">{label}</span>{" "}
+      <span lang="zh-TW">{bridge.text}</span>
+    </span>
+  );
+}
 
 /**
  * One language's readings, which are also its play key. While it plays, the

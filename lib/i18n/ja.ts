@@ -1461,6 +1461,28 @@ const japanese: TranslationDictionary = {
         empty: "この言語の単語はまだありません。",
         count: "読み方{count}通り",
       },
+      alphabet: {
+        kanaTitle: "五十音表",
+        kanaDescription: "ひらがなとカタカナを行ごとに。タップすると音が聞けます。",
+        kanaCard: "ひらがなとカタカナ",
+        hangulTitle: "ハングル表",
+        hangulDescription: "すべての子音と母音、そしてそれが作る音節。タップすると音が聞けます。",
+        hangulCard: "すべての字母と音節",
+        hint: "文字をタップすると音が聞けます。",
+        hiragana: "ひらがな",
+        katakana: "カタカナ",
+        basic: "清音",
+        voiced: "濁音・半濁音",
+        combined: "拗音",
+        consonants: "子音",
+        vowels: "母音",
+        syllables: "音節表",
+        basicConsonants: "基本子音",
+        tenseConsonants: "濃音",
+        basicVowels: "基本母音",
+        compoundVowels: "複合母音",
+      },
+
       modules: {
         sounds: {
           title: "音",
@@ -2674,6 +2696,8 @@ const japanese: TranslationDictionary = {
       pinyin: "ピンイン",
       swapToIpa: "IPA を表示",
       swapToRomanization: "ローマ字表記を表示",
+      hanja: "漢字",
+      traditionalForms: "繁体字",
     },
     pronunciation: {
       rowTitle: "発音",

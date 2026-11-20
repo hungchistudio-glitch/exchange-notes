@@ -1534,6 +1534,8 @@ export type TranslationDictionary = {
        * The Lab's one-spelling-several-readings module (ReadingsModule).
        * correct, incorrect: {example}; result: {correct}, {total}; count: {count}.
        */
+      /** The kana and Hangul charts (AlphabetModule, Chi 2026-11-16); the *Card pair is the Lab landing's line. */
+      alphabet: { kanaTitle: string; kanaDescription: string; kanaCard: string; hangulTitle: string; hangulDescription: string; hangulCard: string; hint: string; hiragana: string; katakana: string; basic: string; voiced: string; combined: string; consonants: string; vowels: string; syllables: string; basicConsonants: string; tenseConsonants: string; basicVowels: string; compoundVowels: string };
       readings: { title: string; subtitle: string; compare: string; quiz: string; playAll: string; question: string; listenAgain: string; correct: string; incorrect: string; next: string; result: string; again: string; empty: string; count: string };
 
       modules: {
@@ -2898,6 +2900,9 @@ export type TranslationDictionary = {
       pinyin: string;
       swapToIpa: string;
       swapToRomanization: string;
+      /** The kanji bridge's labels (lib/kanjiBridge.ts): a Korean word's hanja, a Japanese word in Traditional forms. */
+      hanja: string;
+      traditionalForms: string;
     };
 
     pronunciation: {

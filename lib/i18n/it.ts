@@ -1529,6 +1529,28 @@ const italian: TranslationDictionary = {
         empty: "Ancora nessuna parola per questa lingua.",
         count: "{count} pronunce",
       },
+      alphabet: {
+        kanaTitle: "Tabella dei kana",
+        kanaDescription: "Tutti gli hiragana e i katakana, riga per riga. Toccane uno per ascoltarlo.",
+        kanaCard: "Hiragana e katakana",
+        hangulTitle: "Tabella dell’hangul",
+        hangulDescription: "Tutte le consonanti e le vocali, e le sillabe che formano. Toccane una per ascoltarla.",
+        hangulCard: "Ogni lettera, ogni sillaba",
+        hint: "Tocca una lettera per ascoltarla.",
+        hiragana: "Hiragana",
+        katakana: "Katakana",
+        basic: "Di base",
+        voiced: "Sonori",
+        combined: "Combinati",
+        consonants: "Consonanti",
+        vowels: "Vocali",
+        syllables: "Sillabe",
+        basicConsonants: "Consonanti di base",
+        tenseConsonants: "Consonanti tese",
+        basicVowels: "Vocali di base",
+        compoundVowels: "Vocali composte",
+      },
+
       modules: {
         sounds: {
           title: "Suoni",
@@ -2753,6 +2775,8 @@ const italian: TranslationDictionary = {
       pinyin: "Pinyin",
       swapToIpa: "Mostra l’AFI",
       swapToRomanization: "Mostra la romanizzazione",
+      hanja: "Hanja",
+      traditionalForms: "In cinese tradizionale",
     },
     pronunciation: {
       rowTitle: "Pronuncia",

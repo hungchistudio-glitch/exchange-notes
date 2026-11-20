@@ -1588,6 +1588,28 @@ const english: TranslationDictionary = {
         count: "{count} readings",
       },
 
+      alphabet: {
+        kanaTitle: "Kana chart",
+        kanaDescription: "All of hiragana and katakana, row by row. Tap one to hear it.",
+        kanaCard: "Hiragana and katakana",
+        hangulTitle: "Hangul chart",
+        hangulDescription: "Every consonant and vowel, and the syllables they make. Tap one to hear it.",
+        hangulCard: "Every letter, every syllable",
+        hint: "Tap any letter to hear it.",
+        hiragana: "Hiragana",
+        katakana: "Katakana",
+        basic: "Basic",
+        voiced: "Voiced",
+        combined: "Combined",
+        consonants: "Consonants",
+        vowels: "Vowels",
+        syllables: "Syllables",
+        basicConsonants: "Basic consonants",
+        tenseConsonants: "Tense consonants",
+        basicVowels: "Basic vowels",
+        compoundVowels: "Compound vowels",
+      },
+
       modules: {
         sounds: { title: "Sounds", description: "How each one is made" },
         listen: { title: "Listen", description: "Tell them apart" },
@@ -2962,6 +2984,8 @@ const english: TranslationDictionary = {
       pinyin: "Pinyin",
       swapToIpa: "Show IPA",
       swapToRomanization: "Show romanization",
+      hanja: "Hanja",
+      traditionalForms: "In Traditional Chinese",
     },
 
     pronunciation: {
