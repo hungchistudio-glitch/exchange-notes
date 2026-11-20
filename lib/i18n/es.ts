@@ -1587,6 +1587,28 @@ const spanish: TranslationDictionary = {
         count: "{count} pronunciaciones",
       },
 
+      alphabet: {
+        kanaTitle: "Tabla de kana",
+        kanaDescription: "Todo el hiragana y el katakana, fila por fila. Toca uno para oírlo.",
+        kanaCard: "Hiragana y katakana",
+        hangulTitle: "Tabla de hangul",
+        hangulDescription: "Todas las consonantes y vocales, y las sílabas que forman. Toca una para oírla.",
+        hangulCard: "Cada letra, cada sílaba",
+        hint: "Toca cualquier letra para oírla.",
+        hiragana: "Hiragana",
+        katakana: "Katakana",
+        basic: "Básicos",
+        voiced: "Sonoros",
+        combined: "Combinados",
+        consonants: "Consonantes",
+        vowels: "Vocales",
+        syllables: "Sílabas",
+        basicConsonants: "Consonantes básicas",
+        tenseConsonants: "Consonantes tensas",
+        basicVowels: "Vocales básicas",
+        compoundVowels: "Vocales compuestas",
+      },
+
       modules: {
         sounds: { title: "Sonidos", description: "Cómo se produce cada uno" },
         listen: { title: "Escucha", description: "Distínguelos" },

@@ -1461,6 +1461,28 @@ const korean: TranslationDictionary = {
         empty: "이 언어의 단어는 아직 없어요.",
         count: "읽는 법 {count}가지",
       },
+      alphabet: {
+        kanaTitle: "가나 표",
+        kanaDescription: "히라가나와 가타카나를 행별로. 누르면 소리를 들을 수 있어요.",
+        kanaCard: "히라가나와 가타카나",
+        hangulTitle: "한글 자모표",
+        hangulDescription: "모든 자음과 모음, 그리고 그것이 만드는 음절. 누르면 소리를 들을 수 있어요.",
+        hangulCard: "모든 자모와 음절",
+        hint: "글자를 누르면 소리를 들을 수 있어요.",
+        hiragana: "히라가나",
+        katakana: "가타카나",
+        basic: "청음",
+        voiced: "탁음·반탁음",
+        combined: "요음",
+        consonants: "자음",
+        vowels: "모음",
+        syllables: "음절표",
+        basicConsonants: "기본 자음",
+        tenseConsonants: "된소리",
+        basicVowels: "기본 모음",
+        compoundVowels: "이중 모음",
+      },
+
       modules: {
         sounds: {
           title: "소리",

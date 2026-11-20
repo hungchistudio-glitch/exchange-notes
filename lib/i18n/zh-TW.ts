@@ -1573,6 +1573,28 @@ const traditionalChinese: TranslationDictionary = {
         count: "{count} 種讀音",
       },
 
+      alphabet: {
+        kanaTitle: "五十音表",
+        kanaDescription: "平假名與片假名，一行一行排好。點一下就能聽。",
+        kanaCard: "平假名與片假名",
+        hangulTitle: "韓文字母表",
+        hangulDescription: "所有子音與母音，以及它們拼成的音節。點一下就能聽。",
+        hangulCard: "每個字母、每個音節",
+        hint: "點任何一個字母就能聽到它的音。",
+        hiragana: "平假名",
+        katakana: "片假名",
+        basic: "清音",
+        voiced: "濁音・半濁音",
+        combined: "拗音",
+        consonants: "子音",
+        vowels: "母音",
+        syllables: "拼音表",
+        basicConsonants: "基本子音",
+        tenseConsonants: "雙子音（緊音）",
+        basicVowels: "基本母音",
+        compoundVowels: "複合母音",
+      },
+
       modules: {
         sounds: { title: "聲音", description: "每個音怎麼發出來" },
         listen: { title: "聽力", description: "把它們分辨開來" },

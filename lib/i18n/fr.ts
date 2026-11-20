@@ -1529,6 +1529,28 @@ const french: TranslationDictionary = {
         empty: "Pas encore de mots pour cette langue.",
         count: "{count} prononciations",
       },
+      alphabet: {
+        kanaTitle: "Tableau des kana",
+        kanaDescription: "Tous les hiragana et katakana, ligne par ligne. Touchez-en un pour l’entendre.",
+        kanaCard: "Hiragana et katakana",
+        hangulTitle: "Tableau du hangeul",
+        hangulDescription: "Toutes les consonnes et voyelles, et les syllabes qu’elles forment. Touchez-en une pour l’entendre.",
+        hangulCard: "Chaque lettre, chaque syllabe",
+        hint: "Touchez une lettre pour l’entendre.",
+        hiragana: "Hiragana",
+        katakana: "Katakana",
+        basic: "De base",
+        voiced: "Sonores",
+        combined: "Combinés",
+        consonants: "Consonnes",
+        vowels: "Voyelles",
+        syllables: "Syllabes",
+        basicConsonants: "Consonnes de base",
+        tenseConsonants: "Consonnes tendues",
+        basicVowels: "Voyelles de base",
+        compoundVowels: "Voyelles composées",
+      },
+
       modules: {
         sounds: {
           title: "Sons",

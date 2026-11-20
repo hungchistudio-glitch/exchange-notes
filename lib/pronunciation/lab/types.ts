@@ -42,16 +42,18 @@ export type PronunciationModuleId =
   | "rhythm"
   | "review"
   /** One spelling, several readings (破音字, "record" and "record"). */
-  | "readings";
+  | "readings"
+  /** The kana chart, the Hangul chart (Japanese and Korean only). */
+  | "alphabet";
 
 /**
  * The modules an attempt can be filed under — what the database accepts
  * (pronunciation_attempts.module, supabase/migrations/20260823001230). The
  * readings module's quiz is a listening drill and files its attempts as
  * "listen", so the column needed no migration; the type keeps "readings"
- * from ever being written there.
+ * from ever being written there. The alphabet charts record nothing.
  */
-export type AttemptModule = Exclude<PronunciationModuleId, "readings">;
+export type AttemptModule = Exclude<PronunciationModuleId, "readings" | "alphabet">;
 /**
  * How well a unit is known.
  *
@@ -438,8 +440,8 @@ export type TrainingItem = {
   kind: TrainingItemKind;
   /** The unit, pair, lesson or vocabulary row this item is about. */
   targetId: string;
-  /** Which module screen can render it. */
-  module: PronunciationModuleId;
+  /** Which module screen can render it. The charts are never a day's item. */
+  module: Exclude<PronunciationModuleId, "alphabet">;
   label: string;
   /**
    * What the reader is shown, where the label is an id rather than words:

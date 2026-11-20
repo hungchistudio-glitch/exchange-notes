@@ -7,6 +7,7 @@ import {
   AudioLines,
   ChevronRight,
   Ear,
+  Grid3x3,
   Mic,
   RotateCcw,
   Split,
@@ -43,6 +44,7 @@ const MODULE_ICON: Record<PronunciationModuleId, LucideIcon> = {
   words: Type,
   rhythm: Waves,
   readings: Split,
+  alphabet: Grid3x3,
   review: RotateCcw,
 };
 
@@ -52,6 +54,7 @@ const MODULE_ORDER: PronunciationModuleId[] = [
   "speak",
   "words",
   "rhythm",
+  "alphabet",
   "readings",
   "review",
 ];
@@ -203,7 +206,7 @@ export default function LabLanding() {
           )}
         </section>
 
-        {/* ── The seven modules ─────────────────────────────────── */}
+        {/* ── The modules ───────────────────────────────────────── */}
         {/*
           A nav rather than a section: these seven are the Lab's primary
           navigation, and naming the landmark is what lets a screen-reader
@@ -214,6 +217,13 @@ export default function LabLanding() {
             {MODULE_ORDER.filter((module) => moduleHasContent(pack, module)).map(
               (module) => {
                 const Icon = MODULE_ICON[module];
+                /* The alphabet card is named for the chart it opens. */
+                const card =
+                  module === "alphabet"
+                    ? pack.language === "ko"
+                      ? { title: copy.alphabet.hangulTitle, description: copy.alphabet.hangulCard }
+                      : { title: copy.alphabet.kanaTitle, description: copy.alphabet.kanaCard }
+                    : copy.modules[module];
 
                 return (
                   <Link
@@ -227,10 +237,10 @@ export default function LabLanding() {
 
                     <span className="mt-3 block">
                       <span className="font-cjk block text-[0.9375rem] font-bold tracking-[-0.01em]">
-                        {copy.modules[module].title}
+                        {card.title}
                       </span>
                       <span className="font-cjk mt-0.5 block text-xs leading-5 text-ink-faint">
-                        {copy.modules[module].description}
+                        {card.description}
                       </span>
                     </span>
                   </Link>

@@ -151,5 +151,10 @@ export function moduleHasContent(
       // Every language has a list (lib/pronunciation/heteronyms), kept out
       // of here so the registry does not carry five languages of it.
       return true;
+    case "alphabet":
+      // The two writing systems a beginner has to learn first
+      // (lib/pronunciation/alphabets.ts). English's A–Z and zhuyin are
+      // sound groups of their packs instead.
+      return pack.language === "ja" || pack.language === "ko";
   }
 }
