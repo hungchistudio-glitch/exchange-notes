@@ -140,6 +140,24 @@ describe("Yumi widget seven-language payload", () => {
     });
   });
 
+  it("keeps a Japanese or Korean interface instead of turning it English", () => {
+    for (const interfaceLanguage of ["japanese", "korean"] as const) {
+      expect(
+        normalizeYumiWidgetPayload({ ...genericPayload("ja", "ko"), interfaceLanguage })
+          ?.interfaceLanguage,
+      ).toBe(interfaceLanguage);
+    }
+    // An older app writes the code; it still means the same language.
+    expect(
+      normalizeYumiWidgetPayload({ ...genericPayload("ko", "en"), interfaceLanguage: "ko" })
+        ?.interfaceLanguage,
+    ).toBe("korean");
+    expect(
+      normalizeYumiWidgetPayload({ ...genericPayload("ko", "en"), interfaceLanguage: "klingon" })
+        ?.interfaceLanguage,
+    ).toBe("english");
+  });
+
   it("rejects a malformed pair with the same language on both sides", () => {
     expect(
       normalizeYumiWidgetPayload({

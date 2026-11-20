@@ -169,6 +169,45 @@ function pronounce(word: string): Said[] | null {
   return syllables;
 }
 
+/* =========================================================
+   The pronounced form, in Hangul (Chi, 2026-11-16)
+
+   Korean dictionaries print a word's pronunciation in Hangul between
+   brackets: 한국어 [한구거], 학교 [학꾜], 감사합니다 [감사함니다]. A learner
+   who reads Hangul reads that faster than any romanization, so word cards
+   show it beside RR or IPA. Tensing is written here (ㄱ → ㄲ), as those
+   dictionaries write it.
+   ========================================================= */
+
+function composeSaid(said: Said[]): string {
+  return said
+    .map((syllable) => {
+      const initial = syllable.tense ? TENSE[syllable.initial] ?? syllable.initial : syllable.initial;
+      return String.fromCharCode(
+        BASE +
+          INITIALS.indexOf(initial) * 588 +
+          VOWELS.indexOf(syllable.vowel) * 28 +
+          FINALS.indexOf(syllable.final),
+      );
+    })
+    .join("");
+}
+
+/**
+ * The Korean in `text` written as it is said, or null when that is how it
+ * is spelt already (가다, 사람): a card shows the line only when it teaches
+ * something.
+ */
+export function koreanPronounced(text: string): string | null {
+  const written = text.normalize("NFC").trim();
+  if (!/[가-힣]/.test(written)) return null;
+  const said = written.replace(/[가-힣]+/g, (word) => {
+    const syllables = pronounce(word);
+    return syllables ? composeSaid(syllables) : word;
+  });
+  return said === written ? null : said;
+}
+
 const RR_INITIAL: Record<string, string> = {
   ㄱ: "g", ㄲ: "kk", ㄴ: "n", ㄷ: "d", ㄸ: "tt", ㄹ: "r", ㅁ: "m", ㅂ: "b", ㅃ: "pp", ㅅ: "s",
   ㅆ: "ss", ㅇ: "", ㅈ: "j", ㅉ: "jj", ㅊ: "ch", ㅋ: "k", ㅌ: "t", ㅍ: "p", ㅎ: "h",

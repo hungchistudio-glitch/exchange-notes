@@ -42,7 +42,7 @@
     radial-gradient(circle at 34% 50%,#fff 0 18%,#fff0 30%),
     radial-gradient(closest-side,#fffffff0 0 38%,#ffffff00 100%);
   rotate:-26deg; }
-.cookie span { position:relative; display:grid; place-items:center; height:100%; font:500 1.3rem/1 Georgia,"Songti TC",serif; color:var(--ink);
+.cookie span { position:relative; display:grid; place-items:center; height:100%; font:500 1.3rem/1 Georgia,var(--cjk-serif),serif; color:var(--ink);
   text-shadow:0 1px 0 #ffffff8c,0 -1px 0 #1f281826; }
 /* clear glass: the ground shows through, light gathers at its foot */
 .cookie[data-tone="1"] {
@@ -100,12 +100,12 @@
 .wordRow { display:flex; align-items:center; justify-content:space-between; gap:15px; }
 .wordRow > div { min-width:0; }
 .language { font-size:0.6875rem; color:#77836a; }
-.wordRow h2 { font:2rem/1.2 Georgia,"Songti TC",serif; margin:7px 0; overflow-wrap:anywhere; }
+.wordRow h2 { font:2rem/1.2 Georgia,var(--cjk-serif),serif; margin:7px 0; overflow-wrap:anywhere; }
 .translation { font-size:1.375rem; line-height:1.5; margin:5px 0; overflow-wrap:anywhere; }
 .speaker { flex:none; width:46px; height:46px; display:grid; place-items:center; border:1px solid #d9e1cf; border-radius:50%; background:#edf1e6; color:#526a43; cursor:pointer; }
 .speaker[aria-pressed="true"] { background:#647b54; color:white; }
 .readings { color:#7b876e; font-size:0.75rem; line-height:1.6; margin:5px 0 12px; }
-.example { border-left:1px solid #cfd8c2; padding-left:13px; margin:12px 0 0; font:italic .875rem/1.7 Georgia,"Songti TC",serif; color:#758168; overflow-wrap:anywhere; }
+.example { border-left:1px solid #cfd8c2; padding-left:13px; margin:12px 0 0; font:italic .875rem/1.7 Georgia,var(--cjk-serif),serif; color:#758168; overflow-wrap:anywhere; }
 .audioStatus { font-size:0.75rem; color:#956451; margin:0; }
 .audioStatus:empty { display:none; }
 .cardFooter { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:18px 25px 22px; border-top:1px solid #e4e7dc; font-size:0.75rem; }
@@ -156,15 +156,15 @@
     0 6px 14px -6px #4a3f2a40;
   color:#24211b; }
 .cardHeader { color:#8b8170; }
-.wordRow h2 { font:500 2.6rem/1.1 Georgia,"Songti TC",serif; letter-spacing:-.01em; margin:8px 0 6px; }
+.wordRow h2 { font:500 2.6rem/1.1 Georgia,var(--cjk-serif),serif; letter-spacing:-.01em; margin:8px 0 6px; }
 .translation { font:1.5rem/1.45 var(--cjk-serif),Georgia,serif; color:#2b2720; }
 .language { color:#8b8170; letter-spacing:.04em; }
-.readings { font:italic 1rem/1.5 Georgia,"Songti TC",serif; color:#6f6658; }
+.readings { font:italic 1rem/1.5 Georgia,var(--cjk-serif),serif; color:#6f6658; }
 .speaker { width:48px; height:48px; border:1px solid #ffffff; background:linear-gradient(160deg,#fffdf8,#ece5d6); color:#3a352c;
   box-shadow:0 6px 12px -6px #4a3f2a66,0 1px 2px #4a3f2a26,inset 0 1px 0 #fff; transition:box-shadow .15s,transform .15s; }
 .speaker:active { transform:translateY(1px); box-shadow:0 2px 4px -2px #4a3f2a55,inset 0 2px 4px #4a3f2a26; }
 .speaker[aria-pressed="true"] { background:#2b2720; color:#fffdf8; border-color:#2b2720; }
-.example { border-left:0; padding-left:0; font:1.0625rem/1.65 Georgia,"Songti TC",serif; font-style:normal; color:#3d382f; }
+.example { border-left:0; padding-left:0; font:1.0625rem/1.65 Georgia,var(--cjk-serif),serif; font-style:normal; color:#3d382f; }
 .side + .side { border-top:1px solid #e6dfcf; }
 .cardFooter { border-top:1px solid #e6dfcf; }
 .cardFooter a { color:#6f6658; }

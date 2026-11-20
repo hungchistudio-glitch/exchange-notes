@@ -61,7 +61,28 @@ function fixtures(count: number): VocabularyItem[] {
   }) as unknown as VocabularyItem[];
 }
 
-const ITEMS = fixtures(60);
+/* A Korean and a Japanese word first, for their reading lines (2026-11-16):
+   한국어 shows [한구거] beside its romanization; 図書館 its furigana. */
+function eastAsian(): VocabularyItem[] {
+  const [first] = fixtures(1);
+  return [
+    ["ko", "한국어", "韓語", "한국어를 매일 공부해요."],
+    ["ja", "図書館", "圖書館", "毎日図書館で勉強します。"],
+  ].map(([language, word, translation, example], index) => ({
+    ...first,
+    id: `review-${language}`,
+    word,
+    translation,
+    language,
+    word_language: language,
+    texts: { [language]: word, "zh-TW": translation },
+    example_sentence: example,
+    status: "new",
+    created_at: new Date(Date.UTC(2026, 0, 3) + index).toISOString(),
+  })) as unknown as VocabularyItem[];
+}
+
+const ITEMS = [...eastAsian(), ...fixtures(60)];
 
 export default function VocabularyCardReview() {
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);

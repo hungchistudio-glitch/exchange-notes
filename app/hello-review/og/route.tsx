@@ -4,13 +4,18 @@ import { reviewRouteOnly } from "@/lib/reviewRoutes";
 
 /*
  * The link preview drawn from a fixture (?fixture=star for the Cosmic one,
- * ?fixture=long for the long phrase, ?fixture=gone for the card a
+ * ?fixture=long for the long phrase, ?fixture=jako for Japanese and
+ * Korean, ?fixture=gone for the card a
  * turned-off hello gets), on a development machine or a preview build only.
  */
 export async function GET(request: Request) {
   reviewRouteOnly();
   const fixture = new URL(request.url).searchParams.get("fixture");
   if (fixture === "gone") return helloOgImage({ status: "revoked" });
+  // ?fixture=jako: the library word between Japanese and Korean, for the faces.
+  if (fixture === "jako") {
+    return helloOgImage({ status: "active", hello: { ...FIXTURE_LIBRARY, pair: ["ja", "ko"], source: "ja" } });
+  }
   const hello = fixture === "star" ? FIXTURE_STAR_COSMIC : fixture === "long" ? FIXTURE_LONG_PHRASE : FIXTURE_LIBRARY;
   return helloOgImage({ status: "active", hello });
 }

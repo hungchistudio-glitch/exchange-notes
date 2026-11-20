@@ -1,3 +1,4 @@
+import { hasKanji, toHiragana } from "@/lib/japanese/kana";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import {
   getRecognitionConstructor,
@@ -138,6 +139,72 @@ export function textSimilarity(spoken: string, target: string): number {
   return Math.max(0, 1 - distance / Math.max(a.length, b.length));
 }
 
+/**
+ * Looks up the kana reading of a Japanese text, or null when none came.
+ * The analyzer passes one that asks the server; tests pass their own.
+ */
+export type JapaneseReadingLookup = (text: string) => Promise<string | null>;
+
+/**
+ * How close a Japanese utterance is to the target, compared by sound, 0–1,
+ * or null when it cannot be told.
+ *
+ * A recogniser writes Japanese the way a newspaper would: you say あさ and
+ * it hears 朝. The Lab's targets are mostly kana, so comparing the letters
+ * marked every correct answer wrong. Both sides are brought to hiragana
+ * first, asking for the reading of any side with kanji in it. When a
+ * reading cannot be had, the answer is null — not measured — rather than a
+ * comparison of 朝 with あさ that would call the learner wrong.
+ */
+export async function japaneseSimilarity(
+  spoken: string,
+  target: string,
+  readingOf: JapaneseReadingLookup,
+): Promise<number | null> {
+  // Composed (NFC), so a reading is asked for as the text is written.
+  const compact = (text: string) =>
+    text.normalize("NFC").replace(/[^\p{Letter}\p{Number}]/gu, "");
+  const a = compact(spoken);
+  const b = compact(target);
+
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+
+  const [kanaA, kanaB] = await Promise.all([
+    hasKanji(a) ? readingOf(a) : Promise.resolve(a),
+    hasKanji(b) ? readingOf(b) : Promise.resolve(b),
+  ]);
+
+  if (!kanaA || !kanaB) return null;
+  return textSimilarity(toHiragana(kanaA), toHiragana(kanaB));
+}
+
+/** How long to wait for a reading before calling the attempt unmeasured. */
+const READING_TIMEOUT_MS = 5000;
+
+/** The reading of one Japanese text, from the app's own lookup. */
+function serverJapaneseReading(signal?: AbortSignal): JapaneseReadingLookup {
+  return async (text) => {
+    try {
+      const timeout = AbortSignal.timeout(READING_TIMEOUT_MS);
+      const response = await fetch("/api/word-pronunciation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texts: [text], language: "ja" }),
+        signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+      });
+      if (!response.ok) return null;
+      const result = (await response.json()) as {
+        phonetics?: Record<string, { kana?: string }>;
+      };
+      const kana = result.phonetics?.[text]?.kana?.trim();
+      return kana || null;
+    } catch {
+      return null;
+    }
+  };
+}
+
 const CORRECT_AT = 0.9;
 const ALMOST_AT = 0.65;
 
@@ -255,7 +322,14 @@ export function createSpeechRecognitionAnalyzer(): PronunciationAnalyzer {
           resolve(result);
         }
 
+        /* Set once an answer is being worked out, so the recogniser's end,
+           its error and the timer cannot each start one. */
+        let finishing = false;
+
         function finish(failure?: PronunciationAnalysisResult["failure"]) {
+          if (settled || finishing) return;
+          finishing = true;
+
           if (!best) {
             settle({
               overall: null,
@@ -267,7 +341,30 @@ export function createSpeechRecognitionAnalyzer(): PronunciationAnalyzer {
             return;
           }
 
-          const similarity = textSimilarity(best.transcript, input.targetText);
+          const heard = best.transcript;
+
+          if (input.language === "ja") {
+            void japaneseSimilarity(heard, input.targetText, serverJapaneseReading(input.signal))
+              .then((similarity) => report(heard, similarity));
+            return;
+          }
+
+          report(heard, textSimilarity(heard, input.targetText));
+        }
+
+        function report(heard: string, similarity: number | null) {
+          if (similarity === null) {
+            // Heard, but its reading could not be had: shown, not scored.
+            settle({
+              transcript: heard,
+              overall: null,
+              dimensions: unmeasured(input.dimensions, "inconclusive"),
+              verdict: "unknown",
+              processing: "cloud",
+            });
+            return;
+          }
+
           const score = Math.round(similarity * 100);
 
           /*
@@ -282,7 +379,7 @@ export function createSpeechRecognitionAnalyzer(): PronunciationAnalyzer {
           };
 
           settle({
-            transcript: best.transcript,
+            transcript: heard,
             overall: score,
             dimensions,
             verdict: verdictForSimilarity(similarity),
