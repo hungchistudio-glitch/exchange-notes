@@ -2329,6 +2329,7 @@ const italian: TranslationDictionary = {
     completedReviewsOne: "Hai completato {count} ripasso.",
     backToVocabulary: "Torna alle tue parole",
     backToHome: "Torna alla Home",
+    backToSettings: "Torna alle Impostazioni",
     grades: {
       again: {
         label: "Di nuovo",

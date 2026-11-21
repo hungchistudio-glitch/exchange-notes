@@ -2454,6 +2454,7 @@ const english: TranslationDictionary = {
     completedReviewsOne: "You completed {count} review.",
     backToVocabulary: "Back to your words",
     backToHome: "Back to Home",
+    backToSettings: "Back to Settings",
     grades: {
       again: {
         label: "Again",

@@ -181,7 +181,7 @@ export function LearningProgressPanelDisplay({
       {/* Four readings about how the reviewing is going, with no way to
           review from here, would be a dashboard. */}
       {unavailable ? null : (
-        <Link href="/review" className={styles.review}>
+        <Link href="/review?from=settings" className={styles.review}>
           <span>{copy.continueReview}</span>
           <ArrowUpRight size={16} aria-hidden="true" />
         </Link>

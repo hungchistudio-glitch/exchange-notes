@@ -473,7 +473,7 @@ export default function ProfilePage() {
             >
               <LearningProgressPanel />
               {/* The week as a card to keep or share (Chi, 2026-11-15). */}
-              <SettingsRow href="/recap" title={t.recap.open} description={t.recap.banner} />
+              <SettingsRow href="/recap?from=settings" title={t.recap.open} description={t.recap.banner} />
             </SettingsSection>
           )}
 

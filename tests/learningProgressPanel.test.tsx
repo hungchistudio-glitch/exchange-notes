@@ -115,7 +115,8 @@ describe("standard settings learning progress", () => {
     expect(Array.from(scales(container), (scale) => scale.style.getPropertyValue("--reading"))).toEqual(["88", "37"]);
     expect(scales(metric(copy.mastered))).toHaveLength(0);
     expect(scales(metric(copy.practice))).toHaveLength(0);
-    expect(screen.getByRole("link", { name: copy.continueReview })).toHaveAttribute("href", "/review");
+    // From Settings, so leaving the review comes back here (2026-11-20).
+    expect(screen.getByRole("link", { name: copy.continueReview })).toHaveAttribute("href", "/review?from=settings");
   });
 
   it("reveals the latest readings and review action when loading finishes", () => {

@@ -20,6 +20,7 @@ import { beginReviewRound, saveReviewResult } from "@/lib/review/saveReviewResul
 import type { ReviewGrade } from "@/types/vocabulary";
 import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
 import MilestoneBanner from "@/components/review/MilestoneBanner";
+import { recapFromReview, reviewDoor, reviewExitHref } from "@/lib/navigation/cameFrom";
 import WeakSpotRadar from "@/components/review/WeakSpotRadar";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
@@ -130,9 +131,13 @@ export default function ReviewPage() {
    * reading as the capture page's Cancel: the value comes from the query
    * string, and treating it as a destination would be an open redirect.
    */
-  const cameFromVocabulary = searchParams.get("from") === "vocabulary";
+  const door = reviewDoor(searchParams.get("from"));
+  const cameFromVocabulary = door === "vocabulary";
   const recapDay = useSyncExternalStore(noSubscription, isRecapDay, () => false);
-  const exitHref = cameFromVocabulary ? "/vocabulary" : "/home";
+  /* Settings' "Continue review" says ?from=settings (Chi, 2026-11-20). */
+  const exitHref = reviewExitHref(door);
+  const exitLabel = cameFromVocabulary ? copy.backToVocabulary : door === "settings" ? copy.backToSettings : copy.backToHome;
+  const recapHref = `/recap?from=${recapFromReview(door)}`;
 
   const [phase, setPhase] = useState<Phase>("landing");
   const [mode, setMode] = useState<Mode>("due");
@@ -581,7 +586,7 @@ export default function ReviewPage() {
           href={exitHref}
           {...rise(3, "mt-6 flex h-12 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-semibold text-white")}
         >
-          {cameFromVocabulary ? copy.backToVocabulary : copy.backToHome}
+          {exitLabel}
         </Link>
       </>
     );
@@ -609,7 +614,7 @@ export default function ReviewPage() {
       <PageTitle
         back={{
           href: exitHref,
-          label: cameFromVocabulary ? copy.backToVocabulary : copy.backToHome,
+          label: exitLabel,
         }}
         eyebrow={copy.eyebrow}
         title={copy.title}
@@ -636,13 +641,13 @@ export default function ReviewPage() {
         )}
 
         {/* A milestone worth sharing, offered once (Chi, 2026-11-15). */}
-        <MilestoneBanner />
+        <MilestoneBanner from={recapFromReview(door)} />
 
         {/* On Sundays and Mondays, the week's card is ready (Chi, 2026-11-15:
             每週回顧卡). Read from the reader's own clock, after hydration. */}
         {recapDay ? (
           <Link
-            href="/recap"
+            href={recapHref}
             className="hud-panel recap-banner mt-4 flex items-center justify-between gap-3 rounded-[22px] border border-line bg-white px-5 py-4"
           >
             <span className="flex items-center gap-2 text-sm font-semibold">
@@ -827,7 +832,7 @@ export default function ReviewPage() {
                 {loading ? "…" : allInLanguage.length}
               </span>
             </div>
-            <Link href="/recap" className="flex items-center justify-between py-3 text-sm">
+            <Link href={recapHref} className="flex items-center justify-between py-3 text-sm">
               <span className="text-ink-soft">{t.recap.open}</span>
               <span className="font-bold">→</span>
             </Link>

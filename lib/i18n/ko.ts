@@ -2261,6 +2261,7 @@ const korean: TranslationDictionary = {
     completedReviewsOne: "복습 {count}회를 끝냈어요.",
     backToVocabulary: "내 단어로 돌아가기",
     backToHome: "홈으로 돌아가기",
+    backToSettings: "설정으로 돌아가기",
     grades: {
       again: {
         label: "다시",

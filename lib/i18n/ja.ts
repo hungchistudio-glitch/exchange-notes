@@ -2261,6 +2261,7 @@ const japanese: TranslationDictionary = {
     completedReviewsOne: "{count}回の復習を終えました。",
     backToVocabulary: "単語に戻る",
     backToHome: "ホームに戻る",
+    backToSettings: "設定に戻る",
     grades: {
       again: {
         label: "もう一度",

@@ -19,6 +19,7 @@ import { friendInviteUrl, getProfileById } from "@/lib/friends";
 import { fill } from "@/lib/i18n/format";
 import { getLanguage } from "@/lib/languages";
 import { loadActivity } from "@/lib/recap/activity";
+import { recapBackHref } from "@/lib/navigation/cameFrom";
 import { markMilestoneSeen, parseMilestone } from "@/lib/recap/milestones";
 import { drawShareCard, type ShareStat } from "@/lib/recap/shareCard";
 import { buildWeekRecap, type AttemptRow, type ReviewRow, type WeekRecap } from "@/lib/recap/weekly";
@@ -175,7 +176,7 @@ export default function WeeklyRecap() {
 
   return (
     <Screen>
-      <PageTitle back={{ href: "/review", label: t.common.back }} eyebrow={copy.eyebrow} title={copy.title} subtitle={range || undefined} />
+      <PageTitle back={{ href: recapBackHref(params.get("from")), label: t.common.back }} eyebrow={copy.eyebrow} title={copy.title} subtitle={range || undefined} />
 
       <div className="space-y-4 px-4 pb-10 sm:px-6">
         <section className="hud-panel recap-card rounded-[28px] border border-line bg-white p-6" aria-live="polite">
