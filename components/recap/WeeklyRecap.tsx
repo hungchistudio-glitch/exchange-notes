@@ -16,7 +16,7 @@ import usePageOrigin from "@/hooks/usePageOrigin";
 import usePhonetics from "@/hooks/usePhonetics";
 import useVocabulary from "@/hooks/useVocabulary";
 import { friendInviteUrl, getProfileById } from "@/lib/friends";
-import { fill } from "@/lib/i18n/format";
+import { fill, plural } from "@/lib/i18n/format";
 import { getLanguage } from "@/lib/languages";
 import { loadActivity } from "@/lib/recap/activity";
 import { recapBackHref } from "@/lib/navigation/cameFrom";
@@ -145,7 +145,7 @@ export default function WeeklyRecap() {
   const quiet = recap ? recap.newWords + recap.reviews + recap.labPractice === 0 : false;
   const inviteUrl = exchangeId && origin ? friendInviteUrl(exchangeId, origin) : null;
   const host = origin ? origin.replace(/^https?:\/\//, "") : "";
-  const footer = recap ? fill(copy.footer, { count: recap.totalWords }) : "";
+  const footer = recap ? plural(recap.totalWords, locale, copy.footerOne, copy.footer) : "";
   const lesson = lessonWord
     ? { label: copy.lessonLabel, word: lessonWord, reading: lessonReading || undefined, meaning: lessonMeaning || undefined }
     : null;

@@ -5,6 +5,7 @@
 @import "./tactile.css";
 @import "./yumi-motion.css";
 @import "./pointer-hover.css";
+@import "./touch.css";
 @import "./hud.css";
 
 :root {

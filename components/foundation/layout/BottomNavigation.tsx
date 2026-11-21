@@ -240,7 +240,7 @@ export default function BottomNavigation({
         /* Opaque, and no backdrop-filter — see the note in AppHeader. This
            one is fixed rather than sticky, so it re-blurs on every scroll
            frame of every screen in the app. */
-        className="relative w-full max-w-xl touch-none select-none rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-[var(--dock-padding)] shadow-[var(--dock-shadow)]"
+        className="relative w-full max-w-xl touch-none select-none [-webkit-touch-callout:none] rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-[var(--dock-padding)] shadow-[var(--dock-shadow)]"
         onPointerDown={scrub.onPointerDown}
         onPointerMove={scrub.onPointerMove}
         onPointerUp={scrub.onPointerUp}

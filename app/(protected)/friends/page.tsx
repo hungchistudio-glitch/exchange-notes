@@ -267,7 +267,7 @@ function FriendsPageContent() {
   }
 
   return (
-    <main className="min-h-screen bg-surface px-4 pb-28 text-black sm:px-6 sm:pb-10">
+    <main className="min-h-dvh bg-surface px-4 pb-28 text-black sm:px-6 sm:pb-10">
       <div className="mx-auto max-w-2xl">
         {/*
           Goes back, rather than going home.

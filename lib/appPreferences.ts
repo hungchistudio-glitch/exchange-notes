@@ -584,10 +584,45 @@ export function getInterfaceMode(): InterfaceMode {
   return isInterfaceMode(saved) ? saved : DEFAULT_INTERFACE_MODE;
 }
 
+/*
+ * The colour iOS paints behind the status bar and around the safe areas of
+ * an installed PWA, and the scheme of the browser's own furniture, per mode.
+ * The server renders both into the head (generateViewport in app/layout.tsx);
+ * a switch in Settings changes the mode without a reload, so the head is set
+ * here too. Until 2026-11-21 it was not: switching to Yumi Cosmic left a
+ * cream band along the top of the deep-space screen until the app was next
+ * opened, the very thing generateViewport exists to prevent.
+ */
+export const THEME_COLOR: Record<InterfaceMode, string> = {
+  standard: "#f5f3ed",
+  "yumi-cosmic": "#08090b",
+};
+
+export const COLOR_SCHEME: Record<InterfaceMode, "light" | "dark"> = {
+  standard: "light",
+  "yumi-cosmic": "dark",
+};
+
+function setHeadMeta(name: string, content: string) {
+  const metas = document.head.querySelectorAll<HTMLMetaElement>(`meta[name="${name}"]`);
+  if (metas.length === 0) {
+    const meta = document.createElement("meta");
+    meta.name = name;
+    meta.content = content;
+    document.head.appendChild(meta);
+    return;
+  }
+  metas.forEach((meta) => {
+    if (meta.content !== content) meta.content = content;
+  });
+}
+
 export function applyInterfaceMode(mode: InterfaceMode) {
   if (typeof document === "undefined") return;
 
   document.documentElement.dataset.interfaceMode = mode;
+  setHeadMeta("theme-color", THEME_COLOR[mode]);
+  setHeadMeta("color-scheme", COLOR_SCHEME[mode]);
 }
 
 export function setInterfaceMode(mode: InterfaceMode) {

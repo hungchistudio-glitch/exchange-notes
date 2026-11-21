@@ -9,7 +9,7 @@ import { SpeakKey, SpokenText } from "@/components/speech/Spoken";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabulary from "@/hooks/useVocabulary";
-import { fill } from "@/lib/i18n/format";
+import { fill, plural } from "@/lib/i18n/format";
 import { getLanguage } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
@@ -49,7 +49,7 @@ async function loadCollections(): Promise<CollectionRows> {
 }
 
 export default function VocabularyStarMap({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = t.starMap;
   const statuses = t.vocabulary.search.statuses;
   const { items } = useVocabulary();
@@ -145,7 +145,7 @@ export default function VocabularyStarMap({ onClose }: { onClose: () => void }) 
             </p>
             <h2 id="star-map-title" className="mt-1 text-[1.5rem] font-bold tracking-[-0.02em]">{copy.title}</h2>
             <p className="mt-0.5 text-[0.8125rem] opacity-75">
-              {fill(copy.subtitle, { count: map.stars.length })}
+              {plural(map.stars.length, locale, copy.subtitleOne, copy.subtitle)}
               {inLanguage.length > MAX_STARS ? ` ${fill(copy.newest, { count: MAX_STARS })}` : ""}
             </p>
           </div>
@@ -188,7 +188,7 @@ export default function VocabularyStarMap({ onClose }: { onClose: () => void }) 
               height={map.height * shown}
               viewBox={`0 0 ${map.width} ${map.height}`}
               role="img"
-              aria-label={fill(copy.subtitle, { count: map.stars.length })}
+              aria-label={plural(map.stars.length, locale, copy.subtitleOne, copy.subtitle)}
               onClick={() => setSelected(null)}
             >
               {map.lines.map((line) => {

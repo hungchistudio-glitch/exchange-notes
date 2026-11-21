@@ -1351,6 +1351,7 @@ const spanish: TranslationDictionary = {
     eyebrow: "Tu biblioteca",
     title: "Mapa estelar",
     subtitle: "{count} palabras; cuanto mejor la conoces, más brilla.",
+    subtitleOne: "{count} palabra; cuanto mejor la conoces, más brilla.",
     newest: "(las {count} más nuevas)",
     kinds: {
       people: "Personas",
@@ -1380,6 +1381,7 @@ const spanish: TranslationDictionary = {
     streak: "Racha",
     topWordLine: "Más repasada: {word}",
     footer: "{count} palabras en tu biblioteca · Exchange Notes",
+    footerOne: "{count} palabra en tu biblioteca · Exchange Notes",
     quiet: "Aún no hay actividad esta semana. Unos repasos llenarán esta tarjeta.",
     lessonLabel: "Palabra de la semana",
     qrLabel: "Escanea para aprender conmigo",
@@ -1659,6 +1661,7 @@ const spanish: TranslationDictionary = {
         empty: "Practica algunos sonidos y esto se irá llenando.",
         viewAll: "Ver todo",
         attempts: "{count} intentos",
+        attemptsOne: "{count} intento",
       },
 
       sounds: {
@@ -1667,6 +1670,7 @@ const spanish: TranslationDictionary = {
         all: "Todos",
         empty: "Todavía no hay sonidos en este grupo.",
         soundCount: "{count} sonidos",
+        soundCountOne: "{count} sonido",
       },
 
       detail: {
@@ -2351,6 +2355,7 @@ const spanish: TranslationDictionary = {
     language: {
       title: "Idioma",
       allLanguages: "Todos los idiomas",
+      allLanguagesShort: "Todos",
       filterAriaLabel: "Filtrar por idioma",
       badgeAriaLabel: "Idioma del vocabulario: {language}",
       emptyTitle: "Aún no hay palabras en {language}",
@@ -3387,6 +3392,7 @@ const spanish: TranslationDictionary = {
     },
     streak: "{count} seguidas",
     streakLabel: "{count} palabras ganadas seguidas. La cuarta trae un cofre mediano y la séptima uno prémium.",
+    streakLabelOne: "{count} palabra ganada seguida. La cuarta trae un cofre mediano y la séptima uno prémium.",
     chestMedium: "Cofre mediano ×2",
     chestPremium: "Cofre prémium ×3",
     rewardTitle: "Del cofre",

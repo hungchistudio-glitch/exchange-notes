@@ -1299,6 +1299,7 @@ const italian: TranslationDictionary = {
     eyebrow: "La tua libreria",
     title: "Mappa stellare",
     subtitle: "{count} parole; più la conosci, più brilla.",
+    subtitleOne: "{count} parola; più la conosci, più brilla.",
     newest: "(le {count} più recenti)",
     kinds: {
       people: "Persone",
@@ -1328,6 +1329,7 @@ const italian: TranslationDictionary = {
     streak: "Serie",
     topWordLine: "La più ripassata: {word}",
     footer: "{count} parole nella tua libreria · Exchange Notes",
+    footerOne: "{count} parola nella tua libreria · Exchange Notes",
     quiet: "Ancora nessuna attività questa settimana. Qualche ripasso riempirà questa scheda.",
     lessonLabel: "Parola della settimana",
     qrLabel: "Scansiona per imparare con me",
@@ -1615,6 +1617,7 @@ const italian: TranslationDictionary = {
         empty: "Esercita qualche suono e qui comparirà il quadro.",
         viewAll: "Vedi tutto",
         attempts: "{count} tentativi",
+        attemptsOne: "{count} tentativo",
       },
       sounds: {
         title: "Suoni",
@@ -1622,6 +1625,7 @@ const italian: TranslationDictionary = {
         all: "Tutti",
         empty: "Ancora nessun suono in questo gruppo.",
         soundCount: "{count} suoni",
+        soundCountOne: "{count} suono",
       },
       detail: {
         articulation: "Articolazione",
@@ -2239,6 +2243,7 @@ const italian: TranslationDictionary = {
     language: {
       title: "Lingua",
       allLanguages: "Tutte le lingue",
+      allLanguagesShort: "Tutte",
       filterAriaLabel: "Filtra per lingua",
       badgeAriaLabel: "Lingua del vocabolo: {language}",
       emptyTitle: "Ancora nessuna parola in {language}",
@@ -3177,6 +3182,7 @@ const italian: TranslationDictionary = {
     },
     streak: "{count} di fila",
     streakLabel: "{count} parole indovinate di fila. La quarta nasconde uno scrigno medio, la settima uno premium.",
+    streakLabelOne: "{count} parola indovinata di fila. La quarta nasconde uno scrigno medio, la settima uno premium.",
     chestMedium: "Scrigno medio ×2",
     chestPremium: "Scrigno premium ×3",
     rewardTitle: "Dallo scrigno",

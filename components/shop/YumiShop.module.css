@@ -1801,7 +1801,10 @@
   top: 9px;
   right: 9px;
   z-index: 1;
-  max-width: calc(100% - 34px);
+  /* The card's own margin on both sides, nothing more: nothing else sits on
+     its top edge. At 34px French cut NOUVEAU to NOUVEA… on a phone
+     (break-ui, 2026-11-21). */
+  max-width: calc(100% - 18px);
   padding: 2px 7px;
   border-radius: 999px;
   font-size: 0.6875rem;
