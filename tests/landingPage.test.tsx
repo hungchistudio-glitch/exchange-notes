@@ -7,7 +7,7 @@ vi.mock("@/lib/analytics/track", () => ({
 
 /* The Start keys go to /login through the router, after Yumi's eye has
    closed over the page (components/landing/loginTransition.ts). */
-const router = vi.hoisted(() => ({ push: vi.fn() }));
+const router = vi.hoisted(() => ({ push: vi.fn(), prefetch: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
 
 import LandingPage from "@/components/landing/LandingPage";
@@ -113,7 +113,7 @@ describe("the pre-login product tour", () => {
   it("opens the hero on a trial of the app, with no autoplay and no decorative Yumi", () => {
     render(<LandingPage />);
 
-    const trial = screen.getByRole("region", { name: "Try it with one phrase" });
+    const trial = screen.getByRole("region", { name: "Try it with one word" });
     const tabs = within(trial).getAllByRole("tab");
     expect(tabs.map(tab => tab.textContent)).toEqual(["1Keep", "2Understand", "3Exchange", "4Review"]);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
@@ -126,19 +126,19 @@ describe("the pre-login product tour", () => {
   it("shows every reader a phrase from a language that is not their own", async () => {
     render(<LandingPage />);
 
-    // English readers meet Chinese, marked as Chinese for speech and fonts.
-    const trial = screen.getByRole("region", { name: "Try it with one phrase" });
-    expect(within(trial).getByText("留白")).toHaveAttribute("lang", "zh-Hant");
+    // English readers meet Chinese (a dolphin, 海豚), marked as Chinese for speech and fonts.
+    const trial = screen.getByRole("region", { name: "Try it with one word" });
+    expect(within(trial).getByText("海豚")).toHaveAttribute("lang", "zh-Hant");
     fireEvent.click(within(trial).getByRole("tab", { name: /Exchange/ }));
-    expect(within(trial).getByText("respiro", { selector: "mark" })).toHaveAttribute("lang", "it");
+    expect(within(trial).getByText("delfino", { selector: "mark" })).toHaveAttribute("lang", "it");
 
     fireEvent.click(within(openPicker()).getByRole("button", { name: "繁體中文" }));
 
-    // Traditional Chinese readers meet Italian, and a Spanish friend's word.
-    const zhTrial = await screen.findByRole("region", { name: "用一句話試試看" });
-    expect(within(zhTrial).getAllByText("dolce far niente")[0]).toHaveAttribute("lang", "it");
-    expect(within(zhTrial).getByText("sobremesa", { selector: "mark" })).toHaveAttribute("lang", "es");
-    expect(within(zhTrial).queryByText("留白")).not.toBeInTheDocument();
+    // Traditional Chinese readers meet Italian (delfino), and a Spanish friend's word.
+    const zhTrial = await screen.findByRole("region", { name: "用一個字試試看" });
+    expect(within(zhTrial).getAllByText("delfino")[0]).toHaveAttribute("lang", "it");
+    expect(within(zhTrial).getByText("delfín", { selector: "mark" })).toHaveAttribute("lang", "es");
+    expect(within(zhTrial).queryByText("海豚")).not.toBeInTheDocument();
   });
 
   it("keeps the journey's phrase foreign and its friend from elsewhere in every language", async () => {
@@ -221,19 +221,19 @@ describe("the pre-login product tour", () => {
     render(<LandingPage />);
     const card = screen.getByRole("region", { name: "Try it in three taps" });
     const phrase = within(card).getByRole("button", { expanded: false });
-    expect(phrase).toHaveTextContent("留白");
-    expect(within(card).getByRole("button", { name: "Listen: 留白" })).toBeInTheDocument();
+    expect(phrase).toHaveTextContent("海豚");
+    expect(within(card).getByRole("button", { name: "Listen: 海豚" })).toBeInTheDocument();
 
     fireEvent.click(phrase);
     expect(phrase).toHaveAttribute("aria-expanded", "true");
-    expect(within(card).getByText(/Literally “leave white”/)).toBeVisible();
+    expect(within(card).getByText(/Literally “sea pig”/)).toBeVisible();
 
     fireEvent.click(within(card).getByRole("button", { name: "Keep it" }));
     expect(within(card).getByRole("button", { name: "Kept" })).toHaveAttribute("aria-pressed", "true");
     expect(within(card).getByRole("status")).toHaveTextContent("In your notebook: 1");
 
     // The trial under it has it too: one notebook for the page.
-    const trial = screen.getByRole("region", { name: "Try it with one phrase" });
+    const trial = screen.getByRole("region", { name: "Try it with one word" });
     expect(within(trial).getByRole("button", { name: /Kept — it’s in your notebook/ })).toBeDisabled();
   });
 });

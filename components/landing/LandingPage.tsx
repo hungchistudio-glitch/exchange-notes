@@ -50,6 +50,10 @@ function LandingLoginLink({
   return (
     <Link
       href="/login"
+      // Sign-in is fetched from the first touch, so the eye never waits on it.
+      onPointerEnter={() => router.prefetch("/login")}
+      onPointerDown={() => router.prefetch("/login")}
+      onFocus={() => router.prefetch("/login")}
       onClick={(event) => {
         track(analyticsEvent, { source: analyticsSource });
         // A new tab or window is the browser's to open, untouched.

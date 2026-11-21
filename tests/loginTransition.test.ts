@@ -52,8 +52,10 @@ describe("the way into sign-in", () => {
     expect(cover).toHaveAttribute("aria-hidden", "true");
     expect(go).not.toHaveBeenCalled();
 
-    // The eye's animation ends: go. The backstop timer must not go again.
-    animations[1].onfinish?.();
+    // The pupil's dark has covered the screen: go. The backstop timer must
+    // not go again.
+    const drawIn = animations.find(animation => animation.onfinish);
+    drawIn!.onfinish!();
     vi.advanceTimersByTime(1000);
     expect(go).toHaveBeenCalledTimes(1);
 
@@ -61,7 +63,7 @@ describe("the way into sign-in", () => {
     expect(document.querySelector("[data-login-cover]")).toBeNull();
   });
 
-  it("opens the sign-in page out of the eye, and does nothing without one", () => {
+  it("brings the card out of the eye on arrival, and does nothing without one", () => {
     vi.useFakeTimers();
     const animations = fakeAnimate();
     setReducedMotion(false);
@@ -71,8 +73,10 @@ describe("the way into sign-in", () => {
 
     playLoginExit(document.body.appendChild(document.createElement("a")), () => undefined);
     const before = animations.length;
-    playLoginArrival();
-    expect(animations.length).toBe(before + 2);
+    const card = document.body.appendChild(document.createElement("section"));
+    playLoginArrival(card);
+    // The eye draws back, the card comes forward, the dark clears.
+    expect(animations.length).toBe(before + 3);
     animations[animations.length - 1].onfinish?.();
     expect(document.querySelector("[data-login-cover]")).toBeNull();
   });

@@ -77,7 +77,7 @@ import { phraseCardFor } from "./phraseCard";
      again or got it, and says honestly what the app's scheduler would do.
 
    Every word of interface is in the language picked at the top of the
-   page. Only the phrase and its five renderings are not interface.
+   page. Only the word and its seven names are not interface.
    ========================================================= */
 
 type HeroCopy = TranslationDictionary["landing"]["hero"];

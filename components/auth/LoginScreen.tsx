@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useRef } from "react";
 
 import GoogleIdentityButton from "@/components/auth/GoogleIdentityButton";
 import styles from "@/components/auth/LoginScreen.module.css";
@@ -29,16 +29,19 @@ export default function LoginScreen({ initialError = false }: LoginScreenProps) 
     if (initialError) window.history.replaceState(null, "", "/login");
   }, [initialError]);
 
-  /* Arrived from the landing page's Start key: this page opens out of the
-     Yumi's eye it closed into (components/landing/loginTransition.ts). A
-     sign-in page reached any other way has no eye to open, and skips it. */
+  /* Arrived from the landing page's Start key: the card comes forward out
+     of the Yumi's eye the page closed into (components/landing/
+     loginTransition.ts). A sign-in page reached any other way has no eye,
+     and skips it. */
+  const cardRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    playLoginArrival();
+    playLoginArrival(cardRef.current);
   }, []);
 
   return (
     <main className="flex min-h-svh items-center justify-center bg-surface px-5 py-8 text-black">
       <section
+        ref={cardRef}
         className={`${styles.card} w-full max-w-md rounded-3xl bg-white p-7 shadow-sm sm:p-8`}
       >
         {/*

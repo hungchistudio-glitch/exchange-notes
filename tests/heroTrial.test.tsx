@@ -69,7 +69,7 @@ describe("Keep", () => {
     });
     fireEvent.click(within(trial).getByRole("button", { name: english.trial.keep.save }));
 
-    expect(within(notebook).getByText("留白")).toHaveAttribute("lang", "zh-Hant");
+    expect(within(notebook).getByText("海豚")).toHaveAttribute("lang", "zh-Hant");
     expect(within(notebook).getByText(english.journey.keep.where)).toBeInTheDocument();
     expect(within(trial).getByRole("button", { name: english.trial.keep.saved })).toBeDisabled();
 
@@ -81,7 +81,7 @@ describe("Keep", () => {
     expect(within(notebook).getAllByRole("listitem")).toHaveLength(1);
     expect(within(notebook).getByText("the night market")).toBeInTheDocument();
 
-    fireEvent.click(within(notebook).getByRole("button", { name: "Remove 留白" }));
+    fireEvent.click(within(notebook).getByRole("button", { name: "Remove 海豚" }));
     expect(notebook).toHaveTextContent(english.trial.notebook.empty);
     expect(within(trial).getByRole("button", { name: english.trial.keep.save })).toBeEnabled();
   });
@@ -123,7 +123,7 @@ describe("Understand", () => {
     fireEvent.click(within(trial).getByRole("button", { name: english.trial.listen.slow }));
     fireEvent.click(within(trial).getAllByRole("button", { name: english.trial.listen.play })[0]);
     const utterance = speak.mock.calls.at(-1)![0] as SpeechSynthesisUtterance;
-    expect(utterance.text).toBe("留白");
+    expect(utterance.text).toBe("海豚");
     expect(utterance.voice).toMatchObject({ name: "Meijia" });
     expect(utterance.rate).toBeLessThan(1);
   });
@@ -138,14 +138,14 @@ describe("Understand", () => {
     expect(within(languages).getByRole("button", { name: "English" })).toHaveAttribute("aria-pressed", "true");
 
     fireEvent.click(within(languages).getByRole("button", { name: "Italiano" }));
-    expect(within(trial).getByText("respiro", { selector: "strong > [data-spoken-text]" })).toBeInTheDocument();
-    expect(within(trial).getByText(/Uno spazio vuoto lasciato apposta/).closest("[lang]")).toHaveAttribute("lang", "it");
+    expect(within(trial).getByText("delfino", { selector: "strong > [data-spoken-text]" })).toBeInTheDocument();
+    expect(within(trial).getByText(/Un piccolo cetaceo veloce/).closest("[lang]")).toHaveAttribute("lang", "it");
     // The interface around it stays in English.
     expect(within(trial).getByText(english.trial.compare.title)).toBeInTheDocument();
 
-    fireEvent.click(within(trial).getByRole("button", { name: `${english.trial.listen.play}: respiro` }));
+    fireEvent.click(within(trial).getByRole("button", { name: `${english.trial.listen.play}: delfino` }));
     const utterance = speak.mock.calls.at(-1)![0] as SpeechSynthesisUtterance;
-    expect(utterance.text).toBe("respiro");
+    expect(utterance.text).toBe("delfino");
     expect(utterance.lang).toBe("it-IT");
   });
 });
@@ -162,14 +162,14 @@ describe("Exchange", () => {
     });
     expect(writeText).toHaveBeenCalledTimes(1);
     const text = writeText.mock.calls[0][0] as string;
-    expect(text).toContain("留白 (liú bái)");
+    expect(text).toContain("海豚 (hǎi tún)");
     expect(text).toContain(english.journey.keep.why);
     expect(within(trial).getByRole("button", { name: english.trial.exchange.copied })).toBeInTheDocument();
 
-    fireEvent.click(within(trial).getByRole("button", { name: "Keep “respiro” too" }));
+    fireEvent.click(within(trial).getByRole("button", { name: "Keep “delfino” too" }));
     const notebook = within(trial).getByRole("complementary");
-    expect(within(notebook).getByText("respiro")).toHaveAttribute("lang", "it");
-    expect(within(trial).getByRole("button", { name: "“respiro” is in your notebook" })).toBeDisabled();
+    expect(within(notebook).getByText("delfino")).toHaveAttribute("lang", "it");
+    expect(within(trial).getByRole("button", { name: "“delfino” is in your notebook" })).toBeDisabled();
   });
 
   it("says so when the copy fails, rather than claiming it worked", async () => {
@@ -194,14 +194,14 @@ describe("Review", () => {
 
     fireEvent.click(within(trial).getByRole("button", { name: english.trial.review.keepAndReview }));
     expect(within(trial).getByText("Card 1 of 1")).toBeInTheDocument();
-    expect(within(within(trial).getByRole("complementary")).getByText("留白")).toBeInTheDocument();
+    expect(within(within(trial).getByRole("complementary")).getByText("海豚")).toBeInTheDocument();
   });
 
   it("runs recall, reveal, again and got it on what was kept, and says what the app would do", () => {
     const { trial } = renderTrial();
     fireEvent.click(within(trial).getByRole("button", { name: english.trial.keep.save }));
     fireEvent.click(within(trial).getByRole("tab", { name: /Exchange/ }));
-    fireEvent.click(within(trial).getByRole("button", { name: "Keep “respiro” too" }));
+    fireEvent.click(within(trial).getByRole("button", { name: "Keep “delfino” too" }));
     fireEvent.click(within(trial).getByRole("tab", { name: /Review/ }));
 
     expect(within(trial).getByText("Card 1 of 2")).toBeInTheDocument();
@@ -215,7 +215,7 @@ describe("Review", () => {
     fireEvent.click(within(trial).getByRole("button", { name: english.trial.review.again }));
     expect(within(trial).getByRole("status")).toHaveTextContent(english.trial.review.againResult);
     fireEvent.click(within(trial).getByRole("button", { name: english.trial.review.next }));
-    expect(within(trial).getByText("respiro", { selector: "p > [data-spoken-text]" })).toBeInTheDocument();
+    expect(within(trial).getByText("delfino", { selector: "p > [data-spoken-text]" })).toBeInTheDocument();
 
     for (let i = 0; i < 2; i += 1) {
       fireEvent.click(within(trial).getByRole("button", { name: english.trial.review.reveal }));
