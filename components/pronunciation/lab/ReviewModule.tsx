@@ -9,7 +9,7 @@ import { MasteryDot } from "@/components/pronunciation/lab/SoundTile";
 import { LabEmpty } from "@/components/pronunciation/lab/StateViews";
 import { usePronunciationLab } from "@/contexts/PronunciationLabContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { fill } from "@/lib/i18n/format";
+import { fill, plural } from "@/lib/i18n/format";
 import {
   getDueUnits,
   getWeaknessMap,
@@ -157,7 +157,7 @@ const BAND_TONE: Record<WeaknessBand, string> = {
 };
 
 function WeaknessChip({ entry }: { entry: WeaknessEntry }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   return (
     <li>
@@ -167,7 +167,7 @@ function WeaknessChip({ entry }: { entry: WeaknessEntry }) {
       >
         {entry.unit.symbol}
         <span className="text-[0.6875rem] font-medium opacity-70">
-          {fill(t.pronunciation.lab.weakness.attempts, { count: entry.attempts })}
+          {plural(entry.attempts, locale, t.pronunciation.lab.weakness.attemptsOne, t.pronunciation.lab.weakness.attempts)}
         </span>
       </Link>
     </li>

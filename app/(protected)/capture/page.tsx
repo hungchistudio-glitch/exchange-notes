@@ -1076,7 +1076,7 @@ function CaptureContent() {
                   <CameraIcon />
                 </span>
 
-                <span className="text-xs font-medium text-neutral-600">
+                <span className="text-center text-xs font-medium leading-4 text-neutral-600">
                   {capture.source.useCamera}
                 </span>
               </button>
@@ -1092,7 +1092,7 @@ function CaptureContent() {
                   <LibraryIcon />
                 </span>
 
-                <span className="text-xs font-medium text-neutral-600">
+                <span className="text-center text-xs font-medium leading-4 text-neutral-600">
                   {capture.source.photoLibrary}
                 </span>
               </button>

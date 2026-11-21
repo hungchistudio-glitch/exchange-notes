@@ -1373,6 +1373,7 @@ export type TranslationDictionary = {
     eyebrow: string;
     title: string;
     subtitle: string;
+    subtitleOne: string;
     newest: string;
     kinds: {
       people: string;
@@ -1403,6 +1404,7 @@ export type TranslationDictionary = {
     streak: string;
     topWordLine: string;
     footer: string;
+    footerOne: string;
     quiet: string;
     lessonLabel: string;
     qrLabel: string;
@@ -1588,6 +1590,7 @@ export type TranslationDictionary = {
         empty: string;
         viewAll: string;
         attempts: string;
+        attemptsOne: string;
       };
 
       sounds: {
@@ -1596,6 +1599,7 @@ export type TranslationDictionary = {
         all: string;
         empty: string;
         soundCount: string;
+        soundCountOne: string;
       };
 
       detail: {
@@ -2290,6 +2294,8 @@ export type TranslationDictionary = {
     language: {
       title: string;
       allLanguages: string;
+      /** The same, short enough for the search row at a large text size. */
+      allLanguagesShort: string;
       filterAriaLabel: string;
       badgeAriaLabel: string;
       emptyTitle: string;
@@ -3259,6 +3265,7 @@ export type TranslationDictionary = {
     streak: string;
     /** What the streak track says to a screen reader. */
     streakLabel: string;
+    streakLabelOne: string;
     chestMedium: string;
     chestPremium: string;
     /** The result card: what this word's chest gave. */

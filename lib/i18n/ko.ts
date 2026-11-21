@@ -1235,6 +1235,7 @@ const korean: TranslationDictionary = {
     eyebrow: "내 단어장",
     title: "별자리 지도",
     subtitle: "단어 {count}개. 잘 아는 단어일수록 더 밝게 빛나요.",
+    subtitleOne: "단어 {count}개. 잘 아는 단어일수록 더 밝게 빛나요.",
     newest: "(최신 {count}개)",
     kinds: {
       people: "사람",
@@ -1263,6 +1264,7 @@ const korean: TranslationDictionary = {
     streak: "연속 일수",
     topWordLine: "가장 많이 복습한 단어: {word}",
     footer: "단어장에 {count}개 · Exchange Notes",
+    footerOne: "단어장에 {count}개 · Exchange Notes",
     quiet: "이번 주에는 아직 학습 기록이 없어요. 복습을 조금 하면 이 카드가 채워져요.",
     lessonLabel: "이번 주의 단어",
     qrLabel: "스캔해서 함께 배워요",
@@ -1550,6 +1552,7 @@ const korean: TranslationDictionary = {
         empty: "소리를 몇 개 연습하면 여기가 채워져요.",
         viewAll: "모두 보기",
         attempts: "{count}회 시도",
+        attemptsOne: "{count}회 시도",
       },
       sounds: {
         title: "소리",
@@ -1557,6 +1560,7 @@ const korean: TranslationDictionary = {
         all: "전체",
         empty: "이 그룹에는 아직 소리가 없어요.",
         soundCount: "소리 {count}개",
+        soundCountOne: "소리 {count}개",
       },
       detail: {
         articulation: "조음",
@@ -2174,6 +2178,7 @@ const korean: TranslationDictionary = {
     language: {
       title: "언어",
       allLanguages: "모든 언어",
+      allLanguagesShort: "전체",
       filterAriaLabel: "언어로 거르기",
       badgeAriaLabel: "단어 언어: {language}",
       emptyTitle: "아직 {language} 단어가 없어요",
@@ -3128,6 +3133,7 @@ const korean: TranslationDictionary = {
     },
     streak: "{count}연속",
     streakLabel: "{count}개 연속으로 맞힘. 4번째 단어에 중급 보물상자, 7번째에 프리미엄 보물상자가 있어요.",
+    streakLabelOne: "{count}개 연속으로 맞힘. 4번째 단어에 중급 보물상자, 7번째에 프리미엄 보물상자가 있어요.",
     chestMedium: "중급 보물상자 ×2",
     chestPremium: "프리미엄 보물상자 ×3",
     rewardTitle: "보물상자에서",

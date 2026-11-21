@@ -302,7 +302,15 @@ export default function VocabularySearch({
         })}
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between gap-3">
+      {/*
+        A query container, so the language filter can see how much room the
+        row has left it: at the large text size (19px root) the three icon
+        keys take most of a phone's width, and "Toutes les langues" was cut
+        to "Toutes les la…" (break-ui, 2026-11-21). Under 20rem of row (rem
+        follows the reader's text size here, unlike in a media query) the
+        unfiltered label becomes the short "Toutes", beside its icon.
+      */}
+      <div className="@container mt-2.5 flex items-center justify-between gap-3">
         {/*
           The language filter, and only when there is a choice to make.
 
@@ -337,11 +345,16 @@ export default function VocabularySearch({
               <>
                 <Languages size={16} strokeWidth={1.8} />
                 <span className="min-w-0 truncate text-[0.75rem] font-medium tracking-[-0.01em]">
-                  {languageFilter.length > 1
-                    ? languageFilter
-                        .map((code) => getLanguage(code).badge)
-                        .join(" · ")
-                    : language.allLanguages}
+                  {languageFilter.length > 1 ? (
+                    languageFilter
+                      .map((code) => getLanguage(code).badge)
+                      .join(" · ")
+                  ) : (
+                    <>
+                      <span className="@max-[20rem]:hidden">{language.allLanguages}</span>
+                      <span className="hidden @max-[20rem]:inline">{language.allLanguagesShort}</span>
+                    </>
+                  )}
                 </span>
               </>
             )}

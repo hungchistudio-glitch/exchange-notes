@@ -1,0 +1,78 @@
+/* =========================================================
+   What a finger is told (2026-11-21, the mobile-native skill)
+
+   The pair of app/pointer-hover.css, which answers a mouse. This answers a
+   finger, on the phone the app is mostly used on.
+
+   - **No grey flash.** iOS Safari and Android Chrome paint a translucent
+     box over anything tapped that has a click handler. About ten of the
+     app's controls had switched it off, one by one; the other five hundred
+     flashed. It is the loudest "this is a website" sign there is, and it
+     fought every press the app draws itself.
+   - **Every control still answers the press.** With the flash gone, a key
+     that has no `:active` of its own would answer nothing, so on a coarse
+     pointer every control dims a little while pressed (in Yumi Cosmic it
+     brightens, as a dim on obsidian is invisible). Keys that draw their own
+     press (tactile.css, `active:` utilities) still do; this only fills in
+     where nothing else does.
+   - **A tap is a tap at once.** `touch-action: manipulation` tells the
+     browser a control is never double-tapped to zoom, so it does not wait
+     to see whether a second tap is coming. Pinch-zoom is untouched.
+   - **Holding a key does not select its label.** Text that is a control is
+     not selectable; text that is content (stories, cards, a word read
+     aloud, which are spans) stays selectable.
+
+   All of it in `@layer base` and `:where()`, with no specificity, like
+   pointer-hover.css: a control that sets its own `touch-action` (a drag
+   handle, the dial, the dock's scrub), `filter` or selection keeps it.
+   Left out of the press: whatever is disabled, a full-screen backdrop
+   (`inset-0`, or marked `data-no-hover`), and anything hidden from the
+   accessibility tree.
+   ========================================================= */
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --press-dim: brightness(0.93);
+}
+
+html[data-interface-mode="yumi-cosmic"] {
+  --press-dim: brightness(1.18);
+}
+
+@layer base {
+  :where(
+      button,
+      [role="button"],
+      [role="switch"],
+      [role="tab"],
+      [role="option"],
+      [role="menuitem"],
+      [role="menuitemradio"],
+      a[href],
+      summary,
+      label[for],
+      select
+    ) {
+    touch-action: manipulation;
+  }
+
+  :where(button, [role="button"], [role="switch"], [role="tab"], summary) {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  @media (pointer: coarse) {
+    :where(button, [role="button"], [role="switch"], [role="tab"], a[href], summary):not(
+        :disabled,
+        [aria-disabled="true"],
+        [aria-hidden="true"],
+        [data-no-hover],
+        [class*="inset-0"]
+      ):active {
+      filter: var(--press-dim);
+    }
+  }
+}

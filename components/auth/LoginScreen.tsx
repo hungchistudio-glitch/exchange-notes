@@ -29,7 +29,7 @@ export default function LoginScreen({ initialError = false }: LoginScreenProps) 
   }, [initialError]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-surface px-5 py-8 text-black">
+    <main className="flex min-h-svh items-center justify-center bg-surface px-5 py-8 text-black">
       <section
         className={`${styles.card} w-full max-w-md rounded-3xl bg-white p-7 shadow-sm sm:p-8`}
       >

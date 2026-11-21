@@ -23,7 +23,7 @@ import TodayTrainingCard from "@/components/pronunciation/lab/TodayTrainingCard"
 import { MasteryDot } from "@/components/pronunciation/lab/SoundTile";
 import { usePronunciationLab } from "@/contexts/PronunciationLabContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { fill } from "@/lib/i18n/format";
+import { fill, plural } from "@/lib/i18n/format";
 import { getLanguageName } from "@/lib/languages";
 import { buildDailyTraining } from "@/lib/pronunciation/lab/dailyTraining";
 import {
@@ -68,7 +68,7 @@ const MODULE_ORDER: PronunciationModuleId[] = [
  * everything else in the Lab is reachable from inside one of them.
  */
 export default function LabLanding() {
-  const { t, language: interfaceLanguage } = useTranslation();
+  const { t, language: interfaceLanguage, locale } = useTranslation();
   useLabText(interfaceLanguage);
   const copy = t.pronunciation.lab;
 
@@ -292,7 +292,7 @@ export default function LabLanding() {
                         {entry.unit.symbol}
                       </span>
                       <span className="truncate text-xs text-ink-faint">
-                        {fill(copy.weakness.attempts, { count: entry.attempts })}
+                        {plural(entry.attempts, locale, copy.weakness.attemptsOne, copy.weakness.attempts)}
                       </span>
                     </span>
 
@@ -333,7 +333,7 @@ export default function LabLanding() {
 
                     <span className="shrink-0 text-[0.8125rem] text-ink-faint">
                       {mastery.percent === null
-                        ? fill(copy.sounds.soundCount, { count: mastery.total })
+                        ? plural(mastery.total, locale, copy.sounds.soundCountOne, copy.sounds.soundCount)
                         : fill(copy.progress.soundsMastered, {
                             mastered: mastery.mastered,
                             total: mastery.total,

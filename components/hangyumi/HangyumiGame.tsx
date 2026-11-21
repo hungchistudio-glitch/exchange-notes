@@ -785,7 +785,7 @@ export default function HangyumiGame({
             {/* Wordvault's streak: seven steps, the fourth and the seventh
                 chests; the step this word is, lit; and the chest it holds. */}
             {game === "wordvault" && round && round.streak !== null && (
-              <span className={styles.streak} role="img" aria-label={fill(t.wordvault.streakLabel, { count: round.streak })}>
+              <span className={styles.streak} role="img" aria-label={plural(round.streak, locale, t.wordvault.streakLabelOne, t.wordvault.streakLabel)}>
                 <span className={styles.streakPips} aria-hidden="true">
                   {Array.from({ length: 7 }, (_, i) => (
                     <i

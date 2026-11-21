@@ -11,7 +11,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import hy from "@/components/hangyumi/Hangyumi.module.css";
 import type { CollectionProgress, GamesProgress } from "@/lib/games/progress";
 import { WORDVAULT_CHEST_AT } from "@/lib/games/progress";
-import { fill } from "@/lib/i18n/format";
+import { fill, plural } from "@/lib/i18n/format";
 
 import StarweaverGlyph from "./StarweaverGlyph";
 import WordvaultGlyph from "./WordvaultGlyph";
@@ -149,7 +149,7 @@ export default function GamesHub({ loadToday, loadBalance, loadProgress, hrefs, 
           length={length}
           chests={WORDVAULT_CHEST_AT}
           text={fill(copy.wordvault.streak, { count: streak, total: length })}
-          label={fill(t.wordvault.streakLabel, { count: streak })}
+          label={plural(streak, locale, t.wordvault.streakLabelOne, t.wordvault.streakLabel)}
         />
       );
     }

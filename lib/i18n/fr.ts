@@ -1299,6 +1299,7 @@ const french: TranslationDictionary = {
     eyebrow: "Ta bibliothèque",
     title: "Carte du ciel",
     subtitle: "{count} mots ; mieux tu le connais, plus il brille.",
+    subtitleOne: "{count} mot ; mieux tu le connais, plus il brille.",
     newest: "(les {count} plus récents)",
     kinds: {
       people: "Personnes",
@@ -1328,6 +1329,7 @@ const french: TranslationDictionary = {
     streak: "Série",
     topWordLine: "Le plus révisé : {word}",
     footer: "{count} mots dans ta bibliothèque · Exchange Notes",
+    footerOne: "{count} mot dans ta bibliothèque · Exchange Notes",
     quiet: "Rien cette semaine pour l'instant. Quelques révisions rempliront cette carte.",
     lessonLabel: "Mot de la semaine",
     qrLabel: "Scanne pour apprendre avec moi",
@@ -1615,6 +1617,7 @@ const french: TranslationDictionary = {
         empty: "Travaillez quelques sons et ceci se remplira.",
         viewAll: "Tout voir",
         attempts: "{count} essais",
+        attemptsOne: "{count} essai",
       },
       sounds: {
         title: "Sons",
@@ -1622,6 +1625,7 @@ const french: TranslationDictionary = {
         all: "Tous",
         empty: "Aucun son dans ce groupe pour l'instant.",
         soundCount: "{count} sons",
+        soundCountOne: "{count} son",
       },
       detail: {
         articulation: "Articulation",
@@ -2239,6 +2243,7 @@ const french: TranslationDictionary = {
     language: {
       title: "Langue",
       allLanguages: "Toutes les langues",
+      allLanguagesShort: "Toutes",
       filterAriaLabel: "Filtrer par langue",
       badgeAriaLabel: "Langue du mot : {language}",
       emptyTitle: "Aucun mot en {language} pour l'instant",
@@ -3177,6 +3182,7 @@ const french: TranslationDictionary = {
     },
     streak: "{count} d’affilée",
     streakLabel: "{count} mots trouvés d’affilée. Le quatrième cache un coffre moyen, le septième un coffre premium.",
+    streakLabelOne: "{count} mot trouvé d’affilée. Le quatrième cache un coffre moyen, le septième un coffre premium.",
     chestMedium: "Coffre moyen ×2",
     chestPremium: "Coffre premium ×3",
     rewardTitle: "Dans le coffre",

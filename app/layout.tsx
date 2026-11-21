@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import OrbitField from "@/components/foundation/ambience/OrbitField";
 import { DevicePreferencesProvider } from "@/contexts/DevicePreferencesContext";
-import { rootFontSizeFor } from "@/lib/appPreferences";
+import { COLOR_SCHEME, THEME_COLOR, rootFontSizeFor } from "@/lib/appPreferences";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
 import { loadTranslations } from "@/lib/i18n";
 import {
@@ -97,7 +97,7 @@ export async function generateViewport(): Promise<Viewport> {
   const interfaceMode = await getServerInterfaceMode();
 
   return {
-    themeColor: interfaceMode === "yumi-cosmic" ? "#08090b" : "#f5f3ed",
+    themeColor: THEME_COLOR[interfaceMode],
     /*
      * This used to be the constant "light", on the grounds that the active
      * opening was a pure-white canvas in every interface mode. The opening
@@ -111,7 +111,7 @@ export async function generateViewport(): Promise<Viewport> {
      * opening has none of it. The canvas is settled separately, by the
      * inline background on <html> below.
      */
-    colorScheme: interfaceMode === "yumi-cosmic" ? "dark" : "light",
+    colorScheme: COLOR_SCHEME[interfaceMode],
   };
 }
 

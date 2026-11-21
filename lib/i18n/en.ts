@@ -1352,6 +1352,7 @@ const english: TranslationDictionary = {
     eyebrow: "Your library",
     title: "Star map",
     subtitle: "{count} words; the better you know one, the brighter it shines.",
+    subtitleOne: "{count} word; the better you know one, the brighter it shines.",
     newest: "(the newest {count})",
     kinds: {
       people: "People",
@@ -1381,6 +1382,7 @@ const english: TranslationDictionary = {
     streak: "Day streak",
     topWordLine: "Most reviewed: {word}",
     footer: "{count} words in your library · Exchange Notes",
+    footerOne: "{count} word in your library · Exchange Notes",
     quiet: "No learning logged this week yet. A few reviews will fill this card.",
     lessonLabel: "Word of the week",
     qrLabel: "Scan to learn with me",
@@ -1660,6 +1662,7 @@ const english: TranslationDictionary = {
         empty: "Practise a few sounds and this fills in.",
         viewAll: "See all",
         attempts: "{count} attempts",
+        attemptsOne: "{count} attempt",
       },
 
       sounds: {
@@ -1668,6 +1671,7 @@ const english: TranslationDictionary = {
         all: "All",
         empty: "No sounds in this group yet.",
         soundCount: "{count} sounds",
+        soundCountOne: "{count} sound",
       },
 
       detail: {
@@ -2352,6 +2356,7 @@ const english: TranslationDictionary = {
     language: {
       title: "Language",
       allLanguages: "All languages",
+      allLanguagesShort: "All",
       filterAriaLabel: "Filter by language",
       badgeAriaLabel: "Vocabulary language: {language}",
       emptyTitle: "No {language} words yet",
@@ -3391,6 +3396,7 @@ const english: TranslationDictionary = {
     },
     streak: "{count} in a row",
     streakLabel: "{count} words won in a row. The fourth word holds a medium chest, the seventh a premium one.",
+    streakLabelOne: "{count} word won in a row. The fourth word holds a medium chest, the seventh a premium one.",
     chestMedium: "Medium chest ×2",
     chestPremium: "Premium chest ×3",
     rewardTitle: "From the chest",

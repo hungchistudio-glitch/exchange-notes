@@ -1235,6 +1235,7 @@ const japanese: TranslationDictionary = {
     eyebrow: "あなたの単語帳",
     title: "星図",
     subtitle: "{count}語。よく知っている単語ほど明るく輝きます。",
+    subtitleOne: "{count}語。よく知っている単語ほど明るく輝きます。",
     newest: "（新しい{count}語）",
     kinds: {
       people: "人",
@@ -1263,6 +1264,7 @@ const japanese: TranslationDictionary = {
     streak: "連続日数",
     topWordLine: "いちばん復習した単語：{word}",
     footer: "単語帳に{count}語・Exchange Notes",
+    footerOne: "単語帳に{count}語・Exchange Notes",
     quiet: "今週はまだ学習の記録がありません。少し復習すると、このカードが埋まります。",
     lessonLabel: "今週の単語",
     qrLabel: "スキャンして、いっしょに学ぼう",
@@ -1550,6 +1552,7 @@ const japanese: TranslationDictionary = {
         empty: "いくつか音を練習すると、ここが埋まります。",
         viewAll: "すべて見る",
         attempts: "{count}回の試行",
+        attemptsOne: "{count}回の試行",
       },
       sounds: {
         title: "音",
@@ -1557,6 +1560,7 @@ const japanese: TranslationDictionary = {
         all: "すべて",
         empty: "このグループにはまだ音がありません。",
         soundCount: "{count}音",
+        soundCountOne: "{count}音",
       },
       detail: {
         articulation: "調音",
@@ -2174,6 +2178,7 @@ const japanese: TranslationDictionary = {
     language: {
       title: "言語",
       allLanguages: "すべての言語",
+      allLanguagesShort: "すべて",
       filterAriaLabel: "言語で絞り込む",
       badgeAriaLabel: "単語の言語：{language}",
       emptyTitle: "{language}の単語はまだありません",
@@ -3128,6 +3133,7 @@ const japanese: TranslationDictionary = {
     },
     streak: "{count}連続",
     streakLabel: "{count}語連続で正解。4語目にミディアム宝箱、7語目にプレミアム宝箱があります。",
+    streakLabelOne: "{count}語連続で正解。4語目にミディアム宝箱、7語目にプレミアム宝箱があります。",
     chestMedium: "ミディアム宝箱 ×2",
     chestPremium: "プレミアム宝箱 ×3",
     rewardTitle: "宝箱の中身",

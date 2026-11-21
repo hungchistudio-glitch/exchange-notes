@@ -8,7 +8,7 @@ import SoundTile from "@/components/pronunciation/lab/SoundTile";
 import { LabEmpty } from "@/components/pronunciation/lab/StateViews";
 import { usePronunciationLab } from "@/contexts/PronunciationLabContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { fill } from "@/lib/i18n/format";
+import { plural } from "@/lib/i18n/format";
 import { groupsForModule } from "@/lib/pronunciation/lab/registry";
 import { localize } from "@/lib/pronunciation/localizedText";
 import useLabText from "@/hooks/useLabText";
@@ -24,7 +24,7 @@ const ALL = "__all";
  * declares — no branch here changes.
  */
 export default function SoundsModule() {
-  const { t, language: interfaceLanguage } = useTranslation();
+  const { t, language: interfaceLanguage, locale } = useTranslation();
   useLabText(interfaceLanguage);
   const copy = t.pronunciation.lab;
 
@@ -90,7 +90,7 @@ export default function SoundsModule() {
       </div>
 
       <p className="mt-3 text-xs text-ink-faint">
-        {fill(copy.sounds.soundCount, { count: visible.length })}
+        {plural(visible.length, locale, copy.sounds.soundCountOne, copy.sounds.soundCount)}
       </p>
 
       {visible.length === 0 ? (

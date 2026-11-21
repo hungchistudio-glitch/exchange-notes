@@ -1337,6 +1337,7 @@ const traditionalChinese: TranslationDictionary = {
     eyebrow: "你的單字庫",
     title: "單字星圖",
     subtitle: "{count} 個字，越熟的越亮",
+    subtitleOne: "{count} 個字，越熟的越亮",
     newest: "（顯示最新的 {count} 個）",
     kinds: {
       people: "人物",
@@ -1366,6 +1367,7 @@ const traditionalChinese: TranslationDictionary = {
     streak: "連續天數",
     topWordLine: "本週最常複習：{word}",
     footer: "單字庫共 {count} 個字 · Exchange Notes",
+    footerOne: "單字庫共 {count} 個字 · Exchange Notes",
     quiet: "這週還沒有學習記錄，複習幾個字，這張卡就會亮起來。",
     lessonLabel: "本週一字",
     qrLabel: "掃描一起學",
@@ -1645,6 +1647,7 @@ const traditionalChinese: TranslationDictionary = {
         empty: "練幾個音之後，這裡就會出現內容。",
         viewAll: "看全部",
         attempts: "{count} 次練習",
+        attemptsOne: "{count} 次練習",
       },
 
       sounds: {
@@ -1653,6 +1656,7 @@ const traditionalChinese: TranslationDictionary = {
         all: "全部",
         empty: "這一組還沒有內容。",
         soundCount: "{count} 個音",
+        soundCountOne: "{count} 個音",
       },
 
       detail: {
@@ -2326,6 +2330,7 @@ const traditionalChinese: TranslationDictionary = {
     language: {
       title: "語言",
       allLanguages: "所有語言",
+      allLanguagesShort: "全部",
       filterAriaLabel: "依語言篩選",
       badgeAriaLabel: "單字語言：{language}",
       emptyTitle: "目前還沒有{language}單字",
@@ -3347,6 +3352,7 @@ const traditionalChinese: TranslationDictionary = {
     },
     streak: "連勝 {count}",
     streakLabel: "已連續答對 {count} 題。第 4 題是中等寶箱，第 7 題是高級寶箱。",
+    streakLabelOne: "已連續答對 {count} 題。第 4 題是中等寶箱，第 7 題是高級寶箱。",
     chestMedium: "中等寶箱 ×2",
     chestPremium: "高級寶箱 ×3",
     rewardTitle: "寶箱開出",
