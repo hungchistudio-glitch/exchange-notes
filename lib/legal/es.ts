@@ -7,7 +7,7 @@ const legal: LegalCopy = {
       "Tus notas guardan experiencias personales y, a veces, historias de otras personas. Esta política explica qué datos recoge Exchange Notes, por qué, quién los trata con nosotros, cuánto tiempo se conservan y qué opciones tienes.",
     summaryTitle: "En resumen",
     summary: [
-      "Exchange Notes lo gestiona Hungchi Studio, un estudio independiente dirigido por una persona en Taiwán.",
+      "Exchange Notes lo gestiona Hungchi Studio, un estudio independiente dirigido por una persona en la ciudad de Nueva York.",
       "De tu cuenta de Google solo recibimos tu nombre, correo electrónico, foto de perfil e identificador de cuenta, y solo los usamos para gestionar tu cuenta.",
       "Las funciones de IA envían el texto, las imágenes o el audio correspondientes a Google Gemini. Usamos el nivel gratuito de Gemini, en el que Google puede usar ese contenido para mejorar sus productos y personas pueden revisarlo, así que no envíes nada sensible.",
       "No vendemos tus datos, no mostramos anuncios y no usamos rastreadores publicitarios ni de analítica.",
@@ -17,7 +17,7 @@ const legal: LegalCopy = {
       {
         title: "Quiénes somos",
         body: [
-          "Exchange Notes (la “app”) está gestionada por Hungchi Studio, un estudio independiente dirigido por una persona física en Taiwán y no una empresa registrada. Hungchi Studio decide cómo y para qué se tratan los datos personales descritos aquí y es responsable de ellos. Puedes escribirnos a la dirección que aparece al final de esta página.",
+          "Exchange Notes (la “app”) está gestionada por Hungchi Studio, un estudio independiente dirigido por una persona física en la ciudad de Nueva York y no una empresa registrada. Hungchi Studio decide cómo y para qué se tratan los datos personales descritos aquí y es responsable de ellos. Puedes escribirnos a la dirección que aparece al final de esta página.",
         ],
       },
       {
@@ -92,7 +92,7 @@ const legal: LegalCopy = {
       {
         title: "Tratamiento internacional",
         body: [
-          "Operamos desde Taiwán y nuestros proveedores tratan datos en Canadá, Estados Unidos y otros países donde tienen instalaciones, cuyas leyes de protección de datos pueden ser distintas de las tuyas. Nos apoyamos en los compromisos contractuales de protección de datos de nuestros proveedores, incluidas las cláusulas contractuales tipo cuando procede.",
+          "Operamos desde la ciudad de Nueva York y nuestros proveedores tratan datos en Canadá, Estados Unidos y otros países donde tienen instalaciones, cuyas leyes de protección de datos pueden ser distintas de las tuyas. Nos apoyamos en los compromisos contractuales de protección de datos de nuestros proveedores, incluidas las cláusulas contractuales tipo cuando procede.",
         ],
       },
       {
@@ -153,13 +153,13 @@ const legal: LegalCopy = {
       "Lo que escribes sigue siendo tuyo; solo nos permites guardarlo y tratarlo para que la app funcione para ti.",
       "Los resultados de la IA pueden ser erróneos y no son asesoramiento profesional.",
       "Las galletas de energía y los artículos de la tienda son gratuitos, virtuales y no tienen valor económico.",
-      "La app está en beta y se ofrece tal cual. Se aplica la ley de Taiwán.",
+      "La app está en beta y se ofrece tal cual. Se aplica la ley del estado de Nueva York.",
     ],
     sections: [
       {
         title: "Sobre estas condiciones",
         body: [
-          "Exchange Notes (la “app”) la ofrece Hungchi Studio, un estudio independiente dirigido por una persona física en Taiwán (“nosotros”). Al crear una cuenta o usar la app, aceptas estas condiciones. Si no estás de acuerdo, no uses la app.",
+          "Exchange Notes (la “app”) la ofrece Hungchi Studio, un estudio independiente dirigido por una persona física en la ciudad de Nueva York (“nosotros”). Al crear una cuenta o usar la app, aceptas estas condiciones. Si no estás de acuerdo, no uses la app.",
         ],
       },
       {
@@ -244,7 +244,7 @@ const legal: LegalCopy = {
       {
         title: "Ley aplicable",
         body: [
-          "Estas condiciones se rigen por las leyes de Taiwán (República de China). Las controversias las resolverá un tribunal competente de Taiwán, salvo que las leyes imperativas del lugar donde vives como persona consumidora te permitan acudir a sus tribunales.",
+          "Estas condiciones se rigen por las leyes del estado de Nueva York (Estados Unidos). Las controversias las resolverá un tribunal competente de la ciudad de Nueva York, salvo que las leyes imperativas del lugar donde vives como persona consumidora te permitan acudir a sus tribunales.",
         ],
       },
     ],
