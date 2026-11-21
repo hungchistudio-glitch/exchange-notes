@@ -21,13 +21,13 @@ const STREAK_DAYS = 400;
  * Opening it opens the recap card headed by it; either way it is not
  * offered again (lib/recap/milestones.ts).
  */
-export default function MilestoneBanner() {
+export default function MilestoneBanner({ from = "review" }: { from?: string }) {
   const vocabulary = useOptionalVocabulary();
   if (!vocabulary || vocabulary.loading || vocabulary.items.length === 0) return null;
-  return <Offer items={vocabulary.items} />;
+  return <Offer items={vocabulary.items} from={from} />;
 }
 
-function Offer({ items }: { items: NonNullable<ReturnType<typeof useOptionalVocabulary>>["items"] }) {
+function Offer({ items, from }: { items: NonNullable<ReturnType<typeof useOptionalVocabulary>>["items"]; from: string }) {
   const { t } = useTranslation();
   const copy = t.recap;
   const { learningLanguage } = useDisplayLanguages();
@@ -58,7 +58,7 @@ function Offer({ items }: { items: NonNullable<ReturnType<typeof useOptionalVoca
   return (
     <div className="hud-panel milestone-banner mt-4 flex items-center gap-3 rounded-[22px] border border-line bg-white px-5 py-4">
       <span className="hud-led" data-state="alert" aria-hidden="true" />
-      <Link href={`/recap?milestone=${milestone.id}`} onClick={letGo} className="min-w-0 flex-1">
+      <Link href={`/recap?milestone=${milestone.id}&from=${from}`} onClick={letGo} className="min-w-0 flex-1">
         <span className="block text-sm font-semibold">{fill(copy.milestoneBanner, { milestone: what })}</span>
         <span className="mt-0.5 block text-[0.8125rem] font-semibold text-ink-soft">{copy.milestoneShare} →</span>
       </Link>

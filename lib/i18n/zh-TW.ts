@@ -2424,6 +2424,7 @@ const traditionalChinese: TranslationDictionary = {
     completedReviewsOne: "你已完成 {count} 個單字複習。",
     backToVocabulary: "回到單字頁",
     backToHome: "返回首頁",
+    backToSettings: "返回設定",
     grades: {
       again: {
         label: "再一次",

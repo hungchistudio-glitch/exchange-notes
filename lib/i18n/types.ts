@@ -2387,6 +2387,7 @@ export type TranslationDictionary = {
     completedReviewsOne: string;
     backToVocabulary: string;
     backToHome: string;
+    backToSettings: string;
     grades: {
       again: {
         label: string;

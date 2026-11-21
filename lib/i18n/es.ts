@@ -2450,6 +2450,7 @@ const spanish: TranslationDictionary = {
     completedReviewsOne: "Has completado {count} repaso.",
     backToVocabulary: "Volver a tus palabras",
     backToHome: "Volver al inicio",
+    backToSettings: "Volver a Ajustes",
     grades: {
       again: {
         label: "Otra vez",

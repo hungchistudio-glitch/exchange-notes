@@ -2329,6 +2329,7 @@ const french: TranslationDictionary = {
     completedReviewsOne: "Vous avez terminé {count} révision.",
     backToVocabulary: "Retour à vos mots",
     backToHome: "Retour à l'accueil",
+    backToSettings: "Retour aux réglages",
     grades: {
       again: {
         label: "Encore",
