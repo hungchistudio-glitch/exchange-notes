@@ -93,15 +93,21 @@ const english: TranslationDictionary = {
       title: "Exchange a phrase. Discover another way of seeing.",
       intro: "Keep the words that find you — on a trip, in a song, on a menu — with the moment around them. Yumi helps you understand them, and friends from other places show you what the same words mean to them.",
       promise: "Free during the beta. No feed, no likes — only the people you choose.",
+      plainLine: "See → keep → understand → share",
+      quick: {
+        ariaLabel: "Try it in three taps",
+        listen: "Listen",
+        word: "Tap the phrase",
+        keep: "Keep it",
+        kept: "Kept",
+        notebook: "In your notebook: {count}",
+        more: "Go further: {steps}",
+      },
       tour: {
         keepTitle: "Keep it with its moment",
-        keepDescription: "Where you met it and why it stayed with you are kept with the words. Make the note yours, then keep it.",
         understandTitle: "Understand it with Yumi",
-        understandDescription: "Meaning, tone and culture in your language — something to think with, not a verdict. Hear it, and see it in seven languages.",
         exchangeTitle: "Exchange it, and see it anew",
-        exchangeDescription: "Send it to a friend from somewhere else, and hear what the same words mean to them.",
         reviewTitle: "Bring it back before it fades",
-        reviewDescription: "Recall it, hear it, then check. What you know well waits longer before it comes back.",
       },
       trial: {
         title: "Try it with one phrase",
@@ -243,6 +249,12 @@ const english: TranslationDictionary = {
       },
       endTitle: "YU + MI = Yumi",
       endText: "Now on Earth, learning languages — with you.",
+      keep: {
+        tap: "Tap the word to keep it",
+        sign: "Keep “{phrase}”",
+        byYou: "You kept it",
+        byYumi: "Yumi kept it",
+      },
     },
     notes: {
       eyebrow: "Keep",

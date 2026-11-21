@@ -10,6 +10,8 @@
 .trial {
   display: grid;
   min-width: 0;
+  /* Arrived at from the first screen's card: clear of the sticky nav. */
+  scroll-margin-top: 92px;
   gap: 14px;
   border: 1px solid var(--landing-line);
   border-radius: 32px;
@@ -91,11 +93,11 @@
 
 /* ------------------------------------------------------------ panel */
 
-/* Tall enough for the longest step, so changing step does not move the
-   notebook, or the page, under the reader. */
+/* As tall as its step, no taller (Chi, 2026-11-21: 試用區精簡). It was
+   held at 560px, the longest step's height, so the notebook never moved;
+   on a computer that left the first step a card with a hole in it. */
 .panel {
   display: flex;
-  min-height: 560px;
   flex-direction: column;
   gap: 16px;
   padding: 6px 4px 0;
@@ -108,12 +110,6 @@
   line-height: 1.35;
 }
 
-.panelHead p {
-  margin-top: 4px;
-  color: var(--landing-soft);
-  font-size: 0.8125rem;
-  line-height: 1.55;
-}
 
 .phrase {
   display: flex;
@@ -322,6 +318,63 @@
   text-overflow: ellipsis;
 }
 
+/* The voice and the speed, folded under Listen. */
+.voiceMore {
+  flex-basis: 100%;
+}
+
+.voiceMore > summary,
+.compare > summary {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.voiceMore > summary {
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.voiceMore > summary::-webkit-details-marker,
+.compare > summary::-webkit-details-marker {
+  display: none;
+}
+
+.voiceMore > summary::after,
+.compare > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 180ms var(--ease-out);
+}
+
+.voiceMore[open] > summary::after,
+.compare[open] > summary::after {
+  transform: translateY(1px) rotate(225deg);
+}
+
+.voiceOptions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voiceMore > summary::after,
+  .compare > summary::after {
+    transition: none;
+  }
+}
+
 .speed {
   display: inline-flex;
   border: 1px solid var(--landing-line);
@@ -395,13 +448,23 @@
   line-height: 1.55;
 }
 
+/* A <details> now: block, with its own spacing, since a details element
+   cannot be a grid in every Safari the landing page meets. */
 .compare {
-  display: grid;
-  gap: 10px;
+  display: block;
   border: 1px solid var(--landing-line);
   border-radius: 20px;
   background: var(--landing-amber-wash);
   padding: 14px;
+}
+
+.compare > * + * {
+  margin-top: 10px;
+}
+
+.compare > summary {
+  width: 100%;
+  min-height: 28px;
 }
 
 .compareLanguages {

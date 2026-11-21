@@ -673,6 +673,141 @@
   }
 }
 
+/* ------------------------------------------------------------ the word */
+
+/*
+ * Scene 5's word (Chi, 2026-11-21): the first word of Earth, on a sign that
+ * comes up through the clouds, and the card it becomes once it is kept. In
+ * the picture's lower right on a computer, clear of the scene's words (lower
+ * left), of where she lands and of the end card; in the lower left on a
+ * phone, where the words sit under the picture. It stays to the end.
+ * Transform and opacity only.
+ */
+.wordSign,
+.wordKept {
+  position: absolute;
+  z-index: 3;
+  right: clamp(14px, 4cqw, 56px);
+  bottom: clamp(14px, 7cqh, 52px);
+}
+
+.wordSign {
+  display: grid;
+  justify-items: start;
+  transform-origin: 100% 100%;
+  gap: 2px;
+  max-width: min(64cqw, 18rem);
+  border: 1px solid rgba(240, 199, 116, 0.7);
+  border-radius: 18px;
+  background: rgba(14, 18, 30, 0.72);
+  padding: 10px 14px 9px;
+  color: #fbf3e6;
+  text-align: left;
+  box-shadow: 0 0 0 4px rgba(240, 199, 116, 0.12), 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: wordIn 700ms var(--ease-out) both;
+  transition: transform 140ms var(--ease-out);
+}
+
+.wordSign:active {
+  transform: scale(0.96);
+}
+
+.wordText {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, var(--cjk-serif), serif;
+  font-size: clamp(1.25rem, 4.2cqw, 1.9rem);
+  font-weight: 500;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.wordReading {
+  color: rgba(251, 243, 230, 0.72);
+  font-size: 0.75rem;
+}
+
+.wordHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  color: #f0c774;
+  font-size: 0.75rem;
+  font-weight: 700;
+  animation: wordHint 1.6s ease-in-out 700ms infinite;
+}
+
+/* A small card: who kept it over the phrase, so neither is cut short on a
+   phone (a single pill wrapped "dolce far niente" and clipped the rest). */
+.wordKept {
+  display: grid;
+  max-width: min(64cqw, 18rem);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 7px;
+  border: 1px solid rgba(184, 232, 229, 0.55);
+  border-radius: 16px;
+  background: rgba(14, 18, 30, 0.7);
+  padding: 8px 13px 9px 11px;
+  color: #fbf3e6;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  animation: wordKept 420ms var(--ease-out) both;
+}
+
+.wordKept[data-by="you"] {
+  border-color: rgba(240, 199, 116, 0.8);
+}
+
+.wordKept > span[lang] {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, var(--cjk-serif), serif;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.wordKept > svg {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.wordBy {
+  grid-row: 1;
+  grid-column: 2;
+  color: rgba(251, 243, 230, 0.78);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+@keyframes wordIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.96);
+  }
+}
+
+@keyframes wordHint {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* The sign folds into the card it becomes. */
+@keyframes wordKept {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
 /* ------------------------------------------------------------ try it on */
 
 /* Station 33's rail, in the shop's own dark glass. */
@@ -1072,6 +1207,15 @@
     max-width: 30ch;
   }
 
+  /* She lands in the middle at the foot on a phone: the word keeps to the
+     corner below her. */
+  .wordSign,
+  .wordKept {
+    right: auto;
+    left: 12px;
+    bottom: 12px;
+  }
+
   /* The rail runs across the top of the picture, above her head. */
   .tryOn {
     /* The bar is 6.5% of a 4 : 5 picture's height. */
@@ -1191,7 +1335,10 @@
   .captionTitle,
   .captionText,
   .endCard,
-  .tryOn {
+  .tryOn,
+  .wordSign,
+  .wordHint,
+  .wordKept {
     animation: none;
   }
 

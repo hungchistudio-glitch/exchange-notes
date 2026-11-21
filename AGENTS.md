@@ -24,7 +24,7 @@ searching further.
 | Area | Start at |
 | --- | --- |
 | Signed-in app | `app/(protected)/layout.tsx`: the only auth gate (`requireUser`), the onboarding redirect, and every provider |
-| Public pages | `app/(public)/`: landing `/` and `/login` |
+| Public pages | `app/(public)/`: landing `/` and `/login`. The landing's first-screen card (`components/landing/trial/HeroQuickCard.tsx`: hear, tap, keep), the four-step trial and scene 5 of Yumi's film (the word she keeps as she lands, `wordAt` in `storyTimeline.ts`) keep into one notebook, `lib/landing/trialNotebook.ts`; its Start keys reach `/login` through Yumi's eye (`components/landing/loginTransition.ts`, which `LoginScreen` opens out of). Chi, 2026-11-21. |
 | Session refresh, legacy-host redirect | `proxy.ts` → `lib/supabase/proxy.ts`. This is Next 16's middleware; it refreshes sessions and never authorizes. |
 | Sign-in (Google) | `components/auth/GoogleIdentityButton.tsx`, `app/auth/{callback,google}/route.ts`, `lib/auth/`. Their header comments explain the popup and redirect flows. |
 | Supabase clients | `lib/supabase/{client,server,proxy,service}.ts` |

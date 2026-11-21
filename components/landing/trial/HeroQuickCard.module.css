@@ -1,0 +1,266 @@
+/* =========================================================
+   The first screen's card (HeroQuickCard.tsx)
+
+   The trial's own card, smaller: the landing page's paper tokens (on .page,
+   turning with dark mode), one phrase, three steps. Only transform,
+   opacity and colour move.
+   ========================================================= */
+
+.card {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+  border: 1px solid var(--landing-line);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in oklab, var(--landing-amber) 14%, transparent), transparent 42%),
+    var(--landing-card);
+  padding: 16px 16px 12px;
+  box-shadow: 0 18px 50px rgba(41, 37, 28, 0.1);
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 200ms var(--ease-out);
+}
+
+.steps li > span {
+  display: inline-flex;
+  width: 19px;
+  height: 19px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--landing-subtle-fill);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out);
+}
+
+.steps li[data-done] {
+  color: var(--landing-ink);
+}
+
+.steps li[data-done] > span {
+  background: var(--landing-amber);
+  color: var(--landing-on-ink);
+}
+
+.phraseRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The phrase is the second step's key: tap it and Yumi's reading opens. */
+.phrase {
+  display: flex;
+  min-width: 0;
+  min-height: 56px;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+  border-radius: 16px;
+  padding: 4px 8px 4px 2px;
+  text-align: left;
+  transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.phrase:active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .phrase:hover {
+    background: var(--landing-subtle-fill);
+  }
+}
+
+.phraseText {
+  color: var(--landing-ink);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, var(--cjk-serif), serif;
+  font-size: clamp(1.9rem, 6vw, 2.4rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-decoration: underline dotted color-mix(in oklab, var(--landing-amber) 70%, transparent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 7px;
+}
+
+.phrase[aria-expanded="true"] .phraseText {
+  text-decoration-color: transparent;
+}
+
+.reading {
+  color: var(--landing-faint);
+  font-size: 0.875rem;
+}
+
+.listen {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--landing-ink);
+  color: var(--landing-on-ink);
+  transition: transform 140ms var(--ease-out);
+}
+
+.listen:active {
+  transform: scale(0.94);
+}
+
+.listen:disabled {
+  opacity: 0.4;
+}
+
+/* Yumi's reading, opened by the phrase. */
+.yumi {
+  display: grid;
+  gap: 4px;
+  border-left: 0;
+  border-radius: 16px;
+  background: var(--landing-amber-wash);
+  padding: 10px 12px;
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  animation: yumiOpen 240ms var(--ease-out);
+}
+
+.yumi[hidden] {
+  display: none;
+}
+
+.yumiLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--landing-amber);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.equivalent strong {
+  color: var(--landing-ink);
+  font-weight: 650;
+}
+
+@keyframes yumiOpen {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.keep {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  border-radius: 999px;
+  background: var(--landing-ink);
+  padding: 0 18px;
+  color: var(--landing-on-ink);
+  font-size: 0.875rem;
+  font-weight: 650;
+  transition: transform 140ms var(--ease-out), background-color 200ms var(--ease-out);
+}
+
+.keep:active {
+  transform: scale(0.97);
+}
+
+.keep[aria-pressed="true"] {
+  background: color-mix(in oklab, var(--landing-ink) 14%, transparent);
+  color: var(--landing-ink);
+}
+
+/* Where the phrase lands. */
+.notebook {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--landing-line);
+  border-radius: 999px;
+  padding: 0 11px;
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 200ms var(--ease-out), color 200ms var(--ease-out);
+}
+
+.notebook[data-filled] {
+  border-color: color-mix(in oklab, var(--landing-amber) 60%, var(--landing-line));
+  color: var(--landing-ink);
+}
+
+.further {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-self: start;
+  gap: 6px;
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, currentColor 30%, transparent);
+  text-underline-offset: 4px;
+}
+
+/* The phrase on its way to the notebook: a fixed copy, so nothing in the
+   hero is laid out while it flies. */
+.ghost {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  color: var(--landing-ink, #171717);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(1.9rem, 6vw, 2.4rem);
+  font-weight: 500;
+  line-height: 1.1;
+  pointer-events: none;
+  white-space: nowrap;
+  transform-origin: 50% 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yumi {
+    animation: none;
+  }
+
+  .phrase,
+  .listen,
+  .keep {
+    transition: none;
+  }
+}

@@ -5,15 +5,29 @@ vi.mock("@/lib/analytics/track", () => ({
   track: vi.fn(),
 }));
 
+/* The Start keys go to /login through the router, after Yumi's eye has
+   closed over the page (components/landing/loginTransition.ts). */
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
+
 import LandingPage from "@/components/landing/LandingPage";
 import { track } from "@/lib/analytics/track";
 import { setInterfaceLanguage } from "@/lib/appPreferences";
 import * as i18n from "@/lib/i18n";
+import { resetNotebookForTests } from "@/lib/landing/trialNotebook";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
+
+/* One chip says which language is on and opens the seven (Chi, 2026-11-21). */
+function openPicker(current = "English") {
+  fireEvent.click(screen.getByRole("button", { name: `Interface language: ${current}` }));
+  return screen.getByRole("group", { name: "Read this introduction in" });
+}
 
 describe("the pre-login product tour", () => {
   beforeEach(() => {
     vi.mocked(track).mockClear();
+    router.push.mockClear();
+    resetNotebookForTests();
     setInterfaceLanguage("english");
   });
 
@@ -55,8 +69,10 @@ describe("the pre-login product tour", () => {
 
     // The page's own picker: the note further down has a language view of
     // its own, with a button that is also called "English".
-    const picker = screen.getByRole("group", { name: "Read this introduction in" });
-    for (const name of ["English", "繁體中文", "Español", "Français", "Italiano"]) {
+    // Folded into one chip until it is opened.
+    expect(screen.queryByRole("group", { name: "Read this introduction in" })).not.toBeInTheDocument();
+    const picker = openPicker();
+    for (const name of ["English", "繁體中文", "Español", "Français", "Italiano", "日本語", "한국어"]) {
       expect(within(picker).getByRole("button", { name })).toBeInTheDocument();
     }
 
@@ -82,11 +98,7 @@ describe("the pre-login product tour", () => {
 
     try {
       render(<LandingPage />);
-      fireEvent.click(
-        within(screen.getByRole("group", { name: "Read this introduction in" })).getByRole("button", {
-          name: "Français",
-        }),
-      );
+      fireEvent.click(within(openPicker()).getByRole("button", { name: "Français" }));
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
         "That language couldn't be loaded. Check your connection and try again.",
@@ -120,11 +132,7 @@ describe("the pre-login product tour", () => {
     fireEvent.click(within(trial).getByRole("tab", { name: /Exchange/ }));
     expect(within(trial).getByText("respiro", { selector: "mark" })).toHaveAttribute("lang", "it");
 
-    fireEvent.click(
-      within(screen.getByRole("group", { name: "Read this introduction in" })).getByRole("button", {
-        name: "繁體中文",
-      }),
-    );
+    fireEvent.click(within(openPicker()).getByRole("button", { name: "繁體中文" }));
 
     // Traditional Chinese readers meet Italian, and a Spanish friend's word.
     const zhTrial = await screen.findByRole("region", { name: "用一句話試試看" });
@@ -197,5 +205,35 @@ describe("the pre-login product tour", () => {
     expect(track).toHaveBeenCalledWith("landing_primary_cta_click", { source: "hero" });
     expect(track).toHaveBeenCalledWith("landing_final_cta_click", { source: "final" });
     expect(track).not.toHaveBeenCalledWith("google_auth_start", expect.anything());
+    // Each goes on to sign-in through the router, after its transition
+    // (none here: jsdom has no Web Animations, so it goes at once).
+    expect(router.push).toHaveBeenCalledTimes(entries.length);
+    expect(router.push).toHaveBeenCalledWith("/login");
+  });
+
+  it("says in plain words what the app is for, under the title", () => {
+    render(<LandingPage />);
+    expect(screen.getByText("See → keep → understand → share")).toBeInTheDocument();
+  });
+
+  /* Chi, 2026-11-21: 第一屏三下就懂. */
+  it("lets a reader hear, open and keep the phrase on the first screen, into the trial's notebook", () => {
+    render(<LandingPage />);
+    const card = screen.getByRole("region", { name: "Try it in three taps" });
+    const phrase = within(card).getByRole("button", { expanded: false });
+    expect(phrase).toHaveTextContent("留白");
+    expect(within(card).getByRole("button", { name: "Listen: 留白" })).toBeInTheDocument();
+
+    fireEvent.click(phrase);
+    expect(phrase).toHaveAttribute("aria-expanded", "true");
+    expect(within(card).getByText(/Literally “leave white”/)).toBeVisible();
+
+    fireEvent.click(within(card).getByRole("button", { name: "Keep it" }));
+    expect(within(card).getByRole("button", { name: "Kept" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(card).getByRole("status")).toHaveTextContent("In your notebook: 1");
+
+    // The trial under it has it too: one notebook for the page.
+    const trial = screen.getByRole("region", { name: "Try it with one phrase" });
+    expect(within(trial).getByRole("button", { name: /Kept — it’s in your notebook/ })).toBeDisabled();
   });
 });

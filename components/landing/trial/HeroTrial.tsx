@@ -22,6 +22,7 @@ import {
 
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 import type { TranslationDictionary } from "@/lib/i18n/types";
+import { setNotebook, useNotebook, type Kept } from "@/lib/landing/trialNotebook";
 import { trialPhraseFor } from "@/lib/landing/trialPhrases";
 import {
   INTERFACE_LANGUAGE_CODE,
@@ -55,6 +56,7 @@ import {
 } from "@/lib/speech";
 
 import styles from "./HeroTrial.module.css";
+import { phraseCardFor } from "./phraseCard";
 
 /* =========================================================
    The hero's trial: the app's four steps, done for real on one phrase
@@ -84,17 +86,6 @@ type TrialCopy = HeroCopy["trial"];
 const STEPS = ["keep", "understand", "exchange", "review"] as const;
 type StepId = (typeof STEPS)[number];
 
-type Kept = {
-  id: "phrase" | "word";
-  text: string;
-  lang: string;
-  speech: SpeechTag | null;
-  reading?: string;
-  meaning: string;
-  equivalent?: string;
-  where?: string;
-  why?: string;
-};
 
 const fill = (template: string, values: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (match, key: string) =>
@@ -204,6 +195,13 @@ function VoiceControls({
     <div className={styles.voice}>
       <ListenButton id={id} text={text} speech={speech} speaker={speaker} copy={copy} />
 
+      {/* One main key a step (Chi, 2026-11-21: 試用區精簡): Listen. The voice
+          and the speed are there for whoever wants them, folded away. */}
+      <details className={styles.voiceMore}>
+        <summary>
+          {copy.voice} · {copy.speed}
+        </summary>
+        <div className={styles.voiceOptions}>
       <label className={styles.voicePicker} htmlFor={selectId}>
         <span>{copy.voice}</span>
         <select
@@ -236,6 +234,8 @@ function VoiceControls({
           </button>
         ))}
       </div>
+        </div>
+      </details>
 
       {anyVoices && !voices.length ? (
         <p className={styles.listenNote}>{fill(copy.noVoice, { language: languageName })}</p>
@@ -247,9 +247,12 @@ function VoiceControls({
 // ------------------------------------------------------------- the trial
 
 export default function HeroTrial({
+  id,
   copy,
   language,
 }: {
+  /** So the first screen's card can lead here ("Go further"). */
+  id?: string;
   copy: HeroCopy;
   language: InterfaceLanguage;
 }) {
@@ -265,7 +268,9 @@ export default function HeroTrial({
   // Null until the reader edits it, so a change of language still reads.
   const [whereDraft, setWhere] = useState<string | null>(null);
   const [whyDraft, setWhy] = useState<string | null>(null);
-  const [notebook, setNotebook] = useState<Kept[]>([]);
+  /* One notebook for the page: the first screen's card and the film keep
+     into it too (lib/landing/trialNotebook.ts). */
+  const notebook = useNotebook();
   /* The reader's own pick, or else the interface's language — followed when
      the interface changes, since the page is read in place in any of seven. */
   const [picked, setCompare] = useState<LanguageCode | null>(null);
@@ -280,24 +285,16 @@ export default function HeroTrial({
   const keptWord = notebook.find(item => item.id === "word");
   const edited = !!keptPhrase && (keptPhrase.where !== where || keptPhrase.why !== why);
 
-  const titles: Record<StepId, { title: string; description: string }> = {
-    keep: { title: tour.keepTitle, description: tour.keepDescription },
-    understand: { title: tour.understandTitle, description: tour.understandDescription },
-    exchange: { title: tour.exchangeTitle, description: tour.exchangeDescription },
-    review: { title: tour.reviewTitle, description: tour.reviewDescription },
+  /* One line a step (Chi, 2026-11-21: 試用區精簡): the step's own heading.
+     The paragraph that followed each said again what the step shows. */
+  const titles: Record<StepId, string> = {
+    keep: tour.keepTitle,
+    understand: tour.understandTitle,
+    exchange: tour.exchangeTitle,
+    review: tour.reviewTitle,
   };
 
-  const phraseCard = (): Kept => ({
-    id: "phrase",
-    text: journey.phrase,
-    lang: journey.phraseLang,
-    speech: phrase.speech,
-    reading: journey.reading,
-    meaning: journey.understand.meaning,
-    equivalent: journey.understand.equivalent,
-    where,
-    why,
-  });
+  const phraseCard = (): Kept => phraseCardFor(journey, where, why);
 
   function keepPhrase() {
     const card = phraseCard();
@@ -401,7 +398,7 @@ export default function HeroTrial({
   const nextStep = STEPS[stepIndex + 1];
 
   return (
-    <section className={styles.trial} aria-labelledby={`${baseId}-title`}>
+    <section id={id} className={styles.trial} aria-labelledby={`${baseId}-title`}>
       <header className={styles.top}>
         <h2 id={`${baseId}-title`}>{trial.title}</h2>
         <p>{trial.hint}</p>
@@ -434,8 +431,7 @@ export default function HeroTrial({
         aria-labelledby={`${baseId}-tab-${step}`}
       >
         <div className={styles.panelHead}>
-          <h3>{titles[step].title}</h3>
-          <p>{titles[step].description}</p>
+          <h3>{titles[step]}</h3>
         </div>
 
         {step === "keep" ? (
@@ -505,8 +501,10 @@ export default function HeroTrial({
               </div>
             </dl>
 
-            <div className={styles.compare}>
-              <p className={styles.compareTitle}>{trial.compare.title}</p>
+            {/* Folded, like the voice: the step's answer is Yumi's reading
+                above; the seven languages are the next thing to open. */}
+            <details className={styles.compare}>
+              <summary className={styles.compareTitle}>{trial.compare.title}</summary>
               <div className={styles.compareLanguages} role="group" aria-label={trial.compare.label}>
                 {LANGUAGE_CODES.map(code => (
                   <button
@@ -532,7 +530,7 @@ export default function HeroTrial({
                   label={`${listen.play}: ${phrase.renderings[compare].text}`}
                 />
               </div>
-            </div>
+            </details>
           </div>
         ) : null}
 

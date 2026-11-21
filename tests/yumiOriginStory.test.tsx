@@ -20,8 +20,12 @@ import {
   actAt,
   globe,
   planetTrack,
+  WORD_SELF_KEEP_AT_MS,
+  WORD_SIGN_AT_MS,
+  wordAt,
   yumiAt,
 } from "@/components/landing/story/storyTimeline";
+import { readNotebook, resetNotebookForTests } from "@/lib/landing/trialNotebook";
 import { getTranslations } from "@/lib/i18n";
 import { shopItem } from "@/lib/shop/catalog";
 
@@ -306,6 +310,7 @@ describe("the film on the page", () => {
     render(
       <YumiOriginStory
         copy={copy}
+        journey={getTranslations(language)!.landing.hero.journey}
         language={language}
         cta={<a href="/login">Start</a>}
       />,
@@ -364,6 +369,56 @@ describe("the film on the page", () => {
     expect(station).toHaveAttribute("aria-current", "step");
     expect(screen.getByRole("button", { name: story.pause })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: story.ariaLabel })).toHaveAttribute("data-act", "station");
+  });
+
+  /*
+   * Scene 5 (Chi, 2026-11-21): the first word of Earth comes up on a sign
+   * as she lands. A tap keeps it, into the page's one notebook; untapped,
+   * she keeps it herself at touchdown. 33 seconds either way.
+   */
+  it("knows the word's state from the clock and the reader's tap", () => {
+    expect(wordAt(WORD_SIGN_AT_MS - 1, false)).toBe("none");
+    expect(wordAt(WORD_SIGN_AT_MS, false)).toBe("sign");
+    expect(wordAt(WORD_SELF_KEEP_AT_MS, false)).toBe("keptByYumi");
+    expect(wordAt(WORD_SIGN_AT_MS + 10, true)).toBe("keptByYou");
+    expect(wordAt(WORD_SIGN_AT_MS - 1, true)).toBe("none");
+    // Three seconds to tap it, kept before the film ends.
+    expect(WORD_SELF_KEEP_AT_MS - WORD_SIGN_AT_MS).toBeGreaterThanOrEqual(3_000);
+    expect(WORD_SELF_KEEP_AT_MS).toBeLessThan(STORY_DURATION_MS);
+    // The kept card is up in scene 5's still frame.
+    expect(wordAt(ACT_STILLS_MS[4], false)).toBe("keptByYumi");
+    expect(STORY_DURATION_MS).toBe(33_000);
+  });
+
+  it("lets the reader keep the word Yumi meets as she lands", async () => {
+    resetNotebookForTests();
+    const english = getTranslations("english")!.landing;
+    renderStory();
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(story.acts[4].name) }));
+    const later = skipAhead(WORD_SIGN_AT_MS - STORY_ACTS[4].start + 200);
+    const sign = await screen.findByRole("button", {
+      name: story.keep.sign.replace("{phrase}", english.hero.journey.phrase),
+    });
+    later.mockRestore();
+
+    fireEvent.click(sign);
+    expect(screen.getByRole("status")).toHaveTextContent(story.keep.byYou);
+    expect(readNotebook().map(item => item.text)).toEqual([english.hero.journey.phrase]);
+  });
+
+  it("keeps the word herself at touchdown when nobody taps it", async () => {
+    resetNotebookForTests();
+    renderStory();
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(story.acts[4].name) }));
+    const later = skipAhead(WORD_SELF_KEEP_AT_MS - STORY_ACTS[4].start + 200);
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(story.keep.byYumi));
+    later.mockRestore();
+    // Hers, not the reader's: nothing went into their notebook.
+    expect(readNotebook()).toEqual([]);
   });
 
   it("tries the shop's real pieces on her at Station 33, and takes them off", async () => {

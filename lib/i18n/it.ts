@@ -96,15 +96,21 @@ const italian: TranslationDictionary = {
       title: "Scambia una frase. Scopri un altro modo di vedere il mondo.",
       intro: "Conserva le parole che ti trovano — in viaggio, in una canzone, su un menu — insieme al momento in cui sono arrivate. Yumi ti aiuta a capirle, e amici di altri posti ti mostrano cosa significano per loro le stesse parole.",
       promise: "Gratis durante la beta. Niente feed né «mi piace»: solo le persone che scegli.",
+      plainLine: "Vedere → conservare → capire → condividere",
+      quick: {
+        ariaLabel: "Provalo in tre tocchi",
+        listen: "Ascoltala",
+        word: "Tocca la frase",
+        keep: "Conservala",
+        kept: "Conservata",
+        notebook: "Nel tuo quaderno: {count}",
+        more: "Continua: {steps}",
+      },
       tour: {
         keepTitle: "Conservala con il suo momento",
-        keepDescription: "Dove l’hai incontrata e perché ti è rimasta restano insieme alle parole. Fai tua la nota, poi conservala.",
         understandTitle: "Capiscila con Yumi",
-        understandDescription: "Significato, tono e cultura nella tua lingua: uno spunto per pensare, non un verdetto. Ascoltala e guardala in sette lingue.",
         exchangeTitle: "Scambiala, guardala con altri occhi",
-        exchangeDescription: "Mandala a un amico di un altro posto e scopri cosa significano per lui le stesse parole.",
         reviewTitle: "Riprendila prima che svanisca",
-        reviewDescription: "Ricordala, ascoltala, poi controlla. Ciò che sai bene aspetta di più prima di tornare.",
       },
       trial: {
         title: "Provalo con una frase",
@@ -246,6 +252,12 @@ const italian: TranslationDictionary = {
       },
       endTitle: "YU + MI = Yumi",
       endText: "Ora sulla Terra, a imparare le lingue — con te.",
+      keep: {
+        tap: "Toccala per conservarla",
+        sign: "Conserva «{phrase}»",
+        byYou: "L’hai conservata",
+        byYumi: "Yumi l’ha conservata",
+      },
     },
     notes: {
       eyebrow: "Conserva",

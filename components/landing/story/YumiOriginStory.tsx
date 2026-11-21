@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause, Play, RotateCcw } from "lucide-react";
+import { Bookmark, Check, Pause, Play, RotateCcw } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -13,8 +13,10 @@ import {
 import OrbitalBackdrop, { Burst } from "@/components/shop/OrbitalBackdrop";
 import StationDock from "@/components/shop/StationDock";
 import YumiLoading from "@/components/yumi3d/YumiLoading";
+import { phraseCardFor } from "@/components/landing/trial/phraseCard";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 import type { TranslationDictionary } from "@/lib/i18n/types";
+import { keepPhrase } from "@/lib/landing/trialNotebook";
 import { QUIET_SCENE } from "@/lib/shop/atmosphere";
 import type { ShopItem, YumiOutfit } from "@/lib/shop/catalog";
 import type { Blob } from "./earthPainter";
@@ -36,12 +38,15 @@ import {
   outfitAt,
   planetTrack,
   actAt,
+  wordAt,
   yumiAt,
   type StoryTrack,
+  type StoryWord,
 } from "./storyTimeline";
 import styles from "./YumiOriginStory.module.css";
 
 type StoryCopy = TranslationDictionary["landing"]["story"];
+type Journey = TranslationDictionary["landing"]["hero"]["journey"];
 
 /* =========================================================
    YU + MI = Yumi
@@ -239,10 +244,13 @@ function CaptionBody({ copy, index }: { copy: StoryCopy; index: number }) {
 
 export default function YumiOriginStory({
   copy,
+  journey,
   language,
   cta,
 }: {
   copy: StoryCopy;
+  /** The hero's phrase: the word Yumi meets as she lands (scene 5). */
+  journey: Journey;
   language: InterfaceLanguage;
   /** The call to action on the end card. */
   cta: ReactNode;
@@ -276,6 +284,9 @@ export default function YumiOriginStory({
   const railTouchedRef = useRef(false);
   /** The look before this one, to tell which pieces have just gone on. */
   const lastLookRef = useRef<YumiOutfit>({});
+  /** Scene 5's word: whether the reader has kept it, and what it shows. */
+  const wordTappedRef = useRef(false);
+  const wordRef = useRef<StoryWord>("none");
 
   const [act, setAct] = useState(0);
   /** The act whose words are fading out under the new act's. */
@@ -299,6 +310,8 @@ export default function YumiOriginStory({
      until the film is played again from the start. */
   const [chosen, setChosen] = useState<YumiOutfit | null>(null);
   const outfit = chosen ?? ownOutfit;
+  /** Scene 5's word on its sign, and who kept it (wordAt). */
+  const [word, setWord] = useState<StoryWord>("none");
 
   const showTime = useCallback((time: number) => {
     const nextAct = actAt(time);
@@ -337,7 +350,25 @@ export default function YumiOriginStory({
       endRef.current = nextEnd;
       setEndCard(nextEnd);
     }
+    // Back before the sign (a scene chosen, the film again): it can be
+    // kept again. The reader's notebook keeps what they kept.
+    const nextWord = wordAt(time, wordTappedRef.current);
+    if (nextWord === "none") wordTappedRef.current = false;
+    if (nextWord !== wordRef.current) {
+      wordRef.current = nextWord;
+      setWord(nextWord);
+    }
   }, []);
+
+  /* The reader keeps the word Yumi has just met: into the page's one
+     notebook, the trial's (lib/landing/trialNotebook.ts). */
+  const keepWord = useCallback(() => {
+    if (wordRef.current !== "sign") return;
+    wordTappedRef.current = true;
+    wordRef.current = "keptByYou";
+    setWord("keptByYou");
+    keepPhrase(phraseCardFor(journey));
+  }, [journey]);
 
   /*
    * A dip to black and back, with the change made in the dark: how a film
@@ -987,6 +1018,31 @@ export default function YumiOriginStory({
             <div ref={veilRef} className={styles.veil} aria-hidden="true" />
             <div data-track="letterbox" className={`${styles.letterbox} ${styles.letterboxTop}`} aria-hidden="true" />
             <div data-track="letterbox" className={`${styles.letterbox} ${styles.letterboxBottom}`} aria-hidden="true" />
+
+            {/* Scene 5's word: a sign she meets as she lands, then the card
+                it becomes, kept by the reader or by her (wordAt). */}
+            {word === "sign" ? (
+              <button
+                type="button"
+                className={styles.wordSign}
+                onClick={keepWord}
+                aria-label={copy.keep.sign.replace("{phrase}", journey.phrase)}
+              >
+                <span className={styles.wordText} lang={journey.phraseLang}>{journey.phrase}</span>
+                <span className={styles.wordReading} lang={journey.phraseLang}>{journey.reading}</span>
+                <span className={styles.wordHint} aria-hidden="true">
+                  <Bookmark size={12} aria-hidden="true" /> {copy.keep.tap}
+                </span>
+              </button>
+            ) : word !== "none" ? (
+              <p className={styles.wordKept} data-by={word === "keptByYou" ? "you" : "yumi"} role="status">
+                <Check size={13} aria-hidden="true" />
+                <span lang={journey.phraseLang}>{journey.phrase}</span>
+                <span className={styles.wordBy}>
+                  {word === "keptByYou" ? copy.keep.byYou : copy.keep.byYumi}
+                </span>
+              </p>
+            ) : null}
 
             {endCard ? (
               <div className={styles.endCard}>

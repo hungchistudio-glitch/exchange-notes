@@ -91,15 +91,21 @@ const traditionalChinese: TranslationDictionary = {
       title: "交換一句話，也交換一種看世界的方式。",
       intro: "把在旅途、歌裡、菜單上遇見的字句，連同當下的情境一起留下。Yumi 陪你讀懂它；來自不同地方的朋友，再告訴你同一句話在他們心裡的樣子。",
       promise: "測試期間免費。沒有動態牆，也沒有按讚，只有你選擇的人。",
+      plainLine: "看到 → 留下 → 讀懂 → 分享",
+      quick: {
+        ariaLabel: "三下就懂",
+        listen: "聽聽看",
+        word: "點一下字",
+        keep: "留下它",
+        kept: "已留下",
+        notebook: "筆記本：{count}",
+        more: "繼續試：{steps}",
+      },
       tour: {
         keepTitle: "連同當下一起留下",
-        keepDescription: "在哪裡遇見、為什麼記住它，都和字句放在一起。把筆記改成你的，再留下來。",
         understandTitle: "和 Yumi 一起讀懂",
-        understandDescription: "用你的語言看懂意思、語氣與文化——是一起思考的參考，不是標準答案。聽聽發音，再看看七種語言怎麼說。",
         exchangeTitle: "交換它，換個角度看",
-        exchangeDescription: "把它傳給來自其他地方的朋友，聽聽同一句話在他們心裡的意思。",
         reviewTitle: "在快忘記前想起來",
-        reviewDescription: "先回想、再聽、最後對答案。越熟的字，隔越久才會再出現。",
       },
       trial: {
         title: "用一句話試試看",
@@ -241,6 +247,12 @@ const traditionalChinese: TranslationDictionary = {
       },
       endTitle: "YU + MI = Yumi",
       endText: "現在在地球，和你一起學語言。",
+      keep: {
+        tap: "點一下，幫她留下",
+        sign: "留下「{phrase}」",
+        byYou: "你留下了",
+        byYumi: "Yumi 自己留下了",
+      },
     },
     notes: {
       eyebrow: "留下",

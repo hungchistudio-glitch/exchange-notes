@@ -93,15 +93,21 @@ const spanish: TranslationDictionary = {
       title: "Intercambia una frase. Descubre otra forma de ver el mundo.",
       intro: "Guarda las palabras que te encuentran —en un viaje, en una canción, en un menú— junto con el momento en que aparecieron. Yumi te ayuda a entenderlas, y amistades de otros lugares te muestran lo que esas mismas palabras significan para ellas.",
       promise: "Gratis durante la beta. Sin feed ni «me gusta»: solo las personas que tú eliges.",
+      plainLine: "Ver → guardar → entender → compartir",
+      quick: {
+        ariaLabel: "Pruébalo en tres toques",
+        listen: "Escúchala",
+        word: "Toca la frase",
+        keep: "Guardarla",
+        kept: "Guardada",
+        notebook: "En tu cuaderno: {count}",
+        more: "Sigue: {steps}",
+      },
       tour: {
         keepTitle: "Guárdala con su momento",
-        keepDescription: "Dónde la encontraste y por qué se te quedó se guardan con las palabras. Haz tuya la nota y guárdala.",
         understandTitle: "Entiéndela con Yumi",
-        understandDescription: "Significado, tono y cultura en tu idioma: algo con lo que pensar, no un veredicto. Escúchala y mírala en siete idiomas.",
         exchangeTitle: "Intercámbiala y mírala de nuevo",
-        exchangeDescription: "Envíasela a una amistad de otro lugar y escucha lo que esas mismas palabras significan para ella.",
         reviewTitle: "Recupérala antes de que se borre",
-        reviewDescription: "Recuérdala, escúchala y comprueba. Lo que ya sabes bien tarda más en volver.",
       },
       trial: {
         title: "Pruébalo con una frase",
@@ -243,6 +249,12 @@ const spanish: TranslationDictionary = {
       },
       endTitle: "YU + MI = Yumi",
       endText: "Ya en la Tierra, aprendiendo idiomas contigo.",
+      keep: {
+        tap: "Tócala para guardarla",
+        sign: "Guardar «{phrase}»",
+        byYou: "La guardaste",
+        byYumi: "Yumi la guardó",
+      },
     },
     notes: {
       eyebrow: "Guarda",

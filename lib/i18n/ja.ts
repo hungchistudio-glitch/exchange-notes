@@ -91,15 +91,21 @@ const japanese: TranslationDictionary = {
       title: "ひとことを交換して、別の見方に出会う。",
       intro: "旅先で、歌の中で、メニューの上で出会ったことばを、そのときの瞬間ごととっておきましょう。Yumi が理解を手伝い、別の場所に住む友だちが、同じことばが自分にとって何を意味するかを教えてくれます。",
       promise: "ベータ期間中は無料。フィードも「いいね」もなく、あなたが選んだ人だけ。",
+      plainLine: "見つける → とっておく → 理解する → 分かち合う",
+      quick: {
+        ariaLabel: "3回のタップで試す",
+        listen: "聞いてみる",
+        word: "ことばをタップ",
+        keep: "とっておく",
+        kept: "とっておきました",
+        notebook: "ノート：{count}",
+        more: "さらに試す：{steps}",
+      },
       tour: {
         keepTitle: "その瞬間ごととっておく",
-        keepDescription: "どこで出会い、なぜ心に残ったのかを、ことばといっしょに保存します。自分のノートに仕上げてから、とっておきましょう。",
         understandTitle: "Yumi といっしょに理解する",
-        understandDescription: "意味、語調、文化をあなたの言語で。答えを決めるものではなく、考えるための手がかりです。音で聞いて、7つの言語で見比べられます。",
         exchangeTitle: "交換して、新しく見る",
-        exchangeDescription: "ほかの場所に住む友だちに送って、同じことばが相手にとって何を意味するのか聞いてみましょう。",
         reviewTitle: "薄れる前に呼び戻す",
-        reviewDescription: "思い出して、聞いて、確かめる。よく覚えているものほど、次に出てくるまでの間隔が長くなります。",
       },
       trial: {
         title: "ひとことで試してみる",
@@ -241,6 +247,12 @@ const japanese: TranslationDictionary = {
       },
       endTitle: "YU + MI = Yumi",
       endText: "いまは地球で、あなたといっしょに言語を学んでいます。",
+      keep: {
+        tap: "タップしてとっておこう",
+        sign: "「{phrase}」をとっておく",
+        byYou: "あなたがとっておきました",
+        byYumi: "Yumi がとっておきました",
+      },
     },
     notes: {
       eyebrow: "とっておく",

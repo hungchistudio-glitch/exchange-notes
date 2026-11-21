@@ -96,15 +96,21 @@ const french: TranslationDictionary = {
       title: "Échangez une phrase. Découvrez un autre regard sur le monde.",
       intro: "Gardez les mots qui vous trouvent — en voyage, dans une chanson, sur un menu — avec le moment qui les entoure. Yumi vous aide à les comprendre, et des amis venus d’ailleurs vous montrent ce que ces mêmes mots veulent dire pour eux.",
       promise: "Gratuit pendant la bêta. Pas de fil d’actualité, pas de « j’aime » : seulement les personnes que vous choisissez.",
+      plainLine: "Voir → garder → comprendre → partager",
+      quick: {
+        ariaLabel: "Essayez en trois gestes",
+        listen: "Écoutez",
+        word: "Touchez la phrase",
+        keep: "La garder",
+        kept: "Gardée",
+        notebook: "Dans votre carnet : {count}",
+        more: "Continuez : {steps}",
+      },
       tour: {
         keepTitle: "La garder avec son moment",
-        keepDescription: "Où vous l’avez croisée et pourquoi elle vous est restée sont gardés avec les mots. Faites de la note la vôtre, puis gardez-la.",
         understandTitle: "La comprendre avec Yumi",
-        understandDescription: "Le sens, le ton et la culture dans votre langue — de quoi réfléchir, pas un verdict. Écoutez-la, et voyez-la en sept langues.",
         exchangeTitle: "L’échanger, la voir autrement",
-        exchangeDescription: "Envoyez-la à un ami venu d’ailleurs et découvrez ce que ces mêmes mots veulent dire pour lui.",
         reviewTitle: "La retrouver avant qu’elle s’efface",
-        reviewDescription: "Rappelez-la, écoutez-la, puis vérifiez. Ce que vous savez bien attend plus longtemps avant de revenir.",
       },
       trial: {
         title: "Essayez avec une phrase",
@@ -246,6 +252,12 @@ const french: TranslationDictionary = {
       },
       endTitle: "YU + MI = Yumi",
       endText: "Désormais sur Terre, à apprendre les langues — avec vous.",
+      keep: {
+        tap: "Touchez-la pour la garder",
+        sign: "Garder « {phrase} »",
+        byYou: "Vous l’avez gardée",
+        byYumi: "Yumi l’a gardée",
+      },
     },
     notes: {
       eyebrow: "Gardez",

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HeroTrial from "@/components/landing/trial/HeroTrial";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 import { getTranslations } from "@/lib/i18n";
+import { resetNotebookForTests } from "@/lib/landing/trialNotebook";
 import { getSpeechSettings, setSpeechSettings } from "@/lib/speech";
 
 const voice = (name: string, lang: string, voiceURI = name) =>
@@ -29,6 +30,8 @@ function renderTrial(language: InterfaceLanguage = "english") {
 let speak: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
+  // One notebook for the page (lib/landing/trialNotebook.ts): each test is a fresh page.
+  resetNotebookForTests();
   speak = vi.fn();
   vi.stubGlobal("speechSynthesis", {
     speak,

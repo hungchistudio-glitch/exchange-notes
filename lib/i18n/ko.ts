@@ -91,15 +91,21 @@ const korean: TranslationDictionary = {
       title: "한마디를 나누고, 다른 시선을 발견해요.",
       intro: "여행지에서, 노래 속에서, 메뉴판 위에서 만난 말을 그 순간과 함께 간직하세요. Yumi가 이해를 돕고, 다른 곳에 사는 친구들이 같은 말이 자기에게는 어떤 의미인지 보여 줘요.",
       promise: "베타 기간에는 무료. 피드도 '좋아요'도 없이, 내가 고른 사람들만.",
+      plainLine: "보기 → 간직하기 → 이해하기 → 나누기",
+      quick: {
+        ariaLabel: "세 번 탭으로 써 보기",
+        listen: "들어 보기",
+        word: "말을 탭하기",
+        keep: "간직하기",
+        kept: "간직했어요",
+        notebook: "노트: {count}",
+        more: "더 해 보기: {steps}",
+      },
       tour: {
         keepTitle: "그 순간과 함께 간직하기",
-        keepDescription: "어디서 만났는지, 왜 마음에 남았는지를 말과 함께 저장해요. 나만의 노트로 다듬은 뒤 간직하세요.",
         understandTitle: "Yumi와 함께 이해하기",
-        understandDescription: "의미, 말투, 문화를 내 언어로. 정답이 아니라 생각할 거리예요. 소리로 듣고, 7개 언어로 비교해 보세요.",
         exchangeTitle: "나누고, 새롭게 보기",
-        exchangeDescription: "다른 곳에 사는 친구에게 보내고, 같은 말이 그 친구에게는 어떤 의미인지 들어 보세요.",
         reviewTitle: "잊히기 전에 다시 불러오기",
-        reviewDescription: "떠올리고, 듣고, 확인해요. 잘 아는 것일수록 다시 나오기까지 더 오래 기다려요.",
       },
       trial: {
         title: "한마디로 써 보기",
@@ -241,6 +247,12 @@ const korean: TranslationDictionary = {
       },
       endTitle: "YU + MI = Yumi",
       endText: "지금은 지구에서 당신과 함께 언어를 배우고 있어요.",
+      keep: {
+        tap: "탭해서 간직해 주세요",
+        sign: "‘{phrase}’ 간직하기",
+        byYou: "당신이 간직했어요",
+        byYumi: "Yumi가 간직했어요",
+      },
     },
     notes: {
       eyebrow: "간직하기",

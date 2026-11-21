@@ -6,6 +6,7 @@ import { Fragment, useEffect } from "react";
 import GoogleIdentityButton from "@/components/auth/GoogleIdentityButton";
 import styles from "@/components/auth/LoginScreen.module.css";
 import LoginYumi from "@/components/auth/LoginYumi";
+import { playLoginArrival } from "@/components/landing/loginTransition";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { learningLanguageList } from "@/lib/languages";
 
@@ -27,6 +28,13 @@ export default function LoginScreen({ initialError = false }: LoginScreenProps) 
   useEffect(() => {
     if (initialError) window.history.replaceState(null, "", "/login");
   }, [initialError]);
+
+  /* Arrived from the landing page's Start key: this page opens out of the
+     Yumi's eye it closed into (components/landing/loginTransition.ts). A
+     sign-in page reached any other way has no eye to open, and skips it. */
+  useEffect(() => {
+    playLoginArrival();
+  }, []);
 
   return (
     <main className="flex min-h-svh items-center justify-center bg-surface px-5 py-8 text-black">
