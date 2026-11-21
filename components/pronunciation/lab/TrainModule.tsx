@@ -254,8 +254,8 @@ export default function TrainModule() {
           aria-label={copy.session.stepOf}
         >
           <span
-            className="block h-full rounded-full bg-black transition-[width] duration-500 ease-out motion-reduce:transition-none"
-            style={{ width: `${(session.index / session.items.length) * 100}%` }}
+            className="block h-full w-full rounded-full bg-black transition-transform duration-500 ease-out motion-reduce:transition-none"
+            style={{ transform: `translateX(${(session.index / session.items.length) * 100 - 100}%)` }}
           />
         </div>
 

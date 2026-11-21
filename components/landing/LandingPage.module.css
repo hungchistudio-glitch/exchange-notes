@@ -156,10 +156,14 @@
   letter-spacing: 0.02em;
 }
 
-.languageOption:hover {
-  border-color: color-mix(in oklab, var(--landing-amber) 55%, var(--landing-line));
-  color: var(--landing-ink);
-  transform: translateY(-1px);
+/* A mouse only: a finger's tap would leave the lift stuck on the last
+   language chosen (the mobile-native skill). */
+@media (hover: hover) and (pointer: fine) {
+  .languageOption:hover {
+    border-color: color-mix(in oklab, var(--landing-amber) 55%, var(--landing-line));
+    color: var(--landing-ink);
+    transform: translateY(-1px);
+  }
 }
 
 .languageOption[aria-pressed="true"] {

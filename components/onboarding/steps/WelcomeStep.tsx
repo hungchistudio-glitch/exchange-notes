@@ -26,7 +26,7 @@ export default function WelcomeStep({ onContinue }: WelcomeStepProps) {
       <button
         type="button"
         onClick={onContinue}
-        className="mt-10 flex h-13 min-h-12 w-full max-w-xs items-center justify-center rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98]"
+        className="mt-10 flex h-13 min-h-12 w-full max-w-xs items-center justify-center rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition active:scale-[0.98]"
       >
         {copy.cta}
       </button>

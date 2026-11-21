@@ -72,6 +72,16 @@ CI does not run the build. Its `tsc --noEmit` type-checks `tests/` too
 build checks Next's generated route types (`.next/types/validator.ts`: each
 page's, layout's and route handler's exports).
 
+## Design and motion skills
+
+Five skills from emilkowalski/skills live beside `verify` (Chi, 2026-11-21):
+`review-animations` (with `STANDARDS.md`, the curves and durations),
+`animation-performance`, `mobile-native`, `break-ui` and `learn-taste`. Use
+them when you add or change motion, phone behaviour or a component's data.
+Where they disagree with a choice Chi made and this file records (the warp
+arrival, the lamp, the decoding titles, the HUD), Chi's choice wins; keep its
+look and fix the mechanics (easing, properties, reduced motion, hover gating).
+
 ## Notes that apply to one directory
 
 Read these before working there. Claude Code loads each automatically through

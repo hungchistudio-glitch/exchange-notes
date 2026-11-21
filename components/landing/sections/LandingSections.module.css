@@ -557,8 +557,11 @@
   transition: transform 160ms ease;
 }
 
-.reviewChip:hover {
-  transform: translateY(-1px);
+/* A mouse only, or a tap leaves the chip lifted. */
+@media (hover: hover) and (pointer: fine) {
+  .reviewChip:hover {
+    transform: translateY(-1px);
+  }
 }
 
 .reviewChip strong {

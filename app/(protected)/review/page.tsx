@@ -358,8 +358,8 @@ export default function ReviewPage() {
 
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06]">
             <div
-              className="h-full rounded-full bg-black transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-              style={{ width: `${progress}%` }}
+              className="h-full w-full rounded-full bg-black transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              style={{ transform: `translateX(${progress - 100}%)` }}
             />
           </div>
 

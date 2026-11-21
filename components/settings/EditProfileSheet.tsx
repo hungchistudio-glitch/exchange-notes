@@ -375,7 +375,7 @@ export default function EditProfileSheet({
           type="button"
           onClick={() => void handleSave()}
           disabled={!canSave}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition-all active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-35"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-35"
         >
           {saving ? (
             <LoaderCircle size={16} className="animate-spin" />

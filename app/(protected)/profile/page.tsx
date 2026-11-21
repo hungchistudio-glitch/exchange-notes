@@ -669,7 +669,7 @@ export default function ProfilePage() {
               type="button"
               onClick={() => setLogoutOpen(false)}
               disabled={loggingOut}
-              className="flex min-h-12 flex-1 items-center justify-center rounded-full bg-black/[0.05] text-sm font-semibold text-black transition-all active:scale-[0.98] disabled:opacity-40"
+              className="flex min-h-12 flex-1 items-center justify-center rounded-full bg-black/[0.05] text-sm font-semibold text-black transition active:scale-[0.98] disabled:opacity-40"
             >
               {t.common.cancel}
             </button>
@@ -678,7 +678,7 @@ export default function ProfilePage() {
               type="button"
               onClick={() => void handleLogout()}
               disabled={loggingOut}
-              className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-red-600 text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60"
+              className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-red-600 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-60"
             >
               {loggingOut ? (
                 <LoaderCircle size={16} className="animate-spin" />

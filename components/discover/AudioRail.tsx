@@ -66,10 +66,15 @@ export default function AudioRail({
         </p>
 
         <div className="mt-1 h-[3px] w-full overflow-hidden rounded-full bg-white/70">
+          {/* A full-width bar slid in from the left, not a width that grows:
+              playback moves it several times a second, and a transform is
+              composited where a width is laid out again every time. The
+              track's own rounding clips it, and its leading cap keeps its
+              shape. */}
           <div
-            className="h-full rounded-full transition-[width] duration-150 ease-linear"
+            className="h-full w-full rounded-full transition-transform duration-150 ease-linear"
             style={{
-              width: `${Math.round(progress * 100)}%`,
+              transform: `translateX(${Math.round(progress * 100) - 100}%)`,
               backgroundColor: DISCOVER_COLORS.accent,
             }}
           />

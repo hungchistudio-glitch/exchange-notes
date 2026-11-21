@@ -58,6 +58,18 @@ describe("the warp arrival", () => {
     expect(document.querySelector("[data-warp]")?.getAttribute("aria-hidden")).toBe("true");
   });
 
+  it("takes over from an arrival still playing, so two never run at once", () => {
+    // Back, back: the second page arrives while the first one's light is up.
+    const lamp = document.createElement("div");
+    lamp.setAttribute("data-lamp-light", "");
+    document.body.appendChild(lamp);
+    playWarpArrival([block(100)], () => false);
+    playWarpArrival([block(100)], () => false);
+    expect(document.querySelectorAll("[data-warp]")).toHaveLength(1);
+    expect(document.querySelectorAll("[data-scan]")).toHaveLength(1);
+    expect(document.querySelector("[data-lamp-light]")).toBeNull();
+  });
+
   it("switches each block on in turn and slides its rows in after it", () => {
     const top = block(0, 2);
     const lower = block(600);

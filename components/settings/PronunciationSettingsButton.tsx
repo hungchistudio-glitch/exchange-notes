@@ -257,7 +257,7 @@ export default function PronunciationSettingsButton() {
                     aria-pressed={selected}
                     onClick={() => handleGenderChange(gender)}
                     className={[
-                      "flex min-h-12 items-center justify-center rounded-2xl px-4 text-sm font-semibold transition-all active:scale-[0.98]",
+                      "flex min-h-12 items-center justify-center rounded-2xl px-4 text-sm font-semibold transition active:scale-[0.98]",
                       selected
                         ? "bg-blue-600 text-white"
                         : "border border-black/[0.08] bg-white text-black",
@@ -300,7 +300,7 @@ export default function PronunciationSettingsButton() {
                         aria-pressed={!chosen}
                         onClick={() => handleVoiceChange(language, null)}
                         className={[
-                          "flex min-h-11 items-center justify-between rounded-2xl px-4 text-sm transition-all active:scale-[0.99]",
+                          "flex min-h-11 items-center justify-between rounded-2xl px-4 text-sm transition active:scale-[0.99]",
                           !chosen
                             ? "bg-blue-600 font-semibold text-white"
                             : "border border-black/[0.08] bg-white text-black",
@@ -325,7 +325,7 @@ export default function PronunciationSettingsButton() {
                               preview(language);
                             }}
                             className={[
-                              "flex min-h-11 items-center justify-between gap-3 rounded-2xl px-4 text-sm transition-all active:scale-[0.99]",
+                              "flex min-h-11 items-center justify-between gap-3 rounded-2xl px-4 text-sm transition active:scale-[0.99]",
                               selected
                                 ? "bg-blue-600 font-semibold text-white"
                                 : "border border-black/[0.08] bg-white text-black",

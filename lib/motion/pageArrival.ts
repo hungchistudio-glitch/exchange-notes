@@ -151,6 +151,10 @@ const SLIDE_IN: Keyframe[] = [
 
 /** The band of lamp light, warm and brightest at its leading edge. */
 function passLight(viewportHeight: number) {
+  // One light at a time: a page changed again mid-arrival takes it over.
+  document
+    .querySelectorAll("[data-warp], [data-scan], [data-lamp-light]")
+    .forEach((element) => element.remove());
   const band = Math.round(viewportHeight * LAMP_BAND);
   const light = document.createElement("div");
   light.setAttribute("data-lamp-light", "");

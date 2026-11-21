@@ -89,6 +89,19 @@ function overlay(name: string) {
   return element;
 }
 
+/**
+ * A new arrival takes over from one still playing (2026-11-21, the
+ * review-animations skill: motion a reader can set off quickly must be
+ * interruptible). Pages changed in quick succession, back, back, used to
+ * leave each arrival's starlight, scan line or lamp light running over the
+ * next page's, two or three at once.
+ */
+export function clearArrivalOverlays() {
+  document
+    .querySelectorAll("[data-warp], [data-scan], [data-lamp-light]")
+    .forEach((element) => element.remove());
+}
+
 /** Starlight streaking out from just above the middle of the screen. */
 function warp(viewportWidth: number, viewportHeight: number) {
   const field = overlay("data-warp");
@@ -148,6 +161,7 @@ function scan(viewportHeight: number) {
  */
 export function playWarpArrival(layers: HTMLElement[], holdsFixed: (layer: Element) => boolean) {
   const viewportHeight = window.innerHeight;
+  clearArrivalOverlays();
   warp(window.innerWidth, viewportHeight);
   scan(viewportHeight);
   layers.forEach((layer) => {

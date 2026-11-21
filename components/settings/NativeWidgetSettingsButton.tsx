@@ -53,7 +53,7 @@ export default function NativeWidgetSettingsButton() {
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="h-12 w-full rounded-2xl bg-black text-sm font-semibold text-white transition-all active:scale-[0.98]"
+            className="h-12 w-full rounded-2xl bg-black text-sm font-semibold text-white transition active:scale-[0.98]"
           >
             {copy.done}
           </button>

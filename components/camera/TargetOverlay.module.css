@@ -24,7 +24,13 @@
   --settle-duration: 200ms;
 
   position: absolute;
-  transition: all var(--settle-duration) ease-out;
+  /* The box is placed by left/top/width/height (TargetOverlay.tsx), so
+     those are what settle: an absolutely placed box with four corners
+     inside, cheap to lay out. Named, never `all`, which would also have
+     eased whatever else changed on it. */
+  transition-property: left, top, width, height, opacity;
+  transition-duration: var(--settle-duration);
+  transition-timing-function: var(--ease-out);
 }
 
 /* ---------- the corners, breathing ---------- */

@@ -38,7 +38,7 @@
 
 .backdrop[data-phase="closing"] {
   pointer-events: none;
-  animation: haloBackdropOut 240ms ease-in forwards;
+  animation: haloBackdropOut 240ms var(--ease-out) forwards;
 }
 
 /*

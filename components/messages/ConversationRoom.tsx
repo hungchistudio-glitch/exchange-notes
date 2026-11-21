@@ -2011,7 +2011,7 @@ export default function ConversationRoom({
                   type="submit"
                   disabled={!canSend}
                   aria-label={copy.room.sendMessage}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-150"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition duration-150"
                   style={
                     canSend
                       ? {

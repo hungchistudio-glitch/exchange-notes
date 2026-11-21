@@ -112,3 +112,12 @@
   100% { opacity: 0; }
 }
 
+
+/* Reduced motion: the ring does not swell. The lights may still blink on
+   and off: a change in light, not movement. The one stylesheet with
+   keyframes that had no such block (2026-11-21). */
+@media (prefers-reduced-motion: reduce) {
+  .landRing {
+    animation: none;
+  }
+}

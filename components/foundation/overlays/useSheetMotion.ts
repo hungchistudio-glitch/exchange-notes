@@ -342,13 +342,24 @@ export default function useSheetMotion({
       const panel = panelRef.current;
       const backdrop = backdropRef.current;
 
+      /*
+       * The panel's position is its own `transform`, not a custom property
+       * (2026-11-21, the animation-performance skill). A custom property is
+       * inherited, so setting one on the panel restyled every element inside
+       * it on every pointermove: a vocabulary detail or a settings sheet is
+       * hundreds of nodes, and the drag got heavier the fuller the sheet.
+       * A transform touches the panel alone. Every visible state in
+       * SheetMotion.module.css rests at translate3d(0, 0, 0) with an
+       * identity scale, so this is the same picture the stylesheet drew.
+       * The scrim has no children, so its variable costs nothing.
+       */
       if (!drag) {
-        panel?.style.removeProperty("--sheet-drag-y");
+        panel?.style.removeProperty("transform");
         backdrop?.style.removeProperty("--sheet-drag-progress");
         return;
       }
 
-      panel?.style.setProperty("--sheet-drag-y", `${drag.y}px`);
+      if (panel) panel.style.transform = `translate3d(0, ${drag.y}px, 0)`;
       backdrop?.style.setProperty("--sheet-drag-progress", `${drag.progress}`);
     },
     [],

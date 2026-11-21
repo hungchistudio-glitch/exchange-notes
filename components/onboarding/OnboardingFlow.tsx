@@ -225,7 +225,7 @@ export default function OnboardingFlow({
             {PROGRESS_STEPS.map((progressStep, index) => (
               <span
                 key={progressStep}
-                className={`h-1.5 rounded-full transition-all ${
+                className={`h-1.5 rounded-full transition-[width,background-color] duration-200 ${
                   index === progressIndex
                     ? "w-5 bg-black"
                     : index < progressIndex

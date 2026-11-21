@@ -30,3 +30,14 @@ JavaScript decoder rather than a platform one.
 
 English dictionary metadata is retrieved from https://dictionaryapi.dev/ as a
 best-effort, keyless fallback.
+
+## Emil Kowalski's agent skills
+
+Five agent skills (instructions for coding agents, not shipped code) are kept
+in `.claude/skills/` (Codex reads them through `.agents/skills/`):
+`review-animations`, `animation-performance`, `mobile-native`, `break-ui` and
+`learn-taste`.
+
+- Source: https://github.com/emilkowalski/skills (commit 64eb3de)
+- License: MIT, Copyright (c) 2026 Emil Kowalski; the full text is in each
+  skill's `LICENSE`

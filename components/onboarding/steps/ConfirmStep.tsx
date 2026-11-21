@@ -67,7 +67,7 @@ export default function ConfirmStep({
         type="button"
         onClick={onStart}
         disabled={completing}
-        className="mt-8 flex h-13 min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60"
+        className="mt-8 flex h-13 min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition active:scale-[0.98] disabled:opacity-60"
       >
         {completing ? <LoaderCircle size={16} className="animate-spin" /> : null}
         {copy.cta}

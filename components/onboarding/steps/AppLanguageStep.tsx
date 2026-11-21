@@ -93,7 +93,7 @@ export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
       <button
         type="button"
         onClick={onContinue}
-        className="mt-8 flex h-13 min-h-12 w-full items-center justify-center rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98]"
+        className="mt-8 flex h-13 min-h-12 w-full items-center justify-center rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition active:scale-[0.98]"
       >
         {t.onboarding.continue}
       </button>

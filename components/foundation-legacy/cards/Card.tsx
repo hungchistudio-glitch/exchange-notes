@@ -76,7 +76,7 @@ export default function Card<
         paddingClasses[padding],
         interactive
           ? [
-              "transition-all duration-200",
+              "transition duration-200",
               "hover:-translate-y-0.5",
               "hover:border-[var(--en-border-strong)]",
               "hover:bg-[var(--en-surface-hover)]",

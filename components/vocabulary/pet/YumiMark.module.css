@@ -67,7 +67,7 @@
 .menuAura span:nth-child(3) { animation-delay: 320ms; }
 
 .menuAura[data-phase="closing"] {
-  animation: menuAuraOut 280ms ease-in forwards;
+  animation: menuAuraOut 280ms var(--ease-out) forwards;
 }
 
 @keyframes menuAuraIn {

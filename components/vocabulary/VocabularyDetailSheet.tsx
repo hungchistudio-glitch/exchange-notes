@@ -298,7 +298,7 @@ export default function VocabularyDetailSheet({
                     type="button"
                     disabled={updating}
                     onClick={() => onChangeStatus(status)}
-                    className={`min-h-[44px] rounded-[15px] px-2 text-[0.75rem] font-semibold transition-all disabled:opacity-40 ${
+                    className={`min-h-[44px] rounded-[15px] px-2 text-[0.75rem] font-semibold transition disabled:opacity-40 ${
                       item.status === status
                         ? "bg-black text-white shadow-sm"
                         : "text-ink-soft"
