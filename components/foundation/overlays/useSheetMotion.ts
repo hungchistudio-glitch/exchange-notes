@@ -176,6 +176,55 @@ const FOCUSABLE = [
  * is the fallback for browsers without it, and the thing that wraps focus
  * around the ends — inert alone would let Tab escape to the browser chrome.
  */
+/*
+ * The sheet opened last is drawn on top (2026-11-21).
+ *
+ * Every sheet's layer is a z-index its own file chose, and inertness goes by
+ * the order they opened in: the newest is the one that may be touched. The
+ * two disagreed whenever a sheet opened over one with a higher number. The
+ * lookup sheet (z-[130]) opened from a news story, then "Report a problem"
+ * in its results opened a BottomSheet (z-[100]): the report was drawn
+ * underneath, and the lookup, still on top, had just been made inert, so
+ * nothing on the screen answered a tap. So a sheet that opens is lifted, on
+ * its own layer under <body>, above every other sheet already open, and
+ * goes back to its own number when it closes. A sheet that is already
+ * higher is left alone.
+ */
+/** Each lifted sheet's panel → its layer and the z-index it had inline. */
+const liftedLayers = new Map<HTMLElement, { layer: HTMLElement; previous: string }>();
+
+function layerOf(panel: HTMLElement) {
+  return (Array.from(document.body.children).find((child) => child.contains(panel)) ?? null) as HTMLElement | null;
+}
+
+function zIndexOf(element: HTMLElement) {
+  const z = Number.parseInt(getComputedStyle(element).zIndex, 10);
+  return Number.isFinite(z) ? z : 0;
+}
+
+function liftAboveOpenSheets(panel: HTMLElement) {
+  const layer = layerOf(panel);
+  if (!layer) return;
+  let highest = Number.NEGATIVE_INFINITY;
+  for (const other of openPanels) {
+    if (other === panel) continue;
+    const otherLayer = layerOf(other);
+    if (otherLayer && otherLayer !== layer) highest = Math.max(highest, zIndexOf(otherLayer));
+  }
+  if (highest === Number.NEGATIVE_INFINITY || zIndexOf(layer) > highest) return;
+  if (!liftedLayers.has(panel)) liftedLayers.set(panel, { layer, previous: layer.style.zIndex });
+  layer.style.zIndex = String(highest + 1);
+}
+
+/* Kept by panel, not looked up again: by the time a closing sheet's
+   cleanup runs, its layer may already be off the page. */
+function lowerLayer(panel: HTMLElement) {
+  const lifted = liftedLayers.get(panel);
+  if (!lifted) return;
+  lifted.layer.style.zIndex = lifted.previous;
+  liftedLayers.delete(panel);
+}
+
 function applyInertness() {
   for (const element of inertedElements) element.removeAttribute("inert");
   inertedElements.clear();
@@ -537,6 +586,7 @@ export default function useSheetMotion({
         : null;
 
     openPanels.push(panel);
+    liftAboveOpenSheets(panel);
     applyInertness();
 
     if (!panel.contains(document.activeElement)) {
@@ -546,6 +596,7 @@ export default function useSheetMotion({
     return () => {
       const index = openPanels.indexOf(panel);
       if (index !== -1) openPanels.splice(index, 1);
+      lowerLayer(panel);
       applyInertness();
 
       // Only if it is still on the page, and still somewhere focus can go.
