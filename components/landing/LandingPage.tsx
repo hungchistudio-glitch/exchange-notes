@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Languages } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { ChevronDown, Languages } from "lucide-react";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
 import YumiOriginStory from "@/components/landing/story/YumiOriginStory";
+import { playLoginExit } from "@/components/landing/loginTransition";
+import HeroQuickCard from "@/components/landing/trial/HeroQuickCard";
 import HeroTrial from "@/components/landing/trial/HeroTrial";
 import ExchangeShowcase from "@/components/landing/sections/ExchangeShowcase";
 import LensShowcase from "@/components/landing/sections/LensShowcase";
@@ -43,10 +46,22 @@ function LandingLoginLink({
   analyticsSource: "navigation" | "hero" | "story" | "final";
   className: string;
 }) {
+  const router = useRouter();
   return (
     <Link
       href="/login"
-      onClick={() => track(analyticsEvent, { source: analyticsSource })}
+      // Sign-in is fetched from the first touch, so the eye never waits on it.
+      onPointerEnter={() => router.prefetch("/login")}
+      onPointerDown={() => router.prefetch("/login")}
+      onFocus={() => router.prefetch("/login")}
+      onClick={(event) => {
+        track(analyticsEvent, { source: analyticsSource });
+        // A new tab or window is the browser's to open, untouched.
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        // Through Yumi's eye into sign-in (components/landing/loginTransition.ts).
+        playLoginExit(event.currentTarget, () => router.push("/login"));
+      }}
       className={`flex min-h-12 w-full items-center justify-center rounded-full bg-black px-5 text-sm font-medium text-white transition-opacity hover:opacity-85 ${className}`}
     >
       {label}
@@ -60,6 +75,11 @@ const LANGUAGE_OPTIONS = (
   .filter((value) => getInterfaceLanguageMeta(value).availableAsInterface)
   .map((value) => ({ value, meta: getInterfaceLanguageMeta(value) }));
 
+/*
+ * One chip, not seven (Chi, 2026-11-21: 語言選單收成一顆). The seven
+ * languages took about two fifths of a phone's first screen, above the
+ * title; now the chip says which one is on and opens the rest.
+ */
 function LandingLanguagePicker({
   copy,
   language,
@@ -68,11 +88,38 @@ function LandingLanguagePicker({
   language: InterfaceLanguage;
 }) {
   const requestRef = useRef(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const menuId = useId();
+  const [open, setOpen] = useState(false);
   const [switchingTo, setSwitchingTo] = useState<InterfaceLanguage | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const current = getInterfaceLanguageMeta(language);
+
+  // Closed by a tap anywhere else, or by Escape, which hands focus back.
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      toggleRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   async function selectLanguage(value: InterfaceLanguage) {
-    if (value === language) return;
+    if (value === language) {
+      setOpen(false);
+      return;
+    }
 
     const request = ++requestRef.current;
     setSwitchingTo(value);
@@ -94,6 +141,7 @@ function LandingLanguagePicker({
        * replace it with whatever was stored last time.
        */
       markChosenBeforeSignIn("interfaceLanguage");
+      setOpen(false);
     } catch (error) {
       if (request === requestRef.current) setLoadError(true);
       console.error("Could not load the selected interface language.", error);
@@ -103,42 +151,53 @@ function LandingLanguagePicker({
   }
 
   return (
-    <fieldset className={styles.languagePicker} aria-label={copy.ariaLabel}>
-      <legend className="sr-only">{copy.ariaLabel}</legend>
-      <div className={styles.languagePickerLabel}>
-        <Languages size={16} strokeWidth={1.8} aria-hidden="true" />
-        <span>{copy.label}</span>
-      </div>
-      <div className={styles.languageOptions}>
-        {LANGUAGE_OPTIONS.map(({ value, meta }) => {
-          const selected = value === language;
-          const switching = value === switchingTo;
+    <div ref={rootRef} className={styles.languagePicker}>
+      <button
+        ref={toggleRef}
+        type="button"
+        className={styles.languageToggle}
+        aria-expanded={open}
+        aria-controls={menuId}
+        aria-label={`${copy.label}: ${current.endonym}`}
+        onClick={() => setOpen(value => !value)}
+      >
+        <Languages size={15} strokeWidth={1.8} aria-hidden="true" />
+        <span className={styles.languageBadge} aria-hidden="true">{current.badge}</span>
+        <span lang={current.htmlLang}>{current.endonym}</span>
+        <ChevronDown size={14} strokeWidth={2} aria-hidden="true" className={styles.languageChevron} />
+      </button>
+      {open ? (
+        <div id={menuId} className={styles.languageMenu} role="group" aria-label={copy.ariaLabel}>
+          {LANGUAGE_OPTIONS.map(({ value, meta }) => {
+            const selected = value === language;
+            const switching = value === switchingTo;
 
-          return (
-            <button
-              key={value}
-              type="button"
-              lang={meta.htmlLang}
-              dir={meta.direction}
-              aria-pressed={selected}
-              aria-busy={switching || undefined}
-              onPointerEnter={() => void loadTranslations(value).catch(() => undefined)}
-              onFocus={() => void loadTranslations(value).catch(() => undefined)}
-              onClick={() => void selectLanguage(value)}
-              className={styles.languageOption}
-            >
-              <span aria-hidden="true">{meta.badge}</span>
-              {meta.endonym}
-            </button>
-          );
-        })}
-      </div>
+            return (
+              <button
+                key={value}
+                type="button"
+                lang={meta.htmlLang}
+                dir={meta.direction}
+                aria-pressed={selected}
+                aria-busy={switching || undefined}
+                onPointerEnter={() => void loadTranslations(value).catch(() => undefined)}
+                onFocus={() => void loadTranslations(value).catch(() => undefined)}
+                onClick={() => void selectLanguage(value)}
+                className={styles.languageOption}
+              >
+                <span aria-hidden="true">{meta.badge}</span>
+                {meta.endonym}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
       {loadError ? (
         <p role="alert" className="mt-2 text-xs font-medium text-red-700">
           {copy.loadError}
         </p>
       ) : null}
-    </fieldset>
+    </div>
   );
 }
 
@@ -206,6 +265,9 @@ export default function LandingPage() {
           <p className={styles.eyebrow}>{copy.hero.eyebrow}</p>
           {/* The About page's own first line, which is what this app is for. */}
           <h1 id="landing-hero-title">{copy.hero.title}</h1>
+          {/* What it is for, in plain words, under the poem (Chi, 2026-11-21). */}
+          <p className={styles.plainLine}>{copy.hero.plainLine}</p>
+          <HeroQuickCard copy={copy.hero} trialId="hero-trial" />
           <p className={styles.heroIntro}>{copy.hero.intro}</p>
           <div className={styles.heroCta}>
             <LandingLoginLink
@@ -217,11 +279,12 @@ export default function LandingPage() {
           </div>
           <p className={styles.heroPromise}>{copy.hero.promise}</p>
         </div>
-        <HeroTrial copy={copy.hero} language={language} />
+        <HeroTrial id="hero-trial" copy={copy.hero} language={language} />
       </section>
 
       <YumiOriginStory
         copy={copy.story}
+        journey={copy.hero.journey}
         language={language}
         cta={
           <LandingLoginLink

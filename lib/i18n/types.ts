@@ -125,16 +125,24 @@ export type TranslationDictionary = {
       intro: string;
       /** The line under the button: what it costs and what it is not. */
       promise: string;
-      /** Each trial step's heading and what it is for. */
+      /** Under the title: what the app is for, in plain words. */
+      plainLine: string;
+      /** The first screen's card: hear the phrase, tap it, keep it. */
+      quick: {
+        ariaLabel: string;
+        listen: string;
+        word: string;
+        keep: string;
+        kept: string;
+        notebook: string;
+        more: string;
+      };
+      /** Each trial step's heading: its one line (Chi, 2026-11-21: 試用區精簡). */
       tour: {
         keepTitle: string;
-        keepDescription: string;
         understandTitle: string;
-        understandDescription: string;
         exchangeTitle: string;
-        exchangeDescription: string;
         reviewTitle: string;
-        reviewDescription: string;
       };
       /**
        * The hero's trial: the four steps done for real on one phrase, before
@@ -258,6 +266,13 @@ export type TranslationDictionary = {
       };
       endTitle: string;
       endText: string;
+      /** Scene 5: the word Yumi sees on landing, kept with a tap. */
+      keep: {
+        tap: string;
+        sign: string;
+        byYou: string;
+        byYumi: string;
+      };
     };
     notes: {
       eyebrow: string;

@@ -108,6 +108,30 @@ export function outfitAt(time: number): YumiOutfit {
 /** Where the end card comes up, over the sky. */
 export const END_CARD_AT_MS = 31_200;
 
+/*
+ * Scene 5's word (Chi, 2026-11-21: 第 5 幕幫 Yumi 留下第一個字). Below the
+ * clouds, the first word of Earth comes up through them to meet her: the
+ * hero's phrase, on a sign. The reader can tap it and keep it,
+ * which is the app's one core action; if nobody does by the time she
+ * touches down, she keeps it herself. Either way the kept card stays on
+ * screen to the end, so the scene's still frame (ACT_STILLS_MS) shows it,
+ * and the film is no longer: 33 seconds, as ever.
+ */
+export const WORD_SIGN_AT_MS = 28_600;
+/* A little after touchdown, so there are three seconds to tap it: two
+   (from the sky's coming in to touchdown) was too short to notice the sign
+   and reach it. The end card's words come up meanwhile, above it. */
+export const WORD_SELF_KEEP_AT_MS = 31_800;
+
+export type StoryWord = "none" | "sign" | "keptByYou" | "keptByYumi";
+
+/** The word's state at a moment, given whether the reader has tapped it. */
+export function wordAt(time: number, tapped: boolean): StoryWord {
+  if (time < WORD_SIGN_AT_MS) return "none";
+  if (tapped) return "keptByYou";
+  return time >= WORD_SELF_KEEP_AT_MS ? "keptByYumi" : "sign";
+}
+
 /** Which act a moment belongs to. */
 export function actAt(time: number): number {
   let index = 0;
