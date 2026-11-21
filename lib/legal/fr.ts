@@ -7,7 +7,7 @@ const legal: LegalCopy = {
       "Vos notes contiennent des expériences personnelles et parfois les histoires d’autres personnes. Cette politique explique quelles données Exchange Notes collecte, pourquoi, qui les traite avec nous, combien de temps elles sont conservées et quels choix s’offrent à vous.",
     summaryTitle: "En bref",
     summary: [
-      "Exchange Notes est exploitée par Hungchi Studio, un studio indépendant tenu par une personne à Taïwan.",
+      "Exchange Notes est exploitée par Hungchi Studio, un studio indépendant tenu par une personne à New York.",
       "De votre compte Google, nous recevons uniquement votre nom, votre adresse e-mail, votre photo de profil et votre identifiant, et nous ne les utilisons que pour faire fonctionner votre compte.",
       "Les fonctions d’IA envoient le texte, les images ou l’audio concernés à Google Gemini. Nous utilisons l’offre gratuite de Gemini, dans laquelle Google peut utiliser ces contenus pour améliorer ses produits et des personnes peuvent les examiner : n’envoyez rien de sensible.",
       "Nous ne vendons pas vos données, n’affichons pas de publicité et n’utilisons aucun traceur publicitaire ou d’analyse.",
@@ -17,7 +17,7 @@ const legal: LegalCopy = {
       {
         title: "Qui nous sommes",
         body: [
-          "Exchange Notes (l’« app ») est exploitée par Hungchi Studio, un studio indépendant tenu par une personne physique à Taïwan, et non une société immatriculée. Hungchi Studio détermine comment et pourquoi les données personnelles décrites ici sont traitées et en est responsable. Vous pouvez nous écrire à l’adresse indiquée en bas de cette page.",
+          "Exchange Notes (l’« app ») est exploitée par Hungchi Studio, un studio indépendant tenu par une personne physique à New York, et non une société immatriculée. Hungchi Studio détermine comment et pourquoi les données personnelles décrites ici sont traitées et en est responsable. Vous pouvez nous écrire à l’adresse indiquée en bas de cette page.",
         ],
       },
       {
@@ -92,7 +92,7 @@ const legal: LegalCopy = {
       {
         title: "Traitements internationaux",
         body: [
-          "Nous opérons depuis Taïwan et nos prestataires traitent des données au Canada, aux États-Unis et dans d’autres pays où ils disposent d’installations, dont les lois sur la protection des données peuvent différer des vôtres. Nous nous appuyons sur les engagements contractuels de protection des données de nos prestataires, y compris les clauses contractuelles types lorsqu’elles s’appliquent.",
+          "Nous opérons depuis New York et nos prestataires traitent des données au Canada, aux États-Unis et dans d’autres pays où ils disposent d’installations, dont les lois sur la protection des données peuvent différer des vôtres. Nous nous appuyons sur les engagements contractuels de protection des données de nos prestataires, y compris les clauses contractuelles types lorsqu’elles s’appliquent.",
         ],
       },
       {
@@ -153,13 +153,13 @@ const legal: LegalCopy = {
       "Ce que vous écrivez reste à vous ; vous nous autorisez seulement à le conserver et à le traiter pour faire fonctionner l’app pour vous.",
       "Les résultats de l’IA peuvent être erronés et ne constituent pas un conseil professionnel.",
       "Les biscuits d’énergie et les objets de la boutique sont gratuits, virtuels et sans valeur monétaire.",
-      "L’app est en bêta et fournie en l’état. Le droit taïwanais s’applique.",
+      "L’app est en bêta et fournie en l’état. Le droit de l’État de New York s’applique.",
     ],
     sections: [
       {
         title: "À propos de ces conditions",
         body: [
-          "Exchange Notes (l’« app ») est fournie par Hungchi Studio, un studio indépendant tenu par une personne physique à Taïwan (« nous »). En créant un compte ou en utilisant l’app, vous acceptez ces conditions. Si vous ne les acceptez pas, n’utilisez pas l’app.",
+          "Exchange Notes (l’« app ») est fournie par Hungchi Studio, un studio indépendant tenu par une personne physique à New York (« nous »). En créant un compte ou en utilisant l’app, vous acceptez ces conditions. Si vous ne les acceptez pas, n’utilisez pas l’app.",
         ],
       },
       {
@@ -244,7 +244,7 @@ const legal: LegalCopy = {
       {
         title: "Droit applicable",
         body: [
-          "Ces conditions sont régies par le droit de Taïwan (République de Chine). Les litiges relèvent d’un tribunal compétent à Taïwan, sauf si les lois impératives du lieu où vous vivez en tant que consommateur vous permettent de saisir les tribunaux de ce lieu.",
+          "Ces conditions sont régies par le droit de l’État de New York (États-Unis). Les litiges relèvent d’un tribunal compétent à New York, sauf si les lois impératives du lieu où vous vivez en tant que consommateur vous permettent de saisir les tribunaux de ce lieu.",
         ],
       },
     ],

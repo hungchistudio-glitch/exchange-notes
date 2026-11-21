@@ -7,7 +7,7 @@ const legal: LegalCopy = {
       "Your notes hold personal experiences and sometimes other people’s stories. This policy explains what Exchange Notes collects, why, who processes it with us, how long it is kept, and the choices you have.",
     summaryTitle: "In short",
     summary: [
-      "Exchange Notes is run by Hungchi Studio, an independent studio operated by one person in Taiwan.",
+      "Exchange Notes is run by Hungchi Studio, an independent studio operated by one person in New York City.",
       "From your Google account we receive only your name, email address, profile photo and account ID, and use them only to run your account.",
       "AI features send the relevant text, images or audio to Google Gemini. We use Gemini’s free tier, under which Google may use that content to improve its products and people may review it, so please don’t send anything sensitive.",
       "We don’t sell your data, don’t show ads and don’t use advertising or analytics trackers.",
@@ -17,7 +17,7 @@ const legal: LegalCopy = {
       {
         title: "Who we are",
         body: [
-          "Exchange Notes (the “app”) is operated by Hungchi Studio, an independent studio run by an individual in Taiwan and not a registered company. Hungchi Studio decides how and why the personal data described here is processed and is responsible for it. You can reach us at the address at the end of this page.",
+          "Exchange Notes (the “app”) is operated by Hungchi Studio, an independent studio run by an individual in New York City and not a registered company. Hungchi Studio decides how and why the personal data described here is processed and is responsible for it. You can reach us at the address at the end of this page.",
         ],
       },
       {
@@ -92,7 +92,7 @@ const legal: LegalCopy = {
       {
         title: "International processing",
         body: [
-          "We operate from Taiwan and our providers process data in Canada, the United States and other countries where they have facilities. Those countries may have different data protection laws from yours. We rely on our providers’ contractual data protection commitments, including standard contractual clauses where they apply.",
+          "We operate from New York City and our providers process data in Canada, the United States and other countries where they have facilities. Those countries may have different data protection laws from yours. We rely on our providers’ contractual data protection commitments, including standard contractual clauses where they apply.",
         ],
       },
       {
@@ -153,13 +153,13 @@ const legal: LegalCopy = {
       "What you write stays yours. You let us store and process it only to run the app for you.",
       "AI results can be wrong and are not professional advice.",
       "Energy cookies and shop items are free, virtual and have no money value.",
-      "The app is in beta and provided as is. Taiwanese law applies.",
+      "The app is in beta and provided as is. New York law applies.",
     ],
     sections: [
       {
         title: "About these terms",
         body: [
-          "Exchange Notes (the “app”) is provided by Hungchi Studio, an independent studio run by an individual in Taiwan (“we”, “us”). By creating an account or using the app, you agree to these terms. If you don’t agree, please don’t use the app.",
+          "Exchange Notes (the “app”) is provided by Hungchi Studio, an independent studio run by an individual in New York City (“we”, “us”). By creating an account or using the app, you agree to these terms. If you don’t agree, please don’t use the app.",
         ],
       },
       {
@@ -244,7 +244,7 @@ const legal: LegalCopy = {
       {
         title: "Governing law",
         body: [
-          "These terms are governed by the laws of Taiwan (Republic of China). Disputes will be heard by a competent court in Taiwan, unless the mandatory laws of the place where you live as a consumer give you the right to bring proceedings there.",
+          "These terms are governed by the laws of the State of New York, United States. Disputes will be heard by a competent court in New York City, unless the mandatory laws of the place where you live as a consumer give you the right to bring proceedings there.",
         ],
       },
     ],

@@ -12,7 +12,8 @@ export type { LegalCopy, LegalDocument, LegalSection } from "./types";
  * readers before it takes effect when the change matters to them (the
  * policy promises that).
  */
-export const LEGAL_EFFECTIVE_DATE = "2026-10-15";
+/* 2026-11-20: the studio is run from New York City, and New York law governs (Chi). */
+export const LEGAL_EFFECTIVE_DATE = "2026-11-20";
 
 /* Five literal imports, so the bundler makes five chunks rather than one. */
 const LOADERS: Record<InterfaceLanguage, () => Promise<{ default: LegalCopy }>> = {

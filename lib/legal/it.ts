@@ -7,7 +7,7 @@ const legal: LegalCopy = {
       "Le tue note custodiscono esperienze personali e talvolta le storie di altre persone. Questa informativa spiega quali dati raccoglie Exchange Notes, perché, chi li tratta con noi, per quanto tempo vengono conservati e quali scelte hai.",
     summaryTitle: "In breve",
     summary: [
-      "Exchange Notes è gestita da Hungchi Studio, uno studio indipendente condotto da una persona a Taiwan.",
+      "Exchange Notes è gestita da Hungchi Studio, uno studio indipendente condotto da una persona a New York.",
       "Dal tuo account Google riceviamo solo nome, indirizzo email, foto del profilo e identificativo dell’account, e li usiamo solo per gestire il tuo account.",
       "Le funzioni di IA inviano il testo, le immagini o l’audio pertinenti a Google Gemini. Usiamo il livello gratuito di Gemini, in cui Google può usare questi contenuti per migliorare i suoi prodotti e delle persone possono esaminarli: non inviare nulla di sensibile.",
       "Non vendiamo i tuoi dati, non mostriamo pubblicità e non usiamo tracker pubblicitari o di analisi.",
@@ -17,7 +17,7 @@ const legal: LegalCopy = {
       {
         title: "Chi siamo",
         body: [
-          "Exchange Notes (l’“app”) è gestita da Hungchi Studio, uno studio indipendente condotto da una persona fisica a Taiwan e non da una società registrata. Hungchi Studio stabilisce come e perché vengono trattati i dati personali descritti qui e ne è titolare. Puoi scriverci all’indirizzo indicato in fondo a questa pagina.",
+          "Exchange Notes (l’“app”) è gestita da Hungchi Studio, uno studio indipendente condotto da una persona fisica a New York e non da una società registrata. Hungchi Studio stabilisce come e perché vengono trattati i dati personali descritti qui e ne è titolare. Puoi scriverci all’indirizzo indicato in fondo a questa pagina.",
         ],
       },
       {
@@ -92,7 +92,7 @@ const legal: LegalCopy = {
       {
         title: "Trattamento internazionale",
         body: [
-          "Operiamo da Taiwan e i nostri fornitori trattano dati in Canada, negli Stati Uniti e in altri paesi in cui hanno strutture, le cui leggi sulla protezione dei dati possono essere diverse dalle tue. Ci affidiamo agli impegni contrattuali di protezione dei dati dei nostri fornitori, incluse le clausole contrattuali standard ove applicabili.",
+          "Operiamo da New York e i nostri fornitori trattano dati in Canada, negli Stati Uniti e in altri paesi in cui hanno strutture, le cui leggi sulla protezione dei dati possono essere diverse dalle tue. Ci affidiamo agli impegni contrattuali di protezione dei dati dei nostri fornitori, incluse le clausole contrattuali standard ove applicabili.",
         ],
       },
       {
@@ -153,13 +153,13 @@ const legal: LegalCopy = {
       "Ciò che scrivi resta tuo; ci permetti solo di conservarlo e trattarlo per far funzionare l’app per te.",
       "I risultati dell’IA possono essere sbagliati e non sono consulenza professionale.",
       "I biscotti energia e gli oggetti del negozio sono gratuiti, virtuali e senza valore economico.",
-      "L’app è in beta e viene fornita così com’è. Si applica la legge di Taiwan.",
+      "L’app è in beta e viene fornita così com’è. Si applica la legge dello Stato di New York.",
     ],
     sections: [
       {
         title: "Informazioni su questi termini",
         body: [
-          "Exchange Notes (l’“app”) è fornita da Hungchi Studio, uno studio indipendente condotto da una persona fisica a Taiwan (“noi”). Creando un account o usando l’app, accetti questi termini. Se non li accetti, non usare l’app.",
+          "Exchange Notes (l’“app”) è fornita da Hungchi Studio, uno studio indipendente condotto da una persona fisica a New York (“noi”). Creando un account o usando l’app, accetti questi termini. Se non li accetti, non usare l’app.",
         ],
       },
       {
@@ -244,7 +244,7 @@ const legal: LegalCopy = {
       {
         title: "Legge applicabile",
         body: [
-          "Questi termini sono regolati dalle leggi di Taiwan (Repubblica di Cina). Le controversie saranno decise da un tribunale competente a Taiwan, salvo che le leggi inderogabili del luogo in cui vivi come consumatore ti consentano di rivolgerti ai tribunali di quel luogo.",
+          "Questi termini sono regolati dalle leggi dello Stato di New York (Stati Uniti). Le controversie saranno decise da un tribunale competente a New York, salvo che le leggi inderogabili del luogo in cui vivi come consumatore ti consentano di rivolgerti ai tribunali di quel luogo.",
         ],
       },
     ],
