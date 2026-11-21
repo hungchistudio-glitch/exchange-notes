@@ -69,7 +69,8 @@ describe("a sheet opened over another", () => {
     await waitFor(() => expect(reportLayer.style.zIndex).toBe("131"));
 
     rerender(<Harness reporting={false} />);
+    // The layer leaves the page first; the effect that puts it back runs after.
     await waitFor(() => expect(reportLayer.isConnected).toBe(false), { timeout: 2000 });
-    expect(reportLayer.style.zIndex).toBe("");
+    await waitFor(() => expect(reportLayer.style.zIndex).toBe(""));
   });
 });
