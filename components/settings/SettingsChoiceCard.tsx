@@ -33,7 +33,7 @@ export default function SettingsChoiceCard({
       disabled={disabled}
       onClick={onClick}
       className={[
-        "settings-choice flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition-all active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50",
+        "settings-choice flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50",
         selected
           ? "bg-black text-white"
           : "border border-black/[0.08] bg-white text-black hover:border-black/[0.16]",

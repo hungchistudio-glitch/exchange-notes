@@ -568,8 +568,8 @@ export function WordByWordSwitch({ tone, className = "" }: { tone?: "warm" | "co
         }`}
       >
         <span
-          className={`absolute top-0.5 h-2.5 w-2.5 rounded-full transition-[left] ${
-            on ? "left-3 bg-white" : "left-0.5 bg-white"
+          className={`absolute left-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-white transition-transform duration-150 ${
+            on ? "translate-x-2.5" : "translate-x-0"
           }`}
         />
       </span>

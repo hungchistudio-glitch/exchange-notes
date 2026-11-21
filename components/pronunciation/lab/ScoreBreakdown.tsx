@@ -90,8 +90,8 @@ export default function ScoreBreakdown({
                   <>
                     <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-black/[0.07]">
                       <span
-                        className={`block h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none ${toneFor(entry.score)}`}
-                        style={{ width: `${entry.score}%` }}
+                        className={`block h-full w-full rounded-full transition-transform duration-500 ease-out motion-reduce:transition-none ${toneFor(entry.score)}`}
+                        style={{ transform: `translateX(${entry.score - 100}%)` }}
                       />
                     </span>
                     <span className="w-9 shrink-0 text-right text-[0.8125rem] font-semibold tabular-nums">

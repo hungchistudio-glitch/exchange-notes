@@ -71,7 +71,7 @@ export default function YumiReminderDiagnostics() {
         type="button"
         disabled={testing}
         onClick={() => void sendTest()}
-        className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-black/[0.1] bg-white px-4 text-sm font-semibold text-black transition-all active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
+        className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-black/[0.1] bg-white px-4 text-sm font-semibold text-black transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
       >
         {testing ? (
           <LoaderCircle aria-hidden="true" size={16} className="animate-spin" />

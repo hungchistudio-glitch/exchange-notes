@@ -406,7 +406,7 @@ export default function ScriptableWidgetSettingsButton() {
                 disabled={Boolean(busy)}
                 aria-busy={busy === "issue"}
                 onClick={() => void handleIssue()}
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition-all active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {busy === "issue" ? (
                   <LoaderCircle
@@ -429,7 +429,7 @@ export default function ScriptableWidgetSettingsButton() {
                   disabled={Boolean(busy)}
                   aria-busy={busy === "issue"}
                   onClick={() => setConfirming("rotate")}
-                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition-all active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
+                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   {busy === "issue" ? (
                     <LoaderCircle
@@ -453,7 +453,7 @@ export default function ScriptableWidgetSettingsButton() {
                   disabled={Boolean(busy)}
                   aria-busy={busy === "revoke"}
                   onClick={() => setConfirming("revoke")}
-                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black/[0.06] px-5 text-sm font-semibold text-black transition-all active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
+                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black/[0.06] px-5 text-sm font-semibold text-black transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   {busy === "revoke" ? (
                     <LoaderCircle
@@ -474,7 +474,7 @@ export default function ScriptableWidgetSettingsButton() {
               <button
                 type="button"
                 onClick={() => void refreshStatus()}
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition-all active:scale-[0.985]"
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.985]"
               >
                 <RefreshCw aria-hidden="true" size={16} strokeWidth={1.9} />
                 {copy.refresh}
@@ -484,7 +484,7 @@ export default function ScriptableWidgetSettingsButton() {
             <button
               type="button"
               onClick={handleClose}
-              className="flex min-h-12 w-full items-center justify-center rounded-full px-5 text-sm font-semibold text-ink-soft transition-all active:scale-[0.985]"
+              className="flex min-h-12 w-full items-center justify-center rounded-full px-5 text-sm font-semibold text-ink-soft transition active:scale-[0.985]"
             >
               {copy.close}
             </button>
@@ -531,7 +531,7 @@ export default function ScriptableWidgetSettingsButton() {
               <button
                 type="button"
                 onClick={() => void handleCopy()}
-                className="mt-2.5 flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-black px-4 text-sm font-semibold text-white transition-all active:scale-[0.985]"
+                className="mt-2.5 flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-black px-4 text-sm font-semibold text-white transition active:scale-[0.985]"
               >
                 {copied ? (
                   <Check aria-hidden="true" size={15} strokeWidth={2.2} />
@@ -570,7 +570,7 @@ export default function ScriptableWidgetSettingsButton() {
                 <button
                   type="button"
                   onClick={() => setConfirming(null)}
-                  className="min-h-10 flex-1 rounded-full bg-white px-4 text-sm font-semibold text-black transition-all active:scale-[0.985]"
+                  className="min-h-10 flex-1 rounded-full bg-white px-4 text-sm font-semibold text-black transition active:scale-[0.985]"
                 >
                   {copy.cancel}
                 </button>
@@ -588,7 +588,7 @@ export default function ScriptableWidgetSettingsButton() {
 
                     void handleRevoke();
                   }}
-                  className="min-h-10 flex-1 rounded-full bg-black px-4 text-sm font-semibold text-white transition-all active:scale-[0.985]"
+                  className="min-h-10 flex-1 rounded-full bg-black px-4 text-sm font-semibold text-white transition active:scale-[0.985]"
                 >
                   {confirming === "rotate"
                     ? copy.confirmRotate

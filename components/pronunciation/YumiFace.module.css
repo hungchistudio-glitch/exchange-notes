@@ -360,7 +360,7 @@
 }
 
 .exiting {
-  animation: yumiExit 320ms ease-in both;
+  animation: yumiExit 320ms var(--ease-out) both;
 }
 
 @keyframes yumiExit {

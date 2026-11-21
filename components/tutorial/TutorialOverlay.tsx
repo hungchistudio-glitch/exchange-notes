@@ -308,7 +308,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
             {STEP_ORDER.map((key, dot) => (
               <span
                 key={key}
-                className={`h-1.5 rounded-full transition-all ${
+                className={`h-1.5 rounded-full transition-[width,background-color] duration-200 ${
                   dot === index
                     ? "w-6 bg-black"
                     : dot < index

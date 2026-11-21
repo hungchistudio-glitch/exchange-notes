@@ -103,10 +103,10 @@ export default function VocabularyHero({
         </div>
       </div>
 
-      <div className="mt-6 h-px bg-white/10">
+      <div className="mt-6 h-px overflow-hidden bg-white/10">
         <div
-          className="h-px bg-white transition-[width] duration-500 ease-out"
-          style={{ width: `${percent}%` }}
+          className="h-px w-full bg-white transition-transform duration-500 ease-out"
+          style={{ transform: `translateX(${percent - 100}%)` }}
         />
       </div>
 

@@ -311,7 +311,7 @@ export default function NameStep({
         type="button"
         onClick={onContinue}
         disabled={!canContinue}
-        className="mt-8 flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
+        className="mt-8 flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
       >
         {saving ? <LoaderCircle size={16} className="animate-spin" /> : null}
         {t.onboarding.continue}

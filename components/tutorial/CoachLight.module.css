@@ -207,7 +207,7 @@
 }
 
 .light[data-done="true"] .corner {
-  animation: release 480ms ease-in both;
+  animation: release 480ms var(--ease-out) both;
 }
 
 .light[data-done="true"] .ripple {

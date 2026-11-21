@@ -394,7 +394,7 @@ export default function WebPushSettingsButton() {
                     onClick={() =>
                       void handleTestNotification()
                     }
-                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition-all active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
+                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     {testSending ? (
                       <LoaderCircle
@@ -440,7 +440,7 @@ export default function WebPushSettingsButton() {
                   }
                 }}
                 className={[
-                  "flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-all active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45",
+                  "flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45",
                   canDisable
                     ? "bg-black/[0.06] text-black"
                     : "bg-black text-white",

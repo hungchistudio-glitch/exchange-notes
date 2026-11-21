@@ -123,7 +123,7 @@ export default function BottomSheet({
               className={[
                 "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
                 "bg-black/[0.05] text-ink-soft",
-                "transition-all hover:bg-black/[0.08] active:scale-95",
+                "transition hover:bg-black/[0.08] active:scale-95",
               ].join(" ")}
             >
               <X size={17} strokeWidth={1.8} />

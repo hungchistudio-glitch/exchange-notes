@@ -12,9 +12,11 @@ import BottomSheet from "@/components/foundation/overlays/BottomSheet";
  * a settings sheet, every choice card; for the vocabulary detail, the whole
  * card — to move one element by a few pixels.
  *
- * It is a custom property written straight onto the panel now. This holds
- * that: the contents render once for the gesture, and the transform still
- * follows the finger.
+ * It is the panel's own transform, written straight onto the node. Not a
+ * custom property either (2026-11-21): one is inherited, so writing it on the
+ * panel restyled every element inside the sheet on every pointermove. This
+ * holds both: the contents render once for the gesture, the transform still
+ * follows the finger, and no variable is set on the panel to carry it.
  */
 
 /*
@@ -69,11 +71,12 @@ describe("dragging a sheet", () => {
      */
     expect(onRender.mock.calls.length - beforeDrag).toBeLessThanOrEqual(1);
 
-    // And the panel actually followed the finger.
-    expect(panel.style.getPropertyValue("--sheet-drag-y")).not.toBe("");
-    expect(
-      Number.parseFloat(panel.style.getPropertyValue("--sheet-drag-y")),
-    ).toBeGreaterThan(0);
+    // And the panel actually followed the finger, on its own transform.
+    const moved = /translate3d\(0(?:px)?, (-?[\d.]+)px, 0(?:px)?\)/.exec(panel.style.transform);
+    expect(moved).not.toBeNull();
+    expect(Number.parseFloat(moved![1])).toBeGreaterThan(0);
+    // Nothing inherited carries the drag.
+    expect(panel.style.getPropertyValue("--sheet-drag-y")).toBe("");
   });
 
   it("puts the panel back where the stylesheet wants it when the finger lifts", () => {
@@ -83,11 +86,11 @@ describe("dragging a sheet", () => {
     const handle = screen.getByText("Daily goal").closest("header")!;
 
     drag(handle, 100, 140);
-    expect(panel.style.getPropertyValue("--sheet-drag-y")).not.toBe("");
+    expect(panel.style.transform).not.toBe("");
 
     fireEvent.pointerUp(handle, { pointerId: 1, clientY: 140 });
 
     // Cleared rather than set to zero: the resting value is the stylesheet's.
-    expect(panel.style.getPropertyValue("--sheet-drag-y")).toBe("");
+    expect(panel.style.transform).toBe("");
   });
 });

@@ -94,7 +94,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
         type="button"
         onClick={() => void handlePrimaryAction()}
         disabled={installing || (platform !== "ios" && !canPromptInstall)}
-        className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
+        className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[0.9375rem] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
       >
         {installing ? <LoaderCircle size={16} className="animate-spin" /> : null}
         {copy.installCta}

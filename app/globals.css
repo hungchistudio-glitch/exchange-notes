@@ -313,6 +313,35 @@
   --msg-mark-highlight: #ffffff;
 }
 
+/*
+ * The app's three motion curves (Chi, 2026-11-21: the review-animations
+ * skill, .claude/skills/review-animations/STANDARDS.md).
+ *
+ * Tailwind's own `ease-out` and the curve every bare `transition` utility
+ * falls back to were both weak (0, 0, 0.2, 1 and 0.4, 0, 0.2, 1): over a
+ * 150ms press they barely differ from linear, so a key's scale-down on
+ * press read as late. The strong ease-out lands most of the way in the
+ * first third, which is what makes a press feel answered. Utilities that
+ * name their own curve keep it.
+ *
+ *   --ease-out     entering, leaving, a press: starts fast, settles
+ *   --ease-in-out  something moving across the screen
+ *   --ease-drawer  a sheet or drawer travelling its own height (iOS-like)
+ *
+ * There is deliberately no `ease-in` for interface motion: a curve that
+ * starts slow delays the moment the reader is watching. Leaving uses
+ * --ease-out too, only shorter than arriving.
+ *
+ * `static`, so all three reach :root even where only a CSS module (which
+ * Tailwind never reads) asks for them.
+ */
+@theme static {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --default-transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
