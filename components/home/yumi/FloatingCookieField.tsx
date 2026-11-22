@@ -606,7 +606,7 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
       <div ref={field} className={styles.field} data-floating-field="" data-mode={mode} data-paused={paused}
         data-crossing={crossing ? "true" : undefined}
         inert={mode !== "rest" || activeId !== null} aria-hidden={mode !== "rest" || undefined}>
-        <canvas ref={setCapsuleCanvas} className={styles.capsules} aria-hidden="true" />
+        <canvas ref={setCapsuleCanvas} className={styles.capsules} data-capsule-canvas="" aria-hidden="true" />
         {visible.map(cookie => <button type="button" key={cookie.id}
           ref={node => { if (node) buttons.current.set(cookie.id, node); else buttons.current.delete(cookie.id); }}
           className={styles.cookie} data-yumi-cookie="" data-floating-cookie={cookie.id}

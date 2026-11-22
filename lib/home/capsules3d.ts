@@ -24,8 +24,9 @@ import { makeStudioEnvironment } from "@/lib/yumi3d/scene";
    the silhouette, studio reflections from Yumi's own environment, and a
    clearcoat. About a thousand triangles a capsule.
 
-   The letter is a sprite, so it can never be seen edge on: it leans with
-   the capsule, but never further than a reader can still read it.
+   The letter is a flat card that always faces the screen, so it can never
+   be seen edge on: it leans with the capsule, but never further than a
+   reader can still read it.
    ========================================================= */
 
 export type CapsuleView = {
@@ -95,27 +96,94 @@ function halfShell(radius: number, from: number) {
 }
 
 /** Thicker toward the silhouette: what makes thin glass read as glass. */
-function withRim(material: THREE.MeshPhysicalMaterial, rim: number) {
+
+/* =========================================================
+   One draw for each part of every capsule (Chi, 2026-11-22: 合併膠囊繪製)
+
+   Each capsule was eight objects of its own (four glass shells, the lip, its
+   letter, its shadow, its glow) with its own materials: about ninety draws
+   a frame for twelve capsules, 2,600 a second measured. Now each part is
+   one InstancedMesh for all of them, drawn in the order one capsule was:
+   every shadow, every glow, the far glass, the near glass, the lips, the
+   letters. What differs between capsules rides on each instance: its
+   matrix, its tint (instanceColor), and `instanceLook` (the part's own
+   opacity, the capsule's fade, its warm glow). The letters share one
+   texture, an atlas of 128 px cells.
+
+   The capsule a finger holds, and the tour's, is drawn in a second set on
+   top, so another capsule's letter never shows over its glass.
+
+   A fade now thins the whole capsule, its glass edges and gleam included.
+   They used to stay, so a capsule faded out by a search answer (alpha 0)
+   left its outline behind.
+   ========================================================= */
+
+/** Most capsules a layer draws; the field shows about twelve. */
+const CAPACITY = 48;
+
+type LookOptions = {
+  /** Thicker toward the silhouette: what makes thin glass read as glass. */
+  rim?: number;
+  /** Takes the capsule's warm glow (the due words, the tour's capsule). */
+  glow?: boolean;
+  /** Reads its map from one cell of the letter atlas, this wide in uv. */
+  cell?: number;
+};
+
+/** Teaches a material to read `instanceLook` (and the atlas cell), per instance. */
+function perInstance<T extends THREE.Material>(material: T, { rim, glow = false, cell }: LookOptions): T {
   material.onBeforeCompile = shader => {
-    shader.uniforms.uRim = { value: rim };
-    shader.fragmentShader = shader.fragmentShader
-      .replace("void main() {", "uniform float uRim;\nvoid main() {")
+    if (rim !== undefined) shader.uniforms.uRim = { value: rim };
+    if (cell !== undefined) shader.uniforms.uCell = { value: cell };
+    shader.vertexShader = shader.vertexShader
       .replace(
-        "#include <opaque_fragment>",
-        `float facing = abs(normalize(normal).z);
+        "#include <common>",
+        `#include <common>
+        attribute vec3 instanceLook;
+        varying vec3 vLook;
+        ${cell !== undefined ? "attribute vec2 instanceCell;\nuniform float uCell;" : ""}`,
+      )
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvLook = instanceLook;");
+    if (cell !== undefined) {
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <uv_vertex>",
+        "#include <uv_vertex>\nvMapUv = vMapUv * uCell + instanceCell;",
+      );
+    }
+    let fragment = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+        varying vec3 vLook;
+        ${rim !== undefined ? "uniform float uRim;" : ""}`,
+      )
+      /* The part's own opacity, where the material's used to be. */
+      .replace("#include <color_fragment>", "#include <color_fragment>\ndiffuseColor.a *= vLook.x;");
+    if (glow) {
+      fragment = fragment.replace(
+        "#include <emissivemap_fragment>",
+        "#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(0.34, 0.28, 0.08) * vLook.z;",
+      );
+    }
+    fragment = fragment.replace(
+      "#include <opaque_fragment>",
+      `${rim !== undefined ? `float facing = abs(normalize(normal).z);
         diffuseColor.a = clamp(diffuseColor.a + pow(1.0 - facing, 2.2) * uRim, 0.0, 1.0);
         /* A highlight on thin glass is as bright as on anything: it must
            not be thinned with the glass, or the capsule has no gleam. */
-        diffuseColor.a = clamp(diffuseColor.a + dot(totalSpecular, vec3(0.3333)) * 1.6, 0.0, 1.0);
+        diffuseColor.a = clamp(diffuseColor.a + dot(totalSpecular, vec3(0.3333)) * 1.6, 0.0, 1.0);` : ""}
+        /* The capsule's fade, over everything it is. */
+        diffuseColor.a *= vLook.y;
         #include <opaque_fragment>`,
-      );
+    );
+    shader.fragmentShader = fragment;
   };
-  material.customProgramCacheKey = () => `capsule-rim-${rim}`;
+  material.customProgramCacheKey = () => `capsule-${rim ?? "-"}-${glow ? "g" : "-"}-${cell ?? "-"}`;
   return material;
 }
 
-function glass(color: THREE.ColorRepresentation, opacity: number, rim: number, side: THREE.Side) {
-  return withRim(new THREE.MeshPhysicalMaterial({
+function glass(color: THREE.ColorRepresentation, rim: number, side: THREE.Side) {
+  return perInstance(new THREE.MeshPhysicalMaterial({
     color,
     roughness: 0.05,
     metalness: 0,
@@ -123,31 +191,115 @@ function glass(color: THREE.ColorRepresentation, opacity: number, rim: number, s
     clearcoatRoughness: 0.04,
     envMapIntensity: 1.6,
     transparent: true,
-    opacity,
     depthWrite: false,
     depthTest: false,
     side,
-  }), rim);
+  }), { rim, glow: true });
 }
 
-function glyphTexture(glyph: string, ink: string) {
+/** The letters, 8 × 8 cells of 128 px in one texture; a cell no capsule shows is reused. */
+function letterAtlas() {
+  const CELLS = 8;
+  const CELL = 128;
   const paper = document.createElement("canvas");
-  paper.width = paper.height = 128;
+  paper.width = paper.height = CELLS * CELL;
   const ctx = paper.getContext("2d")!;
-  ctx.clearRect(0, 0, 128, 128);
-  ctx.fillStyle = ink;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  const length = Array.from(glyph).length;
-  const size = length > 1 ? 66 : 88;
-  ctx.font = `600 ${size}px Georgia, ${cjkSerifFor(glyph)}, serif`;
-  /* A faint light edge under the ink, as the beads' letters had. */
-  ctx.shadowColor = "rgba(255,255,255,0.65)";
-  ctx.shadowOffsetY = 2;
-  ctx.fillText(glyph, 64, 68);
   const texture = new THREE.CanvasTexture(paper);
   texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
+  const slots = new Map<string, { cell: number; used: number }>();
+  const free = Array.from({ length: CELLS * CELLS }, (_, i) => CELLS * CELLS - 1 - i);
+
+  function draw(cell: number, glyph: string, ink: string) {
+    const x0 = (cell % CELLS) * CELL;
+    const y0 = Math.floor(cell / CELLS) * CELL;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x0, y0, CELL, CELL);
+    ctx.clip();
+    ctx.clearRect(x0, y0, CELL, CELL);
+    ctx.fillStyle = ink;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const size = Array.from(glyph).length > 1 ? 66 : 88;
+    ctx.font = `600 ${size}px Georgia, ${cjkSerifFor(glyph)}, serif`;
+    /* A faint light edge under the ink, as the beads' letters had. */
+    ctx.shadowColor = "rgba(255,255,255,0.65)";
+    ctx.shadowOffsetY = 2;
+    ctx.fillText(glyph, x0 + 64, y0 + 68);
+    ctx.restore();
+    texture.needsUpdate = true;
+  }
+
+  return {
+    texture,
+    cellWidth: 1 / CELLS,
+    /** The uv corner of this letter's cell, drawing it first if it is new. */
+    cellFor(key: string, glyph: string, ink: string, frame: number): [number, number] {
+      let slot = slots.get(key);
+      if (!slot) {
+        let cell = free.pop();
+        if (cell === undefined) {
+          let oldest: [string, { cell: number; used: number }] | null = null;
+          for (const entry of slots) if (entry[1].used < frame && (!oldest || entry[1].used < oldest[1].used)) oldest = entry;
+          if (oldest) slots.delete(oldest[0]);
+          cell = oldest?.[1].cell ?? 0;
+        }
+        draw(cell, glyph, ink);
+        slot = { cell, used: frame };
+        slots.set(key, slot);
+      }
+      slot.used = frame;
+      /* CanvasTexture flips y: a cell's top row in the canvas is high in uv. */
+      return [(slot.cell % CELLS) / CELLS, 1 - (Math.floor(slot.cell / CELLS) + 1) / CELLS];
+    },
+    dispose() {
+      texture.dispose();
+    },
+  };
+}
+
+/** One part of every capsule: its geometry (its own copy, for the per-instance data) and how it looks. */
+function instancedPart(geometry: THREE.BufferGeometry, material: THREE.Material, order: number, { colored = false, cells = false } = {}) {
+  const own = geometry.clone();
+  own.setAttribute("instanceLook", new THREE.InstancedBufferAttribute(new Float32Array(CAPACITY * 3), 3).setUsage(THREE.DynamicDrawUsage));
+  if (cells) own.setAttribute("instanceCell", new THREE.InstancedBufferAttribute(new Float32Array(CAPACITY * 2), 2).setUsage(THREE.DynamicDrawUsage));
+  const mesh = new THREE.InstancedMesh(own, material, CAPACITY);
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  if (colored) mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(CAPACITY * 3), 3).setUsage(THREE.DynamicDrawUsage);
+  mesh.renderOrder = order;
+  mesh.frustumCulled = false;
+  mesh.count = 0;
+  const look = own.getAttribute("instanceLook") as THREE.InstancedBufferAttribute;
+  const cell = cells ? (own.getAttribute("instanceCell") as THREE.InstancedBufferAttribute) : null;
+  return {
+    mesh,
+    /** Adds an instance; false once the part is full. */
+    push(matrix: THREE.Matrix4, base: number, fade: number, glow = 0, color?: THREE.Color, uv?: [number, number]) {
+      const i = mesh.count;
+      if (i >= CAPACITY) return false;
+      mesh.setMatrixAt(i, matrix);
+      look.setXYZ(i, base, fade, glow);
+      if (color) mesh.setColorAt(i, color);
+      if (uv && cell) cell.setXY(i, uv[0], uv[1]);
+      mesh.count = i + 1;
+      return true;
+    },
+    begin() {
+      mesh.count = 0;
+    },
+    end() {
+      mesh.visible = mesh.count > 0;
+      if (!mesh.count) return;
+      mesh.instanceMatrix.needsUpdate = true;
+      look.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      if (cell) cell.needsUpdate = true;
+    },
+    dispose() {
+      own.dispose();
+      mesh.dispose();
+    },
+  };
 }
 
 function shadowTexture() {
@@ -186,18 +338,8 @@ function haloTexture() {
   return texture;
 }
 
+/** What a capsule keeps between frames: how it is turned and where it was drawn. */
 type Capsule = {
-  group: THREE.Group;
-  materials: { mesh: THREE.Material; base: number }[];
-  glyphMaterial: THREE.SpriteMaterial;
-  glyph: THREE.Sprite;
-  glyphText: string;
-  shadow: THREE.Mesh;
-  shadowMaterial: THREE.MeshBasicMaterial;
-  /* The two halves, for opening it when it is fed. */
-  tintedParts: THREE.Object3D[];
-  clearParts: THREE.Object3D[];
-  halo: THREE.Sprite | null;
   /* The last view it was given, so a fed capsule can finish opening after
      the field has let it go. */
   last: CapsuleView;
@@ -206,7 +348,6 @@ type Capsule = {
   cruise: THREE.Vector3;
   roll: number;
   shown: { x: number; y: number };
-  tone: number;
   seen: boolean;
 };
 
@@ -256,69 +397,68 @@ export function createCapsuleField(
   lip.translate(0, -0.05, 0);
   const plane = new THREE.PlaneGeometry(1, 1);
   const blob = shadowTexture();
-  const glyphs = new Map<string, THREE.CanvasTexture>();
+  const haloMap = haloTexture();
+  const atlas = letterAtlas();
   const capsules = new Map<string, Capsule>();
   const light = { offsetX: SHADOW_OFFSET.x, offsetY: SHADOW_OFFSET.y, stretch: 1, strength: 1 };
-  let shadowInk = 0x2e2418;
   let width = 0;
   let height = 0;
 
-  function glyphFor(text: string, tone: number) {
-    const key = `${tone}:${text}`;
-    let texture = glyphs.get(key);
-    if (!texture) {
-      texture = glyphTexture(text, TONES[tone].ink);
-      glyphs.set(key, texture);
-    }
-    return texture;
+  /* The tinted halves and the lip are white here; each instance brings its
+     tone's colour. The clear halves are one glass for every tone. */
+  const materials = {
+    tintedBack: glass(0xffffff, 0.25, THREE.BackSide),
+    clearBack: glass(0xe9f1f6, 0.35, THREE.BackSide),
+    tintedFront: glass(0xffffff, 0.55, THREE.FrontSide),
+    clearFront: glass(0xeef5fa, 0.95, THREE.FrontSide),
+    lip: perInstance(new THREE.MeshStandardMaterial({
+      color: 0xffffff, roughness: 0.2, metalness: 0, transparent: true, depthTest: false, depthWrite: false,
+    }), { glow: true }),
+    letters: perInstance(new THREE.MeshBasicMaterial({
+      map: atlas.texture, transparent: true, depthTest: false, depthWrite: false,
+    }), { cell: atlas.cellWidth }),
+    halo: perInstance(new THREE.MeshBasicMaterial({
+      map: haloMap, transparent: true, depthTest: false, depthWrite: false,
+    }), {}),
+    shadow: perInstance(new THREE.MeshBasicMaterial({
+      map: blob, color: 0x2e2418, transparent: true, depthTest: false, depthWrite: false, toneMapped: false,
+    }), {}),
+  };
+  const toneColors = TONES.map(tone => ({ tint: new THREE.Color(tone.tint), sheen: new THREE.Color(tone.sheen) }));
+
+  /*
+   * Drawn in the order one capsule was: its glow behind it, the inside of
+   * its far half then its near half, the outside of its far half, the lip,
+   * the outside of its near half, and its letter over all of it. Which half
+   * is far changes as it tumbles (three.js used to sort them, a capsule's
+   * own meshes by depth), so each half has a far pass and a near pass and a
+   * capsule's halves go to whichever they are this frame. The lip between
+   * the outsides is what keeps the seam a soft line under the near glass.
+   */
+  function layer(from: number) {
+    return {
+      halo: instancedPart(plane, materials.halo, from + 1),
+      farTintedBack: instancedPart(tinted, materials.tintedBack, from + 2, { colored: true }),
+      farClearBack: instancedPart(clear, materials.clearBack, from + 3),
+      nearTintedBack: instancedPart(tinted, materials.tintedBack, from + 4, { colored: true }),
+      nearClearBack: instancedPart(clear, materials.clearBack, from + 5),
+      farTintedFront: instancedPart(tinted, materials.tintedFront, from + 6, { colored: true }),
+      farClearFront: instancedPart(clear, materials.clearFront, from + 7),
+      lip: instancedPart(lip, materials.lip, from + 8, { colored: true }),
+      nearTintedFront: instancedPart(tinted, materials.tintedFront, from + 9, { colored: true }),
+      nearClearFront: instancedPart(clear, materials.clearFront, from + 10),
+      letters: instancedPart(plane, materials.letters, from + 11, { cells: true }),
+    };
   }
+  /* Every shadow before any capsule: they lie on the paper. */
+  const shadows = instancedPart(plane, materials.shadow, -1000);
+  const floating = layer(0);
+  const lifted = layer(100);
+  const parts = [shadows, ...Object.values(floating), ...Object.values(lifted)];
+  for (const part of parts) scene.add(part.mesh);
 
   function build(view: CapsuleView): Capsule {
-    const tone = TONES[view.tone] ?? TONES[0];
     const random = seeded(view.id);
-    const group = new THREE.Group();
-    const materials: Capsule["materials"] = [];
-    const tintedParts: THREE.Object3D[] = [];
-    const clearParts: THREE.Object3D[] = [];
-    const add = (geometry: THREE.BufferGeometry, material: THREE.Material, order: number) => {
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.renderOrder = order;
-      mesh.frustumCulled = false;
-      group.add(mesh);
-      materials.push({ mesh: material, base: material.opacity });
-      (geometry === clear ? clearParts : tintedParts).push(mesh);
-    };
-    /* Inside first, then the letter, then the near side of the glass. */
-    add(tinted, glass(tone.tint, tone.opacity * 0.55, 0.25, THREE.BackSide), 1);
-    add(clear, glass(0xe9f1f6, 0.14, 0.35, THREE.BackSide), 1);
-    const glyphMaterial = new THREE.SpriteMaterial({
-      map: glyphFor(view.glyph, view.tone),
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-    });
-    const glyph = new THREE.Sprite(glyphMaterial);
-    glyph.renderOrder = 2;
-    glyph.frustumCulled = false;
-    const shadowMaterial = new THREE.MeshBasicMaterial({
-      map: blob,
-      color: shadowInk,
-      transparent: true,
-      opacity: 0.14,
-      depthTest: false,
-      depthWrite: false,
-      toneMapped: false,
-    });
-    const shadow = new THREE.Mesh(plane, shadowMaterial);
-    shadow.renderOrder = 0;
-    shadow.frustumCulled = false;
-    add(tinted, glass(tone.tint, tone.opacity, 0.55, THREE.FrontSide), 3);
-    add(clear, glass(0xeef5fa, 0.18, 0.95, THREE.FrontSide), 3);
-    add(lip, new THREE.MeshStandardMaterial({
-      color: tone.sheen, roughness: 0.2, metalness: 0, transparent: true, opacity: 0.75, depthTest: false, depthWrite: false,
-    }), 3);
-    scene.add(group, glyph, shadow);
-
     const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(
       random(1) * Math.PI * 2, random(2) * Math.PI * 2, random(3) * Math.PI * 2,
     ));
@@ -330,23 +470,7 @@ export function createCapsuleField(
       /* Still, and three-quarters on, so it reads as a capsule at once. */
       quaternion.setFromEuler(new THREE.Euler(0.35, 0.5, Math.PI / 2 - 0.5 + (random(8) - 0.5) * 0.6));
     }
-    return {
-      group, materials, glyphMaterial, glyph, glyphText: `${view.tone}:${view.glyph}`, shadow, shadowMaterial,
-      tintedParts, clearParts, halo: null, last: view,
-      quaternion, spin: cruise.clone(), cruise, roll: 0, shown: { x: view.x, y: view.y }, tone: view.tone, seen: false,
-    };
-  }
-
-  function remove(id: string, capsule: Capsule) {
-    scene.remove(capsule.group, capsule.glyph, capsule.shadow);
-    if (capsule.halo) {
-      scene.remove(capsule.halo);
-      capsule.halo.material.dispose();
-    }
-    for (const { mesh } of capsule.materials) mesh.dispose();
-    capsule.glyphMaterial.dispose();
-    capsule.shadowMaterial.dispose();
-    capsules.delete(id);
+    return { last: view, quaternion, spin: cruise.clone(), cruise, roll: 0, shown: { x: view.x, y: view.y }, seen: false };
   }
 
   /* Read only when the canvas changes size, never in the frame: the field
@@ -368,15 +492,23 @@ export function createCapsuleField(
   resize();
   const sizeWatch = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => resize());
   sizeWatch?.observe(canvas);
-  const halo = haloTexture();
 
   const step = new THREE.Quaternion();
   const axis = new THREE.Vector3();
   const longAxis = new THREE.Vector3();
   const rolling = new THREE.Vector3();
+  const matrix = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  const apart = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  const flat = new THREE.Quaternion();
+  const UP = new THREE.Vector3(0, 0, 1);
+  const NONE = new THREE.Quaternion();
+  let frameNumber = 0;
 
   return {
     frame(views, dt, now, { tumble, snap }) {
+      frameNumber += 1;
       const present = new Set<string>();
       /* A capsule fed to her finishes opening after the field lets it go. */
       const all = [...views];
@@ -385,7 +517,8 @@ export function createCapsuleField(
         const fedAt = capsule.last.eatenAt;
         if (!present.has(id) && fedAt !== undefined && now - fedAt < OPEN_MS) all.push(capsule.last);
       }
-      all.forEach((view, order) => {
+      for (const part of parts) part.begin();
+      all.forEach(view => {
         present.add(view.id);
         let capsule = capsules.get(view.id);
         if (!capsule) {
@@ -393,12 +526,8 @@ export function createCapsuleField(
           capsules.set(view.id, capsule);
         }
         capsule.last = view;
-        const key = `${view.tone}:${view.glyph}`;
-        if (capsule.glyphText !== key) {
-          capsule.glyphText = key;
-          capsule.glyphMaterial.map = glyphFor(view.glyph, view.tone);
-          capsule.glyphMaterial.needsUpdate = true;
-        }
+        const tone = TONES[view.tone] ?? TONES[0];
+        const colors = toneColors[view.tone] ?? toneColors[0];
 
         /* Where it is: exactly where the physics says while it floats or is
            held; eased while the field glides it to or from its parking. */
@@ -453,18 +582,39 @@ export function createCapsuleField(
           flight = t < 0.15 ? 0 : (t - 0.15) / 0.85;
           alpha *= t < 0.35 ? 1 : 1 - (t - 0.35) / 0.65;
         }
-        for (const part of capsule.tintedParts) part.position.y = open * 0.42;
-        for (const part of capsule.clearParts) part.position.y = -open * 0.42;
+        const drawn = view.hint || view.held ? lifted : floating;
 
-        capsule.group.position.set(x, -y, 0);
-        capsule.group.quaternion.copy(capsule.quaternion);
-        capsule.group.scale.setScalar(scale);
-        const base = 10 * (order + 1) + (view.hint || view.held ? 1000 : 0);
-        for (const child of capsule.group.children) child.renderOrder = base + (child as THREE.Mesh).renderOrder % 10;
-        for (const { mesh, base: opacity } of capsule.materials) mesh.opacity = opacity * alpha;
+        /* Due for review (Chi, 2026-11-22: 快忘的字膠囊會發光): a warm light
+           breathes inside it, slowly, so the home shows which words want
+           practice. Behind the capsule, as light it sits in. */
+        if (view.due && view.eatenAt === undefined) {
+          const breath = reducedMotion ? 0.7 : 0.55 + 0.45 * Math.sin(now / 900 + capsule.cruise.x * 10);
+          position.set(x, -y, 0);
+          size.setScalar(view.size * (1.7 + 0.12 * breath));
+          drawn.halo.push(matrix.compose(position, NONE, size), 1, 0.85 * breath * alpha);
+          glow = Math.max(glow, 0.6 * breath);
+        }
+
+        /* The glass: the tinted half and its lip one way along it, the
+           clear half the other, apart by as much as it has opened. The
+           tinted half is the near one while it points at the screen. */
+        longAxis.set(0, 1, 0).applyQuaternion(capsule.quaternion);
+        if (alpha > 0.002) {
+          const tintedNear = longAxis.z > 0;
+          size.setScalar(scale);
+          apart.set(0, open * 0.42 * scale, 0).applyQuaternion(capsule.quaternion);
+          position.set(x, -y, 0).add(apart);
+          matrix.compose(position, capsule.quaternion, size);
+          (tintedNear ? drawn.nearTintedBack : drawn.farTintedBack).push(matrix, tone.opacity * 0.55, alpha, glow, colors.tint);
+          (tintedNear ? drawn.nearTintedFront : drawn.farTintedFront).push(matrix, tone.opacity, alpha, glow, colors.tint);
+          drawn.lip.push(matrix, 0.75, alpha, glow, colors.sheen);
+          position.set(x, -y, 0).sub(apart);
+          matrix.compose(position, capsule.quaternion, size);
+          (tintedNear ? drawn.farClearBack : drawn.nearClearBack).push(matrix, 0.14, alpha, glow);
+          (tintedNear ? drawn.farClearFront : drawn.nearClearFront).push(matrix, 0.18, alpha, glow);
+        }
 
         /* The letter: inside, upright enough to read, leaning with it. */
-        longAxis.set(0, 1, 0).applyQuaternion(capsule.quaternion);
         let lie = Math.atan2(longAxis.y, longAxis.x);
         if (lie > Math.PI / 2) lie -= Math.PI;
         if (lie < -Math.PI / 2) lie += Math.PI;
@@ -480,51 +630,27 @@ export function createCapsuleField(
           glyphScale = scale * 0.56 * (1 - 0.6 * ease);
           glyphAlpha = view.alpha * (flight < 0.85 ? 1 : 1 - (flight - 0.85) / 0.15);
         }
-        capsule.glyph.position.set(glyphX, -glyphY, 0);
-        capsule.glyph.scale.setScalar(glyphScale);
-        /* Drawn over the near glass too: sealed in, but always legible. */
-        capsule.glyph.renderOrder = base + 4;
-        capsule.glyphMaterial.rotation = capsule.roll * (1 - flight);
-        capsule.glyphMaterial.opacity = glyphAlpha;
-
-        /* Due for review (Chi, 2026-11-22: 快忘的字膠囊會發光): a warm light
-           breathes inside it, slowly, so the home shows which words want
-           practice. */
-        if (view.due && view.eatenAt === undefined) {
-          if (!capsule.halo) {
-            capsule.halo = new THREE.Sprite(new THREE.SpriteMaterial({
-              map: halo, transparent: true, depthTest: false, depthWrite: false,
-            }));
-            capsule.halo.frustumCulled = false;
-            scene.add(capsule.halo);
-          }
-          const breath = reducedMotion ? 0.7 : 0.55 + 0.45 * Math.sin(now / 900 + capsule.cruise.x * 10);
-          capsule.halo.position.set(x, -y, 0);
-          capsule.halo.scale.setScalar(view.size * (1.7 + 0.12 * breath));
-          /* Behind the capsule, as light it sits in. */
-          capsule.halo.renderOrder = base;
-          capsule.halo.material.opacity = 0.85 * breath * alpha;
-          capsule.halo.visible = true;
-          glow = Math.max(glow, 0.6 * breath);
-        } else if (capsule.halo) {
-          capsule.halo.visible = false;
+        if (glyphAlpha > 0.002) {
+          /* Drawn over the near glass too: sealed in, but always legible. */
+          const cell = atlas.cellFor(`${view.tone}:${view.glyph}`, view.glyph, tone.ink, frameNumber);
+          position.set(glyphX, -glyphY, 0);
+          size.setScalar(glyphScale);
+          flat.setFromAxisAngle(UP, capsule.roll * (1 - flight));
+          drawn.letters.push(matrix.compose(position, flat, size), 1, glyphAlpha, 0, undefined, cell);
         }
-        capsule.group.children.forEach(child => {
-          const material = (child as THREE.Mesh).material as THREE.MeshPhysicalMaterial;
-          if (material.emissive) material.emissive.setRGB(0.34 * glow, 0.28 * glow, 0.08 * glow);
-        });
 
         /* Its shadow on the paper, as long as the capsule looks. */
-        const reach = Math.hypot(longAxis.x, longAxis.y);
-        capsule.shadow.position.set(x + view.size * light.offsetX, -(y + view.size * light.offsetY), 0);
-        capsule.shadow.rotation.z = Math.atan2(longAxis.y, longAxis.x);
-        capsule.shadow.scale.set(scale * (BODY * reach + RADIUS * 2) * 1.08 * light.stretch, scale * RADIUS * 2 * 0.95, 1);
-        /* Every shadow before any capsule: they lie on the paper. */
-        capsule.shadow.renderOrder = -1000 + order;
-        capsule.shadowMaterial.opacity = 0.16 * light.strength * alpha * (1 - open) * (view.held ? 0.7 : 1);
-        capsule.tone = view.tone;
+        const shade = 0.16 * light.strength * alpha * (1 - open) * (view.held ? 0.7 : 1);
+        if (shade > 0.002) {
+          const reach = Math.hypot(longAxis.x, longAxis.y);
+          position.set(x + view.size * light.offsetX, -(y + view.size * light.offsetY), 0);
+          flat.setFromAxisAngle(UP, Math.atan2(longAxis.y, longAxis.x));
+          size.set(scale * (BODY * reach + RADIUS * 2) * 1.08 * light.stretch, scale * RADIUS * 2 * 0.95, 1);
+          shadows.push(matrix.compose(position, flat, size), 1, shade);
+        }
       });
-      for (const [id, capsule] of capsules) if (!present.has(id)) remove(id, capsule);
+      for (const part of parts) part.end();
+      for (const id of capsules.keys()) if (!present.has(id)) capsules.delete(id);
       renderer.render(scene, camera);
     },
 
@@ -545,8 +671,7 @@ export function createCapsuleField(
       light.offsetY = 0.16 + z * FLOAT_HEIGHT * 0.6;
       light.stretch = 1 + Math.min(0.3, Math.hypot(x, z) * 0.12);
       light.strength = strength;
-      for (const capsule of capsules.values()) capsule.shadowMaterial.color.setHex(ink);
-      shadowInk = ink;
+      materials.shadow.color.setHex(ink);
       /* Its glass catches the light from the other side of its shadow. */
       lamp.position.set(-x * 0.6, 0.75, 0.9);
     },
@@ -555,9 +680,11 @@ export function createCapsuleField(
 
     dispose() {
       sizeWatch?.disconnect();
-      for (const [id, capsule] of capsules) remove(id, capsule);
-      halo.dispose();
-      for (const texture of glyphs.values()) texture.dispose();
+      capsules.clear();
+      for (const part of parts) part.dispose();
+      for (const material of Object.values(materials)) material.dispose();
+      atlas.dispose();
+      haloMap.dispose();
       tinted.dispose();
       clear.dispose();
       lip.dispose();

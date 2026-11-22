@@ -7,6 +7,7 @@ import { flushSync } from "react-dom";
 import OrbitIconButton from "@/components/foundation/buttons/OrbitIconButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { formatMessageTime } from "@/lib/messages/format";
+import LocalText from "@/components/foundation/LocalText";
 import { signedImageHref } from "@/lib/media/imageUrl";
 import type { SharedWordCard } from "@/lib/messages/wordCard";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
@@ -464,7 +465,7 @@ export default function WordCardMessage({
           className="text-[0.6875rem]"
           style={{ color: "var(--msg-ink-faint)" }}
         >
-          {formatMessageTime(createdAt, locale)}
+          <LocalText text={() => formatMessageTime(createdAt, locale)} />
         </time>
 
         <div className="flex items-center gap-4">

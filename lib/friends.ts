@@ -83,6 +83,11 @@ type ProfileRow = {
  * view. It carries exactly the columns below and nothing private — see the
  * migration that creates it. Every lookup here is about someone other than
  * the signed-in user, which is why none of them touch the table directly.
+ *
+ * Since 2026-11-22 (Chi: 收緊公開資料) the view shows only the reader's own
+ * people: themself, friends, request parties, conversation partners and
+ * note-share partners (*_public_profiles_own_people.sql). A stranger is
+ * reached only by exact Exchange ID, through findProfileByExchangeId.
  */
 const PUBLIC_PROFILES = "public_profiles";
 const PUBLIC_PROFILE_COLUMNS =
@@ -204,7 +209,16 @@ export async function getProfileById(
   return data ? toFriendProfile(data as ProfileRow) : null;
 }
 
-/** Look up a single profile by its public Exchange ID (case-insensitive). */
+/**
+ * Look up a single profile by its public Exchange ID (case-insensitive), the
+ * one way to reach someone who is not yet the reader's: an invite, a hello's
+ * sender, a search, "is this ID taken?".
+ *
+ * An exact match in the database (find_profile_by_exchange_id), one row or
+ * none. It was an ilike against the whole directory, where `_` and `%` are
+ * wildcards: "a%" found the first ID beginning with "a", and an ID with an
+ * underscore matched IDs with any character there.
+ */
 export async function findProfileByExchangeId(
   supabase: SupabaseClient,
   exchangeId: string
@@ -213,9 +227,7 @@ export async function findProfileByExchangeId(
   if (!clean) return null;
 
   const { data, error } = await supabase
-    .from(PUBLIC_PROFILES)
-    .select(PUBLIC_PROFILE_COLUMNS)
-    .ilike("exchange_id", clean)
+    .rpc("find_profile_by_exchange_id", { p_exchange_id: clean })
     .maybeSingle();
 
   if (error) throw error;

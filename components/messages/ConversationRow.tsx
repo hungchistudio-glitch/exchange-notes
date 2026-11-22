@@ -5,6 +5,7 @@ import { BellOff } from "lucide-react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { formatConversationTime } from "@/lib/messages/format";
+import LocalText from "@/components/foundation/LocalText";
 import { messagePreview } from "@/lib/messages/preview";
 import type { ConversationSummary } from "@/lib/friends";
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -78,6 +79,7 @@ export default function ConversationRow({
   const initial = name.charAt(0).toUpperCase();
   const hasUnread = summary.unreadCount > 0;
   const isMuted = Boolean(summary.mutedAt);
+  const lastAt = summary.lastMessage?.createdAt;
   const phraseCount = summary.learningSignalCount;
 
   return (
@@ -143,13 +145,13 @@ export default function ConversationRow({
             )}
           </span>
 
-          {summary.lastMessage && (
+          {lastAt && (
             <time
-              dateTime={summary.lastMessage.createdAt}
+              dateTime={lastAt}
               className="shrink-0 text-[0.6875rem]"
               style={{ color: "var(--msg-ink-faint)" }}
             >
-              {formatConversationTime(summary.lastMessage.createdAt, locale)}
+              <LocalText text={() => formatConversationTime(lastAt, locale)} />
             </time>
           )}
         </span>

@@ -12,8 +12,10 @@ export type { LegalCopy, LegalDocument, LegalSection } from "./types";
  * readers before it takes effect when the change matters to them (the
  * policy promises that).
  */
-/* 2026-11-20: the studio is run from New York City, and New York law governs (Chi). */
-export const LEGAL_EFFECTIVE_DATE = "2026-11-20";
+/* 2026-11-20: the studio is run from New York City, and New York law governs (Chi).
+   2026-11-22: energy cookies are energy capsules in both documents (PR #268);
+   the date is the day that wording went out (Chi: 條款日期改成更新當天). */
+export const LEGAL_EFFECTIVE_DATE = "2026-11-22";
 
 /* Five literal imports, so the bundler makes five chunks rather than one. */
 const LOADERS: Record<InterfaceLanguage, () => Promise<{ default: LegalCopy }>> = {

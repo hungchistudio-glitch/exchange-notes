@@ -5,6 +5,7 @@ import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage } from "@/lib/languages";
 
 import { formatMessageTime } from "@/lib/messages/format";
+import LocalText from "@/components/foundation/LocalText";
 import type { SharedNewsCard as SharedNewsCardData } from "@/lib/messages/newsCard";
 import usePhonetics from "@/hooks/usePhonetics";
 import useLocalPhonetics from "@/hooks/useLocalPhonetics";
@@ -323,7 +324,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
           className="shrink-0 text-[0.6875rem]"
           style={{ color: "var(--msg-ink-faint)" }}
         >
-          {formatMessageTime(createdAt, locale)}
+          <LocalText text={() => formatMessageTime(createdAt, locale)} />
         </time>
       </div>
     </article>

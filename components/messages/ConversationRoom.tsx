@@ -55,6 +55,7 @@ import {
   type MessageAnalysis,
 } from "@/lib/messages/decode";
 import { formatDateLabel, formatMessageTime } from "@/lib/messages/format";
+import LocalText from "@/components/foundation/LocalText";
 import { hideMessagesForUser, listHiddenMessageIds } from "@/lib/messages/hiddenMessages";
 import { readMessagePage, MESSAGE_PAGE_SIZE, type ConversationMessage as Message } from "@/lib/messages/history";
 import { decodeNewsCardMessage } from "@/lib/messages/newsCard";
@@ -1703,12 +1704,16 @@ export default function ConversationRoom({
                           color: "var(--msg-ink-soft)",
                         }}
                       >
-                        {formatDateLabel(
-                          message.created_at,
-                          copy.today,
-                          copy.yesterday,
-                          locale,
-                        )}
+                        <LocalText
+                          text={() =>
+                            formatDateLabel(
+                              message.created_at,
+                              copy.today,
+                              copy.yesterday,
+                              locale,
+                            )
+                          }
+                        />
                       </span>
                     </div>
                   )}
@@ -1803,7 +1808,7 @@ export default function ConversationRoom({
                           }}
                         >
                           <time dateTime={message.created_at}>
-                            {formatMessageTime(message.created_at, locale)}
+                            <LocalText text={() => formatMessageTime(message.created_at, locale)} />
                           </time>
                           {isMine &&
                             (() => {
