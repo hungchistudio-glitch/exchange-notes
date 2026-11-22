@@ -2906,6 +2906,13 @@ export type TranslationDictionary = {
       on: string;
       off: string;
     };
+    /** Whether the home answers the phone's tilt and shake (lib/home/deviceMotion.ts). */
+    homeMotion: {
+      rowTitle: string;
+      rowDescription: string;
+      on: string;
+      off: string;
+    };
     /**
      * Shown only to the app's owner, when the Guardian refuses the news's key
      * and the news reads its public feeds instead (2026-11-15).

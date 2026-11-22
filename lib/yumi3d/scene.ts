@@ -208,6 +208,9 @@ export type YumiSceneHandle = {
    * during the film or while YU and MI are apart.
    */
   setGround?(ground: YumiGround | null): void;
+  /** A ripple across her floor from this point (canvas CSS px); a touch on
+      her makes one of its own. */
+  rippleAt?(xPx: number, strength?: number): void;
   /**
    * A still stand that comes back to a view (the Cosmic home, Chi,
    * 2026-11-12: "停止操作後緩慢歸正"). No cruise between drags; once a
@@ -894,6 +897,10 @@ export function createYumiScene(
       ground.set(next);
     },
 
+    rippleAt(xPx, strength) {
+      ground.ripple(xPx, strength);
+    },
+
     setRotationPaused(paused) {
       rotationPaused = paused;
     },
@@ -976,6 +983,8 @@ export function createYumiScene(
     pointerDown(clientX, clientY) {
       if (film || parts) return;
       measureCanvas();
+      /* Touching her stirs the floor she stands on (Chi, 2026-11-22). */
+      ground.ripple(anchorNow.x, 0.8);
       idleSince = performance.now();
       /* A touch lets go of a return under way, where it is. */
       restFrom = null;

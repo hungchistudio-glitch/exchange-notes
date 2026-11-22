@@ -18,6 +18,7 @@ import HomeGatherStar from "./yumi/HomeGatherStar";
 import { reviewWords } from "./yumi/reviewWords";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
 import homeStyles from "./StandardHome.module.css";
+import { HomeOrbits } from "./StandardHome";
 import { onHomeSearchDismiss } from "@/lib/home/homeMoments";
 import TutorialCoach from "@/components/tutorial/TutorialCoach";
 
@@ -49,6 +50,7 @@ function StandardPreview() {
   const cookies = useMemo(() => buildAvailableCookies(reviewWords, fed), [fed]);
   return <>
         <div ref={stageRef} className={`${homeStyles.surface} ${homeStyles.centre}`} style={{ position: "relative", minHeight: "100svh" }}>
+          <HomeOrbits />
           <YumiRingOverlay stageRef={stageRef}
             onChooseDestination={destination => destination.action === "search" ? openSearch() : setSelected(destination.label)}
             meta={{ greeting: "Good afternoon", place: "New York", date: "Thu, October 1", time: "4:05 PM" }}

@@ -2777,6 +2777,12 @@ const italian: TranslationDictionary = {
       on: "Attivi",
       off: "Disattivati",
     },
+    homeMotion: {
+      rowTitle: "Le capsule seguono il telefono",
+      rowDescription: "Inclina o scuoti il telefono e le capsule-lettera della Home e Yumi lo sentono",
+      on: "Attivo",
+      off: "Disattivato",
+    },
     newsSource: {
       rowTitle: "La chiave del Guardian non funziona",
       refused: "Il Guardian ha rifiutato la chiave delle notizie: ora arrivano dai suoi feed pubblici, con estratti più brevi. Chiedi una nuova chiave gratuita e impostala come GUARDIAN_API_KEY su Vercel.",

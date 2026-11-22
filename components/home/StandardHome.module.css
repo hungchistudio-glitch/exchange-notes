@@ -81,99 +81,99 @@
 /*
   The orbits. Two tilted ellipses around her eye, drawn by the stage itself
   so they follow her wherever the ring overlay carries her (it writes
-  --yumi-x/--yumi-y in whole pixels). Only `transform` reads the variables,
-  so a frame where she drifts is a composite, not a layout.
+  --yumi-x/--yumi-y in whole pixels; HomeOrbits in StandardHome.tsx).
+
+  Each is a holder at her eye, moved only by `transform`, and the ellipse
+  inside it, which sways and breathes on its own (Chi, 2026-11-21:
+  有生命感但是要更淡). Two elements so both run on the compositor: the sway
+  is the ellipse's own `rotate` and the breath its own `opacity`, and the
+  holder's opacity is the fade in once she is at rest. The sway used to be
+  a registered angle read by the pseudo-elements' transform, which had the
+  main thread restyle them on every frame: about half the home's style
+  work (2026-11-22).
 */
-.centre::before,
-.centre::after {
-  content: "";
+.orbit {
   position: fixed;
   top: 0;
   left: 0;
+  width: 0;
+  height: 0;
+  z-index: 0;
+  pointer-events: none;
+  transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh));
+  /* Hidden until she is live and at rest: before the first frame there is
+     no eye to centre on, and with no WebGL the stage stays "starting". */
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+.orbit > i {
+  position: absolute;
+  left: -180px;
+  top: -70px;
   width: 360px;
   height: 140px;
-  margin: -70px 0 0 -180px;
   border-radius: 50%;
-  /* Fainter (Chi, 2026-11-21: 更淡), and alive: see .centre's sway below. */
   border: 1px solid #8a7a5a17;
   /* Two small brass pellets riding each orbit, painted on its own box so
      they turn with it: a point on an ellipse is (50 + 50·cos θ, 50 + 50·sin θ). */
   background:
     radial-gradient(circle at 4% 31%, #b9a57a99 0 3px, #b9a57a00 4px),
     radial-gradient(circle at 85% 85%, #8f9a8699 0 2.5px, #8f9a8600 3.5px);
-  pointer-events: none;
-  transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh)) rotate(calc(-14deg + var(--orbit-sway)));
-  /* Hidden until she is live and at rest: before the first frame there is
-     no eye to centre on, and with no WebGL the stage stays "starting". */
-  opacity: 0;
-  transition: opacity 0.45s ease;
-  z-index: 0;
+  rotate: -14deg;
 }
 
-.centre::after {
+.orbitInner > i {
+  left: -150px;
+  top: -52px;
   width: 300px;
   height: 104px;
-  margin: -52px 0 0 -150px;
   border-color: #8a7a5a12;
   background:
     radial-gradient(circle at 93% 25%, #c8b78e99 0 3.5px, #c8b78e00 4.5px),
     radial-gradient(circle at 21% 91%, #7f746699 0 2.5px, #7f746600 3.5px);
-  transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh)) rotate(calc(22deg + var(--orbit-sway)));
+  rotate: 22deg;
 }
 
-/*
-  Alive, barely (Chi, 2026-11-21: 有生命感但是要更淡): each orbit sways a
-  few degrees about her, slowly and out of step with the other, and
-  breathes a little lighter and darker. The sway is a registered angle the
-  transform reads, so her own --yumi-x/--yumi-y stay as they are; only
-  the two orbits restyle, and nothing lays out.
-*/
-@property --orbit-sway {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
-.centre[data-yumi-mode="rest"]::before {
-  animation: orbitSway 17s ease-in-out infinite, orbitBreathe 9s ease-in-out infinite;
-}
-
-.centre[data-yumi-mode="rest"]::after {
-  animation: orbitSway 23s ease-in-out -8s infinite reverse, orbitBreathe 11s ease-in-out -4s infinite;
-}
-
-@keyframes orbitSway {
-  0%, 100% { --orbit-sway: -4deg; }
-  50% { --orbit-sway: 4deg; }
-}
-
-/* A filter, not opacity: opacity is what fades them in once she is at
-   rest, and an animation on it would cut that fade short. */
-@keyframes orbitBreathe {
-  0%, 100% { filter: opacity(1); }
-  50% { filter: opacity(0.5); }
-}
-
-.centre[data-yumi-mode="rest"]::before,
-.centre[data-yumi-mode="rest"]::after {
+.centre[data-yumi-mode="rest"] .orbit {
   opacity: 1;
+}
+
+.centre[data-yumi-mode="rest"] .orbit > i {
+  animation: orbitSwayOuter 17s ease-in-out infinite, orbitBreathe 9s ease-in-out infinite;
+}
+
+.centre[data-yumi-mode="rest"] .orbitInner > i {
+  animation: orbitSwayInner 23s ease-in-out -8s infinite, orbitBreathe 11s ease-in-out -4s infinite;
+}
+
+@keyframes orbitSwayOuter {
+  0%, 100% { rotate: -18deg; }
+  50% { rotate: -10deg; }
+}
+
+@keyframes orbitSwayInner {
+  0%, 100% { rotate: 26deg; }
+  50% { rotate: 18deg; }
+}
+
+@keyframes orbitBreathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 /* Under the mode veil the orbits are simply there, like the cookies: a fade
    of their own would still be running when it lifts. */
-:global(body:has([data-home-mode-transition])) .centre::before,
-:global(body:has([data-home-mode-transition])) .centre::after {
+:global(body:has([data-home-mode-transition])) .orbit {
   transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .centre::before,
-  .centre::after {
+  .orbit {
     transition: none;
   }
 
-  .centre[data-yumi-mode="rest"]::before,
-  .centre[data-yumi-mode="rest"]::after {
+  .centre[data-yumi-mode="rest"] .orbit > i {
     animation: none;
   }
 }
@@ -183,8 +183,7 @@
     background-image: none;
   }
 
-  .centre::before,
-  .centre::after {
+  .orbit {
     display: none;
   }
 }

@@ -291,6 +291,9 @@
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.5;
+  /* Readable over her reflection in the lacquer just under it (Chi,
+     2026-11-22): a breath of the paper around each letter. */
+  text-shadow: 0 0 2px #f3efe6, 0 0 6px #f3efe6, 0 0 12px #f3efe6cc;
   color: #171717;
 }
 

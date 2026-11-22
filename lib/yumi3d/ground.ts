@@ -54,7 +54,15 @@ export type YumiGround = {
   /** How much darker than she is her reflection is: 0.82 on obsidian; on
       pale lacquer it wants to be deeper to read at all. */
   shade?: number;
+  /** How far below the floor the reflection reaches, in her radii (1.55). */
+  reach?: number;
 };
+
+/** The most ripples on the floor at once. */
+const RIPPLES = 4;
+/** A ripple's life, seconds, and how fast its ring runs out, px/s. */
+const RIPPLE_LIFE = 1.6;
+const RIPPLE_SPEED = 150;
 
 /** How the floor is pressed on screen: the radar pad's scaleY(0.26). */
 const TILT = 0.27;
@@ -95,6 +103,8 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uTint;
   uniform vec2 uCastTip;   // where the shadow of her top lands, CSS px
   uniform float uShade;
+  uniform float uReach;
+  uniform vec3 uRipples[${RIPPLES}]; // x (CSS px), age (s), strength
   varying vec2 vUv;
 
   vec4 tap(vec2 uv) { return texture2D(uMap, clamp(uv, uTexel * 0.5, 1.0 - uTexel * 0.5)); }
@@ -137,13 +147,30 @@ const fragmentShader = /* glsl */ `
     } else {
       float below = px.y - uFloorY;
       if (below < 0.0) discard;
-      float depth = clamp(below / (${REFLECTION_REACH.toFixed(2)} * r), 0.0, 1.0);
+      float depth = clamp(below / (uReach * r), 0.0, 1.0);
+      /* Ripples (Chi, 2026-11-22: 地板漣漪): rings running out across the
+         floor from where it was touched, pressed as the floor is, bending
+         the reflection and catching a little light as they pass. */
+      vec2 bend = vec2(0.0);
+      float shine = 0.0;
+      for (int i = 0; i < ${RIPPLES}; i++) {
+        vec3 ripple = uRipples[i];
+        if (ripple.z <= 0.0) continue;
+        vec2 off = (px - vec2(ripple.x, uFloorY)) / vec2(1.0, ${TILT.toFixed(2)});
+        float dist = length(off);
+        float front = ripple.y * ${RIPPLE_SPEED.toFixed(1)};
+        float ring = exp(-pow((dist - front) / 12.0, 2.0)) * ripple.z * (1.0 - ripple.y / ${RIPPLE_LIFE.toFixed(1)});
+        bend += normalize(off + 0.0001) * sin((dist - front) * 0.45) * ring * 3.0;
+        shine += ring;
+      }
       /* The mirrored pass is upside down relative to this quad. */
-      vec4 seen = soft(vec2(vUv.x, 1.0 - vUv.y), mix(0.6, 3.2, depth));
+      vec2 uv = vec2(vUv.x, 1.0 - vUv.y) + vec2(bend.x, -bend.y) / uRect.zw;
+      vec4 seen = soft(uv, mix(0.6, 3.2, depth));
       float fade = pow(1.0 - depth, 1.6) * 0.62 * uStrength * clipMask;
       /* Obsidian: darker than she is, and a little of the room's ice in it. */
       vec3 colour = mix(seen.rgb * uShade, uTint * seen.a, 0.12);
-      gl_FragColor = vec4(colour * fade, seen.a * fade);
+      float glint = clamp(shine, 0.0, 1.0) * 0.22 * uStrength * clipMask * (1.0 - depth);
+      gl_FragColor = vec4(colour * fade + uTint * glint, seen.a * fade + glint);
     }
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -197,6 +224,8 @@ export function createYumiGround(
     uShadowInk: { value: new THREE.Color(0x2e2418) },
     uCastTip: { value: new THREE.Vector2() },
     uShade: { value: 0.82 },
+    uReach: { value: REFLECTION_REACH },
+    uRipples: { value: Array.from({ length: RIPPLES }, () => new THREE.Vector3()) },
     uTint: { value: new THREE.Color(0xb8e8e5) },
   };
   /* Drawn first of everything (in the opaque list, so before her), with
@@ -222,6 +251,14 @@ export function createYumiGround(
   scene.add(quad);
 
   const projection = new THREE.Matrix4();
+  /* Ripples on the floor: where (CSS px), when (s), how hard. */
+  const ripples: { x: number; at: number; strength: number }[] = [];
+  /* The reflection's pass is drawn every other frame (it moves a few px a
+     second); the frame between composites the last one. Each pass switches
+     every one of her materials to its render-target program and back, and
+     that switch, not the drawing, was most of what it cost. */
+  let passFrame = 0;
+  let lastRegion: { x: number; y: number; w: number; h: number } | null = null;
   const hidden: THREE.Object3D[] = [];
   const clearColor = new THREE.Color();
   const bufferSize = new THREE.Vector2();
@@ -293,6 +330,12 @@ export function createYumiGround(
       quad.visible = false;
     },
 
+    /** A ripple across the floor from this point (CSS px along it). */
+    ripple(x: number, strength = 1) {
+      ripples.push({ x, at: performance.now() / 1000, strength: Math.max(0.15, Math.min(1, strength)) });
+      while (ripples.length > RIPPLES) ripples.shift();
+    },
+
     /** Call after she is posed for the frame and before the main render. */
     render(frame: GroundFrame) {
       quad.visible = false;
@@ -350,8 +393,26 @@ export function createYumiGround(
         restore();
         uniforms.uKind.value = 0;
       } else {
-        region = clampRegion(frame, x - 1.7 * r, g.floorY, x + 1.7 * r, g.floorY + REFLECTION_REACH * r);
-        if (!region) return;
+        const reach = g.reach ?? REFLECTION_REACH;
+        const fresh = clampRegion(frame, x - 1.7 * r, g.floorY, x + 1.7 * r, g.floorY + reach * r);
+        if (!fresh) return;
+        passFrame += 1;
+        const reuse = lastRegion !== null && passFrame % 2 === 0
+          && Math.abs(lastRegion.w - fresh.w) < 2 && Math.abs(lastRegion.h - fresh.h) < 2;
+        uniforms.uReach.value = reach;
+        uniforms.uKind.value = 1;
+        const now = performance.now() / 1000;
+        for (let i = ripples.length - 1; i >= 0; i -= 1) if (now - ripples[i].at > RIPPLE_LIFE) ripples.splice(i, 1);
+        uniforms.uRipples.value.forEach((slot, i) => {
+          const ripple = ripples[i];
+          if (ripple) slot.set(ripple.x, now - ripple.at, ripple.strength);
+          else slot.set(0, 0, 0);
+        });
+        if (reuse && lastRegion) {
+          region = lastRegion;
+        } else {
+          region = fresh;
+          lastRegion = fresh;
         /* The camera mirrored in the floor sees her as the floor shows her,
            upside down about the screen's middle row; the region it is asked
            for is the mirror of the one drawn. */
@@ -363,7 +424,7 @@ export function createYumiGround(
         passCamera.matrixWorldInverse.copy(passCamera.matrixWorld).invert();
         const mirrored = { x: region.x, y: frame.height - (region.y + region.h), w: region.w, h: region.h };
         renderPass(frame, mirrored, REFLECTION_SCALE);
-        uniforms.uKind.value = 1;
+        }
       }
 
       renderer.getDrawingBufferSize(bufferSize);

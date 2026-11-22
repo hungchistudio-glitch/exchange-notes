@@ -2699,6 +2699,12 @@ const japanese: TranslationDictionary = {
       on: "オン",
       off: "オフ",
     },
+    homeMotion: {
+      rowTitle: "カプセルがスマホの動きに反応",
+      rowDescription: "スマホを傾けたり振ったりすると、ホームの文字カプセルと Yumi が反応します",
+      on: "オン",
+      off: "オフ",
+    },
     newsSource: {
       rowTitle: "The Guardian のキーが使えません",
       refused: "The Guardian がニュース用のキーを拒否したため、今日のストーリーは公開フィードから、短めの抜粋で届いています。新しい無料キーを申請し、Vercel で GUARDIAN_API_KEY に設定してください。",

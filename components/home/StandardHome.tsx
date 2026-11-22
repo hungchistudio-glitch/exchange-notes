@@ -64,6 +64,16 @@ import styles from "./StandardHome.module.css";
  * Settings › Devices, friends from Messages, the camera inside the search
  * sheet.
  */
+/** The two orbits around her eye (StandardHome.module.css, .orbit). */
+export function HomeOrbits() {
+  return (
+    <>
+      <span className={styles.orbit} aria-hidden="true"><i /></span>
+      <span className={`${styles.orbit} ${styles.orbitInner}`} aria-hidden="true"><i /></span>
+    </>
+  );
+}
+
 export default function StandardHome() {
   const { t, language } = useTranslation();
 
@@ -164,6 +174,7 @@ export default function StandardHome() {
         className={styles.centre}
         data-coach={coaching ? "on" : undefined}
       >
+        <HomeOrbits />
         <YumiRingOverlay
           stageRef={stageRef}
           unreadCount={unreadCount}

@@ -105,6 +105,12 @@ export function buildSettingsSearchIndex(
       keywords: ["sound", "sounds", "audio", "effects", "mute", "click"],
     },
     {
+      id: "setting-home-motion",
+      title: settings.homeMotion.rowTitle,
+      section: sections.app,
+      keywords: ["tilt", "shake", "motion", "gyro", "capsule", "capsules", "膠囊", "傾斜", "搖晃"],
+    },
+    {
       id: "setting-install",
       title: t.pwa.settingsRowTitle,
       section: sections.devices,

@@ -33,6 +33,7 @@ import SettingsSearch from "@/components/settings/SettingsSearch";
 import PocketKeysSettingsButton from "@/components/settings/PocketKeysSettingsButton";
 import SettingsSection from "@/components/settings/SettingsSection";
 import InterfaceSoundsSettingsButton from "@/components/settings/InterfaceSoundsSettingsButton";
+import HomeMotionSettingsButton from "@/components/settings/HomeMotionSettingsButton";
 import NewsSourceHealthRow from "@/components/settings/NewsSourceHealthRow";
 import ReportsOwnerRow from "@/components/settings/ReportsOwnerRow";
 import ProfileLanguageSettingsButton from "@/components/settings/ProfileLanguageSettingsButton";
@@ -572,6 +573,10 @@ export default function ProfilePage() {
 
             <SettingsAnchor id="setting-interface-sounds">
               <InterfaceSoundsSettingsButton />
+            </SettingsAnchor>
+
+            <SettingsAnchor id="setting-home-motion">
+              <HomeMotionSettingsButton />
             </SettingsAnchor>
 
             {/* The owner's line when the news's Guardian key stops working. */}

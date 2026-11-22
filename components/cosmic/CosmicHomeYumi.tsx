@@ -6,6 +6,9 @@ import { useWornOutfit } from "@/lib/shop/wornOutfit";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 import { parkYumiScene, relayedOptions, takeParkedYumiScene, type YumiSceneRelay } from "@/lib/yumi3d/sceneCache";
 import { voiceSignal } from "@/lib/voice/signal";
+import type { YumiFeeling } from "@/lib/home/yumiFeel";
+
+const CALM: YumiFeeling = { gaze: null, lean: 0, dizzy: false };
 import YumiLoading from "@/components/yumi3d/YumiLoading";
 import styles from "./CosmicHomeYumi.module.css";
 
@@ -146,6 +149,8 @@ export default function CosmicHomeYumi({
       if (pointer === event.pointerId) handle?.pointerMove(event.clientX, event.clientY);
     };
     const finish = (event: PointerEvent) => {
+      /* A touch of her may be where an iPhone asks for the phone's motion. */
+      if (event.type === "pointerup") feelModule?.enableDeviceMotion();
       if (pointer !== event.pointerId) return;
       pointer = null;
       if (event.type === "pointerup") handle?.pointerUp();
@@ -211,6 +216,15 @@ export default function CosmicHomeYumi({
     let voice = 0;
     let lastNow = 0;
     let lean = 0;
+    /* The phone's tilt and shake (lib/home/yumiFeel.ts), loaded with her
+       scene rather than with the page. */
+    let feelModule: typeof import("@/lib/home/yumiFeel") | null = null;
+    let feel: ReturnType<typeof import("@/lib/home/yumiFeel").createYumiFeel> | null = null;
+    void import("@/lib/home/yumiFeel").then(module => {
+      if (cancelled) return;
+      feelModule = module;
+      feel = module.createYumiFeel(reduced);
+    }).catch(() => {});
     const running = () => visible && document.visibilityState === "visible" && !cancelled;
     const frame = (now: number) => {
       frameId = 0;
@@ -242,13 +256,17 @@ export default function CosmicHomeYumi({
       if (glow && (voice > 0.002 || glow.style.getPropertyValue("--voice-level") !== "0")) {
         glow.style.setProperty("--voice-level", voice > 0.002 ? voice.toFixed(3) : "0");
       }
-      const gaze = gazeFor(state.attention, voice, now);
+      const feeling = feel?.step(now, dt) ?? CALM;
+      const felt = state.attention === "idle" && !quiet ? feeling.gaze : null;
+      const gaze = felt ?? gazeFor(state.attention, voice, now);
       handle.setGaze?.(gaze.x, gaze.y);
 
       /* Floating quietly; still under the reader's hand, and under reduced motion. */
       const floating = !reduced && pointer === null && !quiet;
       const wantedFloat = floating ? Math.sin((now / FLOAT_MS) * Math.PI * 2) * FLOAT_PX : 0;
-      const wantedLean = floating ? Math.sin((now / LEAN_MS) * Math.PI * 2 + 1.1) * LEAN_RAD : 0;
+      const wantedLean = floating
+        ? Math.sin((now / LEAN_MS) * Math.PI * 2 + 1.1) * LEAN_RAD + (state.attention === "idle" ? feeling.lean : 0)
+        : 0;
       lean += (wantedLean - lean) * Math.min(1, dt * 3);
       handle.setNavigationLean?.(lean);
       /* Drawn in for the orbit, or out again; placed when anything moved. */
@@ -320,6 +338,7 @@ export default function CosmicHomeYumi({
       window.removeEventListener("blur", cancel);
       document.removeEventListener("visibilitychange", onVisibility);
       cancel();
+      feel?.dispose();
       surface.removeEventListener("pointerdown", down);
       surface.removeEventListener("pointermove", move);
       surface.removeEventListener("pointerup", finish);

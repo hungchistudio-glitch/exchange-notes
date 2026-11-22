@@ -12,7 +12,10 @@ import { floatingCopy } from "@/lib/home/floatingCopy";
 import { returnHomeFromSearch } from "@/lib/home/homeMoments";
 import { avoid, bound, clamp, collide, scatter, type Body, type Rect } from "@/lib/home/floatingPhysics";
 import { getCoachStep, getServerCoachStep, subscribeToCoach } from "@/lib/home/tutorialCoach";
-import { enableDeviceMotion, deviceTilt, takeShake, watchDeviceMotion } from "@/lib/home/deviceMotion";
+import { enableDeviceMotion, deviceTilt, shakeReader, watchDeviceMotion } from "@/lib/home/deviceMotion";
+import { YUMI_FLOOR_RIPPLE } from "@/lib/home/floorRipple";
+import { isDue } from "@/lib/review/analytics";
+import { interfaceSounds } from "@/lib/sound/interfaceSounds";
 import { sunlightAt } from "@/lib/home/sunlight";
 import type { CapsuleField, CapsuleView } from "@/lib/home/capsules3d";
 import { cookieGlyph } from "@/lib/pet/moodEngine";
@@ -41,6 +44,13 @@ const WATER = 1.3;
 const SHAKE_PUSH = 950;
 /** After the last tilt or shake, how long before they start home. */
 const CALM_MS = 1300;
+/* The field's pace (Chi, 2026-11-22: 自動省電). Touched, tilted or shaken in
+   the last ACTIVE_MS: every frame. Otherwise the capsules drift a few px a
+   second and a frame in two is plenty; after IDLE_MS of nothing, one in
+   three. A frame not drawn is not stepped either: the next one steps
+   further, so the drift keeps its speed. */
+const ACTIVE_MS = 2500;
+const IDLE_MS = 20_000;
 // Feeding another word must not recolour or resize the remaining cookies.
 const variantFor = (id: string) => Array.from(id).reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 0) % SIZES.length;
 
@@ -111,6 +121,18 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
     : null);
   const glyphRef = useRef(glyphOf);
   useEffect(() => { glyphRef.current = glyphOf; });
+  /* Words already reviewed whose next review has come: "快忘的字" (Chi,
+     2026-11-22). A word never reviewed is new, not fading, and does not glow. */
+  const dueRef = useRef(new Set<string>());
+  useEffect(() => {
+    const now = Date.now();
+    dueRef.current = new Set(items.filter(row => (row.review_count ?? 0) > 0 && isDue(row, now)).map(row => row.id));
+  }, [items]);
+  /* Where her eye was when each capsule was fed, for its letter's flight. */
+  const feedTargets = useRef(new Map<string, { x: number; y: number }>());
+  /* A fed capsule as it was at that moment: the page lets its word go at
+     once, and the capsule still has its opening to play (capsules3d). */
+  const farewells = useRef(new Map<string, CapsuleView>());
   const item = items.find(row => row.id === activeId);
   // A remotely deleted word must not leave an invisible modal locking the field.
   if (activeId !== null && !item) setActiveId(null);
@@ -118,6 +140,18 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
   function feed(cookie: Cookie) {
     if (latest.current.disabled || consumed.current.has(cookie.id) || !latest.current.cookies.some(row => row.id === cookie.id)) return;
     consumed.current.set(cookie.id, performance.now());
+    const eye = stageRef.current?.querySelector("[data-yumi-figure]")?.getBoundingClientRect();
+    const feedTo = eye ? { x: eye.left + eye.width / 2, y: eye.top + eye.height / 2 } : null;
+    if (feedTo) feedTargets.current.set(cookie.id, feedTo);
+    const body = bodies.current.get(cookie.id);
+    if (body) {
+      const variant = variantFor(cookie.id);
+      farewells.current.set(cookie.id, {
+        id: cookie.id, x: body.x, y: body.y, size: SIZES[variant], tone: variant % 4, glyph: glyphRef.current(cookie),
+        alpha: 0.95, vx: body.vx, vy: body.vy, eatenAt: consumed.current.get(cookie.id), feedTo,
+      });
+    }
+    interfaceSounds.capsule();
     buttons.current.get(cookie.id)?.animate?.([
       { scale: "1", opacity: 1 }, { scale: ".15", opacity: 0 },
     ], { duration: 260, fill: "forwards" });
@@ -252,9 +286,30 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
     /* The paper's light, by the reader's clock, read once a minute. */
     let lightMinute = -1;
     let lightField: CapsuleField | null = null;
+    const jolts = shakeReader();
+    /* The last touch, tilt or shake, for the half-rate idle. */
+    let activeAt = performance.now();
+    let frameNo = 0;
+    const wake = () => { activeAt = performance.now(); };
+    window.addEventListener("pointerdown", wake, true);
+    window.addEventListener("pointermove", wake, true);
+    /* Her floor line, read with the obstacles, for the ripple a capsule
+       makes crossing it (lib/home/floorRipple.ts). */
+    let floorY: number | null = null;
+    let floorBand = 0;
+    let rippleAt = 0;
+    const lastY = new Map<string, number>();
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const tick = (now: number) => {
-      const dt = Math.min(.032, (now - previous) / 1000);
+      const sinceActive = now - activeAt;
+      const busy = sinceActive < ACTIVE_MS || drag.current !== null || gather.current !== null
+        || farewells.current.size > 0 || now < easeUntil;
+      frameNo += 1;
+      if (frameNo % (busy ? 1 : sinceActive > IDLE_MS ? 3 : 2) !== 0) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      const dt = Math.min(.05, (now - previous) / 1000);
       previous = now;
       const state = latest.current;
       const width = window.innerWidth, height = window.innerHeight;
@@ -292,6 +347,9 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
           } else {
             hint = null;
           }
+          const floor = document.querySelector("[data-yumi-floor]")?.getBoundingClientRect();
+          floorY = floor && floor.height > 0 ? floor.top + floor.height / 2 : null;
+          floorBand = figure ? figure.width * 1.4 : 0;
           measureAt = now + 160;
         }
         const rows = state.cookies.slice(0, 12);
@@ -299,10 +357,13 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
         const moving = idle && !state.paused && !reduced.matches && !gather.current;
         const tilt = deviceTilt.live && Math.hypot(deviceTilt.x, deviceTilt.y) > 0.035 ? deviceTilt : null;
         const pull = moving && tilt ? { x: tilt.x, y: tilt.y } : null;
-        const shaken = takeShake();
+        const shaken = jolts.take();
         const strength = Math.hypot(shaken.x, shaken.y);
         const jolt = moving && strength > 0.035 ? shaken : null;
-        if (pull || jolt) calmAt = now + CALM_MS;
+        if (pull || jolt) {
+          calmAt = now + CALM_MS;
+          activeAt = now;
+        }
         if (jolt) capsules.current?.spin(Math.min(9, strength * 22));
         for (const id of bodies.current.keys()) if (!ids.has(id)) { bodies.current.delete(id); painted.delete(id); }
         for (const [id, at] of consumed.current) {
@@ -382,6 +443,8 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
               alpha: idle ? (hint?.id === id ? 1 : variant > 6 ? 0.9 : 0.95) : body.index < 4 ? 0.15 : 0,
               vx: idle ? body.vx : 0, vy: idle ? body.vy : 0,
               eatenAt: consumed.current.get(id),
+              feedTo: feedTargets.current.get(id) ?? null,
+              due: dueRef.current.has(id),
               hint: idle && hint?.id === id ? hint : null,
               held: drag.current?.cookie.id === id,
             });
@@ -394,7 +457,27 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
           }
           if (button.dataset.ready !== "true") button.dataset.ready = "true";
         }
+        /* Fed capsules the page has already let go of, finishing their opening. */
+        for (const [id, farewell] of farewells.current) {
+          if (now - (farewell.eatenAt ?? 0) > 700) farewells.current.delete(id);
+          else if (!next.some(view => view.id === id)) next.push(farewell);
+        }
         views = next;
+        /* A capsule crossing her floor line, near her, at speed: a ripple
+           in the floor she is reflected in (Chi, 2026-11-22: 地板漣漪). */
+        if (idle && floorY !== null) {
+          const figure = stageRef.current?.querySelector("[data-yumi-figure]");
+          for (const [id, body] of particles) {
+            const before = lastY.get(id);
+            lastY.set(id, body.y);
+            if (before === undefined || now - rippleAt < 260 || Math.abs(body.vy) < 120) continue;
+            if ((before - floorY) * (body.y - floorY) > 0) continue;
+            if (!figure || floorBand <= 0) continue;
+            rippleAt = now;
+            window.dispatchEvent(new CustomEvent(YUMI_FLOOR_RIPPLE, { detail: { x: body.x, strength: Math.min(1, Math.abs(body.vy) / 500) } }));
+            break;
+          }
+        }
         const field3d = capsules.current;
         const minute = Math.floor(Date.now() / 60000);
         if (field3d && (minute !== lightMinute || field3d !== lightField)) {
@@ -420,7 +503,12 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      jolts.dispose();
+      window.removeEventListener("pointerdown", wake, true);
+      window.removeEventListener("pointermove", wake, true);
+    };
   }, [stageRef]);
 
   useEffect(() => {
