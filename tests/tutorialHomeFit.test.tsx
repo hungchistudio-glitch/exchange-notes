@@ -32,7 +32,7 @@ afterEach(() => {
 
 describe("the feed step", () => {
   it("says how to feed with the cookies there are now", () => {
-    expect(english.tutorial.coach.steps.feed.body).toMatch(/drag a cookie onto me/i);
+    expect(english.tutorial.coach.steps.feed.body).toMatch(/drag a letter capsule onto me/i);
     expect(english.tutorial.coach.steps.feed.body).toMatch(/Feed Yumi/);
     expect(zhTW.tutorial.coach.steps.feed.body).toMatch(/拖到我身上/);
   });

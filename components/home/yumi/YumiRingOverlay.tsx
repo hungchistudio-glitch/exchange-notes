@@ -125,6 +125,8 @@ const ICON = {
  * keys are out around her.
  */
 const REST_RADIUS = 72;
+/** The warm gold of the Standard paper's lacquer, in her reflection. */
+const STANDARD_LACQUER = 0xe8c890;
 const OPEN_RADIUS = 86;
 
 /*
@@ -998,6 +1000,8 @@ export default function YumiRingOverlay({
            way up reports a new height every frame, and following each one
            made the field drift for the length of the animation. */
         const viewportWatch = { value: Number.NaN, since: 0, settled: Number.NaN };
+        /* The floor last told to the scene, in canvas px (null: none). */
+        let groundFloor: number | null | undefined;
         const loop = (now: number) => {
           if (cancelled || !handle) return;
           const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 1 / 30) : 0;
@@ -1135,6 +1139,19 @@ export default function YumiRingOverlay({
           );
           // While the dial is out she looks at the key at the top and leans a little toward it.
           handle.setNavigationLean?.(openRef.current && !reduced ? dialAim.current.x * 0.045 : 0);
+          /* Her reflection in the paper's lacquer (Chi, 2026-11-21: 全部統一像
+             cosmic 一樣倒影): the radar pad is the floor she stands on, so
+             its middle is the floor line, where YumiHomeStage draws the
+             gold horizon. Read in the same layout as her figure above;
+             told to the scene only when it moves. */
+          const pad = stageRef.current?.querySelector("[data-yumi-floor]")?.getBoundingClientRect();
+          const floorY = pad && pad.height > 0 ? Math.round((pad.top + pad.height / 2 - rect.top) * 2) / 2 : null;
+          if (floorY !== groundFloor) {
+            groundFloor = floorY;
+            handle.setGround?.(floorY === null ? null : {
+              kind: "reflection", floorY, tint: STANDARD_LACQUER, strength: 1, shade: 0.42,
+            });
+          }
           handle.setRotationPaused?.(
             openRef.current || answeringRef.current || returningHomeRef.current ||
             somethingElseIsUp() || getCoachStep() < COACH_STEPS.length,
@@ -1315,6 +1332,7 @@ export default function YumiRingOverlay({
       document.removeEventListener("visibilitychange", onHidden);
       /* Parked, not disposed: the next visit to this screen takes her back
          rather than building her again. */
+      handle?.setGround?.(null);
       if (handle) parkYumiScene({ canvas, handle, relay });
       canvas.remove();
       canvasRef.current = null;

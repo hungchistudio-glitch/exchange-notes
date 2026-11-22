@@ -227,7 +227,7 @@ describe("the new home screen", () => {
 
     coach();
 
-    expect(screen.getByText(/drag a cookie onto me/)).toBeInTheDocument();
+    expect(screen.getByText(/drag a letter capsule onto me/)).toBeInTheDocument();
     expect(screen.getByText(/Feed Yumi/)).toBeInTheDocument();
   });
 
@@ -264,7 +264,7 @@ describe("chapter two: around the app", () => {
     for (const [pathname, text, position] of [
       ["/vocabulary", /Each cell in Daily focus is one word due for review today/, "1/9"],
       ["/vocabulary", /Tap me here and my halo opens/, "2/9"],
-      ["/review", /A perfect round earns 3 energy cookies/, "3/9"],
+      ["/review", /A perfect round earns 3 energy capsules/, "3/9"],
       ["/pronunciation", /Pronunciation Lab: watch how I shape each sound/, "4/9"],
       ["/messages", /Messages: add a friend/, "5/9"],
       ["/notes", /Notes: for what a single word can't hold/, "6/9"],
@@ -281,7 +281,7 @@ describe("chapter two: around the app", () => {
     }
 
     // Then the shop, on Home, before the other look.
-    expect(screen.getByText(/Saving a word for the first time earns 3 energy cookies/)).toBeInTheDocument();
+    expect(screen.getByText(/Saving a word for the first time earns 3 energy capsules/)).toBeInTheDocument();
   });
 
   it("steps aside on screens that are not one of the six", () => {
@@ -321,7 +321,7 @@ describe("chapter three: Yumi's shop", () => {
        rather than made to spend. */
     again("/shop");
     expect(screen.getByText(/Tap any piece and I’ll try it on for free/)).toBeInTheDocument();
-    expect(screen.getByText(/cookies are only spent once you confirm/)).toBeInTheDocument();
+    expect(screen.getByText(/capsules are only spent once you confirm/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
 
     vi.useFakeTimers();
@@ -535,7 +535,7 @@ describe("one word, two cookies (2026-10-18)", () => {
 
     coach();
 
-    expect(screen.getByText(/a cookie on Home to feed me, and \+3 energy cookies for the shop/)).toBeInTheDocument();
+    expect(screen.getByText(/a letter capsule on Home to feed me, and \+3 energy capsules for the shop/)).toBeInTheDocument();
 
     vi.useFakeTimers();
     await act(async () => {
@@ -548,7 +548,7 @@ describe("one word, two cookies (2026-10-18)", () => {
 
     /* Then feeding, which says it spends none of the shop's. */
     expect(getCoachStep()).toBe(stepOf("feed"));
-    expect(screen.getByText(/It costs no energy cookies/)).toBeInTheDocument();
+    expect(screen.getByText(/It costs no energy capsules/)).toBeInTheDocument();
   });
 });
 

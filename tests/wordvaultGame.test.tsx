@@ -169,7 +169,7 @@ describe("Yumi Wordvault", () => {
     await screen.findByText("lasting a very short time");
     for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
     expect(await screen.findByRole("heading", { name: "The vault opens!" })).toBeInTheDocument();
-    expect(screen.getByText("90 cookies this round.")).toBeInTheDocument();
+    expect(screen.getByText("90 capsules this round.")).toBeInTheDocument();
     expect(screen.getByText("Word bonus +27")).toBeInTheDocument();
   });
 
@@ -259,7 +259,7 @@ describe("Wordvault's chests on the screen", () => {
     expect(screen.getByText("Medium chest ×2")).toBeInTheDocument();
     for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
     expect(await screen.findByRole("heading", { name: "The vault opens!" })).toBeInTheDocument();
-    expect(screen.getByText("+90 cookies, beyond today's 333")).toBeInTheDocument();
+    expect(screen.getByText("+90 capsules, beyond today's 333")).toBeInTheDocument();
     // The piece is shown whole first; under the reveal, the card names it too.
     fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Close" }));
     expect(screen.getByText(SHOP_ITEMS[0].names.english)).toBeInTheDocument();
@@ -272,7 +272,7 @@ describe("Wordvault's chests on the screen", () => {
     await screen.findByText("lasting a very short time");
     expect(screen.getByText("Premium chest ×3")).toBeInTheDocument();
     for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
-    expect(await screen.findByText("+180 cookies, beyond today's 333")).toBeInTheDocument();
+    expect(await screen.findByText("+180 capsules, beyond today's 333")).toBeInTheDocument();
     // Out of the chest, shown whole first: its origin, its name, a line about it.
     const dialog = await screen.findByRole("dialog", { name: MYTHIC_ITEMS[0].names.english });
     expect(dialog).toHaveAttribute("data-collection", "mythic");

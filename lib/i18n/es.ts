@@ -227,7 +227,7 @@ const spanish: TranslationDictionary = {
         {
           name: "Estación 33",
           title: "Estación 33, la última parada",
-          text: "Antes de bajar, todo viajero se detiene en la Estación 33, una pequeña tienda en órbita. Yumi elige qué ponerse y un recuerdo de la Tierra, y paga con las galletas de energía que gana aprendiendo.",
+          text: "Antes de bajar, todo viajero se detiene en la Estación 33, una pequeña tienda en órbita. Yumi elige qué ponerse y un recuerdo de la Tierra, y paga con las cápsulas de energía que gana aprendiendo.",
         },
         {
           name: "Aterrizaje",
@@ -237,9 +237,9 @@ const spanish: TranslationDictionary = {
       ],
       tryOn: {
         title: "Pruébate algo",
-        hint: "Son piezas reales de la tienda de la app. Allí se pagan con galletas de energía, que se ganan guardando y repasando palabras.",
+        hint: "Son piezas reales de la tienda de la app. Allí se pagan con cápsulas de energía, que se ganan guardando y repasando palabras.",
         takeOff: "Quitárselo todo",
-        cookies: "{n} galletas",
+        cookies: "{n} cápsulas",
       },
       endTitle: "YU + MI = Yumi",
       endText: "Ya en la Tierra, aprendiendo idiomas contigo.",
@@ -513,13 +513,13 @@ const spanish: TranslationDictionary = {
         },
         keep: {
           body:
-            "Guarda una palabra nueva y recibes dos cosas: una galleta en Inicio para alimentarme y +3 galletas de energía para la tienda.",
-          tag: "Guárdala · +3 galletas de energía",
+            "Guarda una palabra nueva y recibes dos cosas: una cápsula de letra en Inicio para alimentarme y +3 cápsulas de energía para la tienda.",
+          tag: "Guárdala · +3 cápsulas de energía",
         },
         feed: {
           body:
-            "Después de una palabra, tócame para volver a Inicio. Dame una: arrastra una galleta hasta mí, o tócala y pulsa «Alimentar a Yumi». No gasta galletas de energía.",
-          tag: "Aliméntame · sin gastar galletas de energía",
+            "Después de una palabra, tócame para volver a Inicio. Dame una: arrastra una cápsula de letra hasta mí, o tócala y pulsa «Alimentar a Yumi». No gasta cápsulas de energía.",
+          tag: "Aliméntame · sin gastar cápsulas de energía",
         },
         voice: {
           body:
@@ -536,7 +536,7 @@ const spanish: TranslationDictionary = {
         },
         review: {
           body:
-            "Repasar: las palabras vuelven justo antes de que las olvides. Una ronda perfecta da 3 galletas de energía.",
+            "Repasar: las palabras vuelven justo antes de que las olvides. Una ronda perfecta da 3 cápsulas de energía.",
           action: "Abrir Repasar",
         },
         pronunciation: {
@@ -574,7 +574,7 @@ const spanish: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Las galletas de energía son el dinero de mi tienda; guardar una palabra por primera vez te da 3. Toca la bolsa que brilla arriba a la derecha para entrar.",
+            "Las cápsulas de energía son el dinero de mi tienda; guardar una palabra por primera vez te da 3. Toca la bolsa que brilla arriba a la derecha para entrar.",
         },
         tryOn: {
           body:
@@ -583,7 +583,7 @@ const spanish: TranslationDictionary = {
         },
         games: {
           body:
-            "El mando de arriba abre tres juegos de palabras. Las palabras que aciertas dan galletas de energía, y las rachas desbloquean piezas de colección que solo se ganan allí. Tócalo para entrar.",
+            "El mando de arriba abre tres juegos de palabras. Las palabras que aciertas dan cápsulas de energía, y las rachas desbloquean piezas de colección que solo se ganan allí. Tócalo para entrar.",
         },
         modeSwitch: {
           body:
@@ -2150,12 +2150,12 @@ const spanish: TranslationDictionary = {
       },
       summaryWordSingular: "{count} palabra hoy",
       summaryWordPlural: "{count} palabras hoy",
-      summaryCookieSingular: "{count} galleta",
-      summaryCookiePlural: "{count} galletas",
+      summaryCookieSingular: "{count} cápsula de letra",
+      summaryCookiePlural: "{count} cápsulas de letra",
       summaryStreak: "racha de {count} días",
       summaryStreakOne: "racha de {count} día",
-      cookieTrayEmpty: "Añade una palabra para ganarle una galleta a Yumi.",
-      cookieTrayHint: "Arrastra una galleta hasta Yumi",
+      cookieTrayEmpty: "Añade una palabra para ganarle una cápsula de letra a Yumi.",
+      cookieTrayHint: "Arrastra una cápsula de letra hasta Yumi",
       cookieTrayMore: "+{count} más",
       feedAriaLabel: "Darle {word} a Yumi",
       coreTrayEmpty: "Añade una palabra para forjar un Núcleo de Aprendizaje.",
@@ -2170,8 +2170,8 @@ const spanish: TranslationDictionary = {
         due: "toca repasar",
         mastered: "dominada",
       },
-      cookieTypeLetter: "Galleta de letra",
-      cookieTypeZhuyin: "Galleta de zhuyin",
+      cookieTypeLetter: "Cápsula de letra",
+      cookieTypeZhuyin: "Cápsula de zhuyin",
       feedingAnticipating: "Yumi abre la boca con ganas.",
       feedingEating: "Yumi mastica despacio.",
       feedingSwallowing: "Yumi se traga la energía de la palabra.",
@@ -2683,7 +2683,7 @@ const spanish: TranslationDictionary = {
       logoutConfirm: "¿Seguro que quieres cerrar sesión?",
       deleteAccount: "Eliminar cuenta",
       deleteAccountDescription: "Eliminar para siempre tu cuenta y sus datos",
-      deleteAccountWarning: "Se eliminarán para siempre tu cuenta de Exchange Notes y todo su contenido: notas, palabras e imágenes guardadas, historial de repaso, mensajes que enviaste, amistades y Yumi con sus galletas y atuendos. No se puede deshacer.",
+      deleteAccountWarning: "Se eliminarán para siempre tu cuenta de Exchange Notes y todo su contenido: notas, palabras e imágenes guardadas, historial de repaso, mensajes que enviaste, amistades y Yumi con sus cápsulas y atuendos. No se puede deshacer.",
       deleteAccountKept: "Las copias que tus amistades ya guardaron se quedan con ellas, y lo que compartiste fuera de la app no se ve afectado.",
       deleteAccountUnderstood: "Entiendo que no se puede deshacer",
       deleteAccountAction: "Eliminar para siempre",
@@ -2724,7 +2724,7 @@ const spanish: TranslationDictionary = {
       rowDescription: "Cuántas palabras nuevas al día",
       sheetTitle: "Objetivo diario",
       sheetDescription:
-        "Elige cuántas palabras nuevas quieres conocer cada día. Las galletas de Yumi se van llenando a medida que lo cumples.",
+        "Elige cuántas palabras nuevas quieres conocer cada día. Las cápsulas de letra de Yumi se van llenando a medida que lo cumples.",
       wordsLabel: "palabras",
 
       options: {
@@ -2760,7 +2760,7 @@ const spanish: TranslationDictionary = {
     yumiReminders: {
       rowTitle: "Recordatorios de Yumi",
       rowDescription:
-        "Deja que Yumi te avise cuando no le hayas dado ninguna galleta hoy.",
+        "Deja que Yumi te avise cuando no le hayas dado ninguna cápsula de letra hoy.",
       loadError: "No se han podido cargar los ajustes de recordatorios de Yumi.",
       saveError: "No se han podido guardar los ajustes de recordatorios de Yumi.",
       timezoneLabel: "Zona horaria del dispositivo",
@@ -2773,7 +2773,7 @@ const spanish: TranslationDictionary = {
       testError: "No se ha podido enviar la notificación de prueba de Yumi.",
       pushTitle: "Yumi te echa de menos",
       pushBody:
-        "Hoy todavía no hay galleta-palabra. Ven a darle una.",
+        "Hoy todavía no hay cápsula de letra. Ven a darle una.",
     },
 
     interfaceMode: {
@@ -2802,7 +2802,7 @@ const spanish: TranslationDictionary = {
         "Crea un token privado para que la app Scriptable pueda cargar de forma segura tu progreso más reciente con Yumi.",
       activeTitle: "La conexión del widget está activa",
       activeDescription:
-        "Scriptable puede cargar de forma segura el ánimo de Yumi, tus galletas y tu vocabulario más recientes.",
+        "Scriptable puede cargar de forma segura el ánimo de Yumi, tus cápsulas y tu vocabulario más recientes.",
       emptyTitle: "El widget no está conectado",
       emptyDescription:
         "Genera un token privado, cópialo una vez y guárdalo dentro de la app Scriptable de tu iPhone.",
@@ -3042,9 +3042,9 @@ const spanish: TranslationDictionary = {
   shop: {
     title: "Tienda Yumi",
     goBack: "Volver",
-    cookiesOne: "{count} galleta de energía",
-    cookiesOther: "{count} galletas de energía",
-    howEarned: "Guardar una palabra por primera vez da 3 galletas de energía, y superar todas las tarjetas de un repaso, otras 3.",
+    cookiesOne: "{count} cápsula de energía",
+    cookiesOther: "{count} cápsulas de energía",
+    howEarned: "Guardar una palabra por primera vez da 3 cápsulas de energía, y superar todas las tarjetas de un repaso, otras 3.",
     vault: {
       title: "El Tesoro Mítico",
       note: "33 piezas limitadas inspiradas en los mitos, solo en el cofre prémium de Yumi Wordvault.",
@@ -3091,11 +3091,11 @@ const spanish: TranslationDictionary = {
     buy: "Comprar",
     putOn: "Ponérselo",
     wearingNow: "Puesto",
-    shortOne: "Falta {count} galleta",
-    shortOther: "Faltan {count} galletas",
+    shortOne: "Falta {count} cápsula",
+    shortOther: "Faltan {count} cápsulas",
     saveWords: "Guardar palabras",
     confirmTitle: "¿Comprar «{item}»?",
-    confirmBody: "Usarás {price} galletas de energía y te quedarán {after}. Tus palabras y tu progreso no cambian.",
+    confirmBody: "Usarás {price} cápsulas de energía y te quedarán {after}. Tus palabras y tu progreso no cambian.",
     confirmBuy: "Comprar",
     cancel: "Cancelar",
     bought: "Yumi lleva «{item}»",
@@ -3140,7 +3140,7 @@ const spanish: TranslationDictionary = {
     energy: {
       wallet: "Reserva de energía",
       open: "Abrir la reserva de energía",
-      balance: "Galletas de energía disponibles",
+      balance: "Cápsulas de energía disponibles",
       fromLearning: "Guardar y repasar",
       fromSupply: "Compradas",
       howTitle: "Cómo conseguirlas",
@@ -3149,23 +3149,23 @@ const spanish: TranslationDictionary = {
       fromGame: "Hangyumi",
       ruleGame: "Cada letra nueva acertada en Hangyumi (hasta 333 al día)",
       packsTitle: "Paquetes",
-      rate: "1 USD = 33 galletas",
+      rate: "1 USD = 33 cápsulas",
       story: "Yumi tiene tres dedos en cada mano: con las dos cuenta hasta 33. En su forma de contar, 33 vale uno.",
       soon: "Próximamente",
-      future: "Las compras aún no están abiertas. Por ahora, las galletas llegan guardando y repasando palabras.",
-      separate: "Las galletas de energía son solo para la tienda. Las compradas nunca añaden palabras, repasos ni logros de aprendizaje.",
+      future: "Las compras aún no están abiertas. Por ahora, las cápsulas llegan guardando y repasando palabras.",
+      separate: "Las cápsulas de energía son solo para la tienda. Las compradas nunca añaden palabras, repasos ni logros de aprendizaje.",
       rewardSave: "Recompensa por guardar",
       rewardReview: "Recompensa de repaso",
       rewardPaid: "Recarga de energía",
-      rewardMixed: "Galletas de energía recibidas",
+      rewardMixed: "Cápsulas de energía recibidas",
       previewReward: "Ver la recompensa",
     },
-    loading: "Contando galletas…",
+    loading: "Contando cápsulas…",
     toCosmic: "Cambiar al modo Cosmic",
     toStandard: "Cambiar al modo Standard",
     language: "Idioma de la interfaz",
     freeTryOn: "Probar es gratis",
-    preview: "Vista previa · no se gastan galletas reales",
+    preview: "Vista previa · no se gastan cápsulas reales",
     selectPrompt: "Toca una pieza para probarla",
     boutique: {
       openStory: "Gira la moneda y descubre nuestra historia.",
@@ -3264,7 +3264,7 @@ const spanish: TranslationDictionary = {
     languageNote: "Solo cambia el idioma de las palabras de Hangyumi. Los ajustes de la app no cambian.",
     level: "Dificultad",
     levelChoice: "Dificultad {level}",
-    balance: "{count} galletas de energía para gastar",
+    balance: "{count} cápsulas de energía para gastar",
     rewardLetter: "Letra +{count}",
     rewardChar: "Carácter +{count}",
     rewardWord: "Palabra +{count}",
@@ -3288,19 +3288,19 @@ const spanish: TranslationDictionary = {
     studioWon: "Yumi, libre, de vuelta en su peana",
     studioLost: "Yumi, colgada entera",
     today: "Hoy",
-    todayLabel: "{earned} de {cap} galletas hoy",
+    todayLabel: "{earned} de {cap} cápsulas hoy",
     roundEarned: "+{count} en esta ronda",
     letterPaid: "+{count}",
     wordPaid: "Bonus de palabra +{count}",
     alreadyPaid: "Esta palabra ya ha dado su premio hoy.",
     capped: "Solo quedaban {count} hoy, así que eso es lo que ha dado.",
-    capReached: "Ya tienes las 333 de hoy. Sigue jugando para practicar; más galletas a medianoche.",
+    capReached: "Ya tienes las 333 de hoy. Sigue jugando para practicar; más cápsulas a medianoche.",
     won: "¡Has liberado a Yumi!",
-    wonBody: "{count} galletas en esta ronda.",
+    wonBody: "{count} cápsulas en esta ronda.",
     lost: "Yumi está colgada",
-    lostBodyOne: "Te quedas con la {count} galleta que ganaste.",
-    lostBodyOther: "Te quedas con las {count} galletas que ganaste.",
-    lostBodyNone: "Esta vez no hay galletas.",
+    lostBodyOne: "Te quedas con la {count} cápsula que ganaste.",
+    lostBodyOther: "Te quedas con las {count} cápsulas que ganaste.",
+    lostBodyNone: "Esta vez no hay cápsulas.",
     answer: "La palabra era",
     listen: "Escuchar",
     saveWord: "Guardar en el vocabulario",
@@ -3319,12 +3319,12 @@ const spanish: TranslationDictionary = {
     closed: "Hangyumi aún no está disponible en esta versión.",
     rulesTitle: "Cómo funciona Hangyumi",
     rules: {
-      letters: "Cada letra nueva acertada da {letter} galletas, y completar la palabra da {word} más.",
+      letters: "Cada letra nueva acertada da {letter} cápsulas, y completar la palabra da {word} más.",
       misses: "Tres fallos cuelgan su ojo, su brazo y su cuerpo, y la ronda termina. Lo ganado se queda.",
-      cap: "Hasta 333 galletas al día, y cada palabra paga una sola vez al día.",
+      cap: "Hasta 333 cápsulas al día, y cada palabra paga una sola vez al día.",
       learning: "Hangyumi no cambia tus palabras guardadas ni tu historial de repaso.",
       accents: "Las letras con tilde son letras propias: é no es e.",
-      nightscale: "Cada tres palabras que ganas desbloqueas una de las 24 piezas Escamas de noche que aún no tienes, todas con la misma probabilidad. Perder una palabra no quita nada, y las victorias se suman entre días, niveles e idiomas. Te esperan en la vitrina Escamas de noche de la tienda, nunca se venden y no dan galletas extra.",
+      nightscale: "Cada tres palabras que ganas desbloqueas una de las 24 piezas Escamas de noche que aún no tienes, todas con la misma probabilidad. Perder una palabra no quita nada, y las victorias se suman entre días, niveles e idiomas. Te esperan en la vitrina Escamas de noche de la tienda, nunca se venden y no dan cápsulas extra.",
     },
     nightscale: {
       collection: "Escamas {count} / {total}",
@@ -3384,11 +3384,11 @@ const spanish: TranslationDictionary = {
     closed: "Yumi Wordvault todavía no está disponible en esta versión.",
     rulesTitle: "Cómo se juega a Yumi Wordvault",
     rules: {
-      letters: "Cada letra nueva acertada da {letter} galletas, y Yumi avanza un paso por cada hueco que llena. Completa la palabra y sus letras se convierten en la llave del cofre: {word} más.",
+      letters: "Cada letra nueva acertada da {letter} cápsulas, y Yumi avanza un paso por cada hueco que llena. Completa la palabra y sus letras se convierten en la llave del cofre: {word} más.",
       misses: "Un error lanza una copia de su U, luego de su I y luego de su O. Con tres, la ronda termina; las copias siempre vuelven y lo ganado se queda.",
-      cap: "Hasta 333 galletas al día, compartidas con Hangyumi, y cada palabra paga solo una vez al día en cualquiera de los dos juegos.",
+      cap: "Hasta 333 cápsulas al día, compartidas con Hangyumi, y cada palabra paga solo una vez al día en cualquiera de los dos juegos.",
       learning: "Yumi Wordvault no cambia tus palabras guardadas ni tu historial de repaso.",
-      chests: "Gana tres palabras seguidas y la cuarta trae un cofre mediano: las galletas de la palabra por dos y una pieza de la tienda que aún no tienes. Seis seguidas y la séptima trae un cofre prémium: el triple de galletas y una pieza del Tesoro Mítico. El cofre paga el valor completo de la palabra aunque ya la hayas cobrado hoy, y sus galletas extra no cuentan para las 333.",
+      chests: "Gana tres palabras seguidas y la cuarta trae un cofre mediano: las cápsulas de la palabra por dos y una pieza de la tienda que aún no tienes. Seis seguidas y la séptima trae un cofre prémium: el triple de cápsulas y una pieza del Tesoro Mítico. El cofre paga el valor completo de la palabra aunque ya la hayas cobrado hoy, y sus cápsulas extra no cuentan para las 333.",
     },
     streak: "{count} seguidas",
     streakLabel: "{count} palabras ganadas seguidas. La cuarta trae un cofre mediano y la séptima uno prémium.",
@@ -3396,7 +3396,7 @@ const spanish: TranslationDictionary = {
     chestMedium: "Cofre mediano ×2",
     chestPremium: "Cofre prémium ×3",
     rewardTitle: "Del cofre",
-    rewardCookies: "+{count} galletas, aparte de las 333 de hoy",
+    rewardCookies: "+{count} cápsulas, aparte de las 333 de hoy",
     rewardItem: "Nuevo en tu armario",
     rewardLimited: "Del Tesoro Mítico",
     revealSeal: "{origin} · El Tesoro Mítico",
@@ -3410,8 +3410,8 @@ const spanish: TranslationDictionary = {
       celtic: "Leyenda celta",
       mesopotamian: "Mito mesopotámico",
     },
-    rewardAllOwned: "Ya tienes todas las piezas que podía traer, así que dio galletas.",
-    chestPaid: "El cofre guardaba {count} galletas más.",
+    rewardAllOwned: "Ya tienes todas las piezas que podía traer, así que dio cápsulas.",
+    chestPaid: "El cofre guardaba {count} cápsulas más.",
   },
   starweaver: {
     title: "Yumi Starweaver",
@@ -3437,11 +3437,11 @@ const spanish: TranslationDictionary = {
     closed: "Yumi Starweaver aún no está disponible en esta versión.",
     rulesTitle: "Cómo se juega a Yumi Starweaver",
     rules: {
-      letters: "Cada letra nueva acertada da {letter} galletas y se vuelve luz en el mapa estelar, una vez por cada hueco que llena. Completa la palabra y el portal se abre: {word} más.",
+      letters: "Cada letra nueva acertada da {letter} cápsulas y se vuelve luz en el mapa estelar, una vez por cada hueco que llena. Completa la palabra y el portal se abre: {word} más.",
       misses: "Un error envía una copia de su U, luego de su I y luego de su O. Con tres, la ronda termina; las copias siempre vuelven y lo ganado se queda.",
-      cap: "Hasta 333 galletas al día, compartidas con Hangyumi y Yumi Wordvault, y una palabra solo paga una vez al día en cualquiera de ellos.",
+      cap: "Hasta 333 cápsulas al día, compartidas con Hangyumi y Yumi Wordvault, y una palabra solo paga una vez al día en cualquiera de ellos.",
       learning: "Yumi Starweaver no cambia tus palabras guardadas ni tu historial de repaso.",
-      relics: "Cada palabra que completas es un viaje. Cada séptimo trae una de las 17 Reliquias tejidas de estrellas que aún no tienes, todas con la misma probabilidad. Perder una palabra no quita nada, y los viajes se suman entre días, niveles e idiomas. Las reliquias nunca se venden y no dan galletas extra.",
+      relics: "Cada palabra que completas es un viaje. Cada séptimo trae una de las 17 Reliquias tejidas de estrellas que aún no tienes, todas con la misma probabilidad. Perder una palabra no quita nada, y los viajes se suman entre días, niveles e idiomas. Las reliquias nunca se venden y no dan cápsulas extra.",
     },
     voyage: "Viaje {count} / {total}",
     collection: "Reliquias {count} / {total}",
@@ -3463,7 +3463,7 @@ const spanish: TranslationDictionary = {
     open: "Juegos",
     back: "Volver",
     choose: "Elige un juego",
-    today: "{earned} / {cap} galletas hoy",
+    today: "{earned} / {cap} cápsulas hoy",
     shared: "Los tres juegos comparten las 333 de hoy.",
     hangyumi: {
       howTo: "Adivina la palabra; tres fallos cuelgan su O, I, U.",

@@ -36,7 +36,7 @@ const legal: LegalCopy = {
           "Il tuo profilo: nome visualizzato, Exchange ID, foto del profilo, lingua madre e lingua di studio, e preferenze come lingua dell’interfaccia, modalità e obiettivo giornaliero.",
           "Note e vocabolario: parole, traduzioni, esempi, note, fonti, etichette, immagini salvate con esse, raccolte e cronologia dei ripassi.",
           "Messaggi e condivisioni: messaggi, allegati e parole che invii, note che condividi, richieste di amicizia e amicizie.",
-          "Apprendimento e Yumi: punteggi di pronuncia (conserviamo i punteggi, non le registrazioni), risultati dei ripassi, lo stato di Yumi, i biscotti energia e gli oggetti che indossa.",
+          "Apprendimento e Yumi: punteggi di pronuncia (conserviamo i punteggi, non le registrazioni), risultati dei ripassi, lo stato di Yumi, le capsule energia e gli oggetti che indossa.",
         ],
       },
       {
@@ -152,7 +152,7 @@ const legal: LegalCopy = {
       "Devi avere almeno 18 anni e accedere con il tuo account Google.",
       "Ciò che scrivi resta tuo; ci permetti solo di conservarlo e trattarlo per far funzionare l’app per te.",
       "I risultati dell’IA possono essere sbagliati e non sono consulenza professionale.",
-      "I biscotti energia e gli oggetti del negozio sono gratuiti, virtuali e senza valore economico.",
+      "Le capsule energia e gli oggetti del negozio sono gratuiti, virtuali e senza valore economico.",
       "L’app è in beta e viene fornita così com’è. Si applica la legge dello Stato di New York.",
     ],
     sections: [
@@ -200,9 +200,9 @@ const legal: LegalCopy = {
         ],
       },
       {
-        title: "Yumi, i biscotti energia e il negozio",
+        title: "Yumi, le capsule energia e il negozio",
         body: [
-          "I biscotti energia si guadagnano imparando e si spendono in oggetti per Yumi. Biscotti e oggetti sono virtuali, non hanno valore economico, non possono essere convertiti in denaro, venduti o trasferiti e non sono di tua proprietà. Possiamo modificare i saldi per correggere errori o abusi. Oggi non si può acquistare nulla con denaro reale; se in futuro verranno offerti oggetti a pagamento, il prezzo ed eventuali condizioni aggiuntive saranno mostrati prima del pagamento.",
+          "Le capsule energia si guadagnano imparando e si spendono in oggetti per Yumi. Capsule e oggetti sono virtuali, non hanno valore economico, non possono essere convertiti in denaro, venduti o trasferiti e non sono di tua proprietà. Possiamo modificare i saldi per correggere errori o abusi. Oggi non si può acquistare nulla con denaro reale; se in futuro verranno offerti oggetti a pagamento, il prezzo ed eventuali condizioni aggiuntive saranno mostrati prima del pagamento.",
         ],
       },
       {

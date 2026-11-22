@@ -54,10 +54,13 @@ function StandardPreview() {
             meta={{ greeting: "Good afternoon", place: "New York", date: "Thu, October 1", time: "4:05 PM" }}
             notices={{ unread: 0, friendRequests: 0, reviewDue: 12 }}
             field={({ onAnswerChange }) => <ReviewSearch onAnswerChange={onAnswerChange} />}
-            lines={{ primary: fed.length ? `Yumi · ${fed.length} cookies` : "Yumi is curious.", secondary: "Preview" }}>
+            lines={{ primary: fed.length ? `Yumi · ${fed.length} capsules` : "Yumi is curious.", secondary: "Preview" }}>
             <div data-yumi-figure style={{ position: "absolute", width: 144, height: 144, left: "calc(50% - 72px)", top: "calc(42svh - 72px)" }}>
               <ExchangeNotesMark />
             </div>
+            {/* The floor under her, as the radar pad marks it on Home, with
+                Home's gold horizon on it (YumiHomeStage.module.css). */}
+            <span data-yumi-floor="" aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, height: 1, top: "calc(42svh + 75px)", pointerEvents: "none", visibility: "visible", background: "linear-gradient(90deg, #b07f3300, #b07f3399 18%, #c9963fe6 50%, #b07f3399 82%, #b07f3300)", boxShadow: "0 0 8px 1px #d9a95040" }} />
             <FloatingCookieField cookies={cookies} items={reviewWords} stageRef={stageRef} onFeed={cookie => setFed(previous => [...previous, cookie.id])} />
           </YumiRingOverlay>
           <HomeGatherStar />

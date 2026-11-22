@@ -30,7 +30,7 @@ vi.mock("@/hooks/messages/useUnreadMessageCount", () => ({ default: () => ({ unr
 vi.mock("@/hooks/friends/useIncomingFriendRequestCount", () => ({ default: () => ({ count: 0 }) }));
 vi.mock("@/hooks/home/useLocalClock", () => ({ default: () => null }));
 
-const STAR = "Gather and scatter cookies";
+const STAR = "Gather and scatter capsules";
 const star = () => screen.queryByRole("button", { name: STAR });
 const field = () => document.querySelector("[data-floating-field]");
 

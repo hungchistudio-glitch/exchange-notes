@@ -36,7 +36,7 @@ const legal: LegalCopy = {
           "Your profile: display name, Exchange ID, profile photo, native and learning languages, and app preferences such as interface language, mode and daily goal.",
           "Notes and vocabulary: words, translations, examples, notes, sources, tags, pictures you save with them, collections and review history.",
           "Messages and sharing: messages, attachments and words you send, notes you share, friend requests and friendships.",
-          "Learning and Yumi: pronunciation scores (we keep scores, not recordings), review results, Yumi’s state, energy cookies and the items she wears.",
+          "Learning and Yumi: pronunciation scores (we keep scores, not recordings), review results, Yumi’s state, energy capsules and the items she wears.",
         ],
       },
       {
@@ -152,7 +152,7 @@ const legal: LegalCopy = {
       "You need to be 18 or older and sign in with your own Google account.",
       "What you write stays yours. You let us store and process it only to run the app for you.",
       "AI results can be wrong and are not professional advice.",
-      "Energy cookies and shop items are free, virtual and have no money value.",
+      "Energy capsules and shop items are free, virtual and have no money value.",
       "The app is in beta and provided as is. New York law applies.",
     ],
     sections: [
@@ -200,9 +200,9 @@ const legal: LegalCopy = {
         ],
       },
       {
-        title: "Yumi, energy cookies and the shop",
+        title: "Yumi, energy capsules and the shop",
         body: [
-          "Energy cookies are earned by learning and spent on items for Yumi. They and the items are virtual, have no monetary value, cannot be exchanged for money, sold or transferred, and are not your property. We may adjust balances to fix errors or abuse. Nothing can be bought with real money today; if paid items are ever offered, the price and any extra terms will be shown before you pay.",
+          "Energy capsules are earned by learning and spent on items for Yumi. They and the items are virtual, have no monetary value, cannot be exchanged for money, sold or transferred, and are not your property. We may adjust balances to fix errors or abuse. Nothing can be bought with real money today; if paid items are ever offered, the price and any extra terms will be shown before you pay.",
         ],
       },
       {

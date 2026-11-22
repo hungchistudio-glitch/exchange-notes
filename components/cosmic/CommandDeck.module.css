@@ -245,17 +245,61 @@
   background: radial-gradient(60% 55% at 58% 40%, #121c24 0%, #0d141b 45%, transparent 75%);
 }
 
-/* The light Yumi stands in: a soft pool under her, nothing that moves. */
+/* The light Yumi stands in: a soft pool under her, nothing that moves.
+   Centred on her floor line (--yumi-floor, from CosmicHomeYumi), where
+   her reflection starts; 83.5% is the same place before she has drawn. */
 .pool {
   position: absolute;
   left: 50%;
-  bottom: 9%;
+  top: var(--yumi-floor, 83.5%);
   width: 64%;
   height: 15%;
   border-radius: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   background: radial-gradient(closest-side, rgba(184, 232, 229, 0.16), rgba(184, 232, 229, 0.05) 60%, transparent);
   pointer-events: none;
+}
+
+/*
+ * The horizon (Chi, 2026-11-21, after the black hole she sent): one fine
+ * line of light across the obsidian at her floor line, ice in the middle
+ * and violet toward the ends, with a faint glow above and below it. Her
+ * reflection is drawn under it by her own scene (lib/yumi3d/ground.ts).
+ * It reaches past the stage on both sides, as a horizon would.
+ */
+.horizon {
+  position: absolute;
+  z-index: 0;
+  left: -1rem;
+  right: -1rem;
+  top: var(--yumi-floor, 83.5%);
+  height: 1px;
+  transform: translateY(-0.5px);
+  background: linear-gradient(90deg, transparent, rgba(199, 168, 220, 0.55) 18%, rgba(233, 248, 247, 0.95) 50%, rgba(199, 168, 220, 0.55) 82%, transparent);
+  box-shadow: 0 0 10px 1px rgba(184, 232, 229, 0.35), 0 0 28px 4px rgba(155, 120, 220, 0.16);
+  pointer-events: none;
+}
+
+/* The console under the stage is glass on the bridge, so the reflection
+   shows through it (OmniLexiconConsole reads these). */
+.search {
+  --omni-panel: color-mix(in oklab, var(--ob-panel) 70%, transparent);
+  --omni-field: color-mix(in oklab, #0b1117 72%, transparent);
+}
+
+@media (prefers-contrast: more) {
+  .search {
+    --omni-panel: var(--ob-panel);
+    --omni-field: #0b1117;
+  }
+}
+
+.bridge[data-arrival="waiting"] .horizon {
+  opacity: 0;
+}
+
+.bridge[data-arrival="full"] .horizon {
+  animation: wakeOrbit 260ms ease-out 200ms both;
 }
 
 /*
@@ -281,8 +325,11 @@
   border-radius: 50%;
 }
 
+/* The rings behind her are barely there (Chi, 2026-11-21: 超淡化), so
+   she and her reflection carry the stage; the orbit only comes up when
+   it is opened, for the six on it. */
 .orbitLine {
-  border: 1px solid rgba(113, 133, 141, 0.5);
+  border: 1px solid rgba(113, 133, 141, 0.16);
   transition: border-color 220ms ease;
 }
 
@@ -290,7 +337,7 @@
 .sweep {
   border: 1.5px solid transparent;
   border-top-color: var(--ob-ice);
-  opacity: 0.35;
+  opacity: 0.12;
   transform: rotate(38deg);
 }
 
@@ -307,13 +354,13 @@
   width: calc(62 * var(--u));
   height: calc(62 * var(--u));
   transform: translate(-50%, -50%);
-  opacity: 0.75;
+  opacity: 0.2;
   transition: opacity 220ms ease;
 }
 
 .stage[data-orbit="open"] .radar,
 .stage:not([data-omni="idle"]) .radar {
-  opacity: 0.25;
+  opacity: 0.08;
 }
 
 .bridge[data-arrival="full"] .radar {
@@ -339,7 +386,7 @@
 }
 
 .stage[data-orbit="open"] .orbitLine {
-  border-color: rgba(184, 232, 229, 0.42);
+  border-color: rgba(184, 232, 229, 0.3);
 }
 
 .yumi {

@@ -751,7 +751,11 @@ export default function YumiHomeStage({
           Standard takes the home's radar too), drawn by .hud-radar in
           app/hud.css and laid flat here. Outside the ground, which clips:
           the live scene draws her a little below its foot. */}
-      <span className={`hud-radar ${styles.radarPad}`} aria-hidden="true" />
+      <span className={`hud-radar ${styles.radarPad}`} data-yumi-floor="" aria-hidden="true" />
+      {/* The paper is lacquered where she stands (Chi, 2026-11-21), so
+          her scene draws her reflection under this gold horizon. */}
+      <span className={styles.lacquer} aria-hidden="true" />
+      <span className={styles.horizon} aria-hidden="true" />
 
       <div ref={yumiZoneRef} className={styles.ground}>
         <div className={styles.ambientLight} aria-hidden="true">

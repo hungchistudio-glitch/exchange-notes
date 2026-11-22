@@ -122,7 +122,7 @@ describe("when the tour shows it", () => {
     setCoachStep(stepOf("review"));
     coach("/review");
 
-    expect(screen.getByText(/A perfect round earns 3 energy cookies/)).toBeInTheDocument();
+    expect(screen.getByText(/A perfect round earns 3 energy capsules/)).toBeInTheDocument();
     expect(light()).toBeNull();
   });
 
@@ -255,7 +255,7 @@ describe("over the search sheet (Chi, 2026-10-18)", () => {
 
     await waitFor(() => expect(light()).toHaveAttribute("data-shown", "true"));
     expect(light()?.style.transform).toBe("translate3d(21px, 557px, 0)");
-    expect(light()).toHaveTextContent("Save it · +3 energy cookies");
+    expect(light()).toHaveTextContent("Save it · +3 energy capsules");
 
     await act(async () => {
       announceWordSaved({ term: "lujo", duplicate: false });
@@ -282,7 +282,7 @@ describe("over the search sheet (Chi, 2026-10-18)", () => {
     vi.useRealTimers();
 
     expect(onCloseSearch).toHaveBeenCalledOnce();
-    expect(screen.getByText(/drag a cookie onto me/)).toBeInTheDocument();
+    expect(screen.getByText(/drag a letter capsule onto me/)).toBeInTheDocument();
   });
 
   it("leaves the sheet open after the look-up, where the word is to be kept", async () => {
@@ -350,7 +350,7 @@ describe("over a cookie's card (Chi, 2026-10-18)", () => {
     await waitFor(() => expect(light()?.style.transform).toBe("translate3d(217px, 697px, 0)"));
     // Raised by the render after the move: waited for, not read at once.
     await waitFor(() => expect(light()).toHaveAttribute("data-raised", "true"));
-    expect(light()).toHaveTextContent("Feed me · no energy cookies spent");
+    expect(light()).toHaveTextContent("Feed me · no energy capsules spent");
   });
 
   it("slides the tag in from the screen's edge, its line still on the key", async () => {

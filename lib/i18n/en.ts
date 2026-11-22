@@ -227,7 +227,7 @@ const english: TranslationDictionary = {
         {
           name: "Station 33",
           title: "Station 33, the last stop",
-          text: "Every traveller docks at Station 33, a little shop in orbit, before going down. Yumi picks something to wear and a keepsake from Earth, paid for in the energy cookies she earns by learning.",
+          text: "Every traveller docks at Station 33, a little shop in orbit, before going down. Yumi picks something to wear and a keepsake from Earth, paid for in the energy capsules she earns by learning.",
         },
         {
           name: "Land",
@@ -237,9 +237,9 @@ const english: TranslationDictionary = {
       ],
       tryOn: {
         title: "Try something on",
-        hint: "Real pieces from the in-app shop. In the app you pay in energy cookies, earned by saving and reviewing words.",
+        hint: "Real pieces from the in-app shop. In the app you pay in energy capsules, earned by saving and reviewing words.",
         takeOff: "Take everything off",
-        cookies: "{n} cookies",
+        cookies: "{n} capsules",
       },
       endTitle: "YU + MI = Yumi",
       endText: "Now on Earth, learning languages — with you.",
@@ -513,13 +513,13 @@ const english: TranslationDictionary = {
         },
         keep: {
           body:
-            "Save a new word and you get two things: a cookie on Home to feed me, and +3 energy cookies for the shop.",
-          tag: "Save it · +3 energy cookies",
+            "Save a new word and you get two things: a letter capsule on Home to feed me, and +3 energy capsules for the shop.",
+          tag: "Save it · +3 energy capsules",
         },
         feed: {
           body:
-            "I've brought you back home — next time you're done with a word, just tap me. Feed me one: drag a cookie onto me, or tap it and press “Feed Yumi”. It costs no energy cookies.",
-          tag: "Feed me · no energy cookies spent",
+            "I've brought you back home — next time you're done with a word, just tap me. Feed me one: drag a letter capsule onto me, or tap it and press “Feed Yumi”. It costs no energy capsules.",
+          tag: "Feed me · no energy capsules spent",
         },
         voice: {
           body:
@@ -536,7 +536,7 @@ const english: TranslationDictionary = {
         },
         review: {
           body:
-            "Review: words come back just before you'd forget them. A perfect round earns 3 energy cookies.",
+            "Review: words come back just before you'd forget them. A perfect round earns 3 energy capsules.",
           action: "Open Review",
         },
         pronunciation: {
@@ -574,16 +574,16 @@ const english: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Energy cookies are my shop's money. Saving a word for the first time earns 3 energy cookies. Tap the glowing bag at the top right to come in.",
+            "Energy capsules are my shop's money. Saving a word for the first time earns 3 energy capsules. Tap the glowing bag at the top right to come in.",
         },
         tryOn: {
           body:
-            "Tap any piece and I’ll try it on for free. Like it? Buy — cookies are only spent once you confirm.",
+            "Tap any piece and I’ll try it on for free. Like it? Buy — capsules are only spent once you confirm.",
           action: "Open the shop",
         },
         games: {
           body:
-            "The controller at the top opens three word games. Words you guess earn energy cookies, and streaks unlock collection pieces you can only win there. Tap it to go in.",
+            "The controller at the top opens three word games. Words you guess earn energy capsules, and streaks unlock collection pieces you can only win there. Tap it to go in.",
         },
         modeSwitch: {
           body:
@@ -2151,12 +2151,12 @@ const english: TranslationDictionary = {
       },
       summaryWordSingular: "{count} word today",
       summaryWordPlural: "{count} words today",
-      summaryCookieSingular: "{count} cookie",
-      summaryCookiePlural: "{count} cookies",
+      summaryCookieSingular: "{count} letter capsule",
+      summaryCookiePlural: "{count} letter capsules",
       summaryStreak: "{count} day streak",
       summaryStreakOne: "{count} day streak",
-      cookieTrayEmpty: "Add a word to earn Yumi a cookie.",
-      cookieTrayHint: "Drag a cookie onto Yumi",
+      cookieTrayEmpty: "Add a word to earn Yumi a letter capsule.",
+      cookieTrayHint: "Drag a letter capsule onto Yumi",
       cookieTrayMore: "+{count} more",
       feedAriaLabel: "Feed {word} to Yumi",
       coreTrayEmpty: "Add a word to forge a Learning Core.",
@@ -2171,8 +2171,8 @@ const english: TranslationDictionary = {
         due: "review due",
         mastered: "mastered",
       },
-      cookieTypeLetter: "Letter cookie",
-      cookieTypeZhuyin: "Zhuyin cookie",
+      cookieTypeLetter: "Letter capsule",
+      cookieTypeZhuyin: "Zhuyin capsule",
       feedingAnticipating: "Yumi opens up with anticipation.",
       feedingEating: "Yumi is chewing slowly.",
       feedingSwallowing: "Yumi swallows the word energy.",
@@ -2687,7 +2687,7 @@ const english: TranslationDictionary = {
       logoutConfirm: "Are you sure you want to log out?",
       deleteAccount: "Delete account",
       deleteAccountDescription: "Permanently delete your account and its data",
-      deleteAccountWarning: "This permanently deletes your Exchange Notes account and everything in it: notes, saved words and pictures, review history, messages you sent, friends, and Yumi with her cookies and outfits. It can’t be undone.",
+      deleteAccountWarning: "This permanently deletes your Exchange Notes account and everything in it: notes, saved words and pictures, review history, messages you sent, friends, and Yumi with her capsules and outfits. It can’t be undone.",
       deleteAccountKept: "Copies your friends have already saved stay with them, and anything you shared outside the app isn’t affected.",
       deleteAccountUnderstood: "I understand this can’t be undone",
       deleteAccountAction: "Delete permanently",
@@ -2728,7 +2728,7 @@ const english: TranslationDictionary = {
       rowDescription: "How many new words a day",
       sheetTitle: "Daily goal",
       sheetDescription:
-        "Choose how many new words you'd like to meet each day. Yumi's cookies fill up as you reach it.",
+        "Choose how many new words you'd like to meet each day. Yumi's letter capsules fill up as you reach it.",
       wordsLabel: "words",
 
       options: {
@@ -2764,7 +2764,7 @@ const english: TranslationDictionary = {
     yumiReminders: {
       rowTitle: "Yumi reminders",
       rowDescription:
-        "Let Yumi call you when no word cookie has been fed today.",
+        "Let Yumi call you when no letter capsule has been fed today.",
       loadError: "Yumi reminder settings could not be loaded.",
       saveError: "Yumi reminder settings could not be saved.",
       timezoneLabel: "Device timezone",
@@ -2777,7 +2777,7 @@ const english: TranslationDictionary = {
       testError: "The Yumi test notification could not be sent.",
       pushTitle: "Yumi misses you",
       pushBody:
-        "No word cookie today yet — come and feed one.",
+        "No letter capsule today yet — come and feed one.",
     },
 
     interfaceMode: {
@@ -2806,7 +2806,7 @@ const english: TranslationDictionary = {
         "Create a private token that lets the Scriptable app securely load your latest Yumi progress.",
       activeTitle: "Widget connection is active",
       activeDescription:
-        "Scriptable can securely load your latest Yumi mood, cookie progress, and vocabulary.",
+        "Scriptable can securely load your latest Yumi mood, capsule progress, and vocabulary.",
       emptyTitle: "Widget is not connected",
       emptyDescription:
         "Generate a private token, copy it once, and save it inside the Scriptable app on your iPhone.",
@@ -3046,9 +3046,9 @@ const english: TranslationDictionary = {
   shop: {
     title: "Yumi Shop",
     goBack: "Back",
-    cookiesOne: "{count} energy cookie",
-    cookiesOther: "{count} energy cookies",
-    howEarned: "Saving a word for the first time earns 3 energy cookies, and so does passing every card in a review round.",
+    cookiesOne: "{count} energy capsule",
+    cookiesOther: "{count} energy capsules",
+    howEarned: "Saving a word for the first time earns 3 energy capsules, and so does passing every card in a review round.",
     vault: {
       title: "The Mythic Vault",
       note: "33 limited pieces after the myths, found only in Yumi Wordvault's premium chest.",
@@ -3095,11 +3095,11 @@ const english: TranslationDictionary = {
     buy: "Buy",
     putOn: "Put on",
     wearingNow: "Wearing",
-    shortOne: "{count} cookie short",
-    shortOther: "{count} cookies short",
+    shortOne: "{count} capsule short",
+    shortOther: "{count} capsules short",
     saveWords: "Save words",
     confirmTitle: "Buy {item}?",
-    confirmBody: "This uses {price} energy cookies, leaving {after}. Your words and progress stay exactly as they are.",
+    confirmBody: "This uses {price} energy capsules, leaving {after}. Your words and progress stay exactly as they are.",
     confirmBuy: "Buy",
     cancel: "Cancel",
     bought: "Yumi is wearing {item}",
@@ -3144,7 +3144,7 @@ const english: TranslationDictionary = {
     energy: {
       wallet: "Energy supply",
       open: "Open energy supply",
-      balance: "Energy cookies available",
+      balance: "Energy capsules available",
       fromLearning: "Saving and review",
       fromSupply: "Purchased",
       howTitle: "How to earn",
@@ -3153,23 +3153,23 @@ const english: TranslationDictionary = {
       fromGame: "Hangyumi",
       ruleGame: "Each new correct letter in Hangyumi (up to 333 a day)",
       packsTitle: "Supply packs",
-      rate: "US$1 = 33 cookies",
+      rate: "US$1 = 33 capsules",
       story: "Yumi has three fingers on each hand, so with both hands she counts up to 33. In Yumi's counting, 33 is one.",
       soon: "Coming soon",
-      future: "Paid supply isn't open yet. For now, cookies come from saving and reviewing words.",
-      separate: "Energy cookies are only for the shop. Purchased cookies never add words, review records or learning achievements.",
+      future: "Paid supply isn't open yet. For now, capsules come from saving and reviewing words.",
+      separate: "Energy capsules are only for the shop. Purchased capsules never add words, review records or learning achievements.",
       rewardSave: "Saved-word reward",
       rewardReview: "Review round reward",
       rewardPaid: "Energy supply",
-      rewardMixed: "Energy cookies received",
+      rewardMixed: "Energy capsules received",
       previewReward: "Preview the reward",
     },
-    loading: "Counting cookies…",
+    loading: "Counting capsules…",
     toCosmic: "Switch to Cosmic mode",
     toStandard: "Switch to Standard mode",
     language: "Interface language",
     freeTryOn: "Try-on is free",
-    preview: "Preview · no real cookies are spent",
+    preview: "Preview · no real capsules are spent",
     selectPrompt: "Tap a piece to try it on",
     boutique: {
       openStory: "Turn the coin. Discover our story.",
@@ -3268,7 +3268,7 @@ const english: TranslationDictionary = {
     languageNote: "Only changes the language Hangyumi deals words in. Your app settings stay as they are.",
     level: "Difficulty",
     levelChoice: "Difficulty {level}",
-    balance: "{count} energy cookies to spend",
+    balance: "{count} energy capsules to spend",
     rewardLetter: "Letter +{count}",
     rewardChar: "Character +{count}",
     rewardWord: "Word +{count}",
@@ -3292,19 +3292,19 @@ const english: TranslationDictionary = {
     studioWon: "Yumi, free, back on her stand",
     studioLost: "Yumi, hung whole",
     today: "Today",
-    todayLabel: "{earned} of {cap} cookies today",
+    todayLabel: "{earned} of {cap} capsules today",
     roundEarned: "+{count} this round",
     letterPaid: "+{count}",
     wordPaid: "Word bonus +{count}",
     alreadyPaid: "This word has already paid today.",
     capped: "Only {count} left today, so that is what it paid.",
-    capReached: "Today's 333 are all yours. Keep playing for practice; more cookies at midnight.",
+    capReached: "Today's 333 are all yours. Keep playing for practice; more capsules at midnight.",
     won: "You freed Yumi!",
-    wonBody: "{count} cookies this round.",
+    wonBody: "{count} capsules this round.",
     lost: "Yumi is hung",
-    lostBodyOne: "You keep the {count} cookie you won.",
-    lostBodyOther: "You keep the {count} cookies you won.",
-    lostBodyNone: "No cookies this time.",
+    lostBodyOne: "You keep the {count} capsule you won.",
+    lostBodyOther: "You keep the {count} capsules you won.",
+    lostBodyNone: "No capsules this time.",
     answer: "The word was",
     listen: "Listen",
     saveWord: "Save to vocabulary",
@@ -3323,12 +3323,12 @@ const english: TranslationDictionary = {
     closed: "Hangyumi isn't open on this version yet.",
     rulesTitle: "How Hangyumi works",
     rules: {
-      letters: "Each new correct letter pays {letter} cookies, and finishing the word pays {word} more.",
+      letters: "Each new correct letter pays {letter} capsules, and finishing the word pays {word} more.",
       misses: "Three wrong guesses hang her eye, her arm, then her body, and the round ends. What you won stays.",
-      cap: "Up to 333 cookies a day, and a word pays only once a day.",
+      cap: "Up to 333 capsules a day, and a word pays only once a day.",
       learning: "Hangyumi doesn't change your saved words or your review history.",
       accents: "Accented letters are letters of their own: é is not e.",
-      nightscale: "Every third word you win unlocks one of 24 Nightscale pieces you don't own yet, each as likely as the others. Losing a word takes nothing away, and wins count across days, levels and languages. They wait on the shop's Nightscale shelf, are never sold and give no extra cookies.",
+      nightscale: "Every third word you win unlocks one of 24 Nightscale pieces you don't own yet, each as likely as the others. Losing a word takes nothing away, and wins count across days, levels and languages. They wait on the shop's Nightscale shelf, are never sold and give no extra capsules.",
     },
     nightscale: {
       collection: "Nightscale {count} / {total}",
@@ -3388,11 +3388,11 @@ const english: TranslationDictionary = {
     closed: "Yumi Wordvault isn't open on this version yet.",
     rulesTitle: "How Yumi Wordvault works",
     rules: {
-      letters: "Each new correct letter pays {letter} cookies, and Yumi takes one step for every place it fills. Finish the word and its letters become the key to the chest: {word} more.",
+      letters: "Each new correct letter pays {letter} capsules, and Yumi takes one step for every place it fills. Finish the word and its letters become the key to the chest: {word} more.",
       misses: "A wrong guess sends out a copy of her U, then her I, then her O. Three, and the round ends; the copies always come home, and what you won stays.",
-      cap: "Up to 333 cookies a day, shared with Hangyumi, and a word pays only once a day in either game.",
+      cap: "Up to 333 capsules a day, shared with Hangyumi, and a word pays only once a day in either game.",
       learning: "Yumi Wordvault doesn't change your saved words or your review history.",
-      chests: "Win three words in a row and the fourth holds a medium chest: the word's cookies twice over and a shop piece you don't own. Six in a row, and the seventh holds a premium chest: three times the cookies and a piece from the Mythic Vault. A chest pays the word's full worth even on a word already paid today, and its extra cookies don't count toward the 333.",
+      chests: "Win three words in a row and the fourth holds a medium chest: the word's capsules twice over and a shop piece you don't own. Six in a row, and the seventh holds a premium chest: three times the capsules and a piece from the Mythic Vault. A chest pays the word's full worth even on a word already paid today, and its extra capsules don't count toward the 333.",
     },
     streak: "{count} in a row",
     streakLabel: "{count} words won in a row. The fourth word holds a medium chest, the seventh a premium one.",
@@ -3400,7 +3400,7 @@ const english: TranslationDictionary = {
     chestMedium: "Medium chest ×2",
     chestPremium: "Premium chest ×3",
     rewardTitle: "From the chest",
-    rewardCookies: "+{count} cookies, beyond today's 333",
+    rewardCookies: "+{count} capsules, beyond today's 333",
     rewardItem: "New in your wardrobe",
     rewardLimited: "From the Mythic Vault",
     revealSeal: "{origin} · The Mythic Vault",
@@ -3414,8 +3414,8 @@ const english: TranslationDictionary = {
       celtic: "Celtic legend",
       mesopotamian: "Mesopotamian myth",
     },
-    rewardAllOwned: "You already own every piece it could hold, so it gave cookies.",
-    chestPaid: "The chest held {count} more cookies.",
+    rewardAllOwned: "You already own every piece it could hold, so it gave capsules.",
+    chestPaid: "The chest held {count} more capsules.",
   },
   starweaver: {
     title: "Yumi Starweaver",
@@ -3441,11 +3441,11 @@ const english: TranslationDictionary = {
     closed: "Yumi Starweaver isn't open on this version yet.",
     rulesTitle: "How Yumi Starweaver works",
     rules: {
-      letters: "Each new correct letter pays {letter} cookies and becomes light on the star chart, once for every place it fills. Finish the word and the gate opens: {word} more.",
+      letters: "Each new correct letter pays {letter} capsules and becomes light on the star chart, once for every place it fills. Finish the word and the gate opens: {word} more.",
       misses: "A wrong guess sends out a copy of her U, then her I, then her O. Three, and the round ends; the copies always come home, and what you won stays.",
-      cap: "Up to 333 cookies a day, shared with Hangyumi and Yumi Wordvault, and a word pays only once a day in any of them.",
+      cap: "Up to 333 capsules a day, shared with Hangyumi and Yumi Wordvault, and a word pays only once a day in any of them.",
       learning: "Yumi Starweaver doesn't change your saved words or your review history.",
-      relics: "Every word you finish is a voyage. Every seventh brings back one of 17 Starwoven Relics you don't own yet, each as likely as the others. Losing a word takes nothing away, and voyages count across days, levels and languages. Relics are never sold and give no extra cookies.",
+      relics: "Every word you finish is a voyage. Every seventh brings back one of 17 Starwoven Relics you don't own yet, each as likely as the others. Losing a word takes nothing away, and voyages count across days, levels and languages. Relics are never sold and give no extra capsules.",
     },
     voyage: "Voyage {count} / {total}",
     collection: "Relics {count} / {total}",
@@ -3467,7 +3467,7 @@ const english: TranslationDictionary = {
     open: "Games",
     back: "Back",
     choose: "Choose a game",
-    today: "{earned} / {cap} cookies today",
+    today: "{earned} / {cap} capsules today",
     shared: "All three games share today's 333.",
     hangyumi: {
       howTo: "Guess the word; three misses hang her O, I, U.",

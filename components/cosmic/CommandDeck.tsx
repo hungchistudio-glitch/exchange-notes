@@ -383,6 +383,9 @@ export default function CommandDeck() {
           onPointerDown={pulse}
         >
           <span className={styles.pool} aria-hidden="true" />
+          {/* The obsidian's horizon at her floor line, where her reflection
+              begins (Chi, 2026-11-21; CosmicHomeYumi writes --yumi-floor). */}
+          <span className={styles.horizon} aria-hidden="true" />
           {/* The bridge's radar behind her (app/hud.css, .hud-radar). */}
           <span className={`hud-radar ${styles.radar}`} aria-hidden="true" />
           <span className={styles.orbit} aria-hidden="true">
