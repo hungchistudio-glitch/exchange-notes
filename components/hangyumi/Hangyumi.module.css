@@ -156,11 +156,26 @@
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* The ellipsis of a name too long for the plate, in the rule's gold. */
+  color: var(--sign-rule);
+  filter: drop-shadow(0 0 6px var(--sign-glow));
+}
+
+/*
+ * The gilt is painted by each run of letters itself: the name, and the
+ * scramble it decodes from (TitleText, lib/motion/pageArrival.ts). It used
+ * to be the plate's name box painting its background clipped to the text
+ * inside it, and iOS Safari does not paint that clip again when the name
+ * comes back from hiding under the scramble: the scramble showed, then
+ * the name was gone (Chi, 2026-11-21: 招牌標題閃一下就消失). A run that
+ * paints itself is repainted whenever it changes.
+ */
+.signName [data-title-real],
+.signName [data-title-decode] {
   background: var(--sign-ink);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 6px var(--sign-glow));
 }
 
 .signOrbit {

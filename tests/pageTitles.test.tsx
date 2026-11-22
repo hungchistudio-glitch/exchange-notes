@@ -56,6 +56,29 @@ describe("letters running into place", () => {
     expect(scramble.style.color).toBe("transparent");
   });
 
+  /* The games' and the shop's signs (2026-11-21): iOS Safari left the plate
+     blank when the gilt was a parent's clip, so the name paints its own,
+     and the scramble takes the same rule rather than a copy of a parent's. */
+  it("lets a name that paints its own gilt keep it through the scramble and after", () => {
+    const sheet = document.createElement("style");
+    sheet.textContent = ".plate [data-title-real], .plate [data-title-decode] { background-clip: text; color: transparent; }";
+    document.head.appendChild(sheet);
+    const { container } = render(
+      <span className="plate" style={{ color: "rgb(201, 165, 90)" }}>
+        <TitleText text="Yumi's games" clipped />
+      </span>,
+    );
+    const text = container.querySelector("[data-title-text]")!;
+    const scramble = text.querySelector<HTMLElement>("[data-title-decode]")!;
+    expect(scramble.style.color).toBe("transparent");
+    expect(scramble.style.backgroundImage).toBe("");
+    act(() => vi.advanceTimersByTime(DECODE_MS + 50));
+    expect(text.hasAttribute("data-decoding")).toBe(false);
+    expect(text.querySelector("[data-title-decode]")).toBeNull();
+    expect(text.querySelector("[data-title-real]")?.textContent).toBe("Yumi's games");
+    sheet.remove();
+  });
+
   it("stays still for a reader who asked for less motion", () => {
     const matchMedia = vi.spyOn(window, "matchMedia").mockReturnValue({ matches: true } as MediaQueryList);
     const { container } = render(<TitleText text="Notes" />);
