@@ -1,7 +1,7 @@
 /* =========================================================
    The interface's sounds (Chi, 2026-11-14: 更科幻風格, 介面音效)
 
-   Four, synthesised with Web Audio so there is nothing to download, and
+   A handful, synthesised with Web Audio so there is nothing to download, and
    all of them quiet and short, as a ship's console is:
 
    - tap: a short tick for a button, a link, a tab.
@@ -9,6 +9,8 @@
      (lib/motion/warpArrival.ts).
    - page: a softer, lower swish for a Standard page.
    - reward: two notes up, when cookies land (ENERGY_LANDED_EVENT).
+   - scan and lock: the hum of Yumi's iris scan on the way into sign-in,
+     and its click as it locks (components/landing/loginTransition.ts).
 
    On by default in Yumi Cosmic, off in Standard (Chi chose), and either
    can be switched in Settings, for this device. The games keep their own
@@ -149,6 +151,16 @@ export const interfaceSounds = {
   reward: () => play(() => {
     tone(880, 0, 0.16, 0.04);
     tone(1320, 0.09, 0.22, 0.04);
+  }),
+  /* A pass of Yumi's iris scan into sign-in: a low hum rising, a shimmer over it. */
+  scan: () => play(() => {
+    tone(150, 0, 0.3, 0.014, "sine", 210);
+    sweep(900, 2600, 0.3, 0.012);
+  }),
+  /* The scan locks: two quick ticks, the second lower, as a latch. */
+  lock: () => play(() => {
+    tone(2600, 0, 0.02, 0.03, "square");
+    tone(1960, 0.045, 0.07, 0.024, "triangle");
   }),
   /* An energy capsule clicking open (EnergyReward): a tick and a small chime. */
   capsule: () => play(() => {

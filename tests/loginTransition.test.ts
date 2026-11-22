@@ -4,23 +4,25 @@ import { playLoginArrival, playLoginExit } from "@/components/landing/loginTrans
 
 /*
  * From the landing page's Start keys into sign-in, through Yumi's eye
- * (Chi, 2026-11-21). The cover lives on <body> so it lasts across the
- * client navigation; whatever happens it must never stay on the screen,
- * and reduced motion goes straight to sign-in.
+ * (Chi, 2026-11-21; 2026-11-22: 虹膜掃描＋躍遷). The cover lives on <body>
+ * so it lasts across the client navigation. Sign-in is asked for once the
+ * screen is covered; the scan goes on until sign-in says it is there, then
+ * locks, goes through the pupil and assembles the card. Whatever happens
+ * the cover must never stay on the screen, and reduced motion goes
+ * straight to sign-in.
  */
 function fakeAnimate() {
-  const animations: Array<{ onfinish: (() => void) | null; cancel: () => void }> = [];
-  const animate = vi.fn(() => {
-    const animation = { onfinish: null as (() => void) | null, oncancel: null, cancel: () => {} };
-    animations.push(animation);
-    return animation as unknown as Animation;
-  });
+  const animate = vi.fn(() => ({ cancel: () => {}, onfinish: null }) as unknown as Animation);
   Object.defineProperty(HTMLElement.prototype, "animate", { value: animate, configurable: true });
-  return animations;
+  return animate;
 }
 
 function setReducedMotion(reduce: boolean) {
   vi.stubGlobal("matchMedia", (query: string) => ({ matches: reduce && query.includes("reduce") }));
+}
+
+function key() {
+  return document.body.appendChild(document.createElement("a"));
 }
 
 afterEach(() => {
@@ -35,49 +37,69 @@ describe("the way into sign-in", () => {
     fakeAnimate();
     setReducedMotion(true);
     const go = vi.fn();
-    playLoginExit(document.body.appendChild(document.createElement("a")), go);
+    playLoginExit(key(), go);
     expect(go).toHaveBeenCalledTimes(1);
     expect(document.querySelector("[data-login-cover]")).toBeNull();
   });
 
-  it("closes into Yumi's eye, then goes once, and lets go if sign-in never comes", () => {
+  it("asks for sign-in once the screen is covered, scans while it loads, and lets go if it never comes", () => {
     vi.useFakeTimers();
-    const animations = fakeAnimate();
+    fakeAnimate();
     setReducedMotion(false);
     const go = vi.fn();
-    playLoginExit(document.body.appendChild(document.createElement("a")), go);
+    const start = key();
+    playLoginExit(start, go);
 
     const cover = document.querySelector("[data-login-cover]");
     expect(cover).not.toBeNull();
     expect(cover).toHaveAttribute("aria-hidden", "true");
+    expect(start.style.visibility).toBe("hidden");
     expect(go).not.toHaveBeenCalled();
 
-    // The pupil's dark has covered the screen: go. The backstop timer must
-    // not go again.
-    const drawIn = animations.find(animation => animation.onfinish);
-    drawIn!.onfinish!();
-    vi.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(600);
     expect(go).toHaveBeenCalledTimes(1);
 
-    vi.advanceTimersByTime(5000);
+    // Still scanning, long past one pass, and only one navigation.
+    vi.advanceTimersByTime(3000);
+    expect(document.querySelector("[data-login-cover]")).not.toBeNull();
+    expect(go).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(3000);
+    expect(document.querySelector("[data-login-cover]")).toBeNull();
+    expect(start.style.visibility).toBe("");
+  });
+
+  it("locks, goes through and assembles the card once sign-in is there, then clears", () => {
+    vi.useFakeTimers();
+    const animate = fakeAnimate();
+    setReducedMotion(false);
+    playLoginExit(key(), () => undefined);
+    vi.advanceTimersByTime(600);
+
+    const card = document.body.appendChild(document.createElement("section"));
+    playLoginArrival(card);
+    // Kept out of sight until the scan line reaches it.
+    expect(card.style.opacity).toBe("0");
+
+    const before = animate.mock.calls.length;
+    vi.advanceTimersByTime(1000);
+    expect(animate.mock.calls.length).toBeGreaterThan(before);
+    // The card switched on, from the top, as the line passed.
+    expect(card.style.opacity).toBe("");
+    expect(animate.mock.contexts).toContain(card);
+    // The frame's four brackets came out to it.
+    expect(document.querySelectorAll("[data-login-cover] > div").length).toBeGreaterThanOrEqual(5);
+
+    vi.advanceTimersByTime(1500);
     expect(document.querySelector("[data-login-cover]")).toBeNull();
   });
 
-  it("brings the card out of the eye on arrival, and does nothing without one", () => {
-    vi.useFakeTimers();
-    const animations = fakeAnimate();
+  it("does nothing on a sign-in page reached any other way", () => {
+    const animate = fakeAnimate();
     setReducedMotion(false);
-
-    playLoginArrival();
-    expect(animations).toHaveLength(0);
-
-    playLoginExit(document.body.appendChild(document.createElement("a")), () => undefined);
-    const before = animations.length;
     const card = document.body.appendChild(document.createElement("section"));
     playLoginArrival(card);
-    // The eye draws back, the card comes forward, the dark clears.
-    expect(animations.length).toBe(before + 3);
-    animations[animations.length - 1].onfinish?.();
-    expect(document.querySelector("[data-login-cover]")).toBeNull();
+    expect(animate).not.toHaveBeenCalled();
+    expect(card.style.opacity).toBe("");
   });
 });
