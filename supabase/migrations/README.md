@@ -314,13 +314,20 @@ hold no privileges, which was checked with `has_table_privilege` right after.
 
 `20261122163138_find_profile_by_exchange_id` (2026-11-22; Chi: 收緊公開資料)
 was applied before the merge, because it only adds a function, and the file
-was named from the version read back. Its second half,
-`20261122200000_public_profiles_own_people`, restricts `public_profiles` to
-the reader's own people and **must wait for the deploy** that switches
-`findProfileByExchangeId` to the function; its version is provisional, so
-rename it to the recorded one once applied. Before anything was applied, the
+was named from the version read back. Its second half, which restricts
+`public_profiles` to the reader's own people, waited for the deploy that
+switched `findProfileByExchangeId` to the function (PR #271, production
+READY), and was then applied the same day:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20261122200000_public_profiles_own_people` | `20261122172638` |
+
+Before anything was applied, the
 second half was run against production inside a transaction that was rolled
 back, as each of the 18 readers in turn: every one saw exactly themself,
 their friends, request parties, conversation partners and note-share
 partners (none missing, none extra), and every one still found a stranger by
-exact Exchange ID.
+exact Exchange ID. The same check, run again against the live view once
+it was applied, gave the same result; anon cannot read the view and
+authenticated cannot write to it.
