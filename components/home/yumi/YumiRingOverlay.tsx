@@ -27,6 +27,11 @@ import { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 import { getCoachStep } from "@/lib/home/tutorialCoach";
 import { setYumiRingState } from "@/lib/home/yumiRing";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
+import type { FloorRippleDetail } from "@/lib/home/floorRipple";
+import type { YumiFeeling } from "@/lib/home/yumiFeel";
+
+type FeelModule = typeof import("@/lib/home/yumiFeel");
+const CALM: YumiFeeling = { gaze: null, lean: 0, dizzy: false };
 import {
   hasParkedYumiScene,
   parkYumiScene,
@@ -510,6 +515,10 @@ export default function YumiRingOverlay({
      and moved by hand. See lib/yumi3d/sceneCache.ts. */
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<YumiSceneHandle | null>(null);
+  /* What she feels of the phone's tilt and shake (lib/home/yumiFeel.ts),
+     loaded with her scene. */
+  const feelRef = useRef<ReturnType<FeelModule["createYumiFeel"]> | null>(null);
+  const feelModuleRef = useRef<FeelModule | null>(null);
   const outfit = useWornOutfit();
   const outfitRef = useRef(outfit);
   useEffect(() => { outfitRef.current = outfit; }, [outfit]);
@@ -810,6 +819,8 @@ export default function YumiRingOverlay({
       if (!pointer.blank) sceneRef.current?.pointerMove(event.clientX, event.clientY);
     };
     const onCanvasUp = (event: PointerEvent) => {
+      /* A touch of her may be where an iPhone asks for the phone's motion. */
+      if (event.type === "pointerup") feelModuleRef.current?.enableDeviceMotion();
       if (!pointer || pointer.id !== event.pointerId) return;
       // Cancellation events may report (0, 0); they must not turn Yumi.
       if (event.type === "pointerup") onCanvasMove(event);
@@ -869,6 +880,13 @@ export default function YumiRingOverlay({
     const onGaze = (event: Event) => { gazePoint = (event as CustomEvent).detail; };
     const stage = stageRef.current;
     stage?.addEventListener("yumi-cookie-gaze", onGaze);
+    /* A capsule crossing her floor line ripples it (lib/home/floorRipple.ts). */
+    const onFloorRipple = (event: Event) => {
+      const detail = (event as CustomEvent<FloorRippleDetail>).detail;
+      const box = canvas.getBoundingClientRect();
+      sceneRef.current?.rippleAt?.(detail.x - box.left, detail.strength);
+    };
+
     stage?.addEventListener("yumi-cookie-bite", onBite);
     canvas.addEventListener("pointerdown", onCanvasDown);
     canvas.addEventListener("pointermove", onCanvasMove);
@@ -1002,6 +1020,12 @@ export default function YumiRingOverlay({
         const viewportWatch = { value: Number.NaN, since: 0, settled: Number.NaN };
         /* The floor last told to the scene, in canvas px (null: none). */
         let groundFloor: number | null | undefined;
+        void import("@/lib/home/yumiFeel").then(module => {
+          if (cancelled) return;
+          feelModuleRef.current = module;
+          feelRef.current = module.createYumiFeel(reduced);
+          window.addEventListener(module.YUMI_FLOOR_RIPPLE, onFloorRipple);
+        }).catch(() => {});
         const loop = (now: number) => {
           if (cancelled || !handle) return;
           const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 1 / 30) : 0;
@@ -1133,12 +1157,17 @@ export default function YumiRingOverlay({
           const gazeEye = handle.eyeScreenPosition();
           // Lit for Standard from her first frame here, not eased into it.
           handle.setCosmicLevel?.(0, firstPaint);
+          /* The phone's tilt and shake, felt only when nothing else has her
+             eye: not the dial, not a cookie she is watching, not an answer. */
+          const feeling = feelRef.current?.step(now, dt || 1 / 60) ?? CALM;
+          const free = !openRef.current && !answeringRef.current && !gazePoint;
+          const felt = free ? feeling.gaze : null;
           handle.setGaze?.(
-            openRef.current && !reduced ? dialAim.current.x : gazePoint && !reduced ? (gazePoint.x - gazeEye.x) / 180 : 0,
-            openRef.current && !reduced ? dialAim.current.y : gazePoint && !reduced ? (gazePoint.y - gazeEye.y) / 180 : 0,
+            openRef.current && !reduced ? dialAim.current.x : gazePoint && !reduced ? (gazePoint.x - gazeEye.x) / 180 : felt?.x ?? 0,
+            openRef.current && !reduced ? dialAim.current.y : gazePoint && !reduced ? (gazePoint.y - gazeEye.y) / 180 : felt?.y ?? 0,
           );
           // While the dial is out she looks at the key at the top and leans a little toward it.
-          handle.setNavigationLean?.(openRef.current && !reduced ? dialAim.current.x * 0.045 : 0);
+          handle.setNavigationLean?.(openRef.current && !reduced ? dialAim.current.x * 0.045 : free ? feeling.lean : 0);
           /* Her reflection in the paper's lacquer (Chi, 2026-11-21: 全部統一像
              cosmic 一樣倒影): the radar pad is the floor she stands on, so
              its middle is the floor line, where YumiHomeStage draws the
@@ -1148,8 +1177,10 @@ export default function YumiRingOverlay({
           const floorY = pad && pad.height > 0 ? Math.round((pad.top + pad.height / 2 - rect.top) * 2) / 2 : null;
           if (floorY !== groundFloor) {
             groundFloor = floorY;
+            /* Shorter than on obsidian: her own line sits just under the
+               floor, and stays readable over it (Chi, 2026-11-22). */
             handle.setGround?.(floorY === null ? null : {
-              kind: "reflection", floorY, tint: STANDARD_LACQUER, strength: 1, shade: 0.42,
+              kind: "reflection", floorY, tint: STANDARD_LACQUER, strength: 0.95, shade: 0.42, reach: 1.05,
             });
           }
           handle.setRotationPaused?.(
@@ -1319,6 +1350,9 @@ export default function YumiRingOverlay({
       cancelCanvasGestureRef.current = null;
       sceneRef.current = null;
       stage?.removeEventListener("yumi-cookie-gaze", onGaze);
+      if (feelModuleRef.current) window.removeEventListener(feelModuleRef.current.YUMI_FLOOR_RIPPLE, onFloorRipple);
+      feelRef.current?.dispose();
+      feelRef.current = null;
       stage?.removeEventListener("yumi-cookie-bite", onBite);
       canvas.removeEventListener("pointerdown", onCanvasDown);
       canvas.removeEventListener("pointermove", onCanvasMove);

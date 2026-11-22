@@ -2991,6 +2991,12 @@ const english: TranslationDictionary = {
       on: "On",
       off: "Off",
     },
+    homeMotion: {
+      rowTitle: "Capsules follow the phone",
+      rowDescription: "Tilt or shake the phone and Home's letter capsules and Yumi feel it",
+      on: "On",
+      off: "Off",
+    },
     newsSource: {
       rowTitle: "The Guardian's key isn't working",
       refused: "The Guardian refused the news key, so today's stories come from its public feeds, with shorter excerpts. Ask for a new free key and set it as GUARDIAN_API_KEY in Vercel.",

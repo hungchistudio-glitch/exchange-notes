@@ -21,4 +21,8 @@ export const reviewWords: VocabularyItem[] = words.map(([word, translation, lang
   texts: {}, examples: {}, category: "other", favorite: false, part_of_speech: null,
   example_sentence: example, translated_example: null, image_url: null, confidence: null,
   status: "learning", created_at: "2026-10-01T00:00:00Z", updated_at: "2026-10-01T00:00:00Z",
+  /* A few already reviewed and due again, so the review shows their
+     capsules glowing (Chi, 2026-11-22: 快忘的字膠囊會發光). */
+  review_count: index % 4 === 1 ? 2 : 0,
+  next_review_at: index % 4 === 1 ? "2026-10-02T00:00:00Z" : null,
 }));

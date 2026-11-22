@@ -2949,6 +2949,12 @@ const traditionalChinese: TranslationDictionary = {
       on: "開",
       off: "關",
     },
+    homeMotion: {
+      rowTitle: "膠囊跟著手機動",
+      rowDescription: "傾斜或搖晃手機時，主頁的字母膠囊和 Yumi 會跟著反應",
+      on: "開",
+      off: "關",
+    },
     newsSource: {
       rowTitle: "Guardian 金鑰失效",
       refused: "Guardian 拒絕了新聞用的金鑰，新聞目前改抓它的公開 RSS，摘錄比較短。申請一把新的免費金鑰，貼到 Vercel 的 GUARDIAN_API_KEY。",

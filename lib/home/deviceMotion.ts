@@ -10,20 +10,26 @@
      has been held for the last few seconds. Nobody holds a phone flat, so
      an absolute reading would sink every capsule to the bottom; relative,
      tipping it is what moves them, and holding it still lets them settle.
-   - `takeShake()`: the jolt since it was last asked, in m/s.
+   - `shakeReader()`: the jolt since it was last asked, in m/s, kept for
+     each reader (the capsules, and Yumi, who feels it too).
 
    iPhones only send either after the reader allows "Motion & Orientation
    Access", and only ask from inside a tap (`enableDeviceMotion`, which the
    field calls on the first touch of a capsule; Chi chose that over a key or
    a card). Elsewhere it starts without asking. Nothing here is ever sent
    anywhere: it is read in the page and forgotten.
+
+   The reader can turn all of it off for this device (Settings, "Capsules
+   follow the phone"; Chi, 2026-11-22). Off, nothing listens at all.
    ========================================================= */
 
 type PermissionAsker = { requestPermission?: () => Promise<"granted" | "denied"> };
 
 export const deviceTilt = { x: 0, y: 0, live: false };
 
-const shake = { x: 0, y: 0 };
+/* Each reader of the jolt keeps its own, so the capsules and Yumi both
+   feel the same shake. */
+const shakeReaders = new Set<{ x: number; y: number }>();
 let neutral: { x: number; y: number } | null = null;
 let lastOrientationAt = 0;
 let listening = 0;
@@ -71,8 +77,10 @@ function onMotion(event: DeviceMotionEvent) {
   const seconds = raw > 1 ? raw / 1000 : raw;
   /* Device y is up; the screen's is down. */
   const jolt = toScreen(a.x, -a.y);
-  shake.x += jolt.x * seconds;
-  shake.y += jolt.y * seconds;
+  for (const shake of shakeReaders) {
+    shake.x += jolt.x * seconds;
+    shake.y += jolt.y * seconds;
+  }
 }
 
 function start() {
@@ -102,8 +110,31 @@ function needsPermission() {
 let granted = false;
 let subscribers = 0;
 
+/* ------------------------------------------------ the reader's choice */
+
+const MOTION_KEY = "home-motion-v1";
+export const HOME_MOTION_EVENT = "home-motion-change";
+
+/** Whether the home answers the phone's motion on this device; on by default. */
+export function homeMotionOn(): boolean {
+  try {
+    return window.localStorage.getItem(MOTION_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+export function setHomeMotion(on: boolean) {
+  try {
+    window.localStorage.setItem(MOTION_KEY, on ? "on" : "off");
+  } catch {
+    // Private mode: the choice lasts for this page.
+  }
+  window.dispatchEvent(new Event(HOME_MOTION_EVENT));
+}
+
 /**
- * Listen while the field is on screen. Where the browser asks first, this
+ * Listen while the home is on screen. Where the browser asks first, this
  * waits for `enableDeviceMotion` from a tap. Returns the way to stop.
  */
 export function watchDeviceMotion(): () => void {
@@ -111,11 +142,24 @@ export function watchDeviceMotion(): () => void {
   subscribers += 1;
   let started = false;
   const begin = () => {
-    if (started || subscribers === 0) return;
+    if (started || subscribers === 0 || !homeMotionOn()) return;
     started = true;
     start();
   };
-  if (!needsPermission() || granted) begin();
+  const halt = () => {
+    if (!started) return;
+    started = false;
+    stop();
+  };
+  /* Switched in Settings while the home is open: follow it at once. */
+  const onChoice = () => {
+    if (!homeMotionOn()) halt();
+    else if (!needsPermission() || granted) begin();
+  };
+  window.addEventListener(HOME_MOTION_EVENT, onChoice);
+  if (!homeMotionOn()) {
+    waiting.add(begin);
+  } else if (!needsPermission() || granted) begin();
   else {
     /* Asked without a tap: where it was allowed before (or needs no tap,
        as in Chrome), it simply says yes and they move from the start;
@@ -133,8 +177,8 @@ export function watchDeviceMotion(): () => void {
   return () => {
     subscribers = Math.max(0, subscribers - 1);
     waiting.delete(begin);
-    if (started) stop();
-    started = false;
+    window.removeEventListener(HOME_MOTION_EVENT, onChoice);
+    halt();
   };
 }
 
@@ -143,7 +187,7 @@ const waiting = new Set<() => void>();
 
 /** From a tap: ask once, where the browser wants asking. */
 export function enableDeviceMotion() {
-  if (!needsPermission() || granted || asked || typeof window === "undefined") return;
+  if (typeof window === "undefined" || !needsPermission() || granted || asked || !homeMotionOn()) return;
   asked = true;
   const motion = (window as unknown as { DeviceMotionEvent: PermissionAsker }).DeviceMotionEvent;
   const orientation = (window as unknown as { DeviceOrientationEvent?: PermissionAsker }).DeviceOrientationEvent;
@@ -163,14 +207,26 @@ export function enableDeviceMotion() {
     });
 }
 
-/** The jolt since last asked, m/s in screen axes; reading it clears it. */
-export function takeShake() {
-  const taken = { x: shake.x, y: shake.y };
-  shake.x = shake.y = 0;
-  return taken;
+/**
+ * A reader of the phone's jolts: `take()` gives the jolt since it was last
+ * asked, m/s in screen axes, and clears it for this reader only.
+ */
+export function shakeReader() {
+  const shake = { x: 0, y: 0 };
+  shakeReaders.add(shake);
+  return {
+    take() {
+      const taken = { x: shake.x, y: shake.y };
+      shake.x = shake.y = 0;
+      return taken;
+    },
+    dispose() {
+      shakeReaders.delete(shake);
+    },
+  };
 }
 
 if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
   // For checking the capsules from a script: what the field reads.
-  (window as unknown as { __deviceMotion?: unknown }).__deviceMotion = { deviceTilt, shake, listening: () => listening };
+  (window as unknown as { __deviceMotion?: unknown }).__deviceMotion = { deviceTilt, readers: shakeReaders, listening: () => listening };
 }

@@ -12,7 +12,7 @@ export type ReviewAnalytics = {
   clearedToday: number;
 };
 
-function isDue(item: VocabularyItem, now: number) {
+export function isDue(item: VocabularyItem, now: number) {
   if (!item.next_review_at) return true;
   return new Date(item.next_review_at).getTime() <= now;
 }

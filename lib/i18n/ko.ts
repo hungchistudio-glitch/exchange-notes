@@ -2699,6 +2699,12 @@ const korean: TranslationDictionary = {
       on: "켬",
       off: "끔",
     },
+    homeMotion: {
+      rowTitle: "캡슐이 휴대폰을 따라 움직여요",
+      rowDescription: "휴대폰을 기울이거나 흔들면 홈의 글자 캡슐과 Yumi가 반응해요",
+      on: "켬",
+      off: "끔",
+    },
     newsSource: {
       rowTitle: "The Guardian 키가 작동하지 않아요",
       refused: "The Guardian이 뉴스 키를 거부해서, 오늘의 이야기는 공개 피드에서 더 짧은 발췌로 가져오고 있어요. 새 무료 키를 신청해서 Vercel에 GUARDIAN_API_KEY로 설정해 주세요.",
