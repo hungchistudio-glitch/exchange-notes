@@ -19,8 +19,8 @@ describe("writing Yumi's reminder", () => {
     const copy = await yumiReminderCopy("spanish", "it");
 
     expect(copy.title).toBe("Yumi te echa de menos · Manchi a Yumi");
-    expect(copy.body).toContain("galleta-palabra");
-    expect(copy.body).toContain("biscotto-parola");
+    expect(copy.body).toContain("cápsula de letra");
+    expect(copy.body).toContain("capsula-lettera");
   });
 
   it("reads in the other direction too", async () => {

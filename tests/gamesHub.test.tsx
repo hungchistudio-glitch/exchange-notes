@@ -39,7 +39,7 @@ describe("the games hub", () => {
     expect(screen.getByRole("link", { name: /Yumi Starweaver.*A chart woven of stars.*star chart.*Starwoven Relic/ }))
       .toHaveAttribute("href", "/starweaver");
     expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute("href", "/home");
-    expect(await screen.findByText("120 / 333 cookies today")).toBeInTheDocument();
+    expect(await screen.findByText("120 / 333 capsules today")).toBeInTheDocument();
     expect(screen.getByText("All three games share today's 333.")).toBeInTheDocument();
   });
 
@@ -82,7 +82,7 @@ describe("the games hub", () => {
     const { container } = render(
       <GamesHub loadToday={async () => 0} loadProgress={async () => null} hrefs={hrefs} backHref="/home" />,
     );
-    await screen.findByText("0 / 333 cookies today");
+    await screen.findByText("0 / 333 capsules today");
     /* Each row is drawn as a placeholder until the progress has answered,
        which can be a moment after today's count (npm run test:late-react). */
     await waitFor(() => expect(container.querySelectorAll("[role=img]")).toHaveLength(0));

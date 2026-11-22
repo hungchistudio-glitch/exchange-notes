@@ -94,14 +94,15 @@
   height: 140px;
   margin: -70px 0 0 -180px;
   border-radius: 50%;
-  border: 1px solid #8a7a5a30;
+  /* Fainter (Chi, 2026-11-21: 更淡), and alive: see .centre's sway below. */
+  border: 1px solid #8a7a5a17;
   /* Two small brass pellets riding each orbit, painted on its own box so
      they turn with it: a point on an ellipse is (50 + 50·cos θ, 50 + 50·sin θ). */
   background:
-    radial-gradient(circle at 4% 31%, #b9a57a 0 3px, #b9a57a00 4px),
-    radial-gradient(circle at 85% 85%, #8f9a86 0 2.5px, #8f9a8600 3.5px);
+    radial-gradient(circle at 4% 31%, #b9a57a99 0 3px, #b9a57a00 4px),
+    radial-gradient(circle at 85% 85%, #8f9a8699 0 2.5px, #8f9a8600 3.5px);
   pointer-events: none;
-  transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh)) rotate(-14deg);
+  transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh)) rotate(calc(-14deg + var(--orbit-sway)));
   /* Hidden until she is live and at rest: before the first frame there is
      no eye to centre on, and with no WebGL the stage stays "starting". */
   opacity: 0;
@@ -113,11 +114,44 @@
   width: 300px;
   height: 104px;
   margin: -52px 0 0 -150px;
-  border-color: #8a7a5a24;
+  border-color: #8a7a5a12;
   background:
-    radial-gradient(circle at 93% 25%, #c8b78e 0 3.5px, #c8b78e00 4.5px),
-    radial-gradient(circle at 21% 91%, #7f7466 0 2.5px, #7f746600 3.5px);
-  transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh)) rotate(22deg);
+    radial-gradient(circle at 93% 25%, #c8b78e99 0 3.5px, #c8b78e00 4.5px),
+    radial-gradient(circle at 21% 91%, #7f746699 0 2.5px, #7f746600 3.5px);
+  transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh)) rotate(calc(22deg + var(--orbit-sway)));
+}
+
+/*
+  Alive, barely (Chi, 2026-11-21: 有生命感但是要更淡): each orbit sways a
+  few degrees about her, slowly and out of step with the other, and
+  breathes a little lighter and darker. The sway is a registered angle the
+  transform reads, so her own --yumi-x/--yumi-y stay as they are; only
+  the two orbits restyle, and nothing lays out.
+*/
+@property --orbit-sway {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.centre[data-yumi-mode="rest"]::before {
+  animation: orbitSway 17s ease-in-out infinite, orbitBreathe 9s ease-in-out infinite;
+}
+
+.centre[data-yumi-mode="rest"]::after {
+  animation: orbitSway 23s ease-in-out -8s infinite reverse, orbitBreathe 11s ease-in-out -4s infinite;
+}
+
+@keyframes orbitSway {
+  0%, 100% { --orbit-sway: -4deg; }
+  50% { --orbit-sway: 4deg; }
+}
+
+/* A filter, not opacity: opacity is what fades them in once she is at
+   rest, and an animation on it would cut that fade short. */
+@keyframes orbitBreathe {
+  0%, 100% { filter: opacity(1); }
+  50% { filter: opacity(0.5); }
 }
 
 .centre[data-yumi-mode="rest"]::before,
@@ -136,6 +170,11 @@
   .centre::before,
   .centre::after {
     transition: none;
+  }
+
+  .centre[data-yumi-mode="rest"]::before,
+  .centre[data-yumi-mode="rest"]::after {
+    animation: none;
   }
 }
 

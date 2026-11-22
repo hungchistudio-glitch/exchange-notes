@@ -85,7 +85,7 @@ describe("the cookie-landing card", () => {
     await act(async () => { window.dispatchEvent(new Event(ENERGY_REFRESH_EVENT)); });
 
     expect(await screen.findByText("+6")).toBeInTheDocument();
-    expect(screen.getByText("Energy cookies received")).toBeInTheDocument();
+    expect(screen.getByText("Energy capsules received")).toBeInTheDocument();
   });
 
   it("speaks the display language", async () => {

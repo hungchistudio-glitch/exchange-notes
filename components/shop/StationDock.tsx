@@ -24,8 +24,10 @@ export default function StationDock({ className, landing = false }: {
       <div className={styles.spotlight} data-part="spotlight" />
       <div className={styles.pedestal}>
         <span className={styles.plinthSide} />
-        <span className={styles.plinthTop} />
-        <span className={styles.contactShadow} />
+        {/* The top face and the point she stands on, read by the shop's
+            stand to lay her shadow or reflection on the stone (ShopStage). */}
+        <span className={styles.plinthTop} data-dock-top="" />
+        <span className={styles.contactShadow} data-dock-floor="" />
         {landing && <span className={styles.landLights} />}
         {landing && <span className={styles.landRing} />}
       </div>

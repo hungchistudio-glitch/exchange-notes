@@ -113,9 +113,43 @@ export default function ShopStage({
     wake(activeUntil);
   }, [outfit]);
 
+  /*
+   * Her reflection in the plinth's polished top, in both modes (Chi,
+   * 2026-11-21: 全部統一像 cosmic 一樣倒影): ice light in Cosmic, warm gold
+   * on the Standard stone. Kept to the top face. The plinth is
+   * laid out by CSS, so its face is measured whenever the stand's size
+   * changes, in the canvas's own pixels (the stand may be scaled while the
+   * catalogue scrolls; its layout is not).
+   */
+  const plinthRef = useRef<{ floorY: number; clip: { x: number; y: number; rx: number; ry: number } } | null>(null);
+  /* She floats a little over the pad, and a mirror that far under her
+     would put her whole reflection past the top face's edge. So the
+     polished top is taken to be just under her feet (followed through a
+     zoom, in loopOnce). */
+  const feetRef = useRef<number | null>(null);
+  const applyGround = () => {
+    const handle = handleRef.current;
+    const plinth = plinthRef.current;
+    if (!handle) return;
+    handle.setGround?.(plinth
+      ? {
+          kind: "reflection",
+          floorY: Math.min(plinth.floorY, feetRef.current ?? plinth.floorY),
+          clip: plinth.clip,
+          strength: cosmicRef.current ? 1.1 : 1,
+          shade: cosmicRef.current ? 0.82 : 0.45,
+          tint: cosmicRef.current ? 0xb8e8e5 : 0xe8c890,
+        }
+      : null);
+  };
+  const applyGroundRef = useRef(applyGround);
+  useEffect(() => { applyGroundRef.current = applyGround; });
+
   useEffect(() => {
     cosmicRef.current = isCosmic;
     handleRef.current?.setCosmicLevel?.(isCosmic ? 1 : 0);
+    applyGroundRef.current();
+    wake(activeUntil);
   }, [isCosmic]);
 
   useEffect(() => {
@@ -145,6 +179,11 @@ export default function ShopStage({
          more above her than a charm hangs below. */
       const radius = Math.min(rect.width * 0.27, rect.height * 0.25) * zoomRef.current;
       handle.setScreenAnchor(rect.width * 0.5, rect.height * 0.47, radius);
+      const feet = Math.round(rect.height * 0.47 + radius + 3);
+      if (feet !== feetRef.current) {
+        feetRef.current = feet;
+        applyGroundRef.current();
+      }
       handle.frame(now);
     };
 
@@ -185,6 +224,8 @@ export default function ShopStage({
         handle.setCosmicLevel?.(cosmicRef.current ? 1 : 0, true);
         handle.setOutfit?.(outfitRef.current);
         handle.setView?.("three-quarter", true);
+        measurePlinth();
+        applyGroundRef.current();
         setLive(true);
         /* Held out of sight until her beam comes for her. */
         if (!reduced) setBeam("wait");
@@ -202,9 +243,29 @@ export default function ShopStage({
       }
     };
 
+    const measurePlinth = () => {
+      const top = box.querySelector("[data-dock-top]");
+      const foot = box.querySelector("[data-dock-floor]");
+      if (!top || !foot || !canvas.clientWidth) { plinthRef.current = null; return; }
+      const frame = canvas.getBoundingClientRect();
+      const scale = frame.width / canvas.clientWidth || 1;
+      const face = top.getBoundingClientRect();
+      const stand = foot.getBoundingClientRect();
+      plinthRef.current = {
+        floorY: (stand.top + stand.height / 2 - frame.top) / scale,
+        clip: {
+          x: (face.left + face.width / 2 - frame.left) / scale,
+          y: (face.top + face.height / 2 - frame.top) / scale,
+          rx: face.width / 2 / scale,
+          ry: face.height / 2 / scale,
+        },
+      };
+    };
     const onResize = () => {
       size = { width: canvas.clientWidth, height: canvas.clientHeight };
       handle?.resize();
+      measurePlinth();
+      applyGroundRef.current();
     };
     window.addEventListener("resize", onResize);
     const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(onResize);

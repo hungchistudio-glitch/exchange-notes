@@ -49,6 +49,22 @@ function anchorFor(fit: "square" | "stage", width: number, height: number) {
   return { x: width / 2, y: height * 0.47, r: Math.min(width * 0.25, height * 0.29) };
 }
 
+/*
+ * Her reflection on the bridge (Chi, 2026-11-21): the obsidian is a mirror
+ * a little under her, where the pool of light lies. The floor line is that
+ * far below her shell's foot, in her own radii, and her canvas reaches past
+ * the stage's foot far enough for the reflection to fade out (the console
+ * under the stage is glass enough to show it; CommandDeck.module.css).
+ */
+const FLOOR_BELOW = 1.14;
+const REFLECTION_ROOM = 1.6;
+
+/** The floor line under her stand, in the stage's px. */
+export function cosmicFloorFor(width: number, height: number) {
+  const anchor = anchorFor("stage", width, height);
+  return anchor.y + anchor.r * FLOOR_BELOW;
+}
+
 /** Where her eye goes for what the page is doing; x and y in -1..1. */
 function gazeFor(attention: YumiAttention, voice: number, now: number) {
   /* Down at the field, about fifteen degrees: plainly looking, the pupil
@@ -116,10 +132,14 @@ export default function CosmicHomeYumi({
     modalWatch.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-modal"] });
 
     const blocked = () => stateRef.current.paused || !!stateRef.current.mode?.modeTransition || modalOpen;
+    /* The canvas reaches below the stage for her reflection, over the
+       console; only the stage itself takes a touch, so the host (the
+       stage's own box) listens and the canvas lets every touch through. */
+    const surface = host;
     const down = (event: PointerEvent) => {
       if (!handle || blocked() || !event.isPrimary || event.button !== 0 || pointer !== null) return;
       pointer = event.pointerId;
-      canvas.setPointerCapture?.(pointer);
+      surface.setPointerCapture?.(pointer);
       handle.pointerDown(event.clientX, event.clientY);
     };
     const move = (event: PointerEvent) => {
@@ -130,20 +150,20 @@ export default function CosmicHomeYumi({
       pointer = null;
       if (event.type === "pointerup") handle?.pointerUp();
       else handle?.pointerCancel?.();
-      if (canvas.hasPointerCapture?.(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+      if (surface.hasPointerCapture?.(event.pointerId)) surface.releasePointerCapture(event.pointerId);
     };
     const cancel = () => {
       if (pointer === null) return;
       const id = pointer;
       pointer = null;
       handle?.pointerCancel?.();
-      if (canvas.hasPointerCapture?.(id)) canvas.releasePointerCapture(id);
+      if (surface.hasPointerCapture?.(id)) surface.releasePointerCapture(id);
     };
-    canvas.addEventListener("pointerdown", down);
-    canvas.addEventListener("pointermove", move);
-    canvas.addEventListener("pointerup", finish);
-    canvas.addEventListener("pointercancel", finish);
-    canvas.addEventListener("lostpointercapture", finish);
+    surface.addEventListener("pointerdown", down);
+    surface.addEventListener("pointermove", move);
+    surface.addEventListener("pointerup", finish);
+    surface.addEventListener("pointercancel", finish);
+    surface.addEventListener("lostpointercapture", finish);
 
     /* Measured on resize only, never in the frame. */
     let box = { width: 0, height: 0 };
@@ -154,11 +174,26 @@ export default function CosmicHomeYumi({
       const anchor = anchorFor(stateRef.current.fit, box.width, box.height);
       handle.setScreenAnchor(anchor.x, anchor.y + floatY, anchor.r * scale);
     };
+    let floorTold: number | null = null;
     const resize = () => {
       if (!handle) return;
-      handle.resize();
-      const { width, height } = canvas.getBoundingClientRect();
+      /* The stage's own size, before any arrival transform on it. */
+      const width = host.clientWidth;
+      const height = host.clientHeight;
       box = { width, height };
+      const reflecting = stateRef.current.fit === "stage" && width > 0 && height > 0;
+      if (reflecting) {
+        const anchor = anchorFor("stage", width, height);
+        const floor = Math.round(cosmicFloorFor(width, height) * 2) / 2;
+        const below = Math.max(0, Math.ceil(floor + anchor.r * REFLECTION_ROOM - height));
+        canvas.style.height = below ? `${height + below}px` : "";
+        stateRef.current.glowRef?.current?.style.setProperty("--yumi-floor", `${floor}px`);
+        if (floor !== floorTold) {
+          floorTold = floor;
+          handle.setGround?.({ kind: "reflection", floorY: floor });
+        }
+      }
+      handle.resize();
       place();
     };
     const sizeObserver = new ResizeObserver(resize);
@@ -285,13 +320,16 @@ export default function CosmicHomeYumi({
       window.removeEventListener("blur", cancel);
       document.removeEventListener("visibilitychange", onVisibility);
       cancel();
-      canvas.removeEventListener("pointerdown", down);
-      canvas.removeEventListener("pointermove", move);
-      canvas.removeEventListener("pointerup", finish);
-      canvas.removeEventListener("pointercancel", finish);
-      canvas.removeEventListener("lostpointercapture", finish);
+      surface.removeEventListener("pointerdown", down);
+      surface.removeEventListener("pointermove", move);
+      surface.removeEventListener("pointerup", finish);
+      surface.removeEventListener("pointercancel", finish);
+      surface.removeEventListener("lostpointercapture", finish);
       stateRef.current.glowRef?.current?.style.setProperty("--voice-level", "0");
+      /* The scene is shared: no reflection, and its own height, for the next. */
+      canvas.style.height = "";
       if (handle) {
+        handle.setGround?.(null);
         handle.pointerCancel?.();
         /* The scene is shared: hand it back as the Standard home expects it. */
         handle.setRest?.(null);

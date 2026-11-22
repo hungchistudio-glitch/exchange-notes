@@ -4,6 +4,7 @@ import type { YumiOutfit } from "@/lib/shop/catalog";
 
 import { EYE_RADIUS, SHELL_RADIUS, TUBE_RADIUS } from "./anatomy";
 import { ARM_ROOT, EYE_REST, buildYumiActor } from "./actor";
+import { createYumiGround, type YumiGround } from "./ground";
 import { createOutfitRig } from "./outfit";
 import { ROTATION_CRUISE_SPEED, createYumiRotation } from "./rotation";
 
@@ -130,6 +131,8 @@ export type YumiPartPose = {
  */
 export type YumiParts = { yu: YumiPartPose; mi: YumiPartPose };
 
+export type { YumiGround } from "./ground";
+
 export type YumiSceneHandle = {
   /** Advance the simulation and draw. Call from one rAF loop. */
   frame(nowMs: number): void;
@@ -198,6 +201,13 @@ export type YumiSceneHandle = {
   setParts?(parts: YumiParts | null): void;
   /** Turn to a set view: eased, or at once. */
   setView?(view: YumiView, immediate?: boolean): void;
+  /**
+   * The floor under her (Chi, 2026-11-21): her shadow on the paper in
+   * Standard, her reflection in the obsidian in Cosmic, or null for none.
+   * Set once and again only when it changes; the scene keeps it. Not drawn
+   * during the film or while YU and MI are apart.
+   */
+  setGround?(ground: YumiGround | null): void;
   /**
    * A still stand that comes back to a view (the Cosmic home, Chi,
    * 2026-11-12: "停止操作後緩慢歸正"). No cruise between drags; once a
@@ -382,6 +392,7 @@ export function createYumiScene(
   } = buildYumiActor();
   model.position.y = MODEL_REST_Y;
   scene.add(model);
+  const ground = createYumiGround(renderer, scene, camera, model);
 
   /* Each piece's shader compile, while it runs (setOutfit below). */
   const compiles = new Map<THREE.Object3D, Promise<unknown>>();
@@ -824,6 +835,13 @@ export function createYumiScene(
          a blink from every angle rather than only from the front. */
       blinkPivot.scale.set(1, Math.max(0.02, blink), 1);
 
+      /* Her shadow or her reflection, from the pose just set. */
+      if (film || parts) ground.skip();
+      else {
+        const size = canvasSize();
+        ground.render({ width: size.width, height: size.height, anchor: anchorNow, unitsPerPixel: unitsPerPixel() });
+      }
+
       renderer.render(scene, camera);
     },
 
@@ -854,6 +872,7 @@ export function createYumiScene(
     resize,
 
     dispose() {
+      ground.dispose();
       outfit.dispose();
       scene.traverse(object => {
         const mesh = object as THREE.Mesh;
@@ -869,6 +888,10 @@ export function createYumiScene(
 
     setFilm(next) {
       film = next;
+    },
+
+    setGround(next) {
+      ground.set(next);
     },
 
     setRotationPaused(paused) {

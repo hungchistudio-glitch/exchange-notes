@@ -150,6 +150,11 @@ export const interfaceSounds = {
     tone(880, 0, 0.16, 0.04);
     tone(1320, 0.09, 0.22, 0.04);
   }),
+  /* An energy capsule clicking open (EnergyReward): a tick and a small chime. */
+  capsule: () => play(() => {
+    tone(3400, 0, 0.018, 0.026, "square");
+    tone(1760, 0.012, 0.07, 0.022, "triangle");
+  }),
 };
 
 /** The elements a tap ticks for. */

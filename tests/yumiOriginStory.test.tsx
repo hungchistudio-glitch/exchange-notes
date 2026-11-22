@@ -544,7 +544,7 @@ describe("the film on the page", () => {
     const rail = await screen.findByRole("group", { name: copy.tryOn.title });
     later.mockRestore();
     expect(within(rail).getByText("黃銅單片鏡")).toBeInTheDocument();
-    expect(within(rail).getByText("30 塊餅乾")).toBeInTheDocument();
+    expect(within(rail).getByText("30 顆膠囊")).toBeInTheDocument();
   });
 
   it("is written in every interface language", () => {

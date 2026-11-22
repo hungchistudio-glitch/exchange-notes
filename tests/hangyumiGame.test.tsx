@@ -129,7 +129,7 @@ describe("a round of Hangyumi", () => {
     await screen.findByText("lasting a very short time");
     for (const char of ["é", "p", "h", "m", "è", "r", "e"]) await guess(char);
     expect(await screen.findByRole("heading", { name: "You freed Yumi!" })).toBeInTheDocument();
-    expect(screen.getByText("90 cookies this round.")).toBeInTheDocument();
+    expect(screen.getByText("90 capsules this round.")).toBeInTheDocument();
     expect(screen.getByText("Word bonus +27")).toBeInTheDocument();
     expect(screen.getByTestId("stage")).toHaveAttribute("data-status", "won");
     expect(loadOutfit).toHaveBeenCalled();
@@ -143,7 +143,7 @@ describe("a round of Hangyumi", () => {
     expect(within(screen.getByRole("heading", { name: "You freed Yumi!" }).closest("section")!)
       .getByRole("button", { name: "Listen: lasting a very short time" })).toBeInTheDocument();
     // Today's count moves once the cookies have landed.
-    expect(await screen.findByText("90 of 333 cookies today", {}, { timeout: 2000 })).toBeInTheDocument();
+    expect(await screen.findByText("90 of 333 capsules today", {}, { timeout: 2000 })).toBeInTheDocument();
   });
 
   it("ends on the third miss and keeps what was won", async () => {
@@ -152,7 +152,7 @@ describe("a round of Hangyumi", () => {
     await guess("p");
     for (const char of ["x", "y", "z"]) await guess(char);
     expect(await screen.findByRole("heading", { name: "Yumi is hung" })).toBeInTheDocument();
-    expect(screen.getByText("You keep the 9 cookies you won.")).toBeInTheDocument();
+    expect(screen.getByText("You keep the 9 capsules you won.")).toBeInTheDocument();
     expect(screen.getByText("éphémère")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Guess a" })).toBeNull();
   });
@@ -308,10 +308,10 @@ describe("a round of Hangyumi", () => {
 
   it("shows the cookies there are to spend, and adds what a guess pays", async () => {
     play();
-    expect(await screen.findByText("240 energy cookies to spend")).toBeInTheDocument();
+    expect(await screen.findByText("240 energy capsules to spend")).toBeInTheDocument();
     await screen.findByText("lasting a very short time");
     await guess("é");
-    expect(await screen.findByText("249 energy cookies to spend", {}, { timeout: 2000 })).toBeInTheDocument();
+    expect(await screen.findByText("249 energy capsules to spend", {}, { timeout: 2000 })).toBeInTheDocument();
   });
 
   it("glosses the finished word in the reader's language, and keeps that gloss when saving", async () => {
@@ -370,7 +370,7 @@ describe("the game's finish", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Hangyumi" })).toBeInTheDocument();
     // The cookies to spend ride on the sign, under the name.
     expect(screen.getByText("240")).toBeInTheDocument();
-    expect(screen.getByText("240 energy cookies to spend")).toBeInTheDocument();
+    expect(screen.getByText("240 energy capsules to spend")).toBeInTheDocument();
   });
 
   it("moves only the key and the places of the letter just guessed", async () => {

@@ -76,13 +76,13 @@ describe("the Yumi shop", () => {
   it("tries on for free, buys after confirming, and puts the piece on", async () => {
     render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
     // The preview wallet answers after a short pause; a busy machine stretches it.
-    await waitFor(() => expect(screen.getByLabelText(/50 energy cookies/)).toBeInTheDocument(), { timeout: 5000 });
+    await waitFor(() => expect(screen.getByLabelText(/50 energy capsules/)).toBeInTheDocument(), { timeout: 5000 });
 
     // Too dear: on the stand at once, and the bar says how far short.
     department("Body finishes");
     fireEvent.click(card("Jade"));
     expect(stand()).toEqual({ material: "jade" });
-    expect(screen.getByText("10 cookies short")).toBeInTheDocument();
+    expect(screen.getByText("10 capsules short")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Buy" })).toBeDisabled();
 
     // Affordable: nothing is charged until the sheet is confirmed.
@@ -92,11 +92,11 @@ describe("the Yumi shop", () => {
     fireEvent.click(screen.getByRole("button", { name: "Buy" }));
     const sheet = await screen.findByRole("dialog", {}, { timeout: 5000 });
     expect(within(sheet).getByText("Buy Brass monocle?")).toBeInTheDocument();
-    expect(screen.getByLabelText(/50 energy cookies/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/50 energy capsules/)).toBeInTheDocument();
 
     fireEvent.click(within(sheet).getByRole("button", { name: "Buy" }));
     await waitFor(() => expect(screen.getByText("Yumi is wearing Brass monocle")).toBeInTheDocument(), { timeout: 5000 });
-    expect(screen.getByLabelText(/20 energy cookies/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/20 energy capsules/)).toBeInTheDocument();
     expect(card("Brass monocle")).toHaveTextContent("Owned");
 
     // The jade she never bought stays on the stand only; reset takes it off.

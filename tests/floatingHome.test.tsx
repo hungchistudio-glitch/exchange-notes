@@ -33,7 +33,7 @@ describe("real home cookies", () => {
     vi.useFakeTimers();
     const { onFeed, unmount } = field();
     try {
-      fireEvent.click(screen.getByRole("button", { name: "Gather and scatter cookies" }));
+      fireEvent.click(screen.getByRole("button", { name: "Gather and scatter capsules" }));
       expect(document.querySelector("[data-floating-field]")).toHaveAttribute("data-gathering");
       act(() => vi.advanceTimersByTime(1800));
       expect(document.querySelector("[data-floating-field]")).not.toHaveAttribute("data-gathering");
@@ -45,7 +45,7 @@ describe("real home cookies", () => {
     vi.useFakeTimers();
     const { stageRef, unmount } = field();
     try {
-      const star = screen.getByRole("button", { name: "Gather and scatter cookies" });
+      const star = screen.getByRole("button", { name: "Gather and scatter capsules" });
       fireEvent.click(star);
       act(() => vi.advanceTimersByTime(1000));
       fireEvent.click(star);
@@ -82,10 +82,10 @@ describe("real home cookies", () => {
   it("does not auto-feed while a card is open or movement is paused", () => {
     const { onFeed } = field();
     const cookie = screen.getByRole("button", { name: "ciao" });
-    fireEvent.click(screen.getByRole("button", { name: "Pause floating cookies" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pause floating capsules" }));
     act(() => cookie.dispatchEvent(new CustomEvent("yumi-cookie-feed", { bubbles: true })));
     expect(onFeed).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Resume floating cookies" }));
+    fireEvent.click(screen.getByRole("button", { name: "Resume floating capsules" }));
     fireEvent.click(cookie);
     act(() => cookie.dispatchEvent(new CustomEvent("yumi-cookie-feed", { bubbles: true })));
     expect(onFeed).not.toHaveBeenCalled();

@@ -12,13 +12,18 @@ import { floatingCopy } from "@/lib/home/floatingCopy";
 import { returnHomeFromSearch } from "@/lib/home/homeMoments";
 import { avoid, bound, clamp, collide, scatter, type Body, type Rect } from "@/lib/home/floatingPhysics";
 import { getCoachStep, getServerCoachStep, subscribeToCoach } from "@/lib/home/tutorialCoach";
+import { enableDeviceMotion, deviceTilt, takeShake, watchDeviceMotion } from "@/lib/home/deviceMotion";
+import { sunlightAt } from "@/lib/home/sunlight";
+import type { CapsuleField, CapsuleView } from "@/lib/home/capsules3d";
 import { cookieGlyph } from "@/lib/pet/moodEngine";
 import type { Cookie } from "@/lib/pet/types";
 import type { VocabularyItem } from "@/lib/types/app";
 import FloatingWordCard from "./FloatingWordCard";
 import styles from "./FloatingCookies.module.css";
 
-type Particle = Body & { index: number };
+/* `homing`: knocked about by a tilt or a shake, and drifting back to its
+   own place around her once the phone is still again. */
+type Particle = Body & { index: number; homing?: boolean };
 type Drag = { id: number; cookie: Cookie; startX: number; startY: number; x: number; y: number; time: number; moved: boolean };
 const PLACES = [[.19,.315],[.82,.32],[.16,.53],[.82,.55],[.68,.23],[.14,.83],[.87,.85],[.45,.29],[.9,.66],[.08,.665],[.8,.435],[.33,.92]];
 const SIZES = [55,45,53,47,35,34,38,30,33,31,40,28];
@@ -29,6 +34,13 @@ const GATHER_MS = 1800;
 const SETTLE_MS = 520;
 /** How far the demonstrating cookie leans toward her, in px. */
 const NUDGE = 12;
+/* A tilt's pull, px/s² at a full tip; water's drag on it; a shake's push,
+   px/s per m/s of jolt (Chi, 2026-11-21: 像在水裡漂). */
+const TILT_PULL = 640;
+const WATER = 1.3;
+const SHAKE_PUSH = 950;
+/** After the last tilt or shake, how long before they start home. */
+const CALM_MS = 1300;
 // Feeding another word must not recolour or resize the remaining cookies.
 const variantFor = (id: string) => Array.from(id).reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 0) % SIZES.length;
 
@@ -59,6 +71,14 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
      gather once the cookies are back around her. */
   const gatherAfterReturn = useRef(false);
   const suppressClick = useRef<string | null>(null);
+  /* The capsules' canvas (lib/home/capsules3d.ts): the buttons stay the
+     things a finger presses and a screen reader reads; the canvas under
+     them draws each one as a glass capsule. Until it draws, and for good
+     without WebGL, the buttons keep their beads. */
+  /* State, not a ref: OverlayPortal draws the field in place for the first
+     render and then moves it into its portal, which is a new canvas. */
+  const [capsuleCanvas, setCapsuleCanvas] = useState<HTMLCanvasElement | null>(null);
+  const capsules = useRef<CapsuleField | null>(null);
   const latest = useRef({ cookies, onFeed, disabled, paused, activeId, mode });
   useEffect(() => { latest.current = { cookies, onFeed, disabled, paused, activeId, mode }; }, [cookies, onFeed, disabled, paused, activeId, mode]);
   useEffect(() => {
@@ -86,6 +106,11 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
    */
   const coachStep = useSyncExternalStore(subscribeToCoach, getCoachStep, getServerCoachStep);
   const hintId = coachStep === FEED_STEP && mode === "rest" && !disabled ? visible[0]?.id ?? null : null;
+  const glyphOf = (cookie: Cookie) => cookieGlyph(cookie, cookie.type === "zhuyin"
+    ? phoneticsFor({ text: cookie.sourceText, language: cookie.language })?.zhuyin
+    : null);
+  const glyphRef = useRef(glyphOf);
+  useEffect(() => { glyphRef.current = glyphOf; });
   const item = items.find(row => row.id === activeId);
   // A remotely deleted word must not leave an invisible modal locking the field.
   if (activeId !== null && !item) setActiveId(null);
@@ -184,6 +209,32 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
   }, [paused, stageRef]);
 
   useEffect(() => {
+    const canvas = capsuleCanvas;
+    if (!canvas) return;
+    let cancelled = false;
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    void import("@/lib/home/capsules3d")
+      .then(({ createCapsuleField }) => {
+        if (cancelled) return;
+        capsules.current = createCapsuleField(canvas, { reducedMotion });
+        if (process.env.NODE_ENV === "development") (window as unknown as { __capsules?: unknown }).__capsules = capsules.current;
+      })
+      .catch(() => {});
+    const stopMotion = watchDeviceMotion();
+    const onResize = () => capsules.current?.resize();
+    window.addEventListener("resize", onResize);
+    return () => {
+      cancelled = true;
+      stopMotion();
+      window.removeEventListener("resize", onResize);
+      capsules.current?.dispose();
+      capsules.current = null;
+      /* The beads come back on the field this canvas was drawn in. */
+      canvas.parentElement?.removeAttribute("data-capsules");
+    };
+  }, [capsuleCanvas]);
+
+  useEffect(() => {
     let raf = 0, previous = performance.now(), measureAt = 0;
     /* Reported to a mode crossing once the cookies stand where she will be
        revealed among them — the last thing on this home to arrive. */
@@ -191,6 +242,16 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
     let obstacles: Rect[] = [];
     let parked: { cookies: Cookie[]; width: number; height: number } | null = null;
     const painted = new Map<string, string>();
+    /* The capsules ease to and from their parking for this long after the
+       field's mode changes; at rest they are exactly where the physics is. */
+    let lastMode = latest.current.mode;
+    let easeUntil = 0;
+    let views: CapsuleView[] = [];
+    let calmAt = 0;
+    let hint: { id: string; x: number; y: number } | null = null;
+    /* The paper's light, by the reader's clock, read once a minute. */
+    let lightMinute = -1;
+    let lightField: CapsuleField | null = null;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const tick = (now: number) => {
       const dt = Math.min(.032, (now - previous) / 1000);
@@ -198,11 +259,16 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
       const state = latest.current;
       const width = window.innerWidth, height = window.innerHeight;
       const idle = state.mode === "rest";
+      if (state.mode !== lastMode) {
+        lastMode = state.mode;
+        easeUntil = now + 700;
+      }
       const blocked = document.hidden || state.activeId !== null || state.mode === "open" || !!document.querySelector("[aria-modal='true']");
       if (!blocked) {
         // Search parks the cookies once. Typing must not keep measuring the
         // page and rewriting twelve motion layers on every animation frame.
         if (!idle && parked?.cookies === state.cookies && parked.width === width && parked.height === height) {
+          if (now < easeUntil && views.length) capsules.current?.frame(views, dt, now, { tumble: false, snap: false });
           raf = requestAnimationFrame(tick);
           return;
         }
@@ -222,11 +288,22 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
             const length = Math.hypot(dx, dy) || 1;
             hinted.style.setProperty("--nudge-x", `${((dx / length) * NUDGE).toFixed(1)}px`);
             hinted.style.setProperty("--nudge-y", `${((dy / length) * NUDGE).toFixed(1)}px`);
+            hint = { id: hinted.dataset.floatingCookie ?? "", x: (dx / length) * NUDGE, y: (dy / length) * NUDGE };
+          } else {
+            hint = null;
           }
           measureAt = now + 160;
         }
         const rows = state.cookies.slice(0, 12);
         const ids = new Set(rows.map(row => row.id));
+        const moving = idle && !state.paused && !reduced.matches && !gather.current;
+        const tilt = deviceTilt.live && Math.hypot(deviceTilt.x, deviceTilt.y) > 0.035 ? deviceTilt : null;
+        const pull = moving && tilt ? { x: tilt.x, y: tilt.y } : null;
+        const shaken = takeShake();
+        const strength = Math.hypot(shaken.x, shaken.y);
+        const jolt = moving && strength > 0.035 ? shaken : null;
+        if (pull || jolt) calmAt = now + CALM_MS;
+        if (jolt) capsules.current?.spin(Math.min(9, strength * 22));
         for (const id of bodies.current.keys()) if (!ids.has(id)) { bodies.current.delete(id); painted.delete(id); }
         for (const [id, at] of consumed.current) {
           if (!ids.has(id) || now - at > 2000) {
@@ -237,7 +314,8 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
         rows.forEach((cookie, index) => {
           let body = bodies.current.get(cookie.id);
           if (!body) {
-            body = { x: PLACES[index][0] * width, y: PLACES[index][1] * height, vx: Math.cos(index * 2.4) * 8, vy: Math.sin(index * 2.4) * 8, radius: Math.max(44, SIZES[variantFor(cookie.id)]) / 2, index };
+            /* As long as the capsule it is drawn as, so two never overlap. */
+            body = { x: PLACES[index][0] * width, y: PLACES[index][1] * height, vx: Math.cos(index * 2.4) * 8, vy: Math.sin(index * 2.4) * 8, radius: Math.max(22, SIZES[variantFor(cookie.id)] * 0.6), index };
             bodies.current.set(cookie.id, body);
           }
           const held = drag.current?.cookie.id === cookie.id;
@@ -252,6 +330,27 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
               body.vx += Math.sin(now / 3900 + index) * dt * 4;
               body.vy += Math.cos(now / 4700 + index * 2) * dt * 4;
               body.vx *= Math.exp(-dt * .19); body.vy *= Math.exp(-dt * .19);
+              /* The phone tipped: down the slope, as through water. */
+              if (pull) {
+                body.vx += pull.x * TILT_PULL * dt; body.vy += pull.y * TILT_PULL * dt;
+                body.vx *= Math.exp(-dt * WATER); body.vy *= Math.exp(-dt * WATER);
+                body.homing = true;
+              }
+              /* Shaken: each one knocked as hard as the phone was, a little
+                 differently, so they tumble into each other. */
+              if (jolt) {
+                const give = 0.8 + ((index * 37) % 9) / 20;
+                body.vx = clamp(body.vx - jolt.x * SHAKE_PUSH * give, -1400, 1400);
+                body.vy = clamp(body.vy - jolt.y * SHAKE_PUSH * give, -1400, 1400);
+                body.homing = true;
+              }
+              /* Still again: back to its own place around her. */
+              if (body.homing && now > calmAt) {
+                const homeX = PLACES[index][0] * width, homeY = PLACES[index][1] * height;
+                body.vx += (homeX - body.x) * 2.2 * dt; body.vy += (homeY - body.y) * 2.2 * dt;
+                body.vx *= Math.exp(-dt * 1.6); body.vy *= Math.exp(-dt * 1.6);
+                if (Math.hypot(homeX - body.x, homeY - body.y) < 36) body.homing = false;
+              }
             }
             body.x += body.vx * dt; body.y += body.vy * dt;
           }
@@ -266,11 +365,27 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
             collide(particles[i][1], particles[j][1], drag.current?.cookie.id === particles[i][0], drag.current?.cookie.id === particles[j][0]);
           }
         }
+        const next: CapsuleView[] = [];
+        const cookieById = new Map(rows.map(row => [row.id, row]));
         for (const [id, body] of particles) {
           const button = buttons.current.get(id);
           if (!button) continue;
           const x = idle ? body.x : (body.index % 2 ? width - 18 : 18);
           const y = idle ? body.y : 75 + Math.floor(body.index / 2) * 90;
+          const cookie = cookieById.get(id);
+          if (cookie) {
+            const variant = variantFor(id);
+            next.push({
+              id, x, y, size: SIZES[variant], tone: variant % 4, glyph: glyphRef.current(cookie),
+              /* The beads' own opacities: a little back for the far ones,
+                 faint while a search answer is up, and only the first four. */
+              alpha: idle ? (hint?.id === id ? 1 : variant > 6 ? 0.9 : 0.95) : body.index < 4 ? 0.15 : 0,
+              vx: idle ? body.vx : 0, vy: idle ? body.vy : 0,
+              eatenAt: consumed.current.get(id),
+              hint: idle && hint?.id === id ? hint : null,
+              held: drag.current?.cookie.id === id,
+            });
+          }
           const tilt = reduced.matches || state.paused ? 0 : clamp(body.vx * .08, -12, 12);
           const transform = `translate3d(${x - body.radius}px,${y - body.radius}px,0) rotate(${tilt}deg)`;
           if (painted.get(id) !== transform) {
@@ -278,6 +393,22 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
             painted.set(id, transform);
           }
           if (button.dataset.ready !== "true") button.dataset.ready = "true";
+        }
+        views = next;
+        const field3d = capsules.current;
+        const minute = Math.floor(Date.now() / 60000);
+        if (field3d && (minute !== lightMinute || field3d !== lightField)) {
+          lightMinute = minute;
+          lightField = field3d;
+          field3d.setLight(sunlightAt(new Date()));
+        }
+        if (field3d) {
+          const settling = field.current?.hasAttribute("data-settling") ?? false;
+          field3d.frame(views, dt, now, {
+            tumble: idle && !state.paused,
+            snap: idle && !settling && now >= easeUntil,
+          });
+          if (field.current && field.current.dataset.capsules !== "live") field.current.dataset.capsules = "live";
         }
         // The stage's own word, not this field's copy of it: that copy
         // starts at "rest" and only learns otherwise a render later.
@@ -387,6 +518,7 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
       <div ref={field} className={styles.field} data-floating-field="" data-mode={mode} data-paused={paused}
         data-crossing={crossing ? "true" : undefined}
         inert={mode !== "rest" || activeId !== null} aria-hidden={mode !== "rest" || undefined}>
+        <canvas ref={setCapsuleCanvas} className={styles.capsules} aria-hidden="true" />
         {visible.map(cookie => <button type="button" key={cookie.id}
           ref={node => { if (node) buttons.current.set(cookie.id, node); else buttons.current.delete(cookie.id); }}
           className={styles.cookie} data-yumi-cookie="" data-floating-cookie={cookie.id}
@@ -401,6 +533,9 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
             drag.current = { id: event.pointerId, cookie, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, time: performance.now(), moved: false };
             field.current?.setAttribute("data-dragging", "true");
           }}
+          /* The first touch of a capsule is where an iPhone may ask for
+             the phone's motion (a pointerup counts as a tap there). */
+          onPointerUp={() => enableDeviceMotion()}
           onLostPointerCapture={event => {
             if (drag.current?.id !== event.pointerId) return;
             drag.current = null;
