@@ -3,6 +3,7 @@
 import { TitleText } from "@/components/foundation/layout/PageTitle";
 import { ArrowLeft, BookmarkPlus, Check, ChevronRight, Globe, Layers, Lock, Moon, SlidersHorizontal, Sun, X } from "lucide-react";
 import Link from "next/link";
+import RollingNumber from "@/components/foundation/motion/RollingNumber";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
@@ -719,7 +720,7 @@ export default function YumiShop({
             >
               {landedKey > 0 && <span key={landedKey} className={styles.balancePulse} aria-hidden="true" />}
               <EnergyCookie className={styles.balanceCookie} />
-              <span aria-hidden="true">{availability === "loading" ? "…" : state.balance.toLocaleString(locale)}</span>
+              <span aria-hidden="true">{availability === "loading" ? "…" : <RollingNumber value={state.balance} locale={locale} remember="energy-balance" />}</span>
             </button>
           </div>
         </header>

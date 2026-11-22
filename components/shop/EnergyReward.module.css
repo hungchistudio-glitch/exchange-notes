@@ -24,7 +24,13 @@
   color: var(--reward-ink);
   box-shadow: 0 16px 34px -18px #2a221466, 0 2px 6px -3px #2a221433;
   pointer-events: none;
-  animation: arrive 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both, leave 360ms var(--ease-out) 2.1s forwards;
+  /* A toast that drops in on a spring (Chi, 2026-11-22: 通知彈入): it falls
+     a little, overshoots and settles, comes out of a blur, and its capsule
+     pops a beat later while the line under the amount rises in. */
+  animation:
+    drop var(--spring-pop-duration) var(--spring-pop) both,
+    toastIn 200ms var(--ease-out) both,
+    leave 360ms var(--ease-out) 2.1s forwards;
 }
 
 :global(html[data-interface-mode="yumi-cosmic"]) .reward {
@@ -64,6 +70,7 @@
   width: 28px;
   height: 28px;
   flex-shrink: 0;
+  animation: iconPop var(--spring-pop-duration) var(--spring-pop) 90ms both;
 }
 
 /* The balance's own capsule: there from the start, swelling once as the
@@ -155,11 +162,28 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--reward-muted);
+  animation: lineIn 560ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
 }
 
-@keyframes arrive {
-  from { opacity: 0; transform: translateY(-10px) scale(0.96); }
+@keyframes drop {
+  from { transform: translateY(-26px) scale(0.86) rotate(-2deg); }
+  to { transform: none; }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; filter: blur(8px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+@keyframes iconPop {
+  from { opacity: 0; transform: scale(0.35) rotate(-18deg); }
+  40% { opacity: 1; }
   to { opacity: 1; transform: none; }
+}
+
+@keyframes lineIn {
+  from { opacity: 0; transform: translateY(0.5em); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
 }
 
 @keyframes leave {
@@ -220,7 +244,9 @@
   .yumi i,
   .cookie,
   .glow,
-  .text strong { animation: none; }
+  .text strong,
+  .coin,
+  .text span { animation: none; }
   .flyer { display: none; }
 
   @keyframes fade {

@@ -20,6 +20,7 @@ export default function NoteCard({
   className?: string;
 }) {
   const { t, language: interfaceLanguage, locale } = useTranslation();
+  const href = `/notes/${note.id}`;
   // Dates follow the display language and the reader's time zone. The server
   // cannot know the time zone; defer this small label until hydration instead
   // of rebuilding the entire card when the two disagree about the day.
@@ -35,7 +36,27 @@ export default function NoteCard({
 
   return (
     <Link
-      href={`/notes/${note.id}`}
+      href={href}
+      /* Fetched as the finger lands, so the click can start the cut at once. */
+      onPointerDown={() => void import("@/lib/motion/sceneCuts").catch(() => {})}
+      onClick={event => {
+        /* The card opens into its note (lib/motion/sceneCuts.ts; Chi,
+           2026-11-22). The cut's code comes on the press, not with the page. */
+        const card = event.currentTarget;
+        if (card.dataset.cutPassing === "true") {
+          delete card.dataset.cutPassing;
+          return;
+        }
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        const follow = () => {
+          card.dataset.cutPassing = "true";
+          card.click();
+        };
+        void import("@/lib/motion/sceneCuts")
+          .then(({ playCardPush }) => playCardPush(card, follow))
+          .catch(follow);
+      }}
       className={`cosmic-note-card ob-edge block min-w-0 rounded-[24px] border border-black/[0.06] bg-white p-4 shadow-sm transition-transform active:scale-[0.99] ${className}`}
     >
       <div className="flex items-center justify-between gap-3">

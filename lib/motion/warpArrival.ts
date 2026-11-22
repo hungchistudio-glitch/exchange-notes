@@ -1,3 +1,5 @@
+import { springTiming } from "@/lib/motion/spring";
+
 /* =========================================================
    A Cosmic page arrives through a warp, then assembles
    (Chi, 2026-11-14: 更科幻風格, 先躍遷再組裝)
@@ -17,7 +19,7 @@
    | a scan line passes top→foot           | 120–440ms                     |
    | a block switches on                   | when the line reaches its top,|
    |                                       | over 380ms                    |
-   | its rows slide in                     | 80ms after the block, 35ms    |
+   | its rows settle in on a spring        | 80ms after the block, 35ms    |
    |                                       | apart, eight at most          |
 
    Standard settles under a passing lamp instead (playLampArrival in
@@ -30,7 +32,6 @@ export const WARP_MS = 280;
 export const SCAN_START_MS = 120;
 export const SCAN_MS = 320;
 export const ASSEMBLE_MS = 380;
-export const ROW_MS = 360;
 const ROW_LAG_MS = 80;
 const ROW_STAGGER_MS = 35;
 const MAX_ROWS = 8;
@@ -129,6 +130,31 @@ function warp(viewportWidth: number, viewportHeight: number) {
       { duration: WARP_MS, delay: Math.random() * 40, easing: "cubic-bezier(0.55, 0, 0.9, 0.4)", fill: "both" },
     );
   }
+  /* An anamorphic flare across the cut (Chi, 2026-11-22: 換場光條): a thin
+     bright line in a wide soft halo, both elliptical gradients (a hard-edged
+     bar reads as a rectangle), stretching out from the middle as the jump
+     peaks and gone as the page switches on. Opacity and transform only. */
+  const flare = document.createElement("span");
+  Object.assign(flare.style, {
+    position: "absolute",
+    left: "-10%",
+    width: "120%",
+    top: "calc(44% - 40px)",
+    height: "80px",
+    background: [
+      "radial-gradient(ellipse 50% 3% at 50% 50%, rgba(240, 252, 250, 0.95) 0%, rgba(220, 244, 242, 0.6) 40%, rgba(184, 232, 229, 0) 100%)",
+      "radial-gradient(ellipse 46% 48% at 50% 50%, rgba(184, 232, 229, 0.22) 0%, rgba(184, 232, 229, 0.08) 45%, rgba(184, 232, 229, 0) 100%)",
+    ].join(", "),
+  });
+  field.appendChild(flare);
+  flare.animate(
+    [
+      { transform: "scaleX(0.15) scaleY(0.5)", opacity: 0 },
+      { transform: "scaleX(1) scaleY(1)", opacity: 0.9, offset: 0.45 },
+      { transform: "scaleX(1.15) scaleY(0.7)", opacity: 0 },
+    ],
+    { duration: WARP_MS, delay: 30, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "both" },
+  );
   window.setTimeout(() => field.remove(), WARP_MS + 120);
 }
 
@@ -176,12 +202,12 @@ export function playWarpArrival(layers: HTMLElement[], holdsFixed: (layer: Eleme
       .filter((row) => row.getBoundingClientRect().top < viewportHeight)
       .slice(0, MAX_ROWS);
     rows.forEach((row, index) => {
-      row.animate(ROW_IN, {
-        duration: ROW_MS,
+      /* Each row settles into its place on a spring (lib/motion/spring.ts),
+         a touch past it and back, as a HUD list snaps in. */
+      row.animate(ROW_IN, springTiming("settle", {
         delay: delay + ROW_LAG_MS + index * ROW_STAGGER_MS,
-        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
         fill: "backwards",
-      });
+      }));
     });
   });
 }

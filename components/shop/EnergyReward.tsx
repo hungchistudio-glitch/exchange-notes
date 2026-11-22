@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
+
+import RollingNumber from "@/components/foundation/motion/RollingNumber";
 
 import { interfaceSounds } from "@/lib/sound/interfaceSounds";
 
@@ -23,8 +25,16 @@ const OPENS = [360, 450, 540];
  * interface sounds on. Under reduced motion it simply fades in.
  */
 export default function EnergyReward({ amount, label }: { amount: number; label: string }) {
+  /* Each reward counts up from 0 on its own wheels (RollingNumber). */
+  const rewardId = useId();
   useEffect(() => {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    /* A small tap from the phone as it lands, where the phone can (not iOS). */
+    try {
+      navigator.vibrate?.(12);
+    } catch {
+      // Not allowed here: the picture is enough.
+    }
     const timers = OPENS.map(at => window.setTimeout(() => interfaceSounds.capsule(), at));
     return () => timers.forEach(timer => window.clearTimeout(timer));
   }, []);
@@ -44,7 +54,11 @@ export default function EnergyReward({ amount, label }: { amount: number; label:
         ))}
       </span>
       <span className={styles.text}>
-        <strong>+{amount}</strong>
+        <strong>
+          {/* Read whole; the wheels are only drawn. */}
+          <span className="sr-only">+{amount}</span>
+          <span aria-hidden="true">+<RollingNumber value={amount} remember={`reward${rewardId}`} fromZero /></span>
+        </strong>
         <span>{label}</span>
       </span>
     </div>

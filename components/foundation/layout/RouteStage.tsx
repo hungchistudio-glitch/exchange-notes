@@ -106,9 +106,11 @@ function arrive(stage: HTMLElement) {
     return;
   }
   // A feature's key is flying to this page's title (lib/motion/
-  // featureFlight.ts): nothing may move under it, so the layers only fade,
-  // in turn, below.
-  const landing = document.documentElement.hasAttribute("data-feature-flight");
+  // featureFlight.ts), or a designed cut is holding the page's ground over
+  // it (lib/motion/sceneCuts.ts): nothing may move under it, so the layers
+  // only fade, in turn, below.
+  const landing = document.documentElement.hasAttribute("data-feature-flight")
+    || document.documentElement.hasAttribute("data-scene-cut");
   if (!landing) {
     // Yumi Cosmic: a warp, then the page switches on under a scan line
     // (lib/motion/warpArrival.ts; Chi, 2026-11-14: 先躍遷再組裝). Standard:

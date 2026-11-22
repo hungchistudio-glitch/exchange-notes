@@ -25,8 +25,10 @@ export type HomeModeTransition = {
   ready: readonly HomeReadyPart[];
 };
 
-/* Out of the old home quickly, into the new one unhurried. */
-export const HOME_COVER_MS = 200;
+/* Out of the old home quickly, into the new one unhurried. The cover floods
+   out of the switch (HomeModeTransitionScene; Chi, 2026-11-22: 模式切換的接鏡),
+   so it is given the time to cross the screen. */
+export const HOME_COVER_MS = 280;
 export const HOME_REVEAL_MS = 320;
 /** Only a safety net for a part that never reports, never the reveal clock. */
 export const HOME_READY_TIMEOUT_MS = 1500;

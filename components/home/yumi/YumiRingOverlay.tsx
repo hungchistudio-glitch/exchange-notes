@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -459,6 +461,9 @@ export type YumiRingOverlayProps = {
   /** Rendered underneath while the scene is starting, or if it cannot. */
   children: React.ReactNode;
 };
+
+/* The review count's odometer, loaded after the home (tests/routeImportWeight). */
+const RollingNumber = lazy(() => import("@/components/foundation/motion/RollingNumber"));
 
 /** Stable text nodes: the minute clock can update without restarting the reveal. */
 function greetingGlyphs(text: string) {
@@ -1860,7 +1865,14 @@ export default function YumiRingOverlay({
                     {/* Words wait: a status light, blinking (app/hud.css). */}
                     <span className="hud-led" data-state="alert" aria-hidden="true" />
                     <span>{t.navigation.review}</span>
-                    <i className="hud-figure">{notices.reviewDue}</i>
+                    {/* Counts up on its wheels the first time this tab shows it,
+                        and rolls when it changes; loaded after the home, so
+                        until then it is the number itself. */}
+                    <i className="hud-figure">
+                      <Suspense fallback={notices.reviewDue}>
+                        <RollingNumber value={notices.reviewDue} remember="home-review-due" fromZero />
+                      </Suspense>
+                    </i>
                   </Link>
                 ) : null}
 

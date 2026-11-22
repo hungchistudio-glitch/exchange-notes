@@ -1083,7 +1083,8 @@ function buildMachinedLock(): THREE.Object3D {
 
 function buildPearlArch(): THREE.Object3D {
   const metal = std(0xc9a55a, 0.85, 0.28);
-  const pearl = phys(0xd9cbb5, { metalness: 0.05, roughness: 0.27, clearcoat: 0.6, sheen: 0.6, sheenColor: 0xffffff });
+  /* Nacre: its colour shifts with the angle (iridescence), as a pearl's does. */
+  const pearl = phys(0xd9cbb5, { metalness: 0.05, roughness: 0.27, clearcoat: 0.6, sheen: 0.6, sheenColor: 0xffffff, iridescence: 0.5, iridescenceIOR: 1.3 });
   const points: Array<[number, number, number]> = [];
   for (let i = 0; i <= 12; i += 1) {
     const t = i / 12;

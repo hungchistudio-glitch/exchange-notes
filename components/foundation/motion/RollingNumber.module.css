@@ -1,0 +1,53 @@
+/* The odometer (RollingNumber.tsx). Each window is one digit tall; its strip
+   of 0–9 turns by transform to --digit. Tabular figures so the wheels never
+   change width as they turn. */
+.number {
+  display: inline-flex;
+  font-variant-numeric: tabular-nums;
+}
+
+.wheels {
+  display: inline-flex;
+}
+
+.window {
+  position: relative;
+  display: inline-block;
+  height: 1.25em;
+  height: 1lh;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.strip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(calc(var(--digit) * -1.25em));
+  transform: translateY(calc(var(--digit) * -1lh));
+}
+
+.strip > span {
+  display: block;
+  height: 1.25em;
+  height: 1lh;
+  text-align: center;
+}
+
+.sizer {
+  visibility: hidden;
+}
+
+/* Rolling: the settle spring, the rightmost wheel first, 45ms apart. */
+.wheels[data-rolling="true"] .strip {
+  transition: transform var(--spring-settle-duration) var(--spring-settle);
+  transition-delay: calc(var(--wheel) * 45ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheels[data-rolling="true"] .strip {
+    transition: none;
+  }
+}

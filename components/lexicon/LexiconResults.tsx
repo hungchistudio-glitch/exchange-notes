@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import Link from "next/link";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
@@ -968,6 +968,17 @@ function SaveRow({
 }) {
   const state = save.stateFor(variant);
   const duplicate = save.duplicateFor(variant);
+  /* Kept: a small burst of light from its bookmark (lib/motion/burst.ts),
+     only on the change to saved, never on a sheet opened already saved. */
+  const keyRef = useRef<HTMLButtonElement>(null);
+  const was = useRef(state);
+  useEffect(() => {
+    if (was.current === "saving" && state === "saved" && keyRef.current) {
+      const key = keyRef.current;
+      void import("@/lib/motion/burst").then(({ burstFrom }) => burstFrom(key, { color: tone === "cosmic" ? "#b8e8e5" : "#e2b65a" }));
+    }
+    was.current = state;
+  }, [state, tone]);
 
   if (state === "duplicate" && duplicate) {
     return (
@@ -989,6 +1000,7 @@ function SaveRow({
 
   const key = (
     <button
+      ref={keyRef}
       type="button"
       data-coach-target="save-word"
       onClick={() => void save.save(variant)}
@@ -1006,7 +1018,7 @@ function SaveRow({
         </>
       ) : state === "saved" ? (
         <>
-          <BookmarkCheck size={16} aria-hidden="true" />
+          <BookmarkCheck size={16} aria-hidden="true" className="icon-pop" />
           {copy.saved}
         </>
       ) : (

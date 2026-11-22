@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useState, type CSSProperties } from "react";
 import { useInterfaceMode, type ModeTransitionPhase } from "@/contexts/InterfaceModeContext";
 import { HOME_COVER_MS, HOME_REVEAL_MS, isHomeModeReady, type HomeModeTransition } from "@/lib/home/modeTransition";
 import { leaseInlineStyles } from "@/lib/ui/inlineStyleLease";
@@ -14,14 +14,27 @@ function scrollToTop() {
   else window.scrollTo({ top: 0, behavior: "instant" });
 }
 
+/** Where the switch is, and how far the cover must reach from it. */
+function floodOrigin() {
+  const portal = document.querySelector<HTMLElement>("[data-home-mode-portal]")?.getBoundingClientRect();
+  const x = portal && portal.width ? portal.left + portal.width / 2 : window.innerWidth / 2;
+  const y = portal && portal.height ? portal.top + portal.height / 2 : 0;
+  const reach = Math.ceil(Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y)));
+  return { x, y, reach };
+}
+
 /**
  * The veil between the two homes.
  *
  * One viewport-sized layer in the colour of the home being entered, so the
  * old home dissolves into the new one's ground and the new one settles out
- * of it — never a flash through a third colour. Only its opacity animates,
- * which the compositor does on its own, and the shells are swapped, scrolled
- * and drawn only while it is opaque.
+ * of it — never a flash through a third colour. The shells are swapped,
+ * scrolled and drawn only while it is opaque.
+ *
+ * It comes up out of the switch that was pressed (Chi, 2026-11-22: 模式切換
+ * 的接鏡): into Cosmic the night floods out from it as a ripple, an ice edge
+ * on its front; back to Standard a warm light blooms from it and the paper
+ * fills. It lifts by opacity alone, which the compositor does on its own.
  */
 export default function HomeModeTransitionScene({ phase, transition }: {
   phase: ModeTransitionPhase;
@@ -30,6 +43,7 @@ export default function HomeModeTransitionScene({ phase, transition }: {
   const { coverHomeMode, revealHomeMode, finishHomeMode } = useInterfaceMode();
   const { t } = useTranslation();
   const ready = isHomeModeReady(transition);
+  const [origin] = useState(() => (typeof window === "undefined" ? { x: 0, y: 0, reach: 0 } : floodOrigin()));
 
   /* Nothing scrolls under the veil — a flick that was still coasting when
      the switch was pressed must not carry the new home somewhere else. */
@@ -87,12 +101,19 @@ export default function HomeModeTransitionScene({ phase, transition }: {
     data-target={transition.target}
     data-ready={transition.ready.join(" ") || undefined}
     role="status" aria-live="polite"
-    style={{ "--cover-ms": `${HOME_COVER_MS}ms`, "--reveal-ms": `${HOME_REVEAL_MS}ms` } as CSSProperties}
+    style={{
+      "--cover-ms": `${HOME_COVER_MS}ms`,
+      "--reveal-ms": `${HOME_REVEAL_MS}ms`,
+      "--ox": `${origin.x}px`,
+      "--oy": `${origin.y}px`,
+      "--reach": `${origin.reach}px`,
+    } as CSSProperties}
     onAnimationEnd={event => {
       if (event.target !== event.currentTarget) return;
       if (transition.step === "covering") coverHomeMode();
       else if (transition.step === "revealing") finishHomeMode();
     }}>
+    <span className={styles.wave} aria-hidden="true" />
     <span className="sr-only">{phase === "entering-cosmic" ? t.cosmic.transition.entering : t.cosmic.transition.leaving}</span>
   </div>;
 }

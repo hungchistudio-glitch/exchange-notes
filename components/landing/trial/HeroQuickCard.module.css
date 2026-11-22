@@ -141,7 +141,7 @@
   color: var(--landing-soft);
   font-size: 0.8125rem;
   line-height: 1.5;
-  animation: yumiOpen 240ms var(--ease-out);
+  animation: yumiOpen var(--spring-pop-duration) var(--spring-pop), yumiFade 200ms var(--ease-out);
 }
 
 .yumi[hidden] {
@@ -164,10 +164,17 @@
   font-weight: 650;
 }
 
+/* Yumi's reading pops open on a spring (Chi, 2026-11-22). */
 @keyframes yumiOpen {
   from {
+    transform: translateY(-6px) scale(0.92);
+  }
+}
+
+@keyframes yumiFade {
+  from {
     opacity: 0;
-    transform: translateY(-4px);
+    filter: blur(6px);
   }
 }
 
