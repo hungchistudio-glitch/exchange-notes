@@ -64,10 +64,13 @@ export function TitleText({
   text: string;
   className?: string;
   /**
-   * For lettering painted by its parent's background clipped to the text
-   * (the gilt signs of the games and the shop). The clip paints every glyph
-   * inside it, the scramble's and the real text's alike, so the real text
-   * is set aside while the scramble runs.
+   * For gilt lettering, a background clipped to the text (the signs of the
+   * games and the shop). The real text sits in `[data-title-real]` and is
+   * set aside while the scramble runs. Paint the gilt on that run and on the
+   * scramble (`[data-title-decode]`) themselves, not on a parent: iOS Safari
+   * does not repaint a parent's text clip when the name comes back, and the
+   * sign was left blank (2026-11-21). A parent's clip still works elsewhere;
+   * the scramble then copies it (paintLike in lib/motion/pageArrival.ts).
    */
   clipped?: boolean;
 }) {

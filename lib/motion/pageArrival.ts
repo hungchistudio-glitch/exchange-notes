@@ -255,11 +255,14 @@ export function decodeFrame(text: string, progress: number, random: () => number
  * which sits over the text on its own, so the scramble is given the same
  * paint, clipped to its own glyphs.
  */
+function clipsToText(style: CSSStyleDeclaration) {
+  return `${style.backgroundClip} ${style.getPropertyValue("-webkit-background-clip")}`.includes("text");
+}
+
 function paintLike(overlay: HTMLElement, target: HTMLElement) {
   for (let painter = target.parentElement; painter; painter = painter.parentElement) {
     const style = getComputedStyle(painter);
-    const clip = `${style.backgroundClip} ${style.getPropertyValue("-webkit-background-clip")}`;
-    if (!clip.includes("text")) continue;
+    if (!clipsToText(style)) continue;
     overlay.style.backgroundImage = style.backgroundImage;
     overlay.style.backgroundColor = style.backgroundColor;
     overlay.style.backgroundSize = style.backgroundSize;
@@ -284,7 +287,13 @@ export function decodeElement(target: HTMLElement): () => void {
   overlay.setAttribute("data-title-decode", "");
   overlay.setAttribute("aria-hidden", "true");
   overlay.style.color = getComputedStyle(target).color;
-  if (target.hasAttribute("data-title-clipped")) paintLike(overlay, target);
+  if (target.hasAttribute("data-title-clipped")) {
+    /* Where the name paints its own gilt (the games' and the shop's signs),
+       the same rule paints the scramble; it only must not be coloured over. */
+    const real = target.querySelector("[data-title-real]");
+    if (real && clipsToText(getComputedStyle(real))) overlay.style.color = "transparent";
+    else paintLike(overlay, target);
+  }
   overlay.textContent = decodeFrame(text, 0);
   target.setAttribute("data-decoding", "");
   target.appendChild(overlay);
