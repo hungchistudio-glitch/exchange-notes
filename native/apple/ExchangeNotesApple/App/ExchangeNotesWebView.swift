@@ -59,6 +59,9 @@ struct ExchangeNotesWebView: UIViewRepresentable {
         webView.navigationDelegate =
             context.coordinator
 
+        webView.uiDelegate =
+            context.coordinator
+
         webView.allowsBackForwardNavigationGestures =
             true
 
@@ -109,13 +112,15 @@ struct ExchangeNotesWebView: UIViewRepresentable {
         webView.configuration.userContentController.removeScriptMessageHandler(forName: "yumiPocketPreferences")
         webView.configuration.userContentController.removeScriptMessageHandler(forName: "yumiPocketKey")
         webView.navigationDelegate = nil
+        webView.uiDelegate = nil
     }
 
     @MainActor
     final class Coordinator:
         NSObject,
         WKScriptMessageHandler,
-        WKNavigationDelegate
+        WKNavigationDelegate,
+        WKUIDelegate
     {
         static let messageName =
             "yumiWidgetUpdate"
@@ -485,6 +490,184 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                 );
                 """
             )
+        }
+
+        // MARK: - What the page asks of the app (2026-11-22)
+        //
+        // The wrapper had no UI delegate, and WebKit reads that as "no":
+        // window.confirm() answered false at once, so deleting a note or a
+        // word could never go through in the app (NoteDetail.tsx,
+        // useVocabularyMutations.ts), and alert() showed nothing; the
+        // phone's motion had nobody to ask, so the home's capsules and Yumi
+        // could not feel it (lib/home/deviceMotion.ts); a link opening a new
+        // window, such as a news story's source, did nothing. Chi:
+        // iOS 外殼補上權限處理.
+
+        /// Tilt and shake, for the app's own pages. The page asks on the
+        /// first capsule touch and Settings turns it off for the device, so a
+        /// second prompt from WebKit would only be noise.
+        func webView(
+            _ webView: WKWebView,
+            requestDeviceOrientationAndMotionPermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo,
+            decisionHandler: @escaping @MainActor @Sendable (WKPermissionDecision) -> Void
+        ) {
+            decisionHandler(
+                frame.isMainFrame && isTrusted(origin) ? .grant : .deny
+            )
+        }
+
+        /// The camera (naming what it sees) and the microphone (voice
+        /// search, the Lab's Speak), for the app's own pages. iOS still asks
+        /// once, with the reasons in Info.plist; WebKit asked again on every
+        /// launch.
+        func webView(
+            _ webView: WKWebView,
+            requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo,
+            type: WKMediaCaptureType,
+            decisionHandler: @escaping @MainActor @Sendable (WKPermissionDecision) -> Void
+        ) {
+            decisionHandler(
+                frame.isMainFrame && isTrusted(origin) ? .grant : .deny
+            )
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            runJavaScriptAlertPanelWithMessage message: String,
+            initiatedByFrame frame: WKFrameInfo,
+            completionHandler: @escaping @MainActor @Sendable () -> Void
+        ) {
+            guard
+                isTrusted(frame.securityOrigin),
+                let presenter = presenter(for: webView)
+            else {
+                completionHandler()
+                return
+            }
+
+            let alert = UIAlertController(
+                title: nil,
+                message: message,
+                preferredStyle: .alert
+            )
+            alert.addAction(
+                UIAlertAction(title: Self.systemTitle("OK"), style: .default) { _ in
+                    completionHandler()
+                }
+            )
+            presenter.present(alert, animated: true)
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            runJavaScriptConfirmPanelWithMessage message: String,
+            initiatedByFrame frame: WKFrameInfo,
+            completionHandler: @escaping @MainActor @Sendable (Bool) -> Void
+        ) {
+            guard
+                isTrusted(frame.securityOrigin),
+                let presenter = presenter(for: webView)
+            else {
+                completionHandler(false)
+                return
+            }
+
+            let alert = UIAlertController(
+                title: nil,
+                message: message,
+                preferredStyle: .alert
+            )
+            alert.addAction(
+                UIAlertAction(title: Self.systemTitle("Cancel"), style: .cancel) { _ in
+                    completionHandler(false)
+                }
+            )
+            alert.addAction(
+                UIAlertAction(title: Self.systemTitle("OK"), style: .default) { _ in
+                    completionHandler(true)
+                }
+            )
+            presenter.present(alert, animated: true)
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            runJavaScriptTextInputPanelWithPrompt prompt: String,
+            defaultText: String?,
+            initiatedByFrame frame: WKFrameInfo,
+            completionHandler: @escaping @MainActor @Sendable (String?) -> Void
+        ) {
+            guard
+                isTrusted(frame.securityOrigin),
+                let presenter = presenter(for: webView)
+            else {
+                completionHandler(nil)
+                return
+            }
+
+            let alert = UIAlertController(
+                title: nil,
+                message: prompt,
+                preferredStyle: .alert
+            )
+            alert.addTextField { field in
+                field.text = defaultText
+            }
+            alert.addAction(
+                UIAlertAction(title: Self.systemTitle("Cancel"), style: .cancel) { _ in
+                    completionHandler(nil)
+                }
+            )
+            alert.addAction(
+                UIAlertAction(title: Self.systemTitle("OK"), style: .default) { [weak alert] _ in
+                    completionHandler(alert?.textFields?.first?.text ?? "")
+                }
+            )
+            presenter.present(alert, animated: true)
+        }
+
+        /// target="_blank" and window.open: the app's own pages open in
+        /// place, anything else in the reader's browser. Never a second web
+        /// view, which would have no way back.
+        func webView(
+            _ webView: WKWebView,
+            createWebViewWith configuration: WKWebViewConfiguration,
+            for navigationAction: WKNavigationAction,
+            windowFeatures: WKWindowFeatures
+        ) -> WKWebView? {
+            guard let url = navigationAction.request.url else {
+                return nil
+            }
+
+            if isTrusted(url) {
+                webView.load(navigationAction.request)
+            } else if let scheme = url.scheme?.lowercased(),
+                      ["https", "http", "mailto", "tel"].contains(scheme) {
+                UIApplication.shared.open(url)
+            }
+
+            return nil
+        }
+
+        /// Whatever is on top, so a dialog shows over a sheet as well.
+        private func presenter(
+            for webView: WKWebView
+        ) -> UIViewController? {
+            var top = webView.window?.rootViewController
+            while let next = top?.presentedViewController {
+                top = next
+            }
+            return top
+        }
+
+        /// UIKit's own "OK" and "Cancel", in the phone's language.
+        private static func systemTitle(
+            _ key: String
+        ) -> String {
+            Bundle(for: UIApplication.self)
+                .localizedString(forKey: key, value: key, table: nil)
         }
 
         private func isTrusted(

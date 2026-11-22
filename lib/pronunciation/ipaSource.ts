@@ -310,7 +310,12 @@ async function fromModel(
     return { found: out, failed: false };
   }
 
-  console.error("IPA transcription failed:", lastError);
+  /* A warning: one background model, usually a 503 from a busy free tier,
+     and "failed" puts the words in the client's backoff, to be asked later. */
+  console.warn(
+    "IPA transcription failed:",
+    lastError instanceof Error ? lastError.message : lastError,
+  );
 
   return { found: out, failed: true };
 }

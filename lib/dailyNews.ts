@@ -818,9 +818,11 @@ export async function buildLearningCards(
       return;
     }
 
-    console.error(
+    /* A warning: the night's later runs ask again for whatever this batch
+       held, and only a night that ends short is an error (refillPool.ts). */
+    console.warn(
       `Daily news batch ${index + 1}/${batches.length} failed:`,
-      result.reason
+      result.reason instanceof Error ? result.reason.message : result.reason
     );
   });
 

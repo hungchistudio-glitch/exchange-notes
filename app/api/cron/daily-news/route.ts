@@ -33,6 +33,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await catchUpDailyNews();
+    /* A run no model answered is already logged (a warning, or an error on
+       the night's last knock); 503 keeps it readable in net._http_response. */
+    if (result.decision === "failed") {
+      return NextResponse.json({ ok: false, ...result }, { status: 503 });
+    }
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     console.error("Daily news cron job failed:", error);

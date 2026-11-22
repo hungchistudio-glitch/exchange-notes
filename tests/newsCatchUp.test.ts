@@ -23,7 +23,7 @@ vi.mock("@/lib/supabase/service", () => ({
   },
 }));
 
-import { CATCH_UP_EVERY_MS, DAILY_TARGET, catchUpDailyNews, nightStart } from "@/lib/news/refillPool";
+import { CATCH_UP_EVERY_MS, DAILY_TARGET, catchUpDailyNews, isLastKnock, nightStart } from "@/lib/news/refillPool";
 
 type Night = {
   tonight: string[];
@@ -154,5 +154,69 @@ describe("the night's catch-up", () => {
     textQuotaResetAt.mockResolvedValue(Date.now() + 3_600_000);
     const night: Night = { tonight: [], lockAt: null, lockWrites: 0, inserted: [] };
     expect((await catchUpDailyNews(fakeSupabase(night), Date.now())).decision).toBe("quota-out");
+  });
+});
+
+/*
+ * Chi, 2026-11-22: 錯誤紀錄降噪. A batch no model answered was an error in
+ * the logs most nights, though the next knock made it up. Now it is a
+ * warning, and an error is kept for a night that ends short.
+ */
+describe("what the night logs", () => {
+  const midNight = Date.parse("2026-11-22T21:00:00Z");
+  const lastKnock = Date.parse("2026-11-22T23:30:00Z");
+
+  it("knows the scheduler's last knock, 23:30 UTC", () => {
+    expect(isLastKnock(midNight)).toBe(false);
+    expect(isLastKnock(Date.parse("2026-11-22T23:00:00Z"))).toBe(false);
+    expect(isLastKnock(lastKnock)).toBe(true);
+    expect(isLastKnock(Date.parse("2026-11-23T03:00:00Z"))).toBe(true);
+  });
+
+  it("only warns when no model answers a run the night can still make up", async () => {
+    buildLearningCards.mockResolvedValue([]);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const night: Night = { tonight: ["Art"], lockAt: null, lockWrites: 0, inserted: [] };
+
+    expect(await catchUpDailyNews(fakeSupabase(night), midNight)).toEqual({ decision: "failed", have: 1 });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(error).not.toHaveBeenCalled();
+    warn.mockRestore();
+    error.mockRestore();
+  });
+
+  it("is an error when the last knock leaves the night short", async () => {
+    buildLearningCards.mockResolvedValue([]);
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const night: Night = { tonight: ["Art", "World"], lockAt: null, lockWrites: 0, inserted: [] };
+
+    expect((await catchUpDailyNews(fakeSupabase(night), lastKnock)).decision).toBe("failed");
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(String(error.mock.calls[0][0])).toContain(`2 of ${DAILY_TARGET}`);
+    error.mockRestore();
+  });
+
+  it("is quiet when the last knock fills the night", async () => {
+    selectTodaysArticles.mockResolvedValue(["World", "Science"].map(article));
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const night: Night = { tonight: Array(DAILY_TARGET - 2).fill("Art"), lockAt: null, lockWrites: 0, inserted: [] };
+
+    expect(await catchUpDailyNews(fakeSupabase(night), lastKnock)).toEqual({ decision: "ran", have: 10, added: 2 });
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it("still throws what is not the models' weather, such as a refused write", async () => {
+    const night: Night = { tonight: [], lockAt: null, lockWrites: 0, inserted: [] };
+    const client = fakeSupabase(night) as unknown as { from: (table: string) => Record<string, unknown> };
+    const failingWrite = {
+      from(table: string) {
+        const real = client.from(table);
+        if (table === "daily_news_refill_lock") return real;
+        return { ...real, upsert: async () => ({ error: { message: "permission denied" } }) };
+      },
+    } as never;
+    await expect(catchUpDailyNews(failingWrite, midNight)).rejects.toThrow("permission denied");
   });
 });

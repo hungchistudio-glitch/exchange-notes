@@ -25,6 +25,22 @@ export const DEDUPE_WINDOW_DAYS = 45;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/*
+ * The models answered no batch at all: busy (503), out of quota, or hanging
+ * past the run's time. That is the weather of the free tier, not a fault,
+ * and the next run asks again; so it is logged as a warning, and an error is
+ * kept for the one thing worth reading in the morning, a night that ended
+ * short (reportShortNight). Anything else, such as a database refusing a
+ * write, is still thrown as itself and logged as an error.
+ * (Chi, 2026-11-22: 錯誤紀錄降噪.)
+ */
+export class ModelsAnsweredNothing extends Error {
+  constructor() {
+    super("Gemini produced no usable cards for any of today's articles.");
+    this.name = "ModelsAnsweredNothing";
+  }
+}
+
 export type RefillResult =
   | { added: 0; note: string }
   | { added: number; requested: number; pruned: boolean };
@@ -92,7 +108,7 @@ export async function refillDailyNewsPool(
   const items = await buildLearningCards(articles, languages);
 
   if (items.length === 0) {
-    throw new Error("Gemini produced no usable cards for any of today's articles.");
+    throw new ModelsAnsweredNothing();
   }
 
   const { error: insertError } = await supabase.from("daily_news_items").upsert(
@@ -201,7 +217,11 @@ export async function refillPoolIfThin(
     await refillDailyNewsPool(supabase, { limit: DAILY_TARGET - recent });
     return "refilled";
   } catch (error) {
-    console.error("Daily news refill failed:", error);
+    if (error instanceof ModelsAnsweredNothing) {
+      console.warn("Daily news refill: no model answered; the next one tries again.");
+    } else {
+      console.error("Daily news refill failed:", error);
+    }
     return "failed";
   }
 }
@@ -242,6 +262,22 @@ export function nightStart(now: number): number {
   start.setUTCHours(NIGHT_STARTS_UTC_HOUR, 0, 0, 0);
   if (start.getTime() > now) start.setUTCDate(start.getUTCDate() - 1);
   return start.getTime();
+}
+
+// The scheduler's last knock of the night is 23:30 UTC (every half hour,
+// 20:00 to 23:30, in *_daily_news_catch_up.sql), counted here from
+// NIGHT_STARTS_UTC_HOUR; a knock from five minutes before it on is the
+// night's last chance.
+const LAST_KNOCK_MINUTES = 23 * 60 + 30 - NIGHT_STARTS_UTC_HOUR * 60;
+
+export function isLastKnock(now: number): boolean {
+  return now - nightStart(now) >= (LAST_KNOCK_MINUTES - 5) * 60_000;
+}
+
+/** The one news error worth reading: the last knock has run and the night is short. */
+function reportShortNight(have: number, now: number, why: string) {
+  if (have >= DAILY_TARGET || !isLastKnock(now)) return;
+  console.error(`Daily news: the night ended with ${have} of ${DAILY_TARGET} cards (${why}).`);
 }
 
 export type CatchUpResult =
@@ -288,12 +324,25 @@ export async function catchUpDailyNews(
 
   const have = (tonight ?? []).length;
   if (have >= DAILY_TARGET) return { decision: "full", have };
-  if (await textQuotaResetAt()) return { decision: "quota-out", have };
+  if (await textQuotaResetAt()) {
+    reportShortNight(have, now, "every model is out for the day");
+    return { decision: "quota-out", have };
+  }
   if (!(await claimCatchUp(supabase, now))) return { decision: "locked", have };
 
-  const result = await refillDailyNewsPool(supabase, {
-    limit: DAILY_TARGET - have,
-    have: new Set((tonight ?? []).map((row) => row.category as string)),
-  });
-  return { decision: "ran", have, added: result.added };
+  let added: number;
+  try {
+    const result = await refillDailyNewsPool(supabase, {
+      limit: DAILY_TARGET - have,
+      have: new Set((tonight ?? []).map((row) => row.category as string)),
+    });
+    added = result.added;
+  } catch (error) {
+    if (!(error instanceof ModelsAnsweredNothing)) throw error;
+    if (isLastKnock(now)) reportShortNight(have, now, "no model answered the last run");
+    else console.warn(`Daily news: no model answered this run (${have} of ${DAILY_TARGET}); the next knock asks again.`);
+    return { decision: "failed", have };
+  }
+  reportShortNight(have + added, now, "too few batches answered");
+  return { decision: "ran", have, added };
 }
