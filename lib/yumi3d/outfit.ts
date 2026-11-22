@@ -368,9 +368,12 @@ export function isShellMaterial(id: string | undefined): boolean {
   return !!id && id in SHELL_FINISHES;
 }
 
-/** The shell as it ships: obsidian black, a little metal, a little gloss. */
-const SHELL_DEFAULT = {
+/** The shell as it ships: obsidian black, a little metal, a little gloss,
+    and (Chi, 2026-11-22) a thin clear coat that takes the studio's softboxes
+    as soft rectangles of light. A finish sets its own coat. */
+export const SHELL_DEFAULT = {
   color: 0x040507, metalness: 0.5, roughness: 0.4, envMapIntensity: 0.38,
+  clearcoat: 0.42, clearcoatRoughness: 0.2,
 };
 
 export function applyShellFinish(material: THREE.MeshPhysicalMaterial, id: string | undefined) {
@@ -389,8 +392,8 @@ export function applyShellFinish(material: THREE.MeshPhysicalMaterial, id: strin
   material.sheen = finish?.sheen ?? 0;
   material.sheenColor.set(finish?.sheenColor ?? 0xffffff);
   material.sheenRoughness = finish?.sheenRoughness ?? 1;
-  material.clearcoat = finish?.clearcoat ?? 0;
-  material.clearcoatRoughness = finish?.clearcoatRoughness ?? 0;
+  material.clearcoat = finish ? finish.clearcoat ?? 0 : SHELL_DEFAULT.clearcoat;
+  material.clearcoatRoughness = finish ? finish.clearcoatRoughness ?? 0 : SHELL_DEFAULT.clearcoatRoughness;
   material.envMapIntensity = finish?.envMapIntensity ?? (finish ? 0.9 : SHELL_DEFAULT.envMapIntensity);
   material.emissive.set(finish?.emissive ?? 0x000000);
   material.emissiveIntensity = finish?.emissiveIntensity ?? 0;

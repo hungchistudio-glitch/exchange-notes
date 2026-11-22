@@ -7,6 +7,7 @@ import { ARM_ROOT, EYE_REST, buildYumiActor } from "./actor";
 import { createYumiGround, type YumiGround } from "./ground";
 import { createOutfitRig } from "./outfit";
 import { ROTATION_CRUISE_SPEED, createYumiRotation } from "./rotation";
+import { createSpinBlur } from "./spinBlur";
 
 /* =========================================================
    Yumi, in three dimensions
@@ -257,29 +258,66 @@ export type YumiSceneHandle = {
   };
 };
 
-export function makeStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
+export function makeStudioEnvironment(
+  renderer: THREE.WebGLRenderer,
+  { softboxes = false }: { softboxes?: boolean } = {},
+): THREE.Texture {
   /*
    * A painted environment rather than an HDR file: it is four gradients,
    * it costs no request, and the shell only ever shows a soft vertical
    * falloff and one key highlight anyway.
+   *
+   * `softboxes` hangs a photo studio's three panels in it as well (Chi,
+   * 2026-11-22: 攝影棚軟箱光): a large key in front and up to her left, a
+   * tall strip fill to her right, and a long rim panel behind and above
+   * her, so lacquer and glass show the soft rectangles a product shot has
+   * and her silhouette catches a rim. Roughness blurs their edges by itself
+   * (PMREM). Her live scene uses it. The home's letter capsules keep the
+   * plain studio: on beads that small the panels hardly show, and the larger
+   * map cost them about a third more frame time (production A/B,
+   * 2026-11-22). The shop's pictures, rendered once with the plain studio,
+   * keep it plain until they are rendered again.
    */
+  const width = softboxes ? 1024 : 512;
+  const height = width / 2;
+  const unit = width / 512;
   const source = document.createElement("canvas");
-  source.width = 512;
-  source.height = 256;
+  source.width = width;
+  source.height = height;
   const ctx = source.getContext("2d")!;
 
-  const sky = ctx.createLinearGradient(0, 0, 0, 256);
+  const sky = ctx.createLinearGradient(0, 0, 0, height);
   sky.addColorStop(0, "#ffffff");
   sky.addColorStop(0.55, "#e8e4db");
   sky.addColorStop(1, "#9a958c");
   ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, 512, 256);
+  ctx.fillRect(0, 0, width, height);
 
-  const key = ctx.createRadialGradient(150, 70, 6, 150, 70, 110);
+  const key = ctx.createRadialGradient(150 * unit, 70 * unit, 6 * unit, 150 * unit, 70 * unit, 110 * unit);
   key.addColorStop(0, "rgba(255,255,255,1)");
   key.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = key;
-  ctx.fillRect(0, 0, 512, 256);
+  ctx.fillRect(0, 0, width, height);
+
+  if (softboxes) {
+    /* An equirectangular map: x is the direction round her (0.75 of the
+       width faces the camera, 0.25 is behind her), y is up to down. */
+    const panel = (u: number, v: number, w: number, h: number, light: number) => {
+      ctx.save();
+      ctx.shadowColor = `rgba(255,255,255,${light})`;
+      ctx.shadowBlur = 10 * unit;
+      ctx.fillStyle = `rgba(255,255,255,${light})`;
+      ctx.beginPath();
+      const [x, y] = [(u * width) - (w * unit) / 2, (v * height) - (h * unit) / 2];
+      if (typeof ctx.roundRect === "function") ctx.roundRect(x, y, w * unit, h * unit, 6 * unit);
+      else ctx.rect(x, y, w * unit, h * unit);
+      ctx.fill();
+      ctx.restore();
+    };
+    panel(0.86, 0.29, 86, 56, 0.95);
+    panel(0.59, 0.48, 22, 116, 0.6);
+    panel(0.25, 0.22, 160, 22, 0.85);
+  }
 
   const texture = new THREE.CanvasTexture(source);
   texture.mapping = THREE.EquirectangularReflectionMapping;
@@ -373,7 +411,7 @@ export function createYumiScene(
   camera.position.set(0, 0, 19.5);
   camera.lookAt(0, 0, 0);
 
-  scene.environment = makeStudioEnvironment(renderer);
+  scene.environment = makeStudioEnvironment(renderer, { softboxes: true });
 
   const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
   keyLight.position.set(3.4, 4.2, 5.0);
@@ -396,6 +434,9 @@ export function createYumiScene(
   model.position.y = MODEL_REST_Y;
   scene.add(model);
   const ground = createYumiGround(renderer, scene, camera, model);
+  /* A fast turn is drawn with a film camera's motion blur (spinBlur.ts). */
+  const spinBlur = createSpinBlur(renderer);
+  const lastTurn = model.quaternion.clone();
 
   /* Each piece's shader compile, while it runs (setOutfit below). */
   const compiles = new Map<THREE.Object3D, Promise<unknown>>();
@@ -845,7 +886,9 @@ export function createYumiScene(
         ground.render({ width: size.width, height: size.height, anchor: anchorNow, unitsPerPixel: unitsPerPixel() });
       }
 
-      renderer.render(scene, camera);
+      const blurred = !options.reducedMotion && !film && spinBlur.render(scene, camera, model, lastTurn);
+      lastTurn.copy(model.quaternion);
+      if (!blurred) renderer.render(scene, camera);
     },
 
     ready() {
@@ -876,6 +919,7 @@ export function createYumiScene(
 
     dispose() {
       ground.dispose();
+      spinBlur.dispose();
       outfit.dispose();
       scene.traverse(object => {
         const mesh = object as THREE.Mesh;

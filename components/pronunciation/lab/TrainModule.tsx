@@ -254,7 +254,7 @@ export default function TrainModule() {
           aria-label={copy.session.stepOf}
         >
           <span
-            className="block h-full w-full rounded-full bg-black transition-transform duration-500 ease-out motion-reduce:transition-none"
+            className="progress-shine block h-full w-full rounded-full bg-black [transition:transform_var(--spring-settle-duration)_var(--spring-settle)] motion-reduce:transition-none"
             style={{ transform: `translateX(${(session.index / session.items.length) * 100 - 100}%)` }}
           />
         </div>

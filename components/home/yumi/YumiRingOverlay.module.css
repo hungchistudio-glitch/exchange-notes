@@ -424,12 +424,22 @@
   user-select: none;
 }
 
+/* Each letter rises out of a blur into place (Chi, 2026-11-22: 文字逐字浮現):
+   half a line up, ease-out-expo, on the stagger the ink always had. An
+   inline-block that keeps its own space, or the words would run together. */
 .live .inkGlyph {
-  animation: greetingInk 200ms ease-out var(--ink-delay, 220ms) both;
+  display: inline-block;
+  white-space: pre;
+  animation: greetingRise 900ms cubic-bezier(0.16, 1, 0.3, 1) var(--ink-delay, 220ms) both;
 }
 
 .live .when {
   animation: greetingInk 360ms ease-out 760ms both;
+}
+
+@keyframes greetingRise {
+  from { opacity: 0; transform: translateY(0.45em); filter: blur(10px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
 }
 
 @keyframes greetingInk {

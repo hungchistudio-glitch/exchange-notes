@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import type { YumiCamera } from "@/components/yumi3d/Yumi3DFigure";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { ShareFormat } from "@/lib/share/hud";
+import { drawGrain, drawSheen } from "@/lib/share/filmLook";
 
 /* =========================================================
    Sharing a card drawn with Yumi (Chi, 2026-11-15)
@@ -211,7 +212,11 @@ export default function ShareStudio({
           camera.current?.rotateBy(due - turned, 0);
           turned = due;
           camera.current?.draw(now);
-          drawRef.current(ctx, { format, progress: elapsed / OPENING_MS, spin: elapsed / VIDEO_MS, tick: tick++ });
+          const frame = tick++;
+          drawRef.current(ctx, { format, progress: elapsed / OPENING_MS, spin: elapsed / VIDEO_MS, tick: frame });
+          /* The video's finish: a sheen once, and living grain (lib/share/filmLook.ts). */
+          drawSheen(ctx, elapsed);
+          drawGrain(ctx, frame);
           if (elapsed < VIDEO_MS - FRAME_MS) requestAnimationFrame(step);
           else resolve();
         };

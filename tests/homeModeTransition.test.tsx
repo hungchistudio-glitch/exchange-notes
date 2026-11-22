@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InterfaceModeProvider, useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import HomeModePortal from "@/components/home/HomeModePortal";
 import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
-import { HOME_READY_TIMEOUT_MS, HOME_REVEAL_MS } from "@/lib/home/modeTransition";
+import { HOME_COVER_MS, HOME_READY_TIMEOUT_MS, HOME_REVEAL_MS } from "@/lib/home/modeTransition";
 
 const mocks = vi.hoisted(() => ({ persist: vi.fn(), update: vi.fn(), user: vi.fn() }));
 vi.mock("@/lib/appPreferences", async importOriginal => ({
@@ -178,7 +178,7 @@ describe("the home mode transition", () => {
   });
 
   it("has a bounded recovery if readiness or animation events never arrive", () => {
-    fixture(); fireEvent.click(portal()); advance(450);
+    fixture(); fireEvent.click(portal()); advance(HOME_COVER_MS + 250);
     expect(screen.getByTestId("mode")).toHaveTextContent("yumi-cosmic");
     advance(HOME_READY_TIMEOUT_MS); expect(veil()).toHaveAttribute("data-home-mode-transition","revealing");
     advance(HOME_REVEAL_MS + 200); expect(veil()).toBeNull(); expect(portal()).toHaveAttribute("aria-disabled","false");

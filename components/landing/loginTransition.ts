@@ -1,3 +1,4 @@
+import { springTiming } from "@/lib/motion/spring";
 import { interfaceSounds, unlockInterfaceSounds } from "@/lib/sound/interfaceSounds";
 
 /* =========================================================
@@ -482,9 +483,10 @@ export function playLoginExit(from: HTMLElement, navigate: () => void) {
     hudBrackets.forEach(({ element, corner }) => {
       const out = size * 0.16;
       run(element, [
-        { transform: `translate(${corner[1] === "l" ? -out : out}px, ${corner[0] === "t" ? -out : out}px)`, opacity: 0 },
-        { transform: "translate(0px, 0px)", opacity: 1 },
-      ], { duration: 200, easing: EASE_OUT, fill: "forwards" });
+        { transform: `translate(${corner[1] === "l" ? -out : out}px, ${corner[0] === "t" ? -out : out}px)` },
+        { transform: "translate(0px, 0px)" },
+      ], springTiming("pop", { fill: "forwards" }));
+      run(element, [{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: EASE_OUT, fill: "forwards" });
     });
     run(ticks.holder, [{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: 9000, iterations: Infinity });
     run(arcs.holder, [{ transform: "rotate(0deg)" }, { transform: "rotate(-360deg)" }], { duration: 6000, iterations: Infinity });

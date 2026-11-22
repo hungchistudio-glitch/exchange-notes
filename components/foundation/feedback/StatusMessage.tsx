@@ -23,7 +23,8 @@ export default function StatusMessage({
     <div
       role={tone === "danger" ? "alert" : "status"}
       className={[
-        "rounded-2xl px-4 py-3 text-sm font-medium leading-6",
+        /* Drops in on the pop spring (app/globals.css .status-drop). */
+        "status-drop rounded-2xl px-4 py-3 text-sm font-medium leading-6",
         toneClasses[tone],
         className,
       ]

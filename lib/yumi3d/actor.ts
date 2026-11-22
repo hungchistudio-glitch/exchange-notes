@@ -27,6 +27,8 @@ export function buildYumiActor() {
      (enamel, lacquer, porcelain). With none, it renders as it always has. */
   const shellMaterial = new THREE.MeshPhysicalMaterial({
     color: 0x040507, metalness: 0.5, roughness: 0.4, envMapIntensity: 0.38,
+    /* Her shipping coat (SHELL_DEFAULT in outfit.ts). */
+    clearcoat: 0.42, clearcoatRoughness: 0.2,
     transparent: true, opacity: 1,
   });
   const silverMaterial = new THREE.MeshStandardMaterial({

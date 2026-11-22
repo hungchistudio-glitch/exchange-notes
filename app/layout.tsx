@@ -3,6 +3,7 @@ import { preload } from "react-dom";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import OrbitField from "@/components/foundation/ambience/OrbitField";
+import PressFeedback from "@/components/foundation/interaction/PressFeedback";
 import { DevicePreferencesProvider } from "@/contexts/DevicePreferencesContext";
 import { COLOR_SCHEME, THEME_COLOR, rootFontSizeFor } from "@/lib/appPreferences";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
@@ -273,6 +274,7 @@ export default async function RootLayout({
           order is: sign in, opening, home.
         */}
         <OrbitField />
+        <PressFeedback />
         <DevicePreferencesProvider
           initial={{
             interfaceLanguage,
