@@ -2779,9 +2779,11 @@ const italian: TranslationDictionary = {
     },
     homeMotion: {
       rowTitle: "Le capsule seguono il telefono",
-      rowDescription: "Inclina o scuoti il telefono e le capsule-lettera della Home e Yumi lo sentono",
+      rowDescription: "Le capsule della Home e Yumi reagiscono quando inclini o scuoti il telefono. L’attivazione può richiedere il permesso di accesso al movimento.",
       on: "Attivo",
       off: "Disattivato",
+      permissionDenied: "L’accesso al movimento non è stato concesso. La funzione resta disattivata; puoi riprovare qui.",
+      unavailable: "Questo browser non supporta i sensori di movimento. Puoi comunque muovere Yumi con il tocco.",
     },
     newsSource: {
       rowTitle: "La chiave del Guardian non funziona",

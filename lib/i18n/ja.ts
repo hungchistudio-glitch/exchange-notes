@@ -2701,9 +2701,11 @@ const japanese: TranslationDictionary = {
     },
     homeMotion: {
       rowTitle: "カプセルがスマホの動きに反応",
-      rowDescription: "スマホを傾けたり振ったりすると、ホームの文字カプセルと Yumi が反応します",
+      rowDescription: "スマホの傾きや揺れにホームのカプセルと Yumi が反応します。オンにすると、動作へのアクセス許可を求められることがあります。",
       on: "オン",
       off: "オフ",
+      permissionDenied: "動作へのアクセスが許可されなかったため、オフのままです。ここで再度オンにできます。",
+      unavailable: "このブラウザは動作センサーに対応していません。タッチで Yumi を動かすことはできます。",
     },
     newsSource: {
       rowTitle: "The Guardian のキーが使えません",

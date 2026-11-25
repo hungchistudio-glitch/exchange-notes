@@ -2993,9 +2993,11 @@ const english: TranslationDictionary = {
     },
     homeMotion: {
       rowTitle: "Capsules follow the phone",
-      rowDescription: "Tilt or shake the phone and Home's letter capsules and Yumi feel it",
+      rowDescription: "Let Home’s capsules and Yumi respond to tilting and shaking. Enabling this may ask for motion access.",
       on: "On",
       off: "Off",
+      permissionDenied: "Motion access wasn’t granted. This stays off; you can try again here.",
+      unavailable: "Motion sensing isn’t available in this browser. You can still move Yumi by touch.",
     },
     newsSource: {
       rowTitle: "The Guardian's key isn't working",

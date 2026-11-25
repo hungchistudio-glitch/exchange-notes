@@ -2951,9 +2951,11 @@ const traditionalChinese: TranslationDictionary = {
     },
     homeMotion: {
       rowTitle: "膠囊跟著手機動",
-      rowDescription: "傾斜或搖晃手機時，主頁的字母膠囊和 Yumi 會跟著反應",
+      rowDescription: "讓主頁膠囊和 Yumi 隨手機傾斜、搖晃而動。開啟時可能需要允許動作感應。",
       on: "開",
       off: "關",
+      permissionDenied: "尚未取得動作感應權限，功能維持關閉。你可以在這裡重新開啟。",
+      unavailable: "此瀏覽器不支援動作感應；仍可觸控操作 Yumi。",
     },
     newsSource: {
       rowTitle: "Guardian 金鑰失效",

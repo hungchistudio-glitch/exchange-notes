@@ -3,7 +3,6 @@ import { deviceTilt, shakeReader, watchDeviceMotion } from "@/lib/home/deviceMot
 /* The two homes load this with her scene, not with the page (it keeps
    home's first load as small as tests/routeImportWeight.test.ts allows),
    so what they need of the phone's motion comes through here. */
-export { enableDeviceMotion } from "@/lib/home/deviceMotion";
 export { YUMI_FLOOR_RIPPLE } from "@/lib/home/floorRipple";
 
 /* =========================================================

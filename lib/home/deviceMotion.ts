@@ -14,10 +14,9 @@
      each reader (the capsules, and Yumi, who feels it too).
 
    iPhones only send either after the reader allows "Motion & Orientation
-   Access", and only ask from inside a tap (`enableDeviceMotion`, which the
-   field calls on the first touch of a capsule; Chi chose that over a key or
-   a card). Elsewhere it starts without asking. Nothing here is ever sent
-   anywhere: it is read in the page and forgotten.
+   Access". Only the explicit Settings switch calls `enableDeviceMotion`
+   (Chi, 2026-11-23: 不要在主頁詢問). Home mounts and touches never ask.
+   Nothing here is ever sent anywhere: it is read in the page and forgotten.
 
    The reader can turn all of it off for this device (Settings, "Capsules
    follow the phone"; Chi, 2026-11-22). Off, nothing listens at all.
@@ -33,7 +32,6 @@ const shakeReaders = new Set<{ x: number; y: number }>();
 let neutral: { x: number; y: number } | null = null;
 let lastOrientationAt = 0;
 let listening = 0;
-let asked = false;
 
 /** How long it takes for a new way of holding the phone to become level. */
 const SETTLE_SECONDS = 3.2;
@@ -99,50 +97,50 @@ function stop() {
   deviceTilt.live = false;
   neutral = null;
   lastOrientationAt = 0;
+  for (const shake of shakeReaders) shake.x = shake.y = 0;
 }
-
-function needsPermission() {
-  if (typeof window === "undefined") return false;
-  const motion = (window as unknown as { DeviceMotionEvent?: PermissionAsker }).DeviceMotionEvent;
-  return typeof motion?.requestPermission === "function";
-}
-
-let granted = false;
-let subscribers = 0;
 
 /* ------------------------------------------------ the reader's choice */
 
 const MOTION_KEY = "home-motion-v1";
 export const HOME_MOTION_EVENT = "home-motion-change";
+let memoryChoice = false;
+let storageWriteFailed = false;
+let choiceRevision = 0;
 
-/** Whether the home answers the phone's motion on this device; on by default. */
+/** Opt in from Settings; preserve choices explicitly saved on this device. */
 export function homeMotionOn(): boolean {
+  if (storageWriteFailed) return memoryChoice;
   try {
-    return window.localStorage.getItem(MOTION_KEY) !== "off";
+    return window.localStorage.getItem(MOTION_KEY) === "on";
   } catch {
-    return true;
+    return memoryChoice;
   }
 }
 
 export function setHomeMotion(on: boolean) {
+  memoryChoice = on;
+  choiceRevision += 1;
   try {
     window.localStorage.setItem(MOTION_KEY, on ? "on" : "off");
+    storageWriteFailed = false;
   } catch {
     // Private mode: the choice lasts for this page.
+    storageWriteFailed = true;
   }
   window.dispatchEvent(new Event(HOME_MOTION_EVENT));
 }
 
 /**
- * Listen while the home is on screen. Where the browser asks first, this
- * waits for `enableDeviceMotion` from a tap. Returns the way to stop.
+ * Listen passively while an opted-in home is on screen. Browsers deliver
+ * readings only while their permission allows it. Never probe permission
+ * here: even a "silent" request can prompt during navigation from a tap.
  */
 export function watchDeviceMotion(): () => void {
   if (typeof window === "undefined" || !("DeviceOrientationEvent" in window)) return () => {};
-  subscribers += 1;
   let started = false;
   const begin = () => {
-    if (started || subscribers === 0 || !homeMotionOn()) return;
+    if (started || !homeMotionOn()) return;
     started = true;
     start();
   };
@@ -154,57 +152,36 @@ export function watchDeviceMotion(): () => void {
   /* Switched in Settings while the home is open: follow it at once. */
   const onChoice = () => {
     if (!homeMotionOn()) halt();
-    else if (!needsPermission() || granted) begin();
+    else begin();
   };
   window.addEventListener(HOME_MOTION_EVENT, onChoice);
-  if (!homeMotionOn()) {
-    waiting.add(begin);
-  } else if (!needsPermission() || granted) begin();
-  else {
-    /* Asked without a tap: where it was allowed before (or needs no tap,
-       as in Chrome), it simply says yes and they move from the start;
-       where it needs a tap, it refuses quietly and the first touch asks. */
-    const motion = (window as unknown as { DeviceMotionEvent: PermissionAsker }).DeviceMotionEvent;
-    void motion.requestPermission!()
-      .then(answer => {
-        if (answer !== "granted") return;
-        granted = true;
-        begin();
-      })
-      .catch(() => {});
-    waiting.add(begin);
-  }
+  onChoice();
   return () => {
-    subscribers = Math.max(0, subscribers - 1);
-    waiting.delete(begin);
     window.removeEventListener(HOME_MOTION_EVENT, onChoice);
     halt();
   };
 }
 
-/** Fields waiting for a tap's yes. */
-const waiting = new Set<() => void>();
-
-/** From a tap: ask once, where the browser wants asking. */
-export function enableDeviceMotion() {
-  if (typeof window === "undefined" || !needsPermission() || granted || asked || !homeMotionOn()) return;
-  asked = true;
-  const motion = (window as unknown as { DeviceMotionEvent: PermissionAsker }).DeviceMotionEvent;
-  const orientation = (window as unknown as { DeviceOrientationEvent?: PermissionAsker }).DeviceOrientationEvent;
-  /* Both asked inside the same tap; the reader sees one question. */
-  const asks = [motion.requestPermission!(), orientation?.requestPermission?.()].filter(Boolean) as Promise<string>[];
-  void Promise.all(asks)
-    .then(answers => {
-      if (answers.every(answer => answer === "granted")) {
-        granted = true;
-        for (const begin of waiting) begin();
-      }
-    })
-    .catch(() => {
-      /* Not inside a tap after all (a pointerdown is not one on iOS): the
-         next touch may ask again. */
-      asked = false;
-    });
+/** Only call directly from the Settings click, before any await loses activation. */
+export async function enableDeviceMotion(): Promise<"enabled" | "denied" | "unavailable"> {
+  if (typeof window === "undefined" || !("DeviceOrientationEvent" in window)) return "unavailable";
+  const revision = choiceRevision;
+  const sensors = window as unknown as { DeviceMotionEvent?: PermissionAsker; DeviceOrientationEvent?: PermissionAsker };
+  try {
+    // Start both requests synchronously inside the explicit click. A refusal
+    // never leaves an enabled-looking switch; a later Settings click may retry.
+    const answers = await Promise.all([
+      sensors.DeviceMotionEvent?.requestPermission?.(),
+      sensors.DeviceOrientationEvent?.requestPermission?.(),
+    ]);
+    if (revision !== choiceRevision) return "denied";
+    const allowed = answers.every(answer => answer === undefined || answer === "granted");
+    setHomeMotion(allowed);
+    return allowed ? "enabled" : "denied";
+  } catch {
+    if (revision === choiceRevision) setHomeMotion(false);
+    return "denied";
+  }
 }
 
 /**

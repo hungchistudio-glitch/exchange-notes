@@ -149,8 +149,6 @@ export default function CosmicHomeYumi({
       if (pointer === event.pointerId) handle?.pointerMove(event.clientX, event.clientY);
     };
     const finish = (event: PointerEvent) => {
-      /* A touch of her may be where an iPhone asks for the phone's motion. */
-      if (event.type === "pointerup") feelModule?.enableDeviceMotion();
       if (pointer !== event.pointerId) return;
       pointer = null;
       if (event.type === "pointerup") handle?.pointerUp();
@@ -218,11 +216,9 @@ export default function CosmicHomeYumi({
     let lean = 0;
     /* The phone's tilt and shake (lib/home/yumiFeel.ts), loaded with her
        scene rather than with the page. */
-    let feelModule: typeof import("@/lib/home/yumiFeel") | null = null;
     let feel: ReturnType<typeof import("@/lib/home/yumiFeel").createYumiFeel> | null = null;
     void import("@/lib/home/yumiFeel").then(module => {
       if (cancelled) return;
-      feelModule = module;
       feel = module.createYumiFeel(reduced);
     }).catch(() => {});
     const running = () => visible && document.visibilityState === "visible" && !cancelled;
