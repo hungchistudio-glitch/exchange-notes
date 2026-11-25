@@ -12,7 +12,7 @@ import { floatingCopy } from "@/lib/home/floatingCopy";
 import { returnHomeFromSearch } from "@/lib/home/homeMoments";
 import { avoid, bound, clamp, collide, scatter, type Body, type Rect } from "@/lib/home/floatingPhysics";
 import { getCoachStep, getServerCoachStep, subscribeToCoach } from "@/lib/home/tutorialCoach";
-import { enableDeviceMotion, deviceTilt, shakeReader, watchDeviceMotion } from "@/lib/home/deviceMotion";
+import { deviceTilt, shakeReader, watchDeviceMotion } from "@/lib/home/deviceMotion";
 import { YUMI_FLOOR_RIPPLE } from "@/lib/home/floorRipple";
 import { isDue } from "@/lib/review/analytics";
 import { interfaceSounds } from "@/lib/sound/interfaceSounds";
@@ -621,9 +621,6 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
             drag.current = { id: event.pointerId, cookie, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, time: performance.now(), moved: false };
             field.current?.setAttribute("data-dragging", "true");
           }}
-          /* The first touch of a capsule is where an iPhone may ask for
-             the phone's motion (a pointerup counts as a tap there). */
-          onPointerUp={() => enableDeviceMotion()}
           onLostPointerCapture={event => {
             if (drag.current?.id !== event.pointerId) return;
             drag.current = null;

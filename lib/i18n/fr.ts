@@ -2779,9 +2779,11 @@ const french: TranslationDictionary = {
     },
     homeMotion: {
       rowTitle: "Les capsules suivent le téléphone",
-      rowDescription: "Inclinez ou secouez le téléphone : les capsules-lettres de l’accueil et Yumi le sentent",
+      rowDescription: "Les capsules de l’accueil et Yumi réagissent quand le téléphone s’incline ou bouge. L’activation peut demander l’accès aux mouvements.",
       on: "Activé",
       off: "Désactivé",
+      permissionDenied: "L’accès aux mouvements n’a pas été accordé. La fonction reste désactivée ; vous pouvez réessayer ici.",
+      unavailable: "Ce navigateur ne prend pas en charge les capteurs de mouvement. Vous pouvez toujours déplacer Yumi au toucher.",
     },
     newsSource: {
       rowTitle: "La clé du Guardian ne fonctionne plus",

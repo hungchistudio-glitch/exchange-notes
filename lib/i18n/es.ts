@@ -2989,9 +2989,11 @@ const spanish: TranslationDictionary = {
     },
     homeMotion: {
       rowTitle: "Las cápsulas siguen al teléfono",
-      rowDescription: "Inclina o agita el teléfono y las cápsulas de letras de Inicio y Yumi lo notan",
+      rowDescription: "Las cápsulas de Inicio y Yumi reaccionan al inclinar o agitar el teléfono. Al activarlo, puede solicitarse permiso de movimiento.",
       on: "Activado",
       off: "Desactivado",
+      permissionDenied: "No se concedió acceso al movimiento. Sigue desactivado; puedes volver a intentarlo aquí.",
+      unavailable: "Este navegador no admite sensores de movimiento. Puedes seguir moviendo a Yumi con el dedo.",
     },
     newsSource: {
       rowTitle: "La clave de The Guardian no funciona",

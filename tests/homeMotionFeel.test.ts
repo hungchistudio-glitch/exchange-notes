@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { homeMotionOn, setHomeMotion, shakeReader, watchDeviceMotion } from "@/lib/home/deviceMotion";
 import { createYumiFeel } from "@/lib/home/yumiFeel";
@@ -33,19 +33,19 @@ const tilt = (beta: number, gamma: number) => window.dispatchEvent(new FakeOrien
 const jolt = (x: number, y = 0) => window.dispatchEvent(new FakeMotion(x, y));
 
 beforeEach(() => {
-  (window as unknown as { DeviceOrientationEvent: unknown }).DeviceOrientationEvent = FakeOrientation;
-  (window as unknown as { DeviceMotionEvent: unknown }).DeviceMotionEvent = FakeMotion;
+  vi.stubGlobal("DeviceOrientationEvent", FakeOrientation);
+  vi.stubGlobal("DeviceMotionEvent", FakeMotion);
   window.localStorage.removeItem("home-motion-v1");
 });
 
 afterEach(() => {
+  setHomeMotion(false);
+  vi.unstubAllGlobals();
   window.localStorage.removeItem("home-motion-v1");
 });
 
 describe("the home's motion, for this device", () => {
-  it("is on until the reader turns it off, and off nothing reaches a reader", () => {
-    expect(homeMotionOn()).toBe(true);
-    setHomeMotion(false);
+  it("starts off, and off nothing reaches a reader", () => {
     expect(homeMotionOn()).toBe(false);
     const stop = watchDeviceMotion();
     const reader = shakeReader();
@@ -56,6 +56,7 @@ describe("the home's motion, for this device", () => {
   });
 
   it("gives each reader the same jolt, so the capsules and Yumi both feel it", () => {
+    setHomeMotion(true);
     const stop = watchDeviceMotion();
     const capsules = shakeReader();
     const yumi = shakeReader();
@@ -69,6 +70,7 @@ describe("the home's motion, for this device", () => {
 });
 
 describe("what Yumi feels", () => {
+  beforeEach(() => setHomeMotion(true));
   it("leans and looks toward the low side when the phone is tipped", () => {
     const feel = createYumiFeel(false);
     tilt(30, 0);

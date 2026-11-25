@@ -824,8 +824,6 @@ export default function YumiRingOverlay({
       if (!pointer.blank) sceneRef.current?.pointerMove(event.clientX, event.clientY);
     };
     const onCanvasUp = (event: PointerEvent) => {
-      /* A touch of her may be where an iPhone asks for the phone's motion. */
-      if (event.type === "pointerup") feelModuleRef.current?.enableDeviceMotion();
       if (!pointer || pointer.id !== event.pointerId) return;
       // Cancellation events may report (0, 0); they must not turn Yumi.
       if (event.type === "pointerup") onCanvasMove(event);

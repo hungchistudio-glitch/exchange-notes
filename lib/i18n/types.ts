@@ -2912,6 +2912,8 @@ export type TranslationDictionary = {
       rowDescription: string;
       on: string;
       off: string;
+      permissionDenied: string;
+      unavailable: string;
     };
     /**
      * Shown only to the app's owner, when the Guardian refuses the news's key

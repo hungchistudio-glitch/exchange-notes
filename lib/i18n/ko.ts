@@ -2701,9 +2701,11 @@ const korean: TranslationDictionary = {
     },
     homeMotion: {
       rowTitle: "캡슐이 휴대폰을 따라 움직여요",
-      rowDescription: "휴대폰을 기울이거나 흔들면 홈의 글자 캡슐과 Yumi가 반응해요",
+      rowDescription: "휴대폰을 기울이거나 흔들면 홈의 캡슐과 Yumi가 반응해요. 켤 때 동작 접근 권한을 요청할 수 있어요.",
       on: "켬",
       off: "끔",
+      permissionDenied: "동작 접근 권한이 허용되지 않아 꺼진 상태로 유지돼요. 여기서 다시 켤 수 있어요.",
+      unavailable: "이 브라우저는 동작 감지를 지원하지 않아요. 터치로 Yumi를 움직일 수는 있어요.",
     },
     newsSource: {
       rowTitle: "The Guardian 키가 작동하지 않아요",
