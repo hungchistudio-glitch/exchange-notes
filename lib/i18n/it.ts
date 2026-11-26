@@ -250,8 +250,10 @@ const italian: TranslationDictionary = {
         takeOff: "Togli tutto",
         cookies: "{n} capsule",
       },
-      endTitle: "YU + MI = Yumi",
-      endText: "Ora sulla Terra, a imparare le lingue — con te.",
+      endTitle: "Ecco la tua prima parola.",
+      endText: "Ora, scopri il mondo con Yumi.",
+      endAction: "Parti con Yumi",
+      endHint: "Accedi per continuare",
       keep: {
         tap: "Toccala per conservarla",
         sign: "Conserva «{phrase}»",

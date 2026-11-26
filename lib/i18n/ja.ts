@@ -245,8 +245,10 @@ const japanese: TranslationDictionary = {
         takeOff: "ぜんぶ脱ぐ",
         cookies: "カプセル {n}個",
       },
-      endTitle: "YU + MI = Yumi",
-      endText: "いまは地球で、あなたといっしょに言語を学んでいます。",
+      endTitle: "最初の言葉、見つけた。",
+      endText: "次は Yumi と、世界の言葉を集めよう。",
+      endAction: "Yumi と出発する",
+      endHint: "ログインして続ける",
       keep: {
         tap: "タップしてとっておこう",
         sign: "「{phrase}」をとっておく",

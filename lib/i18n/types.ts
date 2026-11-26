@@ -266,6 +266,8 @@ export type TranslationDictionary = {
       };
       endTitle: string;
       endText: string;
+      endAction: string;
+      endHint: string;
       /** Scene 5: the word Yumi sees on landing, kept with a tap. */
       keep: {
         tap: string;

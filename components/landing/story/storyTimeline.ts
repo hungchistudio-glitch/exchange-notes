@@ -106,7 +106,7 @@ export function outfitAt(time: number): YumiOutfit {
 }
 
 /** Where the end card comes up, over the sky. */
-export const END_CARD_AT_MS = 31_200;
+export const END_CARD_AT_MS = 32_000;
 
 /*
  * Scene 5's word (Chi, 2026-11-21: 第 5 幕幫 Yumi 留下第一個字). Below the
@@ -120,7 +120,7 @@ export const END_CARD_AT_MS = 31_200;
 export const WORD_SIGN_AT_MS = 28_600;
 /* A little after touchdown, so there are three seconds to tap it: two
    (from the sky's coming in to touchdown) was too short to notice the sign
-   and reach it. The end card's words come up meanwhile, above it. */
+   and reach it. The invitation waits until this word has been kept. */
 export const WORD_SELF_KEEP_AT_MS = 31_800;
 
 export type StoryWord = "none" | "sign" | "keptByYou" | "keptByYumi";
@@ -279,12 +279,12 @@ export function yumiAt(time: number, portrait = false, reduced = false): StoryYu
   const across = span(time, 26_000, 31_000);
   const fall = span(time, 27_400, 31_000);
   x = lerp(x, portrait ? 0.5 : 0.68, across);
-  y = lerp(y, portrait ? 0.74 : 0.6, fall);
-  r = lerp(r, portrait ? 0.13 : 0.16, across);
+  y = lerp(y, portrait ? 0.25 : 0.48, fall);
+  r = lerp(r, portrait ? 0.21 : 0.19, across);
   if (time >= 27_400 && time < 31_000) gaze = { x: 0, y: 0.8 };
   const touchdown = span(time, 31_000, 31_500, easeOut) - span(time, 31_500, 32_100);
   y += 0.012 * touchdown;
-  if (time >= 31_700) gaze = portrait ? { x: 0, y: -0.7 } : { x: -0.8, y: -0.1 };
+  if (time >= 31_700) gaze = { x: 0, y: 0 };
 
   return { x, y, r, parts, gaze };
 }

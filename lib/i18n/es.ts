@@ -247,8 +247,10 @@ const spanish: TranslationDictionary = {
         takeOff: "Quitárselo todo",
         cookies: "{n} cápsulas",
       },
-      endTitle: "YU + MI = Yumi",
-      endText: "Ya en la Tierra, aprendiendo idiomas contigo.",
+      endTitle: "Ya tienes tu primera palabra.",
+      endText: "Ahora, descubre el mundo con Yumi.",
+      endAction: "Viajar con Yumi",
+      endHint: "Inicia sesión para continuar",
       keep: {
         tap: "Tócala para guardarla",
         sign: "Guardar «{phrase}»",

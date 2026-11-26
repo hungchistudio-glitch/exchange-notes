@@ -96,6 +96,10 @@
   container-type: size;
   width: 100%;
   aspect-ratio: 2.1 / 1;
+  /* The keepsake and invitation must fit at narrow tablet widths, including
+     longer translations. Reserve this space throughout the film, not only
+     when the invitation arrives, so its ending never shifts the page. */
+  min-height: 420px;
   max-height: min(78vh, 620px);
   overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--landing-ink, #171717) 12%, transparent);
@@ -1354,4 +1358,56 @@
   .dock [data-part="spotlight"] {
     transition: none;
   }
+}
+
+/* The first word is the invitation. Keep the stage and its keepsake together,
+   with a quiet, compact action rather than another oversized hero button. */
+.eyeAnchor { position: absolute; top: 0; left: 0; pointer-events: none; visibility: hidden; }
+.screen[data-finale] .sky { filter: saturate(0.55); }
+.endCard {
+  width: 49%;
+  padding: 5% 6%;
+  gap: 12px;
+  animation: endIn 600ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.firstWord {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 18px 0 20px;
+  margin-bottom: 6px;
+  border-block: 1px solid currentColor;
+  border-color: color-mix(in srgb, currentColor 20%, transparent);
+}
+.firstWordLabel { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; opacity: 0.8; }
+.firstWordText { font-family: var(--cjk-serif), Georgia, serif; font-size: clamp(1.8rem, 3.4vw, 3rem); line-height: 1.2; overflow-wrap: anywhere; }
+.firstWordReading { font-size: 0.85rem; opacity: 0.7; }
+.endTitle { font-size: clamp(1.3rem, 2.3vw, 2.1rem); line-height: 1.2; letter-spacing: -0.025em; }
+.endText { font-size: 0.875rem; line-height: 1.5; }
+.endCta { width: auto; max-width: 100%; margin-top: 8px; }
+.endCta > a {
+  min-height: 48px;
+  width: auto;
+  padding: 12px 24px;
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  border: 1px solid rgba(184, 232, 229, 0.4);
+  background: #132127;
+  color: #e4ecee;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  text-align: center;
+}
+.endCta > a:focus-visible { outline: 2px solid #b8e8e5; outline-offset: 4px; }
+.endHint { font-size: 0.75rem; opacity: 0.7; margin: 0; }
+@media (max-width: 720px) {
+  .screen { aspect-ratio: 3 / 5; min-height: 640px; }
+  .endCard { top: 43%; bottom: 0; width: 100%; padding: 0 24px 24px; gap: 8px; align-content: center; text-align: center; }
+  .firstWord { justify-items: center; gap: 5px; padding: 12px 0; margin: 0; }
+  .firstWordText { font-size: clamp(1.5rem, 7vw, 2.2rem); }
+  .endTitle { font-size: 1.4rem; }
+  .endText { max-width: 30ch; }
+  .endCta { margin-top: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .endCard { animation: none; }
 }
