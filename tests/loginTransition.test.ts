@@ -33,6 +33,26 @@ afterEach(() => {
 });
 
 describe("the way into sign-in", () => {
+  it("starts the film exit at Yumi's eye and navigates as soon as that shorter cover closes", () => {
+    vi.useFakeTimers();
+    fakeAnimate();
+    setReducedMotion(false);
+    const eye = document.body.appendChild(document.createElement("span"));
+    vi.spyOn(eye, "getBoundingClientRect").mockReturnValue(new DOMRect(220, 100, 40, 40));
+    const go = vi.fn();
+    const start = key();
+    playLoginExit(start, go, eye);
+    const layers = [...document.querySelectorAll<HTMLElement>("[data-login-cover] div")];
+    expect(layers.some(layer => layer.style.clipPath.includes("at 240px 120px"))).toBe(true);
+    vi.advanceTimersByTime(259);
+    expect(go).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(go).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(6000);
+    expect(document.querySelector("[data-login-cover]")).toBeNull();
+    expect(start.style.visibility).toBe("");
+  });
+
   it("goes at once, with no cover, for a reader who asked for less motion", () => {
     fakeAnimate();
     setReducedMotion(true);

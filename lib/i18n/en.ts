@@ -247,8 +247,10 @@ const english: TranslationDictionary = {
         takeOff: "Take everything off",
         cookies: "{n} capsules",
       },
-      endTitle: "YU + MI = Yumi",
-      endText: "Now on Earth, learning languages — with you.",
+      endTitle: "Your first word is here.",
+      endText: "Now, collect the world with Yumi.",
+      endAction: "Set off with Yumi",
+      endHint: "Sign in to continue",
       keep: {
         tap: "Tap the word to keep it",
         sign: "Keep “{phrase}”",

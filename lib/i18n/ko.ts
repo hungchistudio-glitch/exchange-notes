@@ -245,8 +245,10 @@ const korean: TranslationDictionary = {
         takeOff: "모두 벗기",
         cookies: "캡슐 {n}개",
       },
-      endTitle: "YU + MI = Yumi",
-      endText: "지금은 지구에서 당신과 함께 언어를 배우고 있어요.",
+      endTitle: "첫 단어를 만났어요.",
+      endText: "이제 Yumi와 세상의 말을 모아 봐요.",
+      endAction: "Yumi와 출발하기",
+      endHint: "로그인하고 계속하기",
       keep: {
         tap: "탭해서 간직해 주세요",
         sign: "‘{phrase}’ 간직하기",

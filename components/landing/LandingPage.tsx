@@ -60,7 +60,10 @@ function LandingLoginLink({
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
         // Through Yumi's eye into sign-in (components/landing/loginTransition.ts).
-        playLoginExit(event.currentTarget, () => router.push("/login"));
+        const eye = analyticsSource === "story"
+          ? event.currentTarget.closest("[data-story-screen]")?.querySelector<HTMLElement>("[data-story-eye][data-ready]")
+          : null;
+        playLoginExit(event.currentTarget, () => router.push("/login"), eye);
       }}
       className={`flex min-h-12 w-full items-center justify-center rounded-full bg-black px-5 text-sm font-medium text-white transition-opacity hover:opacity-85 ${className}`}
     >
@@ -288,10 +291,10 @@ export default function LandingPage() {
         language={language}
         cta={
           <LandingLoginLink
-            label={copy.hero.cta}
+            label={copy.story.endAction}
             analyticsEvent="landing_primary_cta_click"
             analyticsSource="story"
-            className={styles.primaryButton}
+            className=""
           />
         }
       />

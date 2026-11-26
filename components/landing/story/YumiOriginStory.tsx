@@ -4,6 +4,7 @@ import { Bookmark, Check, Pause, Play, RotateCcw } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -265,6 +266,8 @@ export default function YumiOriginStory({
   const flareRef = useRef<HTMLSpanElement>(null);
   /** A little of the Earth's blue in her eye while she watches it. */
   const glintRef = useRef<HTMLDivElement>(null);
+  const eyeAnchorRef = useRef<HTMLSpanElement>(null);
+  const firstWordRef = useRef<HTMLDivElement>(null);
   const clockRef = useRef<FilmClock | null>(null);
   const handleRef = useRef<YumiSceneHandle | null>(null);
   const reducedRef = useRef(false);
@@ -312,6 +315,24 @@ export default function YumiOriginStory({
   const outfit = chosen ?? ownOutfit;
   /** Scene 5's word on its sign, and who kept it (wordAt). */
   const [word, setWord] = useState<StoryWord>("none");
+
+  // One handoff at the film's end: the actual keepsake comes from her eye
+  // to its reading position. Measure once, then move only on the compositor.
+  useLayoutEffect(() => {
+    if (!endCard || reducedRef.current) return;
+    const card = firstWordRef.current;
+    const origin = eyeAnchorRef.current?.getBoundingClientRect();
+    if (!card || !origin?.width || typeof card.animate !== "function") return;
+    const target = card.getBoundingClientRect();
+    const dx = origin.left + origin.width / 2 - target.left - target.width / 2;
+    const dy = origin.top + origin.height / 2 - target.top - target.height / 2;
+    const animation = card.animate([
+      { transform: `translate(${dx}px, ${dy}px) scale(0.92)`, opacity: 0 },
+      { opacity: 1, offset: 0.65 },
+      { transform: "translate(0, 0) scale(1)", opacity: 1 },
+    ], { duration: 600, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "backwards" });
+    return () => animation.cancel();
+  }, [endCard]);
 
   const showTime = useCallback((time: number) => {
     const nextAct = actAt(time);
@@ -639,6 +660,16 @@ export default function YumiOriginStory({
         }
         handle.setGaze?.(gazeX, gazeY);
         handle.frame(now);
+        // Keep the login origin on the real rendered eye, without layout reads.
+        const anchor = eyeAnchorRef.current;
+        if (anchor && endRef.current) {
+          const eye = handle.eyeScreenPosition();
+          const diameter = radius * 0.6;
+          const side = `${diameter}px`;
+          if (anchor.style.width !== side) anchor.style.width = anchor.style.height = side;
+          anchor.style.transform = `translate(${eye.x - diameter / 2}px, ${eye.y - diameter / 2}px)`;
+          anchor.dataset.ready = "true";
+        } else if (anchor) delete anchor.dataset.ready;
 
         /* And a little of its blue in her eye, stronger as it fills the frame. */
         const glint = glintRef.current;
@@ -933,7 +964,8 @@ export default function YumiOriginStory({
         data-drawn={layersDrawn || undefined}
       >
         <div className={styles.frame}>
-          <div ref={screenRef} className={styles.screen}>
+          <div ref={screenRef} className={styles.screen} data-story-screen data-finale={endCard || undefined}>
+            <span ref={eyeAnchorRef} data-story-eye className={styles.eyeAnchor} aria-hidden="true" />
             <div data-track="camera" className={styles.camera}>
               <div className={styles.nebula} />
               <div data-track="starsFar" className={styles.starsFar} />
@@ -1034,7 +1066,7 @@ export default function YumiOriginStory({
                   <Bookmark size={12} aria-hidden="true" /> {copy.keep.tap}
                 </span>
               </button>
-            ) : word !== "none" ? (
+            ) : word !== "none" && !endCard ? (
               <p className={styles.wordKept} data-by={word === "keptByYou" ? "you" : "yumi"} role="status">
                 <Check size={13} aria-hidden="true" />
                 <span lang={journey.phraseLang}>{journey.phrase}</span>
@@ -1046,9 +1078,15 @@ export default function YumiOriginStory({
 
             {endCard ? (
               <div className={styles.endCard}>
+                <div ref={firstWordRef} className={styles.firstWord} role="status">
+                  <span className={styles.firstWordLabel}><Check size={13} aria-hidden="true" /> {word === "keptByYou" ? copy.keep.byYou : copy.keep.byYumi}</span>
+                  <span className={styles.firstWordText} lang={journey.phraseLang}>{journey.phrase}</span>
+                  <span className={styles.firstWordReading} lang={journey.phraseLang}>{journey.reading}</span>
+                </div>
                 <p className={styles.endTitle}>{copy.endTitle}</p>
                 <p className={styles.endText}>{copy.endText}</p>
                 <div className={styles.endCta}>{cta}</div>
+                <p className={styles.endHint}>{copy.endHint}</p>
               </div>
             ) : null}
           </div>

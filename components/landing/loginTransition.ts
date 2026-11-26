@@ -291,7 +291,13 @@ let active: Exit | null = null;
  * calls playLoginArrival. With reduced motion, or no Web Animations, it
  * navigates at once.
  */
-export function playLoginExit(from: HTMLElement, navigate: () => void) {
+export function playLoginExit(from: HTMLElement, navigate: () => void, storyEye?: HTMLElement | null) {
+  // The film hands off at its rendered eye, not at another button-shaped eye.
+  const origin = storyEye?.getBoundingClientRect();
+  const fromStory = !!origin && origin.width > 0 && origin.height > 0;
+  const formTime = fromStory ? 0 : FORM_MS;
+  const drawTime = fromStory ? 240 : DRAW_IN_MS;
+  const coveredAt = fromStory ? 260 : COVERED_AT;
   let gone = false;
   const go = () => {
     if (gone) return;
@@ -312,14 +318,14 @@ export function playLoginExit(from: HTMLElement, navigate: () => void) {
 
   const vw = innerWidth;
   const vh = innerHeight;
-  const box = from.getBoundingClientRect();
+  const box = fromStory ? origin! : from.getBoundingClientRect();
   const x = box.left + box.width / 2;
   const y = box.top + box.height / 2;
   const cx = vw / 2;
   const cy = vh / 2;
   /* Her eye in the middle; at the key it is the size it was (56–96px). */
   const size = Math.round(Math.max(120, Math.min(184, Math.min(vw, vh) * 0.36)));
-  const atKey = Math.min(96, Math.max(56, box.height * 1.4));
+  const atKey = fromStory ? box.width : Math.min(96, Math.max(56, box.height * 1.4));
   const reach = (px: number, py: number) => Math.ceil(Math.hypot(Math.max(px, vw - px), Math.max(py, vh - py)));
 
   const cover = layer({ inset: "0", zIndex: "2000" }, true);
@@ -440,7 +446,8 @@ export function playLoginExit(from: HTMLElement, navigate: () => void) {
   });
 
   night.append(dark, glide, hud, space, streaks);
-  cover.append(pill, curtain, back, ...frame.map(({ element }) => element));
+  if (!fromStory) cover.append(pill);
+  cover.append(curtain, back, ...frame.map(({ element }) => element));
   document.body.appendChild(cover);
   /* The key steps aside for its stand-in, or the stand-in drawing in over
      an identical key would not be seen to move. */
@@ -454,7 +461,7 @@ export function playLoginExit(from: HTMLElement, navigate: () => void) {
   };
 
   // 1. The key draws in to her eye's width and gives way to it.
-  run(pill, [
+  if (!fromStory) run(pill, [
     { left: `${box.left}px`, width: `${box.width}px`, opacity: 1 },
     { left: `${x - box.height / 2}px`, width: `${box.height}px`, opacity: 1, offset: 0.8 },
     { left: `${x - box.height / 2}px`, width: `${box.height}px`, opacity: 0 },
@@ -463,22 +470,22 @@ export function playLoginExit(from: HTMLElement, navigate: () => void) {
   run(eye.eye, [
     { opacity: 0, transform: "scale(0.6)" },
     { opacity: 1, transform: "scale(1)" },
-  ], { duration: 130, delay: 60, easing: EASE_OUT, fill: "forwards" });
+  ], { duration: 130, delay: fromStory ? 0 : 60, easing: EASE_OUT, fill: "forwards" });
   run(glide, [
     { transform: fromKey },
     { transform: "translate(0px, 0px) scale(1)" },
-  ], { duration: DRAW_IN_MS - 20, delay: FORM_MS, easing: EASE_IN_OUT, fill: "forwards" });
+  ], { duration: drawTime - 20, delay: formTime, easing: EASE_IN_OUT, fill: "forwards" });
 
   // 2. The dark spreads from the key as the eye leaves it.
   run(dark, [
     { opacity: 1, clipPath: `circle(${atKey * 0.22}px at ${x}px ${y}px)` },
     { opacity: 1, clipPath: `circle(${reach(x, y)}px at ${x}px ${y}px)` },
-  ], { duration: DRAW_IN_MS + 20, delay: FORM_MS - 80, easing: EASE_IN_OUT, fill: "forwards" });
+  ], { duration: drawTime + 20, delay: Math.max(0, formTime - 80), easing: EASE_IN_OUT, fill: "forwards" });
   /* Covered: sign-in is asked for while she scans. */
-  later(COVERED_AT, go);
+  later(coveredAt, go);
 
   // The HUD comes up round her as she settles.
-  later(HUD_AT, () => {
+  later(fromStory ? 220 : HUD_AT, () => {
     run(hud, [{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: EASE_OUT, fill: "forwards" });
     hudBrackets.forEach(({ element, corner }) => {
       const out = size * 0.16;
@@ -516,7 +523,7 @@ export function playLoginExit(from: HTMLElement, navigate: () => void) {
       else if (active?.cover === cover) scan();
     });
   };
-  later(SCAN_AT, scan);
+  later(fromStory ? 260 : SCAN_AT, scan);
 
   // Lock: the brackets clamp, the arc closes, her iris lights, a click.
   const lock = () => {

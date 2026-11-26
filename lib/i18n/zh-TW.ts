@@ -245,8 +245,10 @@ const traditionalChinese: TranslationDictionary = {
         takeOff: "全部脫下",
         cookies: "{n} 顆膠囊",
       },
-      endTitle: "YU + MI = Yumi",
-      endText: "現在在地球，和你一起學語言。",
+      endTitle: "第一個字，有了。",
+      endText: "接下來，和 Yumi 一起收藏世界。",
+      endAction: "與 Yumi 出發",
+      endHint: "登入以繼續",
       keep: {
         tap: "點一下，幫她留下",
         sign: "留下「{phrase}」",

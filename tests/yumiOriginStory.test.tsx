@@ -47,6 +47,7 @@ vi.mock("@/lib/yumi3d/scene", () => ({
     scene.handle = {
       ready: vi.fn(() => ready),
       frame: vi.fn(),
+      eyeScreenPosition: vi.fn(() => ({ x: 300, y: 180 })),
       resize: vi.fn(),
       dispose: vi.fn(),
       setScreenAnchor: vi.fn(),
@@ -288,12 +289,12 @@ describe("YU and MI", () => {
 
     const landed = yumiAt(STORY_DURATION_MS);
     expect(landed.x).toBeGreaterThan(0.6);
-    expect(landed.gaze?.x).toBeLessThan(0);
-    // On a phone she lands below the words instead, and looks up at them.
+    expect(landed.gaze).toEqual({ x: 0, y: 0 });
+    // On a phone she waits above the first word and faces the reader.
     const phone = yumiAt(STORY_DURATION_MS, true);
     expect(phone.x).toBeCloseTo(0.5);
-    expect(phone.y).toBeGreaterThan(0.7);
-    expect(phone.gaze?.y).toBeLessThan(0);
+    expect(phone.y).toBeLessThan(0.35);
+    expect(phone.gaze).toEqual({ x: 0, y: 0 });
   });
 });
 
