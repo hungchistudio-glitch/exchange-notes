@@ -28,6 +28,7 @@ import {
 import { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 import { getCoachStep } from "@/lib/home/tutorialCoach";
 import { setYumiRingState } from "@/lib/home/yumiRing";
+import { openMicGuide, voiceSignal, voiceStage } from "@/lib/voice/signal";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 import type { FloorRippleDetail } from "@/lib/home/floorRipple";
 import type { YumiFeeling } from "@/lib/home/yumiFeel";
@@ -941,6 +942,12 @@ export default function YumiRingOverlay({
           },
           onTap: () => {
             if (returningHomeRef.current) return;
+            /* In her earmuffs, the first tap is the way to turn the
+               microphone on; after that she is the ring again. */
+            if (!openRef.current && voiceStage.deaf && !voiceStage.deafTold) {
+              openMicGuide();
+              return;
+            }
             if (!openRef.current && answeringRef.current) {
               returnHome();
               return;
@@ -1163,11 +1170,18 @@ export default function YumiRingOverlay({
           /* The phone's tilt and shake, felt only when nothing else has her
              eye: not the dial, not a cookie she is watching, not an answer. */
           const feeling = feelRef.current?.step(now, dt || 1 / 60) ?? CALM;
-          const free = !openRef.current && !answeringRef.current && !gazePoint;
+          /* While a microphone listens she looks at the key that was
+             pressed, and her pupil opens with the voice; with no
+             microphone at all she wears earmuffs (Chi, 2026-11-27). */
+          const listeningTo = voiceStage.phase === "listening" && !openRef.current ? voiceStage.mic : null;
+          handle.setListening?.(voiceStage.phase === "listening" ? voiceSignal.level : null);
+          handle.setEarmuffs?.(voiceStage.deaf);
+          const lookAt = listeningTo ?? gazePoint;
+          const free = !openRef.current && !answeringRef.current && !lookAt;
           const felt = free ? feeling.gaze : null;
           handle.setGaze?.(
-            openRef.current && !reduced ? dialAim.current.x : gazePoint && !reduced ? (gazePoint.x - gazeEye.x) / 180 : felt?.x ?? 0,
-            openRef.current && !reduced ? dialAim.current.y : gazePoint && !reduced ? (gazePoint.y - gazeEye.y) / 180 : felt?.y ?? 0,
+            openRef.current && !reduced ? dialAim.current.x : lookAt && !reduced ? (lookAt.x - gazeEye.x) / 180 : felt?.x ?? 0,
+            openRef.current && !reduced ? dialAim.current.y : lookAt && !reduced ? (lookAt.y - gazeEye.y) / 180 : felt?.y ?? 0,
           );
           // While the dial is out she looks at the key at the top and leans a little toward it.
           handle.setNavigationLean?.(openRef.current && !reduced ? dialAim.current.x * 0.045 : free ? feeling.lean : 0);

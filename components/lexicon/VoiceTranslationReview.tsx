@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import OmniLexiconConsole from "@/components/cosmic/OmniLexiconConsole";
 import UniversalSearchField from "@/components/lexicon/UniversalSearchField";
+import MicGuideMount from "@/components/voice/MicGuideMount";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
@@ -84,6 +85,7 @@ export default function VoiceTranslationReview({ cosmic }: { cosmic: boolean }) 
             >
               <div className="mx-auto w-full max-w-xl">
                 {cosmic ? <OmniLexiconConsole /> : <UniversalSearchField />}
+                <MicGuideMount />
               </div>
             </main>
           </LexiconSearchProvider>

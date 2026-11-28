@@ -25,6 +25,7 @@ vi.mock("@/hooks/i18n/useTranslation", () => ({
         modeType: "Type",
         modeVoice: "Voice",
         searching: "Searching",
+        voice: { stop: "Stop", holding: "Let go to send", holdHint: "or hold to talk" },
       },
       capture: { analysis: { description: "Reading image" } },
     },

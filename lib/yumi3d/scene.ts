@@ -5,7 +5,7 @@ import type { YumiOutfit } from "@/lib/shop/catalog";
 import { EYE_RADIUS, SHELL_RADIUS, TUBE_RADIUS } from "./anatomy";
 import { ARM_ROOT, EYE_REST, buildYumiActor } from "./actor";
 import { createYumiGround, type YumiGround } from "./ground";
-import { createOutfitRig } from "./outfit";
+import { buildEarmuffsPiece, createOutfitRig } from "./outfit";
 import { ROTATION_CRUISE_SPEED, createYumiRotation } from "./rotation";
 import { createSpinBlur } from "./spinBlur";
 
@@ -184,6 +184,13 @@ export type YumiSceneHandle = {
 
   /** A gentle look toward a cookie, independent of the eye-pull gesture. */
   setGaze?(x: number, y: number): void;
+  /**
+   * While a microphone listens, its level (0–1); null when none does. Her
+   * pupil opens with the voice and settles after it (Chi, 2026-11-27).
+   */
+  setListening?(level: number | null): void;
+  /** Earmuffs on while the page has no microphone (lib/voice/signal.ts). */
+  setEarmuffs?(on: boolean): void;
   setNavigationLean?(radians: number): void;
 
   /** What she has on (lib/shop/catalog.ts). An empty outfit is Yumi as she ships. */
@@ -448,6 +455,46 @@ export function createYumiScene(
      one on never stalls a frame compiling it (where the browser can compile
      in parallel; elsewhere it costs the same, just not mid-frame). */
   const compiling = new Set<THREE.Object3D>();
+
+  /* Listening and her earmuffs (setListening, setEarmuffs). */
+  let listenLevel: number | null = null;
+  let dilationNow = 1;
+  let earmuffsWanted = false;
+  let earmuffs: THREE.Object3D | null = null;
+  let earmuffsScale = 0;
+  let earmuffsVelocity = 0;
+  function stepEarmuffs(dt: number, shown: boolean) {
+    if (earmuffsWanted && !earmuffs) {
+      earmuffs = buildEarmuffsPiece();
+      earmuffs.scale.setScalar(0);
+      model.add(earmuffs);
+      const piece = earmuffs;
+      piece.visible = true;
+      compiling.add(piece);
+      const compile = renderer.compileAsync(piece, camera, scene)
+        .catch(() => {})
+        .finally(() => { compiling.delete(piece); compiles.delete(piece); });
+      compiles.set(piece, compile);
+    }
+    if (!earmuffs) { outfit.setHeadHidden(false); return; }
+    const target = earmuffsWanted ? 1 : 0;
+    if (options.reducedMotion || dt === 0) {
+      earmuffsScale = target;
+      earmuffsVelocity = 0;
+    } else {
+      /* On with a little bounce; off a touch quicker, without one. */
+      earmuffsVelocity += ((target - earmuffsScale) * 220 - earmuffsVelocity * (target ? 15 : 30)) * dt;
+      earmuffsScale = Math.max(0, earmuffsScale + earmuffsVelocity * dt);
+      if (Math.abs(target - earmuffsScale) < 0.002 && Math.abs(earmuffsVelocity) < 0.01) {
+        earmuffsScale = target;
+        earmuffsVelocity = 0;
+      }
+    }
+    earmuffs.scale.setScalar(1.2 * earmuffsScale);
+    earmuffs.visible = shown && earmuffsScale > 0.01;
+    /* Her own hat goes while the earmuffs are over her head. */
+    outfit.setHeadHidden(earmuffsWanted || earmuffsScale > 0.35);
+  }
 
   // ----------------------------------------------------------- behaviour
   const eyePosition = EYE_REST.clone();
@@ -793,7 +840,13 @@ export function createYumiScene(
       /* A glass finish is see-through on its own account; the film's fade
          multiplies it rather than replacing it. */
       const finishOpacity = (shellMaterial.userData.finishOpacity as number | undefined) ?? 1;
-      outfit.setVisible((!film || film.actor > 0.98) && !parts);
+      const dressedShown = (!film || film.actor > 0.98) && !parts;
+      /* Her pupil opens with the voice, quickly, and settles slowly after. */
+      const dilationWanted = listenLevel === null ? 1 : 1.08 + 0.34 * listenLevel;
+      dilationNow += (dilationWanted - dilationNow) * Math.min(1, dt * (dilationWanted > dilationNow ? 14 : 5));
+      outfit.setDilation(dilationNow);
+      stepEarmuffs(dt, dressedShown);
+      outfit.setVisible(dressedShown);
       for (const piece of compiling) piece.visible = false;
 
       if (film) {
@@ -921,6 +974,10 @@ export function createYumiScene(
       ground.dispose();
       spinBlur.dispose();
       outfit.dispose();
+      earmuffs?.traverse(object => {
+        const material = (object as THREE.Mesh).material;
+        for (const one of Array.isArray(material) ? material : material ? [material] : []) one.dispose();
+      });
       scene.traverse(object => {
         const mesh = object as THREE.Mesh;
         if (mesh.geometry) mesh.geometry.dispose();
@@ -1088,6 +1145,14 @@ export function createYumiScene(
 
     setNavigationLean(radians) {
       navigationLeanTarget = options.reducedMotion ? 0 : THREE.MathUtils.clamp(radians, -0.04, 0.04);
+    },
+
+    setListening(level) {
+      listenLevel = level === null ? null : THREE.MathUtils.clamp(level, 0, 1);
+    },
+
+    setEarmuffs(on) {
+      earmuffsWanted = on;
     },
 
     setGaze(x, y) {

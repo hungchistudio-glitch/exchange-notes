@@ -34,6 +34,7 @@ import PocketKeysSettingsButton from "@/components/settings/PocketKeysSettingsBu
 import SettingsSection from "@/components/settings/SettingsSection";
 import InterfaceSoundsSettingsButton from "@/components/settings/InterfaceSoundsSettingsButton";
 import HomeMotionSettingsButton from "@/components/settings/HomeMotionSettingsButton";
+import MicrophoneSettingsRow from "@/components/settings/MicrophoneSettingsRow";
 import NewsSourceHealthRow from "@/components/settings/NewsSourceHealthRow";
 import ReportsOwnerRow from "@/components/settings/ReportsOwnerRow";
 import ProfileLanguageSettingsButton from "@/components/settings/ProfileLanguageSettingsButton";
@@ -577,6 +578,11 @@ export default function ProfilePage() {
 
             <SettingsAnchor id="setting-home-motion">
               <HomeMotionSettingsButton />
+            </SettingsAnchor>
+
+            {/* Where voice works from, and a check-up of it (Chi, 2026-11-27). */}
+            <SettingsAnchor id="setting-microphone">
+              <MicrophoneSettingsRow />
             </SettingsAnchor>
 
             {/* The owner's line when the news's Guardian key stops working. */}

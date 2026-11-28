@@ -5,7 +5,7 @@ import { useOptionalInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { useWornOutfit } from "@/lib/shop/wornOutfit";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 import { parkYumiScene, relayedOptions, takeParkedYumiScene, type YumiSceneRelay } from "@/lib/yumi3d/sceneCache";
-import { voiceSignal } from "@/lib/voice/signal";
+import { openMicGuide, voiceSignal, voiceStage } from "@/lib/voice/signal";
 import type { YumiFeeling } from "@/lib/home/yumiFeel";
 
 const CALM: YumiFeeling = { gaze: null, lean: 0, dizzy: false };
@@ -123,7 +123,9 @@ export default function CosmicHomeYumi({
     canvas.setAttribute("aria-hidden", "true");
     host.appendChild(canvas);
     const relay: YumiSceneRelay = parked?.relay ?? { current: {} };
-    relay.current = {};
+    /* A tap on her in her earmuffs is the way to turn the microphone on
+       (Chi, 2026-11-27); otherwise a tap is only her eye's pull. */
+    relay.current = { onTap: () => { if (voiceStage.deaf) openMicGuide(); } };
     let handle: YumiSceneHandle | null = parked?.handle ?? null;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -254,7 +256,16 @@ export default function CosmicHomeYumi({
       }
       const feeling = feel?.step(now, dt) ?? CALM;
       const felt = state.attention === "idle" && !quiet ? feeling.gaze : null;
-      const gaze = felt ?? gazeFor(state.attention, voice, now);
+      /* At the key that was pressed while it listens, the pupil opening
+         with the voice; earmuffs with no microphone (Chi, 2026-11-27). */
+      const hearing = voiceStage.phase === "listening";
+      handle.setListening?.(hearing ? voiceSignal.level : null);
+      handle.setEarmuffs?.(voiceStage.deaf);
+      const mic = hearing && !reduced ? voiceStage.mic : null;
+      const eye = mic ? handle.eyeScreenPosition() : null;
+      const gaze = mic && eye
+        ? { x: (mic.x - eye.x) / 180 + 0.05 * Math.sin(now / 480) * voice, y: (mic.y - eye.y) / 180 }
+        : felt ?? gazeFor(state.attention, voice, now);
       handle.setGaze?.(gaze.x, gaze.y);
 
       /* Floating quietly; still under the reader's hand, and under reduced motion. */

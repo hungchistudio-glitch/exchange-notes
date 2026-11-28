@@ -35,7 +35,8 @@ describe("one Yumi across the two homes", () => {
     const view = render(<CosmicHomeYumi paused={false} />); await ready();
     expect(view.container.querySelector("canvas")).toBe(scene.canvas); expect(create).not.toHaveBeenCalled();
     expect(scene.handle.resetScreenAnchor).toHaveBeenCalledOnce();
-    expect(scene.relay.current).toEqual({});
+    // Its only callback is the tap that opens the microphone guide while she wears earmuffs.
+    expect(Object.keys(scene.relay.current)).toEqual(["onTap"]);
     view.unmount(); const returned = takeParkedYumiScene();
     expect(returned?.canvas).toBe(scene.canvas); expect(returned?.handle).toBe(scene.handle); expect(scene.handle.dispose).not.toHaveBeenCalled();
     if (returned) parkYumiScene(returned);

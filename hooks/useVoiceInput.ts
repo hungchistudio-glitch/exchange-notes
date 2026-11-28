@@ -4,7 +4,16 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { tidyChinese } from "@/lib/chinese/tidyChinese";
 import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import { stopSpeech } from "@/lib/speech";
-import { createBandReader, levelFromRms, meterStream, resetVoiceSignal, speechPulse } from "@/lib/voice/signal";
+import { isOnline, isWeakSignal, subscribeNetwork } from "@/hooks/useOnline";
+import {
+  createBandReader,
+  levelFromRms,
+  meterStream,
+  resetVoiceSignal,
+  setVoiceDeaf,
+  speechPulse,
+  voiceStage,
+} from "@/lib/voice/signal";
 
 import {
   getRecognitionConstructor,
@@ -131,7 +140,64 @@ export type VoiceNotice =
   | "not-understood"
   | "unavailable"
   | "limit"
-  | "mic-denied";
+  | "mic-denied"
+  /** Another app has the microphone: a call, a recording, Siri. */
+  | "mic-busy"
+  /** There is no microphone to open. */
+  | "mic-missing"
+  /** A weak signal: the phone's own recogniser answered; Yumi listens again later. */
+  | "weak-local"
+  /** No signal: the recording is kept, and heard once the signal is back. */
+  | "queued";
+
+/*
+ * What a microphone that would not open was saying (Chi, 2026-11-27: the
+ * console said "Microphone access is off" and nobody could tell where to
+ * turn it on). Every refusal used to read as a switched-off permission,
+ * and a microphone held by a phone call is not one the reader can switch
+ * on in Settings.
+ */
+export function micNoticeFor(error: unknown): "mic-denied" | "mic-busy" | "mic-missing" {
+  const name = (error as { name?: unknown } | null)?.name;
+  if (name === "NotFoundError" || name === "OverconstrainedError" || name === "DevicesNotFoundError") return "mic-missing";
+  if (name === "NotReadableError" || name === "AbortError" || name === "TrackStartError") return "mic-busy";
+  return "mic-denied";
+}
+
+/* These stay until the reader tries again: each asks them to do something. */
+const STICKY_NOTICES = new Set<VoiceNotice>(["mic-denied", "mic-busy", "mic-missing", "queued"]);
+
+/*
+ * A held key: the reader decides when the sentence is over, so neither the
+ * quiet after speech nor the no-speech window ends it (Chi, 2026-11-27:
+ * 按住說話). The minute is still the ceiling.
+ */
+export type VoiceStartOptions = { hold?: boolean };
+
+/* A recording kept for when the network is good again. */
+type LateHearing = {
+  audio: Blob;
+  /** What the phone heard and was already used; empty when nothing was. */
+  heard: string;
+  /** upgrade: offer Yumi's hearing beside the phone's. replay: hear it at last. */
+  kind: "upgrade" | "replay";
+  at: number;
+  tries: number;
+};
+/* Past this a kept recording belongs to a question nobody is asking any more. */
+const LATE_HEARING_MS = 10 * 60_000;
+const LATE_RETRY_MS = 15_000;
+const BETTER_SHOWN_MS = 60_000;
+
+function networkGood() {
+  return isOnline() && !isWeakSignal();
+}
+
+/* Two hearings of one sentence differ when their words do, not their commas. */
+function sameWords(a: string, b: string) {
+  const plain = (text: string) => text.toLocaleLowerCase().replace(/[\s\p{P}]+/gu, "");
+  return plain(a) === plain(b);
+}
 
 /**
  * What became of a recording handed to `onAudio`.
@@ -184,6 +250,7 @@ export default function useVoiceInput({
   onCaption,
   onAudio,
   onStart,
+  transcribe,
 }: {
   lang: string;
   onResult: (transcript: string) => void;
@@ -195,6 +262,12 @@ export default function useVoiceInput({
     audio: Blob,
     context: { transcript: string },
   ) => Promise<VoiceAudioOutcome | void> | VoiceAudioOutcome | void;
+  /**
+   * Yumi's hearing of a recording, without acting on it: for a sentence the
+   * phone's recogniser already answered on a weak signal. When it differs,
+   * `better` offers it.
+   */
+  transcribe?: (audio: Blob) => Promise<string | null>;
 }) {
   const records = Boolean(onAudio);
   const supported = useSyncExternalStore(
@@ -206,8 +279,21 @@ export default function useVoiceInput({
   const [phase, setPhase] = useState<VoicePhase>("idle");
   const [caption, setCaption] = useState("");
   const [notice, setNoticeState] = useState<VoiceNotice | null>(null);
+  const [held, setHeld] = useState(false);
+  /* Yumi's hearing of a sentence the phone answered on a weak signal. */
+  const [better, setBetter] = useState<string | null>(null);
   const listening = phase === "listening";
   useReloadHold(phase !== "idle");
+
+  /* Yumi, on both homes, follows whichever microphone is open. */
+  useEffect(() => {
+    if (phase === "idle") return;
+    voiceStage.phase = phase;
+    return () => {
+      voiceStage.phase = "idle";
+      voiceStage.holding = false;
+    };
+  }, [phase]);
 
   type Session = {
     recognition: SpeechRecognitionLike | null;
@@ -229,12 +315,20 @@ export default function useVoiceInput({
     pulse: ((strength: number) => void) | null;
     /** How many characters dictation has heard, to size each pulse. */
     heard: number;
+    /** Held down to talk: only letting go ends it. */
+    hold: boolean;
+    /** Dictation's words so far, for a held key let go before a final. */
+    words: string;
+    /** The phone's own recogniser answering for a weak signal. */
+    local: boolean;
   };
   const sessionRef = useRef<Session | null>(null);
   const onResultRef = useRef(onResult);
   const onCaptionRef = useRef(onCaption);
   const onAudioRef = useRef(onAudio);
   const onStartRef = useRef(onStart);
+  const transcribeRef = useRef(transcribe);
+  useEffect(() => { transcribeRef.current = transcribe; }, [transcribe]);
   useEffect(() => { onResultRef.current = onResult; }, [onResult]);
   useEffect(() => { onCaptionRef.current = onCaption; }, [onCaption]);
   useEffect(() => { onAudioRef.current = onAudio; }, [onAudio]);
@@ -259,8 +353,75 @@ export default function useVoiceInput({
   const showNotice = useCallback((value: VoiceNotice | null) => {
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     setNoticeState(value);
-    if (value) noticeTimer.current = setTimeout(() => setNoticeState(null), NOTICE_MS);
+    if (value === "mic-denied") setVoiceDeaf(true);
+    if (value && !STICKY_NOTICES.has(value)) {
+      noticeTimer.current = setTimeout(() => setNoticeState(null), value === "weak-local" ? NOTICE_MS * 2 : NOTICE_MS);
+    }
   }, []);
+
+  /* ── Hearing it later ────────────────────────────────────────────────
+     A weak signal still answers at once with what the phone heard; the
+     recording waits here for a good signal, then Yumi hears it. A replay
+     (nothing was heard at all) goes through onAudio, as if just recorded;
+     an upgrade only offers Yumi's words when they differ. */
+  const lateRef = useRef<LateHearing | null>(null);
+  const lateBusy = useRef(false);
+  const betterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const offerBetter = useCallback((text: string | null) => {
+    if (betterTimer.current) clearTimeout(betterTimer.current);
+    betterTimer.current = null;
+    setBetter(text);
+    if (text) betterTimer.current = setTimeout(() => setBetter(null), BETTER_SHOWN_MS);
+  }, []);
+  useEffect(() => () => { if (betterTimer.current) clearTimeout(betterTimer.current); }, []);
+
+  const hearLate = useCallback(async () => {
+    const late = lateRef.current;
+    if (!late || lateBusy.current || sessionRef.current || !networkGood()) return;
+    if (Date.now() - late.at > LATE_HEARING_MS) { lateRef.current = null; return; }
+    lateBusy.current = true;
+    late.tries += 1;
+    try {
+      if (late.kind === "replay") {
+        let outcome: VoiceAudioOutcome | void = "unavailable";
+        try { outcome = await onAudioRef.current?.(late.audio, { transcript: "" }); } catch { /* Tried again later. */ }
+        if (lateRef.current !== late) return;
+        if (outcome === "unavailable" && late.tries < 3) return;
+        lateRef.current = null;
+        setNoticeState(current => (current === "queued" ? null : current));
+        if (outcome === "limit") showNotice("limit");
+        else if (outcome === "unheard") showNotice("not-understood");
+        return;
+      }
+      let text: string | null = null;
+      try { text = (await transcribeRef.current?.(late.audio)) ?? null; } catch { text = null; }
+      if (lateRef.current !== late) return;
+      if (text === null && late.tries < 3) return;
+      lateRef.current = null;
+      if (text && !sameWords(text, late.heard)) offerBetter(text.trim());
+    } finally {
+      lateBusy.current = false;
+    }
+  }, [offerBetter, showNotice]);
+  const hearLateRef = useRef(hearLate);
+  useEffect(() => { hearLateRef.current = hearLate; }, [hearLate]);
+  useEffect(() => {
+    const unsubscribe = subscribeNetwork(() => { void hearLateRef.current(); });
+    const timer = setInterval(() => { if (lateRef.current) void hearLateRef.current(); }, LATE_RETRY_MS);
+    return () => { unsubscribe(); clearInterval(timer); };
+  }, []);
+  const keepForLater = useCallback((audio: Blob, heard: string, kind: LateHearing["kind"]) => {
+    if (audio.size === 0) return;
+    if (kind === "upgrade" && !transcribeRef.current) return;
+    lateRef.current = { audio, heard, kind, at: Date.now(), tries: 0 };
+  }, []);
+
+  /** Yumi's words for the sentence, once, for the surface to look up. */
+  const takeBetter = useCallback(() => {
+    const text = better;
+    offerBetter(null);
+    return text;
+  }, [better, offerBetter]);
   useEffect(() => () => { if (noticeTimer.current) clearTimeout(noticeTimer.current); }, []);
 
   const release = useCallback((session: Session) => {
@@ -324,6 +485,22 @@ export default function useVoiceInput({
       return;
     }
 
+    /*
+     * A weak signal with the phone's own words in hand (a computer, where
+     * the recogniser captions beside the recording): those words now, and
+     * Yumi's later, rather than a minute of waiting on an upload.
+     */
+    if (transcript && audio.size > 0 && onAudioRef.current && !networkGood()) {
+      if (!current()) return;
+      sessionRef.current = null;
+      setPhase("idle");
+      setCaption("");
+      onResultRef.current(transcript);
+      keepForLater(audio, transcript, "upgrade");
+      showNotice("weak-local");
+      return;
+    }
+
     if (audio.size === 0 || !onAudioRef.current) {
       if (!current()) return;
       sessionRef.current = null;
@@ -349,8 +526,12 @@ export default function useVoiceInput({
     if (!outcome || outcome === "handled") return;
     if (transcript) onResultRef.current(transcript);
     if (outcome === "limit") showNotice("limit");
-    else if (!transcript) showNotice(outcome === "unheard" ? "not-understood" : "unavailable");
-  }, [showNotice]);
+    else if (!transcript && outcome === "unavailable" && !networkGood()) {
+      // Nothing heard, nothing reachable: keep it for a good signal.
+      keepForLater(audio, "", "replay");
+      showNotice("queued");
+    } else if (!transcript) showNotice(outcome === "unheard" ? "not-understood" : "unavailable");
+  }, [keepForLater, showNotice]);
 
   const finishRef = useRef(finish);
   useEffect(() => { finishRef.current = finish; }, [finish]);
@@ -378,8 +559,9 @@ export default function useVoiceInput({
       return;
     }
     // Dictation keeps its session: the recogniser's final words arrive
-    // after stop() and are still the reader's. onend lets it go.
-    if (!records) {
+    // after stop() and are still the reader's. onend lets it go. So does
+    // the phone's own recogniser standing in on a weak signal.
+    if (!records || session.local) {
       setPhase("idle");
       setCaption("");
       return;
@@ -455,6 +637,7 @@ export default function useVoiceInput({
       writeLevel(level);
       bands.read(level);
 
+      if (session.hold) { session.frame = requestAnimationFrame(tick); return; }
       if (session.heardSpeech && now - lastSpeechAt > SILENCE_END_MS) { stopRef.current(); return; }
       if (!session.heardSpeech && now - startedAt > NO_SPEECH_MS) {
         // A muted track really is recording nothing: say so now rather
@@ -469,14 +652,29 @@ export default function useVoiceInput({
     session.frame = requestAnimationFrame(tick);
   }, [writeLevel]);
 
-  const start = useCallback(() => {
-    const recording = records && canRecord();
-    const Recognition = recording && !recognizerSharesMicrophone()
-      ? null
-      : getRecognitionConstructor();
+  const start = useCallback((options: VoiceStartOptions = {}) => {
+    const hold = Boolean(options.hold);
+    const wantsRecording = records && canRecord();
+    const available = getRecognitionConstructor();
+    /*
+     * A weak signal on an iPhone, where the recogniser cannot share the
+     * microphone with a recording: the phone's own recogniser answers
+     * instead, at once, rather than an upload that may never arrive
+     * (Chi, 2026-11-27: 弱訊號備援). Weak, not gone: Safari's recogniser
+     * mostly needs the network too, and with none it would lose the
+     * sentence. With no network at all the recording is made as ever and
+     * kept until there is one ("queued").
+     */
+    const local = wantsRecording && !recognizerSharesMicrophone() && available !== null && isOnline() && isWeakSignal();
+    const recording = wantsRecording && !local;
+    const Recognition = recording && !recognizerSharesMicrophone() ? null : available;
     if (!Recognition && !recording) return;
     cancel();
     showNotice(null);
+    offerBetter(null);
+    lateRef.current = null;
+    setHeld(hold);
+    voiceStage.holding = hold;
     // A pronunciation still playing would be recorded as the reader's words,
     // and on iOS it holds the audio session the microphone is about to need.
     stopSpeech();
@@ -498,6 +696,9 @@ export default function useVoiceInput({
       stopMeter: null,
       pulse: null,
       heard: 0,
+      hold,
+      words: "",
+      local,
     };
     sessionRef.current = session;
     const current = () => sessionRef.current === session && !session.cancelled;
@@ -507,7 +708,7 @@ export default function useVoiceInput({
       recognition.lang = lang;
       // Recording: captions for as long as the reader speaks. Dictation:
       // one utterance, as the filter field has always worked.
-      recognition.continuous = recording;
+      recognition.continuous = recording || hold;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
       recognition.onresult = event => {
@@ -533,11 +734,15 @@ export default function useVoiceInput({
         // Each new syllable swells the sea where nothing meters the voice.
         session.pulse?.(Math.max(0.2, Math.min(1, (words.length - session.heard) / 6)));
         session.heard = words.length;
+        session.words = words;
         setCaption(words);
         if (words) onCaptionRef.current?.(words);
+        // Held: the whole of it, once the key is let go (onend).
+        if (session.hold) { session.transcript = tidyChinese(finals.trim()); return; }
         if (transcript.trim()) {
           session.submitted = true;
           onResultRef.current(tidyChinese(transcript.trim()));
+          if (session.local) showNotice("weak-local");
         }
       };
       recognition.onerror = event => {
@@ -545,7 +750,9 @@ export default function useVoiceInput({
         // Recording: the recogniser only captions, and the recording carries
         // on without it — no caption is not a failure worth reporting.
         if (recording) return;
-        if (event.error === "not-allowed") showNotice("mic-denied");
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") showNotice("mic-denied");
+        else if (event.error === "audio-capture") showNotice("mic-busy");
+        else if (event.error === "network" && session.local) showNotice("unavailable");
         else if (event.error !== "aborted" && event.error !== "no-speech") console.error("Speech recognition failed:", event.error);
         release(session);
         sessionRef.current = null;
@@ -557,6 +764,14 @@ export default function useVoiceInput({
       };
       recognition.onend = () => {
         if (recording) return; // The recording, not the recogniser, decides.
+        if (session.hold && !session.submitted && !session.cancelled) {
+          const said = (session.transcript || session.words).trim();
+          if (said) {
+            session.submitted = true;
+            onResultRef.current(said);
+            if (session.local) showNotice("weak-local");
+          }
+        }
         release(session);
         if (current()) {
           sessionRef.current = null;
@@ -580,6 +795,8 @@ export default function useVoiceInput({
         // Permission can arrive after Stop, navigation, or another recording.
         if (!current() || session.stopped) { stream.getTracks().forEach(track => track.stop()); return; }
         session.stream = stream;
+        // She hears again: the earmuffs come off.
+        if (voiceStage.deaf) setVoiceDeaf(false);
         const recorder = createRecorder(stream);
         session.recorder = recorder;
         recorder.ondataavailable = event => { if (event.data.size > 0) session.chunks.push(event.data); };
@@ -594,14 +811,14 @@ export default function useVoiceInput({
         // read zeros and never hear the speaker finish.
         void session.audioContext?.resume?.().catch(() => undefined);
         meter(session, stream);
-      }).catch(() => {
+      }).catch(error => {
         if (!current()) return;
         try { recognition?.abort(); } catch { /* Already ended. */ }
         release(session);
         sessionRef.current = null;
         setPhase("idle");
         setCaption("");
-        showNotice("mic-denied");
+        showNotice(micNoticeFor(error));
       });
     }
 
@@ -624,6 +841,7 @@ export default function useVoiceInput({
           const context = session.audioContext;
           if (!current() || session.stopped || !context) { stream.getTracks().forEach(track => track.stop()); return; }
           session.stream = stream;
+          if (voiceStage.deaf) setVoiceDeaf(false);
           void context.resume?.().catch(() => undefined);
           session.stopMeter = meterStream(context, stream, writeLevel);
         }).catch(() => {
@@ -653,14 +871,15 @@ export default function useVoiceInput({
     setCaption("");
     session.timer = setTimeout(() => {
       if (!current()) return;
-      if (recording) { stopRef.current(); return; }
+      // A held key at the minute: what was said is still sent.
+      if (recording || hold) { stopRef.current(); return; }
       try { recognition?.abort(); } catch { /* Already ended. */ }
       release(session);
       sessionRef.current = null;
       setPhase("idle");
       setCaption("");
-    }, recording ? MAX_RECORDING_MS : DICTATION_MAX_MS);
-  }, [lang, records, cancel, release, finish, meter, showNotice, writeLevel]);
+    }, recording || hold ? MAX_RECORDING_MS : DICTATION_MAX_MS);
+  }, [lang, records, cancel, release, finish, meter, showNotice, writeLevel, offerBetter]);
 
   const toggle = useCallback(() => {
     if (phase === "listening") {
@@ -678,6 +897,11 @@ export default function useVoiceInput({
     phase,
     caption,
     notice,
+    /** Held down to talk, this session. */
+    held,
+    /** Yumi's hearing of a sentence the phone answered on a weak signal. */
+    better,
+    takeBetter,
     start,
     stop,
     cancel,

@@ -26,7 +26,7 @@ import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput, { type VoiceAudioOutcome } from "@/hooks/useVoiceInput";
 import { onHomeSearchDismiss } from "@/lib/home/homeMoments";
 import { getLanguage, getLanguageName } from "@/lib/languages";
-import { transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
+import { hearText, transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 import { stopSpeech } from "@/lib/speech";
@@ -122,6 +122,7 @@ export default function UniversalSearchField({
     },
     onAudio: handleAudio,
     onStart: warmVoiceLookup,
+    transcribe: hearText,
   });
 
   function handleSubmit(event: FormEvent) {
@@ -260,6 +261,14 @@ export default function UniversalSearchField({
                 acceptsVoice.current = true;
                 voice.toggle();
               }}
+              hold={{
+                start: () => {
+                  onboarding.dismiss();
+                  acceptsVoice.current = true;
+                  voice.start({ hold: true });
+                },
+                stop: voice.stop,
+              }}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95"
               idleClassName="bg-surface text-ink-strong"
               activeClassName="bg-black text-white"
@@ -289,7 +298,14 @@ export default function UniversalSearchField({
             listening={voice.listening}
             levelRef={voice.bindLevel}
             caption={voice.caption}
-            notice={voice.notice} className="mt-3 px-1" />
+            notice={voice.notice}
+            held={voice.held}
+            better={voice.better}
+            onBetter={() => {
+              const text = voice.takeBetter();
+              if (text) { acceptsVoice.current = true; search.submit(text, "voice"); }
+            }}
+            className="mt-3 px-1" />
 
       {imageLookup.reading ? (
         <p

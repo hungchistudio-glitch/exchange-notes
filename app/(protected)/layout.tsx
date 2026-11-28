@@ -21,6 +21,7 @@ import EnergyRewardObserver from "@/components/shop/EnergyRewardObserver";
 import { AppTutorialCoach } from "@/components/tutorial/TutorialCoach";
 import OnDeviceVisionWarmup from "@/components/foundation/OnDeviceVisionWarmup";
 import OfflinePageKeeper from "@/components/foundation/OfflinePageKeeper";
+import MicGuideMount from "@/components/voice/MicGuideMount";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
@@ -228,6 +229,8 @@ export default async function ProtectedLayout({
             */}
             <AppTutorialCoach />
             <OnDeviceVisionWarmup />
+            {/* Where to turn the microphone on, from a notice or from Yumi. */}
+            <MicGuideMount />
           </LexiconSearchProvider>
         </VocabularyProvider>
 

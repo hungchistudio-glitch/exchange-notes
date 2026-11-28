@@ -1,5 +1,6 @@
 "use client";
 
+import { reportNetworkFailure, reportSlowNetwork } from "@/hooks/useOnline";
 import type { VoiceAudioOutcome } from "@/hooks/useVoiceInput";
 
 /*
@@ -76,11 +77,20 @@ export async function transcribeSpeech(audio: Blob): Promise<TranscribedSpeech> 
     }
 
     return { outcome: heard.failed ? "unavailable" : "unheard" };
-  } catch {
+  } catch (error) {
     // No connection, or no answer in time. The caller falls back to
-    // whatever the browser heard.
+    // whatever the browser heard, or keeps the recording for a better
+    // signal (hooks/useVoiceInput.ts), which is why the app is told.
+    if (controller.signal.aborted) reportSlowNetwork();
+    else if (error instanceof TypeError) reportNetworkFailure();
     return { outcome: "unavailable" };
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Only what was said, or null: for a sentence the phone already answered. */
+export async function hearText(audio: Blob): Promise<string | null> {
+  const heard = await transcribeSpeech(audio);
+  return heard.outcome === "handled" ? heard.text : null;
 }

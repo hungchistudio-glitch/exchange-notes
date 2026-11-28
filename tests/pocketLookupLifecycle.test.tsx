@@ -9,7 +9,7 @@ vi.mock("@/hooks/lexicon/useLexiconSearch",()=>({default:()=>({query:"",setQuery
 vi.mock("@/hooks/lexicon/useLexiconSave",()=>({default:()=>({stateFor:()=>"idle",save:vi.fn()})}));
 vi.mock("@/hooks/useCosmicMode",()=>({default:()=>false}));
 vi.mock("@/hooks/useVoiceInput",()=>({default:(options:{onAudio:(audio:Blob)=>Promise<unknown>})=>{test.audio=options.onAudio;return {cancel:test.cancel,supported:false,phase:"idle"};}}));
-vi.mock("@/lib/lexicon/voiceLookup",()=>({transcribeSpeech:test.transcribe,warmVoiceLookup:vi.fn()}));
+vi.mock("@/lib/lexicon/voiceLookup",()=>({transcribeSpeech:test.transcribe,hearText:vi.fn(),warmVoiceLookup:vi.fn()}));
 vi.mock("@/components/voice/VoiceSea",()=>({default:()=>null}));
 beforeEach(()=>{vi.clearAllMocks();setInterfaceLanguage("english");});
 it("keeps draft text through a local language switch and invalidates the departed search",()=>{
