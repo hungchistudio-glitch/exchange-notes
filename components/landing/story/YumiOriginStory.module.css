@@ -819,6 +819,10 @@
    top edge (the beam starts above the stand's box) would cross the frame. */
 .dock [data-part="spotlight"] {
   opacity: 0;
+  /* The shared shop beam begins at its box edge. In the film its whole
+     box can be seen, so feather both ends instead of exposing that seam. */
+  -webkit-mask-image: linear-gradient(transparent, #000 24%, #000 78%, transparent);
+  mask-image: linear-gradient(transparent, #000 24%, #000 78%, transparent);
   transition: opacity 700ms ease;
 }
 
@@ -1364,6 +1368,13 @@
    with a quiet, compact action rather than another oversized hero button. */
 .eyeAnchor { position: absolute; top: 0; left: 0; pointer-events: none; visibility: hidden; }
 .screen[data-finale] .sky { filter: saturate(0.55); }
+/* A finished film has a stable final composition even if a browser drops
+   a layer's compositor animation. Replay removes data-finale. */
+.screen[data-finale] [data-track="sky"] { opacity: 1 !important; }
+.screen[data-finale] [data-track="orbit"],
+.screen[data-finale] [data-track="dock"],
+.screen[data-finale] [data-track="streaks"],
+.screen[data-finale] .letterbox { visibility: hidden; }
 .endCard {
   width: 49%;
   padding: 5% 6%;
@@ -1400,8 +1411,11 @@
 .endCta > a:focus-visible { outline: 2px solid #b8e8e5; outline-offset: 4px; }
 .endHint { font-size: 0.75rem; opacity: 0.7; margin: 0; }
 @media (max-width: 720px) {
+  /* Mobile uses the vignette already behind the content; opaque cinema
+     bars must never cut through her hat or the invitation. */
+  .letterbox { display: none; }
   .screen { aspect-ratio: 3 / 5; min-height: 640px; }
-  .endCard { top: 43%; bottom: 0; width: 100%; padding: 0 24px 24px; gap: 8px; align-content: center; text-align: center; }
+  .endCard { top: 43%; bottom: 0; width: 100%; padding: 16px 24px 36px; gap: 8px; align-content: center; text-align: center; }
   .firstWord { justify-items: center; gap: 5px; padding: 12px 0; margin: 0; }
   .firstWordText { font-size: clamp(1.5rem, 7vw, 2.2rem); }
   .endTitle { font-size: 1.4rem; }
