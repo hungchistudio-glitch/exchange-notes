@@ -32,18 +32,17 @@ import {
   MERGE_AT_MS,
   STORY_ACTS,
   STORY_DURATION_MS,
-  STORY_TRACKS,
   DOCKED_AT_MS,
   LAYERS_DRAWN_AT_MS,
   lookAt,
   outfitAt,
-  planetTrack,
   actAt,
   wordAt,
   yumiAt,
-  type StoryTrack,
   type StoryWord,
 } from "./storyTimeline";
+import { createLayerClock, createPlainClock, type FilmClock } from "./filmClock";
+import { compileEarthMotion } from "./earthMotion";
 import styles from "./YumiOriginStory.module.css";
 
 type StoryCopy = TranslationDictionary["landing"]["story"];
@@ -126,100 +125,6 @@ const MATTER: ReadonlyArray<{
   { x: 72, y: 90, size: 5, tone: "#e8edf6", dx: -6, dy: -14, duration: 11, delay: -8 },
 ];
 
-type FilmClock = {
-  time(): number;
-  playing(): boolean;
-  play(): void;
-  pause(): void;
-  seek(time: number): void;
-  dispose(): void;
-  /** True when the clock is the layers' own Web Animations. */
-  compositor: boolean;
-  /** The screen changed size: tracks drawn to its size are redrawn. */
-  resize?(width: number, height: number): void;
-};
-
-/**
- * The film's clock: every layer's Web Animation, moved together. A
- * chapter jump is one currentTime write on each, and the 3D Yumi reads the
- * time back from the first.
- */
-function createLayerClock(root: HTMLElement, screen: HTMLElement): FilmClock | null {
-  const elements = Array.from(root.querySelectorAll<HTMLElement>("[data-track]"));
-  if (!elements.length || typeof elements[0].animate !== "function") return null;
-
-  /* The planet's descent ends on Station 33's horizon, which is placed in
-     proportion to the screen's width and height; its keyframes are worked
-     out for this screen. */
-  const framesFor = (name: StoryTrack) =>
-    name === "planet" && screen.clientWidth > 0 && screen.clientHeight > 0
-      ? planetTrack(screen.clientWidth, screen.clientHeight)
-      : STORY_TRACKS[name];
-
-  let planet: Animation | null = null;
-  const animations = elements.map(element => {
-    const name = element.dataset.track as StoryTrack;
-    const animation = element.animate(framesFor(name), {
-      duration: STORY_DURATION_MS,
-      fill: "both",
-    });
-    animation.pause();
-    animation.currentTime = 0;
-    if (name === "planet") planet = animation;
-    return animation;
-  });
-  const lead = animations[0];
-  const time = () => Math.min(STORY_DURATION_MS, Number(lead.currentTime ?? 0));
-
-  return {
-    compositor: true,
-    time,
-    playing: () => lead.playState === "running",
-    play() {
-      if (time() >= STORY_DURATION_MS - 1) for (const a of animations) a.currentTime = 0;
-      for (const a of animations) a.play();
-    },
-    pause() {
-      for (const a of animations) a.pause();
-    },
-    seek(next) {
-      for (const a of animations) a.currentTime = next;
-    },
-    dispose() {
-      for (const a of animations) a.cancel();
-    },
-    resize(width, height) {
-      if (width > 0 && height > 0) (planet?.effect as KeyframeEffect | null)?.setKeyframes(planetTrack(width, height));
-    },
-  };
-}
-
-/** Where Web Animations are missing: a plain clock, and still layers. */
-function createPlainClock(): FilmClock {
-  let base = 0;
-  let since: number | null = null;
-  const time = () =>
-    since === null ? base : Math.min(STORY_DURATION_MS, base + performance.now() - since);
-  return {
-    compositor: false,
-    time,
-    playing: () => since !== null,
-    play() {
-      if (time() >= STORY_DURATION_MS - 1) base = 0;
-      else base = time();
-      since = performance.now();
-    },
-    pause() {
-      base = time();
-      since = null;
-    },
-    seek(next) {
-      base = next;
-      if (since !== null) since = performance.now();
-    },
-    dispose() {},
-  };
-}
 
 type Catalog = {
   items: ShopItem[];
@@ -507,6 +412,7 @@ export default function YumiOriginStory({
         : null;
     const planetBox = { left: 0, top: 0, size: 0 };
     let earthDrawnAt = Number.NaN;
+    let earthMotion = compileEarthMotion(size.width, size.height);
     /*
      * Its resolution: 1.5x at most (as her own canvas), and no more pixels
      * than EARTH_PIXEL_BUDGET. When the Earth is the horizon it fills half
@@ -534,6 +440,7 @@ export default function YumiOriginStory({
         planetBox.top = planet.offsetTop;
         planetBox.size = planet.offsetWidth;
       }
+      earthMotion = compileEarthMotion(size.width, size.height);
       earthRatio = Math.max(1, ratioFor() - 0.25 * ratioSteps);
       painter?.resize(size.width, size.height, earthRatio);
       earthDrawnAt = Number.NaN;
@@ -542,8 +449,8 @@ export default function YumiOriginStory({
     let glintShown = false;
 
     /*
-     * Where the planet's and the window's animations have put the Earth this
-     * frame, as one matrix from the planet's box to the screen, and draw it.
+     * Sample the same keyframes as the window without reading computed styles
+     * back from the browser every frame, then draw Earth with that matrix.
      * Returns its centre and radius on screen, for her gaze.
      */
     const drawEarth = (time: number) => {
@@ -555,16 +462,14 @@ export default function YumiOriginStory({
         earthDrawnAt = Number.NaN;
         return null;
       }
-      const orbitStyle = getComputedStyle(orbit);
-      const planetStyle = getComputedStyle(planet);
-      const toMatrix = (value: string) => new DOMMatrix(value && value !== "none" ? value : undefined);
+      const motion = earthMotion(time);
       const half = planetBox.size / 2;
       const matrix = new DOMMatrix()
         .translate(0.5 * size.width, 0.7 * size.height)
-        .multiply(toMatrix(orbitStyle.transform))
+        .translate(motion.orbit.x, motion.orbit.y).scale(motion.orbit.scale)
         .translate(-0.5 * size.width, -0.7 * size.height)
         .translate(planetBox.left + half, planetBox.top + half)
-        .multiply(toMatrix(planetStyle.transform))
+        .translate(motion.planet.x, motion.planet.y).scale(motion.planet.scale)
         .translate(-half, -half);
       if (time !== earthDrawnAt) {
         earthDrawnAt = time;
@@ -573,8 +478,8 @@ export default function YumiOriginStory({
           height: size.height,
           size: planetBox.size,
           matrix,
-          opacity: Number(orbitStyle.opacity) * Number(planetStyle.opacity),
-          flare: flareRef.current ? Number(getComputedStyle(flareRef.current).opacity) : 0,
+          opacity: motion.orbit.opacity * motion.planet.opacity,
+          flare: motion.flare,
           time,
           air: reduced ? 0 : airAt(time),
         });
@@ -623,6 +528,7 @@ export default function YumiOriginStory({
       lastDraw = now;
 
       const time = clock.time();
+      clock.sync?.();
       if (clock.playing() && time >= STORY_DURATION_MS) finish();
       showTime(time);
 
@@ -850,11 +756,6 @@ export default function YumiOriginStory({
             measureEarth();
           });
     resize?.observe(screen);
-
-    /* The lead animation's own end, so a film that finishes while its tab
-       is in the background still shows its last frame and the replay. */
-    const lead = film.querySelector<HTMLElement>("[data-track]")?.getAnimations?.()[0];
-    if (lead) lead.onfinish = () => { if (!disposed) finish(); };
 
     return () => {
       disposed = true;

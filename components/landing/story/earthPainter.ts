@@ -13,8 +13,8 @@
 
    Drawn here instead, every frame, into a canvas the size of the screen,
    with the same clock: the planet's and the station's own Web Animations
-   still run (on invisible layers that paint nothing), and the projector
-   reads where they put the planet and hands it to `draw`. Nothing is ever
+   still run (on invisible layers that paint nothing); earthMotion samples
+   their same keyframes without computed-style reads and hands them to `draw`. Nothing is ever
    a small picture blown up, so it is sharp at every size, and nothing is
    waiting to be rasterised, so nothing goes missing.
 
