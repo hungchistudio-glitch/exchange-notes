@@ -14,7 +14,7 @@ import { Keyboard, Mic, Radar } from "lucide-react";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
-import { VoiceCaptureStatus } from "@/components/lexicon/VoiceCapture";
+import { VoiceCaptureStatus, usePressToTalk } from "@/components/lexicon/VoiceCapture";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -25,7 +25,7 @@ import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput, { type VoiceAudioOutcome } from "@/hooks/useVoiceInput";
-import { transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
+import { hearText, transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
 import {
   getLanguage,
   getLanguageName,
@@ -123,6 +123,11 @@ export default function OmniLexiconConsole({
     caption: voiceCaption,
     notice: voiceNotice,
     bindLevel: voiceLevelRef,
+    held: voiceHeld,
+    better: voiceBetter,
+    takeBetter,
+    start: startVoice,
+    stop: stopVoice,
   } = useVoiceInput({
     // The caption listens in the language being learned; what was actually
     // said, in any language, comes back from the model.
@@ -130,8 +135,16 @@ export default function OmniLexiconConsole({
     onResult: (transcript) => search.submit(transcript, "voice"),
     onAudio: handleAudio,
     onStart: warmVoiceLookup,
+    transcribe: hearText,
   });
   const understanding = voicePhase === "understanding";
+  /* The same key holds to talk, as every microphone does. */
+  const voiceKey = usePressToTalk({
+    phase: voicePhase,
+    onTap: toggleVoice,
+    onHoldStart: () => startVoice({ hold: true }),
+    onHoldEnd: stopVoice,
+  });
 
   const state: OmniLexiconState = listening
     ? "listening"
@@ -290,10 +303,11 @@ export default function OmniLexiconConsole({
             type="button"
             className={styles.mode}
             data-active={listening}
+            data-holding={voiceKey.holding || undefined}
             aria-pressed={listening}
-            onClick={toggleVoice}
-            aria-label={copy.inputVoice}
-            title={copy.inputVoice}
+            {...voiceKey.bind}
+            aria-label={voiceKey.holding ? t.lexicon.voice.holding : copy.inputVoice}
+            title={`${copy.inputVoice} · ${t.lexicon.voice.holdHint}`}
           >
             <Mic size={17} strokeWidth={1.7} aria-hidden="true" />
           </button>
@@ -317,6 +331,12 @@ export default function OmniLexiconConsole({
         listening={listening}
         caption={voiceCaption}
         notice={voiceNotice}
+        held={voiceHeld}
+        better={voiceBetter}
+        onBetter={() => {
+          const text = takeBetter();
+          if (text) search.submit(text, "voice");
+        }}
         tone="cosmic"
         compact
         className="mt-2.5"

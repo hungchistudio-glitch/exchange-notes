@@ -204,3 +204,15 @@
     transition: none;
   }
 }
+
+/* Push to talk (Chi, 2026-11-27): a held key, with no callout or selection
+   under the thumb, and a brighter rim while it is held. */
+.mode {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+.mode[data-holding] {
+  box-shadow: 0 0 0 1px var(--cosmic-cyan), 0 0 22px color-mix(in oklab, var(--cosmic-cyan) 45%, transparent);
+}

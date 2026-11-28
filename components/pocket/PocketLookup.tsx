@@ -15,7 +15,7 @@ import useLexiconSearch from "@/hooks/lexicon/useLexiconSearch";
 import useCosmicMode from "@/hooks/useCosmicMode";
 import useVoiceInput from "@/hooks/useVoiceInput";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
-import { transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
+import { hearText, transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
 
 import PocketLookupView from "./PocketLookupView";
 import styles from "./PocketLookup.module.css";
@@ -98,6 +98,7 @@ function LookupSession({
       voiceGeneration.current++;
       warmVoiceLookup();
     },
+    transcribe: hearText,
   });
 
   const cancelRecording = voice.cancel;
@@ -133,6 +134,7 @@ function LookupSession({
             listening={voice.listening}
             levelRef={voice.bindLevel}
             onPress={voice.toggle}
+            hold={{ start: () => voice.start({ hold: true }), stop: voice.stop }}
             className={styles.icon}
             idleClassName=""
             activeClassName=""
@@ -147,6 +149,12 @@ function LookupSession({
         listening={voice.listening}
         caption={voice.caption}
         notice={voice.notice}
+        held={voice.held}
+        better={voice.better}
+        onBetter={() => {
+          const text = voice.takeBetter();
+          if (text) { onDraft(text); search.submit(text, "voice"); setVoiceOpen(false); }
+        }}
         tone={cosmic ? "cosmic" : "warm"}
       />
       <VoiceSea phase={voice.phase} />

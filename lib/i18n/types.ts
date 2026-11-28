@@ -1,6 +1,16 @@
 import type { InfoCopy } from "@/lib/i18n/info/types";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 
+/** Where the reader is, for the steps to turning a microphone on. */
+export type MicPlatform =
+  | "ios-home"
+  | "ios-safari"
+  | "ios-app"
+  | "android"
+  | "mac-safari"
+  | "desktop-chrome"
+  | "desktop-firefox";
+
 /**
  * Dictionaries are keyed by interface language, so this equation is correct
  * — and confined to the interface axis. Do not extend it to the learning
@@ -770,6 +780,41 @@ export type TranslationDictionary = {
       unavailable: string;
       limit: string;
       micDenied: string;
+      /** Another app holds the microphone (a call, a recording, Siri). */
+      micBusy: string;
+      /** No microphone at all. */
+      micMissing: string;
+      /** After micDenied: the key that opens the guide to turning it on. */
+      micHowTo: string;
+      /** The key's name while it is held down (push to talk). */
+      holding: string;
+      /** Added to the key's title: that it can also be held. */
+      holdHint: string;
+      /** A weak signal: the phone's own recogniser answered. */
+      weakLocal: string;
+      /** No signal: the recording is kept and heard later. */
+      queued: string;
+      /** Before Yumi's words for a sentence the phone answered first. */
+      better: string;
+      useBetter: string;
+      /** components/voice/MicGuide.tsx: where to turn the microphone on. */
+      guide: {
+        title: string;
+        intro: string;
+        youAreOn: string;
+        other: string;
+        platforms: Record<MicPlatform, string>;
+        steps: Record<MicPlatform, string[]>;
+        retry: string;
+        trying: string;
+        works: string;
+        stillDenied: string;
+        busy: string;
+        missing: string;
+        close: string;
+        /** Yumi's own label while she wears her earmuffs. */
+        yumiDeaf: string;
+      };
     };
 
     /** Yumi's reading of a sentence. */
@@ -2916,6 +2961,28 @@ export type TranslationDictionary = {
       off: string;
       permissionDenied: string;
       unavailable: string;
+    };
+    /** Settings › Microphone: its state, and the check-up (Chi, 2026-11-27). */
+    microphone: {
+      rowTitle: string;
+      rowDescription: string;
+      status: { granted: string; denied: string; prompt: string; unknown: string };
+      checkTitle: string;
+      checkIntro: string;
+      start: string;
+      again: string;
+      speakNow: string;
+      listening: string;
+      steps: { permission: string; level: string; hearing: string };
+      permissionOk: string;
+      levelOk: string;
+      levelLow: string;
+      hearingOk: string;
+      hearingNone: string;
+      hearingLimit: string;
+      hearingOffline: string;
+      allGood: string;
+      howTo: string;
     };
     /**
      * Shown only to the app's owner, when the Guardian refuses the news's key

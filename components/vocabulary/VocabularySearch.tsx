@@ -102,6 +102,8 @@ export default function VocabularySearch({
     supported: voiceSupported,
     listening,
     toggle: toggleVoice,
+    start: startVoice,
+    stop: stopVoice,
     bindLevel: voiceLevelRef,
   } = useVoiceInput({
     // Dictation listens in the language being learned, whichever it is.
@@ -245,6 +247,10 @@ export default function VocabularySearch({
                 onPress={() => {
                   if (!listening) onQueryChange("");
                   toggleVoice();
+                }}
+                hold={{
+                  start: () => { onQueryChange(""); startVoice({ hold: true }); },
+                  stop: stopVoice,
                 }}
                 labels={{ idle: search.voiceSearch, listening: search.voiceListening }}
                 iconSize={16}

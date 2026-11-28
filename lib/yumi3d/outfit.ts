@@ -827,6 +827,57 @@ function buildHeadphones(): THREE.Object3D {
   return group(band, pad, cups);
 }
 
+/*
+ * Earmuffs (Chi, 2026-11-27): what she wears while the page has no
+ * microphone, so the reader can see why she is not listening. Not a shop
+ * piece and never sold: the scene puts them on over her head slot
+ * (setEarmuffs) and takes them off when a microphone opens. Two fluffy
+ * muffs, their surface pushed out by a little seeded noise, on a soft band.
+ */
+function fluff(radius: number, seed: number, material: THREE.Material) {
+  const geometry = new THREE.IcosahedronGeometry(radius, 3);
+  const rand = seeded(seed);
+  const position = geometry.getAttribute("position");
+  const point = new THREE.Vector3();
+  /* Shared corners must move together, or the muff splits along its seams. */
+  const pushed = new Map<string, number>();
+  for (let i = 0; i < position.count; i += 1) {
+    point.fromBufferAttribute(position, i);
+    const key = `${point.x.toFixed(4)},${point.y.toFixed(4)},${point.z.toFixed(4)}`;
+    let push = pushed.get(key);
+    if (push === undefined) { push = 1 + (rand() - 0.5) * 0.16; pushed.set(key, push); }
+    point.multiplyScalar(push);
+    position.setXYZ(i, point.x, point.y, point.z);
+  }
+  geometry.computeVertexNormals();
+  return new THREE.Mesh(geometry, material);
+}
+
+function buildEarmuffs(): THREE.Object3D {
+  const plush = phys(0xf0b6ca, { roughness: 0.92, sheen: 1, sheenRoughness: 0.55, sheenColor: 0xffffff });
+  /* Facing the reader, as she is mostly seen: a muff either side of the top
+     of her shell and the band arched between them, so it reads as earmuffs
+     from the front rather than one pompom (a pair worn front and back). */
+  const band = mesh(new THREE.TorusGeometry(0.62, 0.055, 12, 56, Math.PI), std(0xe9a9bf, 0, 0.6), 0, 0.04, 0.1);
+  const muffs = group();
+  for (const side of [1, -1]) {
+    const muff = fluff(0.36, side > 0 ? 71 : 72, plush);
+    muff.position.set(0.62 * side, 0.04, 0.1);
+    muff.scale.set(0.78, 1, 1);
+    muffs.add(muff);
+  }
+  return group(band, muffs);
+}
+
+/** The earmuffs on their mount, ready to add to her model. */
+export function buildEarmuffsPiece(): THREE.Object3D {
+  const anchor = headAnchor();
+  anchor.add(buildEarmuffs());
+  anchor.scale.setScalar(1.2);
+  anchor.userData.yumiEarmuffs = true;
+  return anchor;
+}
+
 function buildHairComb(): THREE.Object3D {
   const s = new THREE.Shape();
   s.moveTo(-0.46, 0);
@@ -1951,6 +2002,10 @@ export type OutfitRig = {
   /** Per frame: keep eyewear in front of the eye, minus the blink. */
   sync(dt?: number, reducedMotion?: boolean): void;
   setVisible(visible: boolean): void;
+  /** Hide what she wears on her head (the earmuffs go on over it). */
+  setHeadHidden(hidden: boolean): void;
+  /** Her pupil, opened wider than it rests: 1 is at rest. */
+  setDilation(scale: number): void;
   dispose(): void;
 };
 
@@ -2162,6 +2217,18 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
   const worn = new Map<ShopSlot, { id: string; objects: THREE.Object3D[]; motion: ReturnType<typeof collectCollection03Motion> }>();
   let motionTime = 0;
   let finish: string | undefined;
+  let headHidden = false;
+  let dilation = 1;
+  let restingPupil = 1;
+  /* A worn pupil keeps its own scale; dilation multiplies it, across only. */
+  const dilate = () => {
+    pupil.scale.setScalar(restingPupil * dilation);
+    for (const object of worn.get("pupil")?.objects ?? []) {
+      const base = (object.userData.restingScale as THREE.Vector3 | undefined) ?? object.scale.clone();
+      object.userData.restingScale = base;
+      object.scale.set(base.x * dilation, base.y * dilation, base.z);
+    }
+  };
 
   function remove(slot: ShopSlot) {
     const current = worn.get(slot);
@@ -2204,7 +2271,8 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
 
       /* A coloured iris needs room to be seen: her own round pupil narrows
          while one is on, the way a pupil does in light. */
-      pupil.scale.setScalar(worn.has("iris") && !worn.has("pupil") ? 0.72 : 1);
+      restingPupil = worn.has("iris") && !worn.has("pupil") ? 0.72 : 1;
+      dilate();
       return added;
     },
 
@@ -2221,7 +2289,20 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
 
     setVisible(visible) {
       eyewear.visible = visible;
-      for (const { objects } of worn.values()) for (const o of objects) o.visible = visible;
+      for (const [slot, { objects }] of worn) {
+        const shown = visible && !(slot === "head" && headHidden);
+        for (const o of objects) o.visible = shown;
+      }
+    },
+
+    setHeadHidden(hidden) {
+      headHidden = hidden;
+    },
+
+    setDilation(scale) {
+      if (Math.abs(scale - dilation) < 0.0005) return;
+      dilation = scale;
+      dilate();
     },
 
     dispose() {

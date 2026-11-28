@@ -36,7 +36,7 @@ import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput, { type VoiceAudioOutcome } from "@/hooks/useVoiceInput";
 import { getLanguage, getLanguageName } from "@/lib/languages";
-import { transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
+import { hearText, transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 
@@ -176,6 +176,7 @@ export default function LexiconSearchSheet({
     onResult: (transcript) => search.submit(transcript, "voice"),
     onAudio: handleAudio,
     onStart: warmVoiceLookup,
+    transcribe: hearText,
   });
 
   if (!motion.rendered) return null;
@@ -387,6 +388,7 @@ export default function LexiconSearchSheet({
                 listening={voice.listening}
                 levelRef={voice.bindLevel}
                 onPress={voice.toggle}
+                hold={{ start: () => voice.start({ hold: true }), stop: voice.stop }}
                 iconSize={16}
                 className={modeButtonClass}
                 idleClassName="bg-surface text-ink-soft"
@@ -412,7 +414,14 @@ export default function LexiconSearchSheet({
             listening={voice.listening}
             levelRef={voice.bindLevel}
             caption={voice.caption}
-            notice={voice.notice} tone={tone} className="mt-3 px-1" />
+            notice={voice.notice}
+            held={voice.held}
+            better={voice.better}
+            onBetter={() => {
+              const text = voice.takeBetter();
+              if (text) search.submit(text, "voice");
+            }}
+            tone={tone} className="mt-3 px-1" />
 
           {/* Reading the photo, which happens before there is a word for the
               engine to have a status about. */}

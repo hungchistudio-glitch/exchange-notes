@@ -1,10 +1,12 @@
 "use client";
 
 import { LoaderCircle, Mic, Square } from "lucide-react";
+import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type useVoiceInput from "@/hooks/useVoiceInput";
-import type { VoiceNotice } from "@/hooks/useVoiceInput";
+import type { VoicePhase, VoiceNotice } from "@/hooks/useVoiceInput";
+import { openMicGuide, setVoiceMic } from "@/lib/voice/signal";
 
 import styles from "./VoiceCapture.module.css";
 
@@ -22,6 +24,89 @@ import styles from "./VoiceCapture.module.css";
 type Voice = ReturnType<typeof useVoiceInput>;
 
 const CAPTION_TAIL = 120;
+
+/* Held this long, a press is a held key rather than a tap. */
+const HOLD_MS = 320;
+
+/**
+ * Push to talk (Chi, 2026-11-27: 按住說話). A tap still starts a recording
+ * that ends itself on a pause; a key held for a third of a second records
+ * until it is let go, for a noisy street where the pause never comes.
+ * Every microphone key uses this, on both modes.
+ *
+ * The held recording starts from a timer rather than the press itself, so
+ * a tap never opens the microphone twice. Letting go is the end of it, and
+ * the click that follows the release is swallowed.
+ */
+export function usePressToTalk({
+  phase,
+  onTap,
+  onHoldStart,
+  onHoldEnd,
+}: {
+  phase: VoicePhase;
+  onTap: () => void;
+  onHoldStart?: () => void;
+  onHoldEnd?: () => void;
+}) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdingRef = useRef(false);
+  const swallow = useRef(false);
+  const [holding, setHolding] = useState(false);
+  const clear = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const letGo = () => {
+    clear();
+    if (!holdingRef.current) return;
+    holdingRef.current = false;
+    setHolding(false);
+    swallow.current = true;
+    onHoldEnd?.();
+  };
+
+  return {
+    holding,
+    bind: {
+      onPointerDown(event: PointerEvent<HTMLElement>) {
+        if (event.button !== 0) return;
+        swallow.current = false;
+        // Yumi looks at the key being pressed.
+        setVoiceMic(event.currentTarget);
+        if (!onHoldStart || phase !== "idle") return;
+        clear();
+        const key = event.currentTarget;
+        const pointer = event.pointerId;
+        try { key.setPointerCapture(pointer); } catch { /* Not capturable: the release still ends it. */ }
+        timer.current = setTimeout(() => {
+          timer.current = null;
+          holdingRef.current = true;
+          setHolding(true);
+          onHoldStart();
+        }, HOLD_MS);
+      },
+      onPointerUp: letGo,
+      onPointerCancel: letGo,
+      onClick(event: MouseEvent<HTMLElement>) {
+        if (swallow.current) {
+          swallow.current = false;
+          event.preventDefault();
+          return;
+        }
+        onTap();
+      },
+      /* A long press is a held key, not a menu. */
+      onContextMenu(event: MouseEvent<HTMLElement>) {
+        if (onHoldStart) event.preventDefault();
+      },
+    },
+  };
+}
 
 /*
  * The parts of the voice session these draw from, passed one by one: handing
@@ -46,8 +131,11 @@ export function VoiceMicButton({
   iconSize = 17,
   labels,
   coachTarget,
+  hold,
 }: VoiceView & {
   onPress: () => void;
+  /** Push to talk: what starts a held recording and what ends it. */
+  hold?: { start: () => void; stop: () => void };
   /** Size and shape; the colours come from the two below. */
   className: string;
   idleClassName: string;
@@ -62,7 +150,11 @@ export function VoiceMicButton({
   const copy = t.lexicon;
   const phase = givenPhase ?? (listening ? "listening" : "idle");
   const active = phase !== "idle";
-  const label = phase === "listening" ? labels?.listening ?? copy.voice.stop : labels?.idle ?? copy.modeVoice;
+  const press = usePressToTalk({ phase, onTap: onPress, onHoldStart: hold?.start, onHoldEnd: hold?.stop });
+  const label = press.holding
+    ? copy.voice.holding
+    : phase === "listening" ? labels?.listening ?? copy.voice.stop : labels?.idle ?? copy.modeVoice;
+  const title = hold && phase === "idle" ? `${label} · ${copy.voice.holdHint}` : label;
 
   /*
    * The light sits on a wrapper behind the button rather than inside it: a
@@ -70,7 +162,7 @@ export function VoiceMicButton({
    * against a pale bead.
    */
   return (
-    <span ref={levelRef} className={styles.mic}>
+    <span ref={levelRef} className={styles.mic} data-holding={press.holding || undefined}>
       {phase === "listening" && (
         <>
           <span className={styles.breath} aria-hidden="true" />
@@ -84,9 +176,9 @@ export function VoiceMicButton({
 
       <button
         type="button"
-        onClick={onPress}
+        {...press.bind}
         aria-label={label}
-        title={label}
+        title={title}
         aria-pressed={phase === "listening"}
         aria-busy={phase === "understanding"}
         data-coach-target={coachTarget}
@@ -121,6 +213,14 @@ function noticeText(
       return copy.limit;
     case "mic-denied":
       return copy.micDenied;
+    case "mic-busy":
+      return copy.micBusy;
+    case "mic-missing":
+      return copy.micMissing;
+    case "weak-local":
+      return copy.weakLocal;
+    case "queued":
+      return copy.queued;
   }
 }
 
@@ -133,9 +233,17 @@ export function VoiceCaptureStatus({
   tone = "warm",
   compact = false,
   className = "",
+  held = false,
+  better = null,
+  onBetter,
 }: VoiceView & {
   caption?: string;
   notice?: VoiceNotice | null;
+  /** The key is held down: letting go sends it. */
+  held?: boolean;
+  /** Yumi's hearing of a sentence the phone answered on a weak signal. */
+  better?: string | null;
+  onBetter?: () => void;
   tone?: "warm" | "cosmic";
   /** Caption and notices only: the surface shows its own listening state. */
   compact?: boolean;
@@ -153,16 +261,32 @@ export function VoiceCaptureStatus({
     caption.length > CAPTION_TAIL ? `…${caption.slice(-CAPTION_TAIL).trimStart()}` : caption;
 
   if (phase === "idle") {
-    if (!notice) return null;
+    if (!notice && !better) return null;
+    const tint = cosmic ? "text-[var(--cosmic-cyan)]" : "text-[var(--accent-amber-deep)]";
     return (
-      <p
-        role="status"
-        className={`${styles.caption} ${className} text-[0.75rem] leading-5 ${
-          cosmic ? "text-[var(--cosmic-cyan)]" : "text-[var(--accent-amber-deep)]"
-        }`}
-      >
-        {noticeText(notice, copy)}
-      </p>
+      <div role="status" className={`${styles.caption} ${className} text-[0.75rem] leading-5 ${tint}`}>
+        {notice ? (
+          <p className="m-0">
+            {noticeText(notice, copy)}
+            {notice === "mic-denied" ? (
+              <>
+                {" "}
+                <button type="button" className={styles.noticeAction} onClick={openMicGuide}>
+                  {copy.micHowTo}
+                </button>
+              </>
+            ) : null}
+          </p>
+        ) : null}
+        {better ? (
+          <p className={`m-0 ${notice ? "mt-1" : ""}`}>
+            {copy.better} <q className={cosmic ? "" : "text-ink-strong"}>{better}</q>{" "}
+            <button type="button" className={styles.noticeAction} onClick={onBetter}>
+              {copy.useBetter}
+            </button>
+          </p>
+        ) : null}
+      </div>
     );
   }
 
@@ -209,7 +333,7 @@ export function VoiceCaptureStatus({
             cosmic ? "text-[var(--cosmic-cyan-dim)]" : "text-ink-faint"
           }`}
         >
-          {copy.listeningHint}
+          {held ? copy.holding : copy.listeningHint}
         </p>
       ) : null}
     </div>

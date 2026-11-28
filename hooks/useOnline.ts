@@ -110,9 +110,16 @@ function subscribe(listener: () => void) {
   };
 }
 
+/** Told whenever online, offline or the weak signal changes, outside React. */
+export function subscribeNetwork(listener: () => void) {
+  return subscribe(listener);
+}
+
 function getSnapshot(): boolean {
   if (assumedOffline) return false;
-  return typeof navigator === "undefined" ? true : navigator.onLine;
+  // Only a browser that says "offline" is: a navigator without the flag
+  // (a WebView shim, a test) is not evidence of no network.
+  return typeof navigator === "undefined" || navigator.onLine !== false;
 }
 
 /*

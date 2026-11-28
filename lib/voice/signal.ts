@@ -168,3 +168,90 @@ export function speechPulse(onLevel?: (level: number) => void) {
     },
   };
 }
+
+/* =========================================================
+   Who is listening, and where (Chi, 2026-11-27)
+
+   Yumi turns to the microphone the reader pressed, and her pupil opens
+   with their voice; when the page has no microphone, she wears earmuffs
+   until it has one, and a tap on her opens the way to turn it on. Both
+   homes read this every frame from the loops that already draw her, so it
+   is a plain object like voiceSignal rather than React state.
+
+   `deaf` is the one fact worth remembering past a page: the browser said
+   no. It clears when a microphone opens again.
+   ========================================================= */
+
+export type VoiceStagePhase = "idle" | "listening" | "understanding";
+
+export const voiceStage: {
+  phase: VoiceStagePhase;
+  /** The middle of the key that was pressed, in viewport pixels. */
+  mic: { x: number; y: number } | null;
+  /** The browser refused the microphone; she wears earmuffs. */
+  deaf: boolean;
+  /** Held down to talk (push to talk) rather than tapped. */
+  holding: boolean;
+  /*
+   * Whether the reader has been shown the way to turn it on since she put
+   * her earmuffs on. Until then a tap on her opens the guide; after it, a
+   * tap is hers again (on Standard's home she is the only way to the ring).
+   */
+  deafTold: boolean;
+} = { phase: "idle", mic: null, deaf: false, holding: false, deafTold: false };
+
+const DEAF_KEY = "yumi-mic-deaf-v1";
+
+/** The key the reader is pressing: Yumi looks there while they speak. */
+export function setVoiceMic(element: Element | null) {
+  if (!element) { voiceStage.mic = null; return; }
+  const box = element.getBoundingClientRect();
+  voiceStage.mic = box.width > 0 ? { x: box.left + box.width / 2, y: box.top + box.height / 2 } : null;
+}
+
+export function setVoiceDeaf(deaf: boolean) {
+  if (deaf && !voiceStage.deaf) voiceStage.deafTold = false;
+  voiceStage.deaf = deaf;
+  try {
+    if (deaf) window.sessionStorage.setItem(DEAF_KEY, "1");
+    else window.sessionStorage.removeItem(DEAF_KEY);
+  } catch { /* Private mode: she forgets on the next page load. */ }
+}
+
+/** After a reload in the same tab, she still has her earmuffs on. */
+export function restoreVoiceDeaf() {
+  try {
+    if (window.sessionStorage.getItem(DEAF_KEY) === "1" && !voiceStage.deaf) {
+      voiceStage.deaf = true;
+      voiceStage.deafTold = false;
+    }
+  } catch { /* Nothing kept. */ }
+}
+
+/* The guide to turning the microphone on: one sheet for the whole app
+   (components/voice/MicGuideHost.tsx), opened from a notice, from Yumi,
+   or from Settings. */
+let guideOpen = false;
+const guideListeners = new Set<() => void>();
+
+export function openMicGuide() {
+  voiceStage.deafTold = true;
+  if (guideOpen) return;
+  guideOpen = true;
+  for (const listener of guideListeners) listener();
+}
+
+export function closeMicGuide() {
+  if (!guideOpen) return;
+  guideOpen = false;
+  for (const listener of guideListeners) listener();
+}
+
+export function micGuideOpen() {
+  return guideOpen;
+}
+
+export function subscribeMicGuide(listener: () => void) {
+  guideListeners.add(listener);
+  return () => { guideListeners.delete(listener); };
+}

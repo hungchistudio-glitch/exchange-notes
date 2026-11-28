@@ -111,6 +111,12 @@ export function buildSettingsSearchIndex(
       keywords: ["tilt", "shake", "motion", "gyro", "capsule", "capsules", "膠囊", "傾斜", "搖晃"],
     },
     {
+      id: "setting-microphone",
+      title: settings.microphone.rowTitle,
+      section: sections.app,
+      keywords: ["microphone", "mic", "voice", "permission", "check", "麥克風", "語音", "權限", "健檢", "聲音"],
+    },
+    {
       id: "setting-install",
       title: t.pwa.settingsRowTitle,
       section: sections.devices,
