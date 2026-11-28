@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CircleAlert, LoaderCircle, Mic } from "lucide-react";
+import { Check, CircleAlert, LoaderCircle, Mic, RotateCw, Send } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
@@ -9,7 +9,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import useCosmicMode from "@/hooks/useCosmicMode";
 import { isOnline } from "@/hooks/useOnline";
 import { transcribeSpeech } from "@/lib/lexicon/voiceLookup";
-import { openMicrophone } from "@/lib/voice/micAccess";
+import { audioStuck, micDiagnostic, openMicrophone, sendMicDiagnostic, type MicFailure } from "@/lib/voice/micAccess";
 import { meterStream } from "@/lib/voice/signal";
 
 /* =========================================================
@@ -85,6 +85,10 @@ export default function MicCheckSheet({ open, onClose }: { open: boolean; onClos
   const [permission, setPermission] = useState<Permission>("pending");
   const [sound, setSound] = useState<Sound>("pending");
   const [hearing, setHearing] = useState<Hearing>("pending");
+  const [diagnostic, setDiagnostic] = useState<string | null>(null);
+  const [sendState, setSendState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+  const [stuck, setStuck] = useState(false);
+  const [retriedNote, setRetriedNote] = useState(false);
   const running = useRef(false);
   const bar = useRef<HTMLSpanElement | null>(null);
   const cleanup = useRef<(() => void) | null>(null);
@@ -96,6 +100,14 @@ export default function MicCheckSheet({ open, onClose }: { open: boolean; onClos
     setPermission("checking");
     setSound("pending");
     setHearing("pending");
+    setDiagnostic(null);
+    setSendState("idle");
+    setStuck(false);
+    setRetriedNote(false);
+    /* A failed step's code: what the browser said, and the state around it. */
+    const explain = (failure: MicFailure | null, extra: string[] = [], retried = false) => {
+      void micDiagnostic(failure, retried).then(code => setDiagnostic([code, ...extra].join(" | ").slice(0, 500)));
+    };
     // Inside the tap: iOS starts an AudioContext only from one.
     const context = audioContext();
     void context?.resume().catch(() => undefined);
@@ -103,10 +115,13 @@ export default function MicCheckSheet({ open, onClose }: { open: boolean; onClos
       const tried = await openMicrophone();
       if (!tried.ok) {
         setPermission(tried.problem);
+        setStuck(audioStuck(tried.failure));
+        explain(tried.failure);
         void context?.close().catch(() => undefined);
         return;
       }
       setPermission("ok");
+      setRetriedNote(tried.retried);
       setSound("listening");
       const stream = tried.stream;
       let peak = 0;
@@ -119,7 +134,7 @@ export default function MicCheckSheet({ open, onClose }: { open: boolean; onClos
         : () => {};
       const release = () => {
         stopMeter();
-        for (const track of stream.getTracks()) track.stop();
+        tried.release();
         void context?.close().catch(() => undefined);
       };
       cleanup.current = release;
@@ -127,9 +142,11 @@ export default function MicCheckSheet({ open, onClose }: { open: boolean; onClos
       release();
       cleanup.current = null;
       // No meter at all (an old browser): the hearing step is the judge.
-      setSound(peak >= VOICE_LEVEL || !context ? "ok" : "low");
+      const soundOk = peak >= VOICE_LEVEL || !context;
+      setSound(soundOk ? "ok" : "low");
+      const soundNote = `sound ${context ? peak.toFixed(2) : "no-meter"} bytes ${audio.size}`;
 
-      if (!isOnline()) { setHearing("offline"); return; }
+      if (!isOnline()) { setHearing("offline"); explain(null, [soundNote, "hearing offline"], tried.retried); return; }
       setHearing("checking");
       const heard = await transcribeSpeech(audio);
       setHearing(
@@ -138,6 +155,7 @@ export default function MicCheckSheet({ open, onClose }: { open: boolean; onClos
             : heard.outcome === "unavailable" ? (isOnline() ? "none" : "offline")
               : "none",
       );
+      if (heard.outcome !== "handled" || !soundOk) explain(null, [soundNote, `hearing ${heard.outcome}`], tried.retried);
     } finally {
       running.current = false;
     }
@@ -212,8 +230,55 @@ export default function MicCheckSheet({ open, onClose }: { open: boolean; onClos
       {allGood ? (
         <p role="status" className="mt-5 text-sm font-semibold text-emerald-700">{copy.allGood}</p>
       ) : null}
+      {retriedNote ? <p className="mt-2 text-xs text-ink-faint">{copy.retriedNote}</p> : null}
 
-      {permission === "denied" ? (
+      {stuck ? (
+        <div className="mt-6 rounded-2xl border border-[var(--accent-amber)]/40 p-4">
+          <p className="text-sm leading-5 text-ink-strong">{t.lexicon.voice.guide.notSettings}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-3 inline-flex items-center gap-2 rounded-full border border-black/15 px-4 py-2 text-sm font-semibold text-ink-strong"
+          >
+            <RotateCw size={14} aria-hidden="true" />
+            {t.lexicon.voice.guide.reload}
+          </button>
+        </div>
+      ) : null}
+
+      {diagnostic ? (
+        <div className="mt-6">
+          <p className="text-[0.9375rem] font-semibold text-ink-strong">{copy.diagnosticTitle}</p>
+          <p className="mt-0.5 text-xs text-ink-soft">{copy.diagnosticHint}</p>
+          <code
+            data-mic-diagnostic
+            className="mt-2 block select-all break-words rounded-xl bg-black/[0.05] p-3 font-mono text-[0.6875rem] leading-4 text-ink-strong"
+          >
+            {diagnostic}
+          </code>
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              type="button"
+              disabled={sendState === "sending" || sendState === "sent"}
+              onClick={() => {
+                setSendState("sending");
+                void sendMicDiagnostic(diagnostic).then(ok => setSendState(ok ? "sent" : "failed"));
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-black/15 px-4 py-2 text-sm font-semibold text-ink-strong disabled:opacity-60"
+            >
+              {sendState === "sending" ? <LoaderCircle size={14} className="animate-spin" aria-hidden="true" /> : <Send size={14} aria-hidden="true" />}
+              {sendState === "sending" ? copy.sending : copy.send}
+            </button>
+            {sendState === "sent" || sendState === "failed" ? (
+              <span role="status" className={`text-xs ${sendState === "sent" ? "text-emerald-700" : "text-[var(--accent-amber-deep)]"}`}>
+                {sendState === "sent" ? copy.sent : copy.sendFailed}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {permission === "denied" && !stuck ? (
         <div className="mt-6 border-t border-black/10 pt-5">
           <p className="mb-3 text-[0.9375rem] font-semibold text-ink-strong">{copy.howTo}</p>
           <MicGuideSteps cosmic={cosmic} />

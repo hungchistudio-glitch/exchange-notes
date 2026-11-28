@@ -821,6 +821,8 @@ const english: TranslationDictionary = {
         missing: "No microphone was found. Connect headphones or a microphone and try again.",
         close: "Close",
         yumiDeaf: "Yumi has her earmuffs on: the microphone is off. Tap her to see how to turn it on.",
+        notSettings: "This isn’t a setting: the iPhone’s audio got stuck. Reloading the page usually fixes it.",
+        reload: "Reload the page",
       },
     },
 
@@ -2709,7 +2711,7 @@ const english: TranslationDictionary = {
     resolve: "Done",
     ownerRow: "Readers’ reports",
     ownerRowDescription: "{count} open",
-    surfaces: { word: "Word", news: "News", game: "Word game", lab: "Pronunciation Lab" },
+    surfaces: { word: "Word", news: "News", game: "Word game", lab: "Pronunciation Lab", device: "Device check" },
   },
 
   settings: {
@@ -3106,6 +3108,13 @@ const english: TranslationDictionary = {
       hearingOffline: "No connection right now. Try the recognition step when the signal is good.",
       allGood: "All good! Voice lookup is ready.",
       howTo: "How to turn it on",
+      diagnosticTitle: "Diagnostic code",
+      diagnosticHint: "What the browser said when it refused, and the audio state at that moment.",
+      send: "Send diagnostic",
+      sending: "Sending…",
+      sent: "Sent — thank you!",
+      sendFailed: "Couldn’t send. Please take a screenshot of this code.",
+      retriedNote: "Tried a second way automatically.",
     },
     newsSource: {
       rowTitle: "The Guardian's key isn't working",

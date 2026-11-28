@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import english from "@/lib/i18n/en";
@@ -58,7 +58,7 @@ describe("the guide", () => {
     iphone(async () => { throw Object.assign(new Error("no"), { name: "NotAllowedError" }); });
     render(<MicGuideSheet open onClose={vi.fn()} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: guide.retry })); });
-    expect(screen.getByText(guide.stillDenied)).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(guide.stillDenied)).toBeTruthy());
     expect(voiceStage.deaf).toBe(true);
   });
 });
@@ -70,7 +70,7 @@ describe("the check-up", () => {
     const copy = english.settings.microphone;
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: copy.start })); });
 
-    expect(screen.getByText(english.lexicon.voice.micDenied)).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(english.lexicon.voice.micDenied)).toBeTruthy());
     expect(screen.getByText(copy.howTo)).toBeTruthy();
     expect(screen.getByText(guide.steps["ios-home"][0])).toBeTruthy();
     expect(screen.getByRole("button", { name: copy.again })).toBeTruthy();

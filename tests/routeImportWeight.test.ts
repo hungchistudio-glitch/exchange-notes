@@ -246,10 +246,18 @@ describe("what the heaviest tabs drag in with them", () => {
    * lib/pronunciation/localReadings.ts and lib/preferences/readingDisplay.ts
    * — none of which imports anything outside them. Kept off pinyin-pro on
    * purpose (lib/pronunciation/index.ts stays behind useLocalPhonetics).
+   *
+   * Raised vocabulary 182 → 183 and home 199 → 200 (2026-11-27): the
+   * microphone's audio session (Chi: Allow 了還是不能收音). Both search
+   * fields record, and on an iPhone a recording must ask for the record
+   * session in the tap, before the interface's ticks or a speaker can have
+   * left it with no input; the one owner of that session,
+   * lib/audio/session.ts, imports nothing, and lib/speech.ts and the sounds
+   * already on both graphs now go through it.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 182],
-    ["home", TABS.home, 199],
+    ["vocabulary", TABS.vocabulary, 183],
+    ["home", TABS.home, 200],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

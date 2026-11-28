@@ -12,7 +12,8 @@
    reader can send, never read back, so nobody sees another reader's notes.
    ========================================================= */
 
-export const REPORT_SURFACES = ["word", "news", "game", "lab"] as const;
+/* "device": a microphone check-up's diagnostic (Settings › Microphone; Chi, 2026-11-27). */
+export const REPORT_SURFACES = ["word", "news", "game", "lab", "device"] as const;
 export type ReportSurface = (typeof REPORT_SURFACES)[number];
 
 /** Reports one reader may send in a day: plenty for a careful reader, too few to flood. */

@@ -816,6 +816,8 @@ const italian: TranslationDictionary = {
         missing: "Nessun microfono trovato. Collega cuffie o un microfono e riprova.",
         close: "Chiudi",
         yumiDeaf: "Yumi ha i paraorecchie: il microfono è disattivato. Toccala per vedere come attivarlo.",
+        notSettings: "Non è un’impostazione: l’audio dell’iPhone si è bloccato. Ricaricare la pagina di solito risolve.",
+        reload: "Ricarica la pagina",
       },
     },
 
@@ -2565,7 +2567,7 @@ const italian: TranslationDictionary = {
     resolve: "Fatto",
     ownerRow: "Segnalazioni dei lettori",
     ownerRowDescription: "{count} aperte",
-    surfaces: { word: "Parola", news: "Notizie", game: "Gioco di parole", lab: "Laboratorio di pronuncia" },
+    surfaces: { word: "Parola", news: "Notizie", game: "Gioco di parole", lab: "Laboratorio di pronuncia", device: "Diagnostica del dispositivo" },
   },
 
   settings: {
@@ -2892,6 +2894,13 @@ const italian: TranslationDictionary = {
       hearingOffline: "Nessuna connessione al momento. Riprova il riconoscimento con un buon segnale.",
       allGood: "Tutto a posto! La ricerca vocale è pronta.",
       howTo: "Come attivarlo",
+      diagnosticTitle: "Codice diagnostico",
+      diagnosticHint: "Cosa ha risposto il browser rifiutando, e lo stato dell’audio in quel momento.",
+      send: "Invia diagnostica",
+      sending: "Invio…",
+      sent: "Inviato, grazie!",
+      sendFailed: "Invio non riuscito. Fai uno screenshot di questo codice.",
+      retriedNote: "È stato provato automaticamente un altro modo.",
     },
     newsSource: {
       rowTitle: "La chiave del Guardian non funziona",
