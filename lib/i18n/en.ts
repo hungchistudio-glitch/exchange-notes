@@ -1063,6 +1063,35 @@ const english: TranslationDictionary = {
 
     exploreImageLabel: "Explore this image · {count} words",
     exploreImageLabelOne: "Explore this image · {count} word",
+    comprehension: {
+      label: "You know {percent}%",
+      newWords: "{count} new",
+      aria: "Comprehension {percent}%: {known} of {total} key words are in your library",
+    },
+    laser: {
+      scanning: "Scanning…",
+      noQuick: "Not in the quick dictionary. Try the full lookup.",
+      full: "Full lookup",
+      inLibrary: "In your library",
+      fromStory: "Story key word",
+      close: "Close",
+    },
+    starMap: {
+      open: "Signal map",
+      title: "Today’s signals",
+      subtitle: "Where each of today’s stories comes from. Drag the globe to turn it.",
+      stories: "{count} stories",
+      storyOne: "1 story",
+      receiver: "You’re here",
+      cities: {
+        london: "London",
+        newYork: "New York",
+        amsterdam: "Amsterdam",
+        taipei: "Taipei",
+        tokyo: "Tokyo",
+        seoul: "Seoul",
+      },
+    },
   },
 
   capture: {

@@ -1,0 +1,72 @@
+/* The signal map: a globe the width of the sheet, then the cities. */
+.map {
+  display: grid;
+  place-items: center;
+  padding: 4px 0 12px;
+}
+.globe {
+  width: min(320px, 82vw);
+  aspect-ratio: 1;
+  touch-action: none;
+  cursor: grab;
+}
+.globe:active {
+  cursor: grabbing;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+.city {
+  display: grid;
+  gap: 4px;
+}
+.cityName {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--color-ink-strong, #1d1a15);
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2f8f7f;
+  box-shadow: 0 0 0 3px rgba(47, 143, 127, 0.18);
+}
+:global(html[data-interface-mode="yumi-cosmic"]) .dot {
+  background: #7ed6ff;
+  box-shadow: 0 0 0 3px rgba(126, 214, 255, 0.2);
+}
+.meta {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-ink-soft, #6f6a62);
+  text-align: right;
+}
+.story {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 6px 0 6px 15px;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: inherit;
+  cursor: pointer;
+}
+.story:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 6px;
+}

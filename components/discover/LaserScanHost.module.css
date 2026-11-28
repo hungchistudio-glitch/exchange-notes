@@ -1,0 +1,191 @@
+/*
+  The laser scan: a beam from Yumi's eye to the held word (drawn in 180ms),
+  a scan line over the word, and a hologram tag that flickers on. Composited
+  properties only: stroke-dashoffset, transform, opacity.
+*/
+.layer {
+  --laser: #2f8f7f;
+  --laser-glow: rgba(47, 143, 127, 0.35);
+  --tag-bg: rgba(250, 248, 242, 0.9);
+  --tag-ink: #1d1a15;
+  --tag-soft: #6f6a62;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+:global(html[data-interface-mode="yumi-cosmic"]) .layer {
+  --laser: #b8e8e5;
+  --laser-glow: rgba(126, 214, 255, 0.45);
+  --tag-bg: rgba(16, 24, 32, 0.88);
+  --tag-ink: #e4ecee;
+  --tag-soft: #9fb4b8;
+}
+
+.beam {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.beamCore,
+.beamGlow {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  stroke-linecap: round;
+  animation: beamDraw 180ms cubic-bezier(0.3, 0.7, 0.2, 1) forwards, beamFade 380ms ease-in 560ms forwards;
+}
+.beamCore {
+  stroke: var(--laser);
+  stroke-width: 1.4;
+}
+.beamGlow {
+  stroke: var(--laser-glow);
+  stroke-width: 5;
+}
+.muzzle {
+  fill: var(--laser);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: muzzle 420ms ease-out forwards;
+}
+@keyframes beamDraw { to { stroke-dashoffset: 0; } }
+@keyframes beamFade { to { opacity: 0; } }
+@keyframes muzzle {
+  0% { transform: scale(0.4); opacity: 1; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+/* The scan: brackets round the word, a bright line run across it. */
+.scan {
+  position: absolute;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--laser) 45%, transparent);
+  background: color-mix(in oklab, var(--laser) 10%, transparent);
+  overflow: hidden;
+  opacity: 0;
+  animation: scanIn 120ms ease-out 150ms forwards, scanOut 600ms ease-in 2400ms forwards;
+}
+.bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--laser);
+  box-shadow: 0 0 10px 2px var(--laser-glow);
+  transform: translateX(-4px);
+  animation: scanRun 340ms cubic-bezier(0.45, 0, 0.55, 1) 170ms forwards;
+}
+@keyframes scanIn { to { opacity: 1; } }
+@keyframes scanOut { to { opacity: 0.35; } }
+@keyframes scanRun {
+  to { transform: translateX(calc(var(--scan-width, 120px))); opacity: 0; }
+}
+
+/* The hologram tag: glass, a fine rim, a flicker as it comes on. */
+.tag {
+  position: absolute;
+  pointer-events: auto;
+  padding: 12px 14px 10px;
+  border-radius: 14px;
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--laser) 40%, transparent),
+    0 10px 28px rgba(0, 0, 0, 0.16),
+    0 0 22px var(--laser-glow);
+  transform-origin: 50% 100%;
+  opacity: 0;
+  animation: tagOn 420ms steps(1, end) 420ms forwards, tagRise 260ms cubic-bezier(0.22, 1, 0.36, 1) 420ms both;
+}
+.tag[data-above] {
+  transform: translateY(-100%);
+}
+.tag::after {
+  /* Scan lines across the glass: it is a projection, not a card. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(180deg, transparent 0 3px, color-mix(in oklab, var(--laser) 7%, transparent) 3px 4px);
+  pointer-events: none;
+}
+@keyframes tagOn {
+  0% { opacity: 0.6; }
+  20% { opacity: 0.15; }
+  35% { opacity: 0.9; }
+  50% { opacity: 0.4; }
+  65%, 100% { opacity: 1; }
+}
+@keyframes tagRise {
+  from { translate: 0 6px; scale: 0.96; }
+  to { translate: 0 0; scale: 1; }
+}
+
+.close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--tag-soft);
+  cursor: pointer;
+}
+.word {
+  margin: 0 24px 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.pos {
+  margin: 1px 0 0;
+  font-size: 0.6875rem;
+  color: var(--tag-soft);
+  font-style: italic;
+}
+.meaning {
+  margin: 6px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+.foot {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.badge {
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--laser);
+}
+.full {
+  border: 0;
+  background: none;
+  padding: 2px 0;
+  color: var(--laser);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beam,
+  .scan {
+    display: none;
+  }
+  .tag {
+    animation: none;
+    opacity: 1;
+  }
+}

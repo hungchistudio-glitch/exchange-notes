@@ -1,7 +1,8 @@
 "use client";
 
+import { requestLaserScan } from "@/lib/discover/laserScan";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { getLanguage, getLanguageName } from "@/lib/languages";
+import { getLanguage, getLanguageName, type LanguageCode } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
 import { lazy, Suspense, useState } from "react";
 import {
@@ -67,6 +68,14 @@ export default function StoryDetailSheet({
 }: StoryDetailSheetProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { marksFor, lookUp } = useKnownWords();
+  /* A held word: Yumi's eye scans it (lib/discover/laserScan.ts). */
+  const laser = (language: LanguageCode, meaningLanguage: LanguageCode) =>
+    lookUp
+      ? (word: string, rect?: DOMRect) => {
+          if (rect && card && requestLaserScan({ word, rect, language, meaningLanguage, storyWords: card.vocabulary })) return;
+          lookUp(word);
+        }
+      : undefined;
 
   // Above the early return: a hook cannot be called conditionally.
   const { pair } = useDisplayLanguages();
@@ -226,7 +235,7 @@ export default function StoryDetailSheet({
         <div>
           <div className="flex items-start gap-2">
             <h3 className="min-w-0 flex-1 text-[1.3125rem] font-bold leading-[1.25] tracking-[-0.02em] text-black">
-              <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={primarySpeech} tapToStart marks={marksFor(card.titles[primaryLanguage] ?? "", primarySpeech)} onLongPressWord={lookUp} />
+              <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={primarySpeech} tapToStart marks={marksFor(card.titles[primaryLanguage] ?? "", primarySpeech)} onLongPressWord={laser(primaryLanguage, secondaryLanguage)} />
             </h3>
 
             <SpeakKey
@@ -241,7 +250,7 @@ export default function StoryDetailSheet({
 
           <div className="mt-2 flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[0.9375rem] font-medium leading-[1.6] text-ink-soft">
-              <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={secondarySpeech} tapToStart marks={marksFor(card.titles[secondaryLanguage] ?? "", secondarySpeech)} onLongPressWord={lookUp} />
+              <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={secondarySpeech} tapToStart marks={marksFor(card.titles[secondaryLanguage] ?? "", secondarySpeech)} onLongPressWord={laser(secondaryLanguage, primaryLanguage)} />
             </p>
 
             <SpeakKey
@@ -266,7 +275,7 @@ export default function StoryDetailSheet({
 
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[0.9375rem] leading-[1.7] text-ink-strong">
-              <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={primarySpeech} tapToStart marks={marksFor(card.summaries[primaryLanguage] ?? "", primarySpeech)} onLongPressWord={lookUp} />
+              <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={primarySpeech} tapToStart marks={marksFor(card.summaries[primaryLanguage] ?? "", primarySpeech)} onLongPressWord={laser(primaryLanguage, secondaryLanguage)} />
             </p>
 
             <SpeakKey
@@ -281,7 +290,7 @@ export default function StoryDetailSheet({
 
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[0.875rem] leading-[1.7] text-ink-soft">
-              <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={secondarySpeech} tapToStart marks={marksFor(card.summaries[secondaryLanguage] ?? "", secondarySpeech)} onLongPressWord={lookUp} />
+              <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={secondarySpeech} tapToStart marks={marksFor(card.summaries[secondaryLanguage] ?? "", secondarySpeech)} onLongPressWord={laser(secondaryLanguage, primaryLanguage)} />
             </p>
 
             <SpeakKey

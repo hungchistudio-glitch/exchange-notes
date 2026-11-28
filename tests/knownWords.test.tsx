@@ -67,7 +67,8 @@ describe("the text that shows them", () => {
     fireEvent.pointerUp(span);
     fireEvent.click(span);
 
-    expect(lookUp).toHaveBeenCalledWith("tondre");
+    // With where the word is drawn, for the news page's laser scan.
+    expect(lookUp).toHaveBeenCalledWith("tondre", expect.any(DOMRect));
     expect(spoken).not.toHaveBeenCalled();
     delete (document as unknown as Record<string, unknown>).caretRangeFromPoint;
     spoken.mockRestore();

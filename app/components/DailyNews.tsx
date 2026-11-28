@@ -5,19 +5,24 @@ import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage, getLanguageName, type LanguageCode } from "@/lib/languages";
 import { fill } from "@/lib/i18n/format";
 import { STORES, readRecord, writeRecord } from "@/lib/offline/db";
-import { Headphones, SlidersHorizontal } from "lucide-react";
+import { Headphones, Orbit, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 
 import SignalControlSheet from "@/components/discover/SignalControlSheet";
 import YumiSignalRadar from "@/components/discover/YumiSignalRadar";
+import useCosmicMode from "@/hooks/useCosmicMode";
+import { prepareNewsWind } from "@/lib/discover/newsWindDay";
 import useSignalRadar from "@/hooks/discover/useSignalRadar";
 import { track } from "@/lib/analytics/track";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
+import dynamic from "next/dynamic";
 
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
@@ -215,6 +220,14 @@ function storyRun(id: string) {
   return `story:${id}`;
 }
 
+/* The arrival's wind and its canvas: a chunk of their own, fetched with
+   the page; the page is already hidden under it (prepareNewsWind). */
+const NewsWind = dynamic(() => import("@/components/discover/NewsWind"), { ssr: false });
+/* The laser scan's beam and hologram tag, for a word held in a story. */
+const LaserScanHost = dynamic(() => import("@/components/discover/LaserScanHost"), { ssr: false });
+/* Today's signal map, fetched when first opened. */
+const SignalStarMap = dynamic(() => import("@/components/discover/SignalStarMap"), { ssr: false });
+
 export default function DailyNews() {
   const { t, locale, language: interfaceLanguage } = useTranslation();
   const copy = t.discover;
@@ -230,6 +243,17 @@ export default function DailyNews() {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  /* The arrival (Chi, 2026-11-28): the page waits under a wind of today's
+     letters and condenses out of it; a refresh from the logo blows a gust. */
+  const windStage = useRef<HTMLDivElement | null>(null);
+  const [starMapOpen, setStarMapOpen] = useState(false);
+  const [starMapBuilt, setStarMapBuilt] = useState(false);
+  const [gustKey, setGustKey] = useState(0);
+  const cosmic = useCosmicMode();
+  useLayoutEffect(() => {
+    if (windStage.current) prepareNewsWind(windStage.current);
+  }, []);
   const [error, setError] = useState<DailyNewsError>("");
 
   /*
@@ -403,7 +427,10 @@ export default function DailyNews() {
     refreshing,
     loading,
     error: Boolean(error),
-    onScan: () => void loadNews(true),
+    onScan: () => {
+      setGustKey((key) => key + 1);
+      void loadNews(true);
+    },
     onOpenControls: () => {
       track("radar.controls_opened");
       setControlsOpen(true);
@@ -774,11 +801,35 @@ export default function DailyNews() {
   /* The featured story's full play, read from the shared speech state; hooks,
      so above the loading return for the same reason. */
   const featuredRun = visibleCards[0] ? storyRun(visibleCards[0].id) : "";
+  /* The letters the wind carries: today's headlines and summaries. */
+  const windGlyphs = useMemo(
+    () => visibleCards.slice(0, 8).map((card) => `${card.titles[primaryLanguage] ?? ""} ${card.summaries[primaryLanguage] ?? ""}`).join(" "),
+    [visibleCards, primaryLanguage],
+  );
   const featuredPlaying = useSpokenRun(featuredRun);
   const featuredProgress = useSpokenProgress(featuredRun);
 
+  /* One stage around both the skeleton and the page, so the wind and the
+     attributes it sets live through the switch from one to the other. */
+  const windLayer = (
+    <NewsWind
+      stageRef={windStage}
+      ready={!loading && !refreshing}
+      glyphs={windGlyphs}
+      gustKey={gustKey}
+      cosmic={cosmic}
+    />
+  );
+
   if (loading) {
-    return <LoadingHero />;
+    return (
+      <div ref={windStage} data-news-stage="">
+        {windLayer}
+        <div data-wind-content="">
+          <LoadingHero />
+        </div>
+      </div>
+    );
   }
 
   /*
@@ -823,6 +874,8 @@ export default function DailyNews() {
   ).items;
 
   return (
+    <div ref={windStage} data-news-stage="">
+    {windLayer}
     <section>
       {/* One heading (Chi, 2026-11-13: 統一成大標題): the page used to say
           "Discover" in a bar and "Daily News" again under it. */}
@@ -835,6 +888,21 @@ export default function DailyNews() {
           action={
           <div className="flex items-center gap-1">
             <YumiSignalRadar controller={radar} copy={copy} />
+
+            {/* Where today's signals come from (Chi, 2026-11-28: 訊號來源星圖). */}
+            <button
+              type="button"
+              onClick={() => {
+                setStarMapBuilt(true);
+                setStarMapOpen(true);
+              }}
+              aria-label={copy.starMap.open}
+              title={copy.starMap.open}
+              className="flex h-9 w-9 items-center justify-center rounded-full"
+              style={{ color: DISCOVER_COLORS.textSecondary }}
+            >
+              <Orbit size={15} strokeWidth={1.9} aria-hidden="true" />
+            </button>
 
             {/* Today's stories read aloud, one after another (Chi, 2026-11-15). */}
             <Link
@@ -900,6 +968,7 @@ export default function DailyNews() {
         onClearTopics={() => setSelectedTopics(new Set())}
       />
 
+      <div data-wind-content="">
       {notice && !error && (
         <div
           role="status"
@@ -993,6 +1062,20 @@ export default function DailyNews() {
           </div>
         </div>
       ) : null}
+      </div>
+
+      <LaserScanHost />
+
+      {starMapBuilt ? (
+        <SignalStarMap
+          open={starMapOpen}
+          onClose={() => setStarMapOpen(false)}
+          cards={visibleCards}
+          language={primaryLanguage}
+          copy={copy.starMap}
+          onOpenStory={(id) => setDetailCardId(id)}
+        />
+      ) : null}
 
       <StoryDetailSheet
         card={detailCard}
@@ -1041,5 +1124,6 @@ export default function DailyNews() {
         />
       ) : null}
     </section>
+    </div>
   );
 }

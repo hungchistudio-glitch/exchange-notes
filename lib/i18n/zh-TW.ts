@@ -1055,6 +1055,35 @@ const traditionalChinese: TranslationDictionary = {
 
     exploreImageLabel: "探索這張圖片 · {count} 個單字",
     exploreImageLabelOne: "探索這張圖片 · {count} 個單字",
+    comprehension: {
+      label: "你認得 {percent}%",
+      newWords: "新字 {count}",
+      aria: "理解度 {percent}%：{total} 個關鍵字中有 {known} 個在你的字庫裡",
+    },
+    laser: {
+      scanning: "掃描中…",
+      noQuick: "快速字典裡沒有這個字，看看完整查詢。",
+      full: "完整查詢",
+      inLibrary: "已在字庫",
+      fromStory: "本則關鍵字",
+      close: "關閉",
+    },
+    starMap: {
+      open: "訊號來源星圖",
+      title: "今日訊號來源",
+      subtitle: "今天每則新聞從哪裡傳來。拖曳地球可以轉動。",
+      stories: "{count} 則",
+      storyOne: "1 則",
+      receiver: "你在這裡",
+      cities: {
+        london: "倫敦",
+        newYork: "紐約",
+        amsterdam: "阿姆斯特丹",
+        taipei: "台北",
+        tokyo: "東京",
+        seoul: "首爾",
+      },
+    },
   },
 
   capture: {

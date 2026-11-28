@@ -1047,6 +1047,20 @@ export type TranslationDictionary = {
 
     exploreImageLabel: string;
     exploreImageLabelOne: string;
+    /** The comprehension scanner on each story (Chi, 2026-11-28). */
+    comprehension: { label: string; newWords: string; aria: string };
+    /** The laser scan of a held word, and its hologram tag. */
+    laser: { scanning: string; noQuick: string; full: string; inLibrary: string; fromStory: string; close: string };
+    /** Today's signal map: where each story comes from. */
+    starMap: {
+      open: string;
+      title: string;
+      subtitle: string;
+      stories: string;
+      storyOne: string;
+      receiver: string;
+      cities: { london: string; newYork: string; amsterdam: string; taipei: string; tokyo: string; seoul: string };
+    };
   };
 
   capture: {
