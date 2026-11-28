@@ -1062,6 +1062,35 @@ const spanish: TranslationDictionary = {
 
     exploreImageLabel: "Explorar esta imagen · {count} palabras",
     exploreImageLabelOne: "Explorar esta imagen · {count} palabra",
+    comprehension: {
+      label: "Conoces el {percent}%",
+      newWords: "{count} nuevas",
+      aria: "Comprensión {percent}%: {known} de {total} palabras clave están en tu biblioteca",
+    },
+    laser: {
+      scanning: "Escaneando…",
+      noQuick: "No está en el diccionario rápido. Prueba la búsqueda completa.",
+      full: "Búsqueda completa",
+      inLibrary: "En tu biblioteca",
+      fromStory: "Palabra clave de la noticia",
+      close: "Cerrar",
+    },
+    starMap: {
+      open: "Mapa de señales",
+      title: "Señales de hoy",
+      subtitle: "De dónde viene cada noticia de hoy. Arrastra el globo para girarlo.",
+      stories: "{count} noticias",
+      storyOne: "1 noticia",
+      receiver: "Estás aquí",
+      cities: {
+        london: "Londres",
+        newYork: "Nueva York",
+        amsterdam: "Ámsterdam",
+        taipei: "Taipéi",
+        tokyo: "Tokio",
+        seoul: "Seúl",
+      },
+    },
   },
 
   capture: {

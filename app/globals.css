@@ -885,3 +885,33 @@ html[data-interface-mode="yumi-cosmic"] ruby.furigana > rt {
   word-break: keep-all;
   overflow-wrap: break-word;
 }
+
+/* ---------------------------------------------------------------
+   The news page's arrival (components/discover/NewsWind.tsx; Chi,
+   2026-11-28): the content waits under a wind of its own letters and
+   fades in as they land; the Yumi logo waits to be dropped in last.
+   --------------------------------------------------------------- */
+[data-news-wind="gust"] [data-wind-content],
+[data-news-wind="assemble"] [data-wind-content] {
+  opacity: 0;
+}
+[data-news-wind="reveal"] [data-wind-content] {
+  transition: opacity 340ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-news-wind-logo="waiting"] [data-wind-logo] {
+  opacity: 0;
+}
+/* A wind that never ends (a script that did not load) still shows the page. */
+[data-news-wind="gust"] [data-wind-content],
+[data-news-wind-logo="waiting"] [data-wind-logo] {
+  animation: news-wind-failsafe 0s linear 15s forwards;
+}
+@keyframes news-wind-failsafe {
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-news-wind] [data-wind-content],
+  [data-news-wind-logo] [data-wind-logo] {
+    opacity: 1 !important;
+  }
+}

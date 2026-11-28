@@ -1,6 +1,10 @@
 "use client";
 
-import { useId, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
+
+import Yumi3DFigure, { type YumiCamera } from "@/components/yumi3d/Yumi3DFigure";
+import useCosmicMode from "@/hooks/useCosmicMode";
+import { useWornOutfit } from "@/lib/shop/wornOutfit";
 
 import useInView from "@/hooks/useInView";
 import { RADAR_NODE_COUNT } from "@/lib/discover/signalRadar";
@@ -62,9 +66,6 @@ export default function YumiSignalRadar({
 }: YumiSignalRadarProps) {
   const { state, policy, scan, pressHandlers } = controller;
 
-  // Scoped so two radars on one screen can never share a clip path.
-  const eyeClipId = `radar-eye-${useId().replace(/:/g, "")}`;
-
   const busy = state === "scanning" || state === "syncing";
 
   /*
@@ -85,6 +86,14 @@ export default function YumiSignalRadar({
   }[state];
 
   const nodeCount = RADAR_NODE_COUNT[policy.tier];
+
+  /* She turns round when asked to look: a scan is her spinning to listen. */
+  const outfit = useWornOutfit();
+  const cosmic = useCosmicMode();
+  const camera = useRef<YumiCamera | null>(null);
+  useEffect(() => {
+    if (state === "scanning") camera.current?.rotateBy(240, 0);
+  }, [state]);
 
   const { ref, inView } = useInView<HTMLButtonElement>();
 
@@ -110,13 +119,14 @@ export default function YumiSignalRadar({
       className={styles.radar}
       data-state={state}
       data-tier={policy.tier}
+      /* The news page's arrival drops it in last, like a ball (NewsWind). */
+      data-wind-logo=""
     >
       {/* L0–L1: the field the instrument sits in, and the halo it throws. */}
       <span className={styles.ambient} aria-hidden="true" />
       <span className={styles.halo} aria-hidden="true" />
 
-      {/* L2: the structural orb — dark glass, and the only opaque layer. */}
-      <span className={styles.orb} aria-hidden="true" />
+      {/* L2: the structural orb is gone: Yumi herself is the body now. */}
 
       {/* L4–L5: the inner orbit, and the segmented ring that does the
           scanning. Dashed rather than solid, because a turning solid ring
@@ -153,71 +163,21 @@ export default function YumiSignalRadar({
       ) : null}
 
       {/*
-        L3: the core, which is Yumi.
-        
-        Drawn here rather than by ExchangeNotesMark, and that is a size
-        decision rather than a shortcut. The full mark is four gradients, a
-        mask, a seventeen-point constellation and a gaussian blur, authored
-        against a 400-unit box for hero sizes; at the 30px this core renders
-        at, every one of those is invisible and all of them still cost — the
-        same filter-on-an-animating-element that had to come off the vocabulary
-        hero for dropping frames.
-        
-        So this is the same creature at the size available: the mark's own body
-        geometry, its eye where the mark puts it, and its blink on the app's
-        shared rhythm (app/yumi-motion.css — the identical keyframes the splash,
-        Messages and the Command Deck use). What is left out is only detail that
-        could not be seen.
+        L3: the core is Yumi, in 3D (Chi, 2026-11-28: 替換成3d yumi 統一yumi
+        的形式): the same figure as both homes, in what she wears, lit for
+        the mode. She waits for an idle moment to be made, shows her own
+        loading ring until then, and stops drawing when scrolled away.
       */}
-      <span className={`${styles.core} yumi-breath`}>
-        <svg className={styles.coreMark} viewBox="0 0 400 400" aria-hidden="true">
-          <defs>
-            <clipPath id={eyeClipId}>
-              <circle cx="285" cy="180" r="40" />
-            </clipPath>
-          </defs>
-
-          {/* The open C — Yumi's body, in the signal colour. */}
-          <path
-            d="M 300,70 Q 110,70 100,180 Q 110,320 300,320"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="58"
-            strokeLinecap="round"
-          />
-
-          {/*
-            The eye. A dark socket with a bright pupil rather than the mark's
-            pale sclera: at this size a light disc with a dark dot inside it
-            collapses into a grey smudge, where a lit point in a dark socket
-            stays a lit point.
-          */}
-          <circle cx="285" cy="180" r="40" fill="var(--radar-core-bg)" />
-
-          <g clipPath={`url(#${eyeClipId})`}>
-            <circle cx="290" cy="176" r="17" fill="currentColor" />
-
-            {/* Lids, on the mark's own geometry and the app's own blink. Both
-                must carry the same duration or the eye tears in half — which
-                is why one custom property drives them. */}
-            <rect
-              className="yumi-blink-upper"
-              x="245"
-              y="100"
-              width="80"
-              height="120"
-              fill="var(--radar-core-bg)"
-            />
-            <rect
-              className="yumi-blink-lower"
-              x="245"
-              y="215"
-              width="80"
-              height="25"
-              fill="var(--radar-core-bg)"
-            />
-          </g>
-        </svg>
+      <span className={styles.yumi} aria-hidden="true">
+        <Yumi3DFigure
+          interactive={false}
+          outfit={outfit}
+          cosmic={cosmic}
+          fill={0.44}
+          prepare="idle"
+          cameraRef={camera}
+          className={styles.yumiFigure}
+        />
       </span>
     </button>
   );

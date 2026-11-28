@@ -1,5 +1,7 @@
 "use client";
 
+import ComprehensionGauge from "@/components/discover/ComprehensionGauge";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import Image from "next/image";
 
@@ -23,6 +25,7 @@ export default function CompactStoryRow({
   onOpen,
 }: CompactStoryRowProps) {
   const { pair } = useDisplayLanguages();
+  const { t } = useTranslation();
   /*
    * The two languages the reader chose, and only those. A card that cannot
    * lead in the language being learned is filtered out upstream rather than
@@ -81,9 +84,17 @@ export default function CompactStoryRow({
             >
               {formattedTime}
             </span>
+
+            <ComprehensionGauge
+              text={`${card.titles[primaryLanguage] ?? ""} ${card.summaries[primaryLanguage] ?? ""}`}
+              language={primaryLanguage}
+              copy={t.discover.comprehension}
+              size="sm"
+            />
           </div>
 
           <h3
+            data-wind-text=""
             className={`text-[1.0625rem] font-semibold leading-[1.35] tracking-[-0.01em] ${
               hasThumbnail ? "mt-1.5 line-clamp-2" : "mt-2"
             }`}
@@ -93,6 +104,7 @@ export default function CompactStoryRow({
           </h3>
 
           <p
+            data-wind-text=""
             className="mt-0.5 line-clamp-1 text-[0.875rem] leading-[1.5]"
             style={{ color: DISCOVER_COLORS.textSecondary }}
           >

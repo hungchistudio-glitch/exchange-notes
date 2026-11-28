@@ -64,6 +64,8 @@ export type Yumi3DFigureProps = {
   cameraRef?: MutableRefObject<YumiCamera | null>;
   /** Fired once she is live: a card drawn with her can be drawn again. */
   onLive?: () => void;
+  /** Lit as on the Cosmic deck rather than on paper (the news page's key). */
+  cosmic?: boolean;
   className?: string;
 };
 
@@ -85,6 +87,7 @@ export default function Yumi3DFigure({
   outfit,
   cameraRef,
   onLive,
+  cosmic = false,
   className,
 }: Yumi3DFigureProps) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -116,6 +119,11 @@ export default function Yumi3DFigure({
     outfitRef.current = outfit;
     if (outfit && live) sceneRef.current?.setOutfit?.(outfit);
   }, [outfit, live]);
+
+  /* Lit for the mode she is shown in, from her first frame. */
+  useEffect(() => {
+    if (live) sceneRef.current?.setCosmicLevel?.(cosmic ? 1 : 0, true);
+  }, [cosmic, live]);
 
   const reachKey = reach?.key ?? 0;
   const reachTarget = reach?.target;

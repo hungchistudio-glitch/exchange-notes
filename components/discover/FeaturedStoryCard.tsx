@@ -1,5 +1,7 @@
 "use client";
 
+import ComprehensionGauge from "@/components/discover/ComprehensionGauge";
+import { requestLaserScan } from "@/lib/discover/laserScan";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { plural } from "@/lib/i18n/format";
@@ -70,8 +72,18 @@ export default function FeaturedStoryCard({
    * shown in a language nobody asked for.
    */
   const [primaryLanguage, secondaryLanguage] = pair;
+  /* A held word: Yumi's eye scans it and its meaning comes up beside it
+     (lib/discover/laserScan.ts); the full lookup where nothing draws that. */
+  const laser = (language: typeof primaryLanguage, meaningLanguage: typeof primaryLanguage) =>
+    lookUp
+      ? (word: string, rect?: DOMRect) => {
+          if (rect && requestLaserScan({ word, rect, language, meaningLanguage, storyWords: card.vocabulary })) return;
+          lookUp(word);
+        }
+      : undefined;
 
   const accent = categoryAccent(card.category);
+  const gaugeText = `${card.titles[primaryLanguage] ?? ""} ${card.summaries[primaryLanguage] ?? ""}`;
   // Stored captions were generated from article text without seeing the photo.
   // Keep them out of both the UI and alt text, including older cached cards.
   // The adjacent headline is the accessible story entry; restore photo
@@ -122,7 +134,17 @@ export default function FeaturedStoryCard({
           />
         </div>
       ) : (
+        <>
         <EditorialMark />
+        {/*
+          How much of it the reader can already read (Chi, 2026-11-28:
+          理解度掃描儀), at the centre of the scope drawn in the corner, as
+          the reading an instrument would give there.
+        */}
+        <span className="absolute right-[58px] top-[42px] z-[1] -translate-y-1/2 translate-x-1/2">
+          <ComprehensionGauge text={gaugeText} language={primaryLanguage} copy={copy.comprehension} size="scope" />
+        </span>
+        </>
       )}
 
       {card.imageUrl && card.vocabulary.length > 0 ? (
@@ -170,6 +192,11 @@ export default function FeaturedStoryCard({
           >
             {formattedTime}
           </span>
+
+          {/* With a photo there is no scope to sit in: the small reading. */}
+          {card.imageUrl ? (
+            <ComprehensionGauge text={gaugeText} language={primaryLanguage} copy={copy.comprehension} size="sm" />
+          ) : null}
         </div>
 
         {/*
@@ -181,14 +208,14 @@ export default function FeaturedStoryCard({
           className={`mt-4 ${isAudioPlaying && audioMode === "primary" ? "" : "line-clamp-3"} text-[1.875rem] font-bold leading-[1.16] tracking-[-0.02em]`}
           style={{ color: DISCOVER_COLORS.text }}
         >
-          <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} marks={marksFor(card.titles[primaryLanguage] ?? "", getLanguage(primaryLanguage).speechTag)} onLongPressWord={lookUp} />
+          <SpokenText text={card.titles[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} marks={marksFor(card.titles[primaryLanguage] ?? "", getLanguage(primaryLanguage).speechTag)} onLongPressWord={laser(primaryLanguage, secondaryLanguage)} />
         </h2>
 
         <p
           className="mt-2.5 text-[1rem] font-medium leading-[1.55] tracking-[0.005em]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} marks={marksFor(card.titles[secondaryLanguage] ?? "", getLanguage(secondaryLanguage).speechTag)} onLongPressWord={lookUp} />
+          <SpokenText text={card.titles[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} marks={marksFor(card.titles[secondaryLanguage] ?? "", getLanguage(secondaryLanguage).speechTag)} onLongPressWord={laser(secondaryLanguage, primaryLanguage)} />
         </p>
 
         {/* Short summary */}
@@ -196,14 +223,14 @@ export default function FeaturedStoryCard({
           className={`mt-4 ${isAudioPlaying && audioMode === "primary" ? "" : "line-clamp-2"} text-[0.9375rem] leading-[1.6]`}
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} marks={marksFor(card.summaries[primaryLanguage] ?? "", getLanguage(primaryLanguage).speechTag)} onLongPressWord={lookUp} />
+          <SpokenText text={card.summaries[primaryLanguage] ?? ""} lang={getLanguage(primaryLanguage).speechTag} marks={marksFor(card.summaries[primaryLanguage] ?? "", getLanguage(primaryLanguage).speechTag)} onLongPressWord={laser(primaryLanguage, secondaryLanguage)} />
         </p>
 
         <p
           className={`mt-1 ${isAudioPlaying && audioMode === "secondary" ? "" : "line-clamp-1"} text-[0.84375rem] leading-[1.6]`}
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} marks={marksFor(card.summaries[secondaryLanguage] ?? "", getLanguage(secondaryLanguage).speechTag)} onLongPressWord={lookUp} />
+          <SpokenText text={card.summaries[secondaryLanguage] ?? ""} lang={getLanguage(secondaryLanguage).speechTag} marks={marksFor(card.summaries[secondaryLanguage] ?? "", getLanguage(secondaryLanguage).speechTag)} onLongPressWord={laser(secondaryLanguage, primaryLanguage)} />
         </p>
       </div>
 

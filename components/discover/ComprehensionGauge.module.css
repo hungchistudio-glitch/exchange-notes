@@ -1,0 +1,117 @@
+/*
+  The comprehension scanner: a thin instrument ring with tick marks and the
+  reading in a measured figure. The arc sweeps to its value once, as the
+  story comes into view, with a glint running round it; transform, opacity
+  and stroke-dashoffset only.
+*/
+.gauge {
+  --gauge-ink: #2f6f62;
+  --gauge-track: color-mix(in oklab, var(--gauge-ink) 16%, transparent);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--gauge-ink);
+}
+:global(html[data-interface-mode="yumi-cosmic"]) .gauge {
+  --gauge-ink: #b8e8e5;
+}
+
+.ring {
+  width: 26px;
+  height: 26px;
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+.gauge[data-size="sm"] .ring {
+  width: 18px;
+  height: 18px;
+}
+
+.track,
+.ticks,
+.arc {
+  fill: none;
+}
+.track {
+  stroke: var(--gauge-track);
+  stroke-width: 2.4;
+}
+.ticks {
+  stroke: color-mix(in oklab, var(--gauge-ink) 30%, transparent);
+  stroke-width: 1.6;
+  stroke-dasharray: 0.6 7.73;
+}
+.arc {
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  filter: drop-shadow(0 0 1.5px color-mix(in oklab, currentColor 55%, transparent));
+}
+.gauge[data-scanned] .arc {
+  stroke-dashoffset: calc(100 - var(--reading));
+  transition: stroke-dashoffset 1100ms cubic-bezier(0.22, 1, 0.36, 1) 120ms;
+}
+
+.figure {
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.gauge[data-size="sm"] .figure {
+  font-size: 0.625rem;
+}
+
+.caption {
+  font-size: 0.6875rem;
+  color: var(--discover-text-secondary, #6f6a62);
+  white-space: nowrap;
+}
+:global(html[data-interface-mode="yumi-cosmic"]) .caption {
+  color: #9fb4b8;
+}
+.fresh {
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gauge[data-scanned] .arc {
+    transition: none;
+  }
+}
+
+/* While the news page's arrival plays, the instrument waits at zero; it
+   switches on once the logo has landed (components/discover/NewsWind.tsx). */
+:global([data-news-wind]) .gauge[data-scanned] .arc {
+  stroke-dashoffset: 100;
+  transition: none;
+}
+
+/* In the featured card's scope: the ring larger, the reading inside it,
+   the count of new words under it. */
+.gauge[data-size="scope"] {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin: 0;
+}
+.gauge[data-size="scope"] .ring {
+  width: 46px;
+  height: 46px;
+}
+.gauge[data-size="scope"] .figure {
+  position: absolute;
+  top: 23px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+}
+.gauge[data-size="scope"] .caption {
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+}

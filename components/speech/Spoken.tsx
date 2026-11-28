@@ -217,6 +217,31 @@ function offsetAt(container: HTMLElement, x: number, y: number): number | null {
   return null;
 }
 
+/**
+ * Where the text between two offsets is drawn: the inverse of offsetAt,
+ * counting text nodes the same way. Null where it cannot be laid out.
+ */
+function rectBetween(container: HTMLElement, start: number, end: number): DOMRect | null {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const range = document.createRange();
+  let before = 0;
+  let started = false;
+  for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+    const length = text.textContent?.length ?? 0;
+    if (!started && start <= before + length) {
+      range.setStart(text, Math.max(0, start - before));
+      started = true;
+    }
+    if (started && end <= before + length) {
+      range.setEnd(text, Math.max(0, end - before));
+      const rect = range.getBoundingClientRect?.();
+      return rect && (rect.width > 0 || rect.height > 0) ? rect : null;
+    }
+    before += length;
+  }
+  return null;
+}
+
 /* ---------- following the lit word ---------- */
 
 /** The part of the screen a lit word can be read in: the viewport, inside any scrolling sheet. */
@@ -264,7 +289,8 @@ type SpokenTextProps = {
    */
   marks?: readonly TextRange[];
   /** A word held down: looked up where the reader is (Chi, 2026-11-15). */
-  onLongPressWord?: (word: string) => void;
+  /** A word held down, and where it is on screen (for an effect that points at it). */
+  onLongPressWord?: (word: string, rect?: DOMRect) => void;
   /**
    * Japanese furigana for this text, its segments' plain text being `text`
    * (useWordFurigana, useTextFurigana). Drawn whether or not it is
@@ -369,7 +395,8 @@ function SpokenTextInner({
               if (at < 0) return;
               pressed.current = true;
               window.getSelection?.()?.removeAllRanges();
-              onLongPressWord(segments[at].text);
+              const held = segments[at];
+              onLongPressWord(held.text, rectBetween(container, held.start, held.end) ?? new DOMRect(x - 12, y - 10, 24, 20));
             }, LONG_PRESS_MS),
           };
         },
