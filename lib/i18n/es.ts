@@ -821,6 +821,8 @@ const spanish: TranslationDictionary = {
         missing: "No se encontró ningún micrófono. Conecta unos auriculares o un micrófono e inténtalo de nuevo.",
         close: "Cerrar",
         yumiDeaf: "Yumi lleva orejeras: el micrófono está desactivado. Tócala para ver cómo activarlo.",
+        notSettings: "No es un ajuste: el audio del iPhone se quedó bloqueado. Recargar la página suele arreglarlo.",
+        reload: "Recargar la página",
       },
     },
 
@@ -2705,7 +2707,7 @@ const spanish: TranslationDictionary = {
     resolve: "Hecho",
     ownerRow: "Informes de lectores",
     ownerRowDescription: "{count} pendientes",
-    surfaces: { word: "Palabra", news: "Noticias", game: "Juego de palabras", lab: "Laboratorio de pronunciación" },
+    surfaces: { word: "Palabra", news: "Noticias", game: "Juego de palabras", lab: "Laboratorio de pronunciación", device: "Diagnóstico del dispositivo" },
   },
 
   settings: {
@@ -3102,6 +3104,13 @@ const spanish: TranslationDictionary = {
       hearingOffline: "Ahora no hay conexión. Prueba el reconocimiento cuando haya buena señal.",
       allGood: "¡Todo bien! La búsqueda por voz está lista.",
       howTo: "Cómo activarlo",
+      diagnosticTitle: "Código de diagnóstico",
+      diagnosticHint: "Lo que dijo el navegador al negarse y el estado del audio en ese momento.",
+      send: "Enviar diagnóstico",
+      sending: "Enviando…",
+      sent: "Enviado, ¡gracias!",
+      sendFailed: "No se pudo enviar. Haz una captura de este código.",
+      retriedNote: "Se probó automáticamente de otra forma.",
     },
     newsSource: {
       rowTitle: "La clave de The Guardian no funciona",

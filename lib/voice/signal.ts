@@ -198,7 +198,9 @@ export const voiceStage: {
    * tap is hers again (on Standard's home she is the only way to the ring).
    */
   deafTold: boolean;
-} = { phase: "idle", mic: null, deaf: false, holding: false, deafTold: false };
+  /** The browser's own words the last time a microphone would not open. */
+  lastError: { name: string; message: string; session: string | null; retried: boolean; at: number } | null;
+} = { phase: "idle", mic: null, deaf: false, holding: false, deafTold: false, lastError: null };
 
 const DEAF_KEY = "yumi-mic-deaf-v1";
 

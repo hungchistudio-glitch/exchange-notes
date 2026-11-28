@@ -1,12 +1,12 @@
 "use client";
 
-import { Check, LoaderCircle, Mic } from "lucide-react";
+import { Check, LoaderCircle, Mic, RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { MicPlatform } from "@/lib/i18n/types";
-import { detectMicPlatform, tryMicrophone } from "@/lib/voice/micAccess";
+import { audioStuck, detectMicPlatform, tryMicrophone } from "@/lib/voice/micAccess";
 
 /* =========================================================
    Where to turn the microphone on (Chi, 2026-11-27: 我不知道要去哪裡打開
@@ -29,7 +29,7 @@ const PLATFORMS: readonly MicPlatform[] = [
   "desktop-firefox",
 ];
 
-type TryState = "idle" | "trying" | "works" | "denied" | "busy" | "missing";
+type TryState = "idle" | "trying" | "works" | "denied" | "busy" | "missing" | "stuck";
 
 export function MicGuideSteps({ cosmic = false }: { cosmic?: boolean }) {
   const { t } = useTranslation();
@@ -101,7 +101,8 @@ export default function MicGuideSheet({
       closeTimer.current = setTimeout(() => { setState("idle"); onClose(); }, 1_400);
       return;
     }
-    setState(result.problem);
+    // The iPhone's audio, not a setting: the steps would not help, a reload does.
+    setState(audioStuck(result.failure) ? "stuck" : result.problem);
   };
 
   const message =
@@ -109,7 +110,8 @@ export default function MicGuideSheet({
       : state === "denied" ? copy.stillDenied
         : state === "busy" ? copy.busy
           : state === "missing" ? copy.missing
-            : null;
+            : state === "stuck" ? copy.notSettings
+              : null;
 
   return (
     <BottomSheet
@@ -123,6 +125,16 @@ export default function MicGuideSheet({
             <p role="status" className={`text-center text-sm ${state === "works" ? "text-emerald-700" : "text-[var(--accent-amber-deep)]"}`}>
               {message}
             </p>
+          ) : null}
+          {state === "stuck" ? (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-black/15 text-sm font-semibold text-ink-strong"
+            >
+              <RotateCw size={15} aria-hidden="true" />
+              {copy.reload}
+            </button>
           ) : null}
           <button
             type="button"

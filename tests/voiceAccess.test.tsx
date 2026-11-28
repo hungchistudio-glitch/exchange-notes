@@ -1,4 +1,4 @@
-import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import english from "@/lib/i18n/en";
@@ -95,6 +95,8 @@ describe("a microphone that will not open", () => {
     const { result } = renderHook(() => useVoiceInput({ lang: "en-US", onResult: vi.fn(), onAudio: vi.fn() }));
 
     await act(async () => { result.current.start(); });
+    // It asks a second way first, a quarter of a second later (lib/audio/session.ts).
+    await act(async () => { await vi.advanceTimersByTimeAsync(300); });
     expect(result.current.notice).toBe("mic-denied");
     expect(voiceStage.deaf).toBe(true);
 
@@ -107,7 +109,7 @@ describe("a microphone that will not open", () => {
     stubBrowser(async () => { throw Object.assign(new Error("held"), { name: "NotReadableError" }); });
     const { result } = renderHook(() => useVoiceInput({ lang: "en-US", onResult: vi.fn(), onAudio: vi.fn() }));
     await act(async () => { result.current.start(); });
-    expect(result.current.notice).toBe("mic-busy");
+    await waitFor(() => expect(result.current.notice).toBe("mic-busy"));
     expect(voiceStage.deaf).toBe(false);
   });
 

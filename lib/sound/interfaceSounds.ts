@@ -23,6 +23,7 @@
    ========================================================= */
 
 import type { InterfaceMode } from "@/lib/appPreferences";
+import { preferAudioSession } from "@/lib/audio/session";
 
 export const INTERFACE_SOUNDS_KEY = "interface-sounds";
 /** Fired when the switch moves, so every reader of it hears at once. */
@@ -72,14 +73,9 @@ let noise: AudioBuffer | null = null;
 /** Call inside a tap: makes or wakes the context. Off, it touches no audio. */
 export function unlockInterfaceSounds() {
   if (!allowedHere()) return;
-  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
-  if (session && session.type !== "ambient") {
-    try {
-      session.type = "ambient";
-    } catch {
-      // Older Safari: Web Audio is ambient there already.
-    }
-  }
+  // Ambient keeps to the silent switch; never while a microphone is open,
+  // where it would leave no input (lib/audio/session.ts).
+  preferAudioSession("ambient");
   const Constructor = window.AudioContext
     ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Constructor) return;

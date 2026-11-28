@@ -5,6 +5,7 @@ import { tidyChinese } from "@/lib/chinese/tidyChinese";
 import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import { stopSpeech } from "@/lib/speech";
 import { isOnline, isWeakSignal, subscribeNetwork } from "@/hooks/useOnline";
+import { audioSessionType, beginCapture, reassertCapture } from "@/lib/audio/session";
 import {
   createBandReader,
   levelFromRms,
@@ -321,6 +322,8 @@ export default function useVoiceInput({
     words: string;
     /** The phone's own recogniser answering for a weak signal. */
     local: boolean;
+    /** Hands the audio session back (lib/audio/session.ts). */
+    endCapture: (() => void) | null;
   };
   const sessionRef = useRef<Session | null>(null);
   const onResultRef = useRef(onResult);
@@ -426,6 +429,8 @@ export default function useVoiceInput({
 
   const release = useCallback((session: Session) => {
     session.stopped = true;
+    session.endCapture?.();
+    session.endCapture = null;
     if (session.timer) { clearTimeout(session.timer); session.timer = null; }
     if (session.frame !== null) { cancelAnimationFrame(session.frame); session.frame = null; }
     session.stopMeter?.();
@@ -678,6 +683,12 @@ export default function useVoiceInput({
     // A pronunciation still playing would be recorded as the reader's words,
     // and on iOS it holds the audio session the microphone is about to need.
     stopSpeech();
+    // In the tap, before anything asks for the microphone: a session the
+    // sounds left "ambient" or a speaker left "playback" has no input on an
+    // iPhone, whatever Settings allows (lib/audio/session.ts; Chi,
+    // 2026-11-27: Allow 了還是不行).
+    const sessionBefore = audioSessionType();
+    const endCapture = beginCapture();
     if (recording) onStartRef.current?.();
 
     const session: Session = {
@@ -699,6 +710,7 @@ export default function useVoiceInput({
       hold,
       words: "",
       local,
+      endCapture,
     };
     sessionRef.current = session;
     const current = () => sessionRef.current === session && !session.cancelled;
@@ -750,7 +762,16 @@ export default function useVoiceInput({
         // Recording: the recogniser only captions, and the recording carries
         // on without it — no caption is not a failure worth reporting.
         if (recording) return;
-        if (event.error === "not-allowed" || event.error === "service-not-allowed") showNotice("mic-denied");
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          voiceStage.lastError = {
+            name: `SpeechRecognition:${event.error}`,
+            message: "",
+            session: sessionBefore === null ? null : `${sessionBefore}→${audioSessionType()}`,
+            retried: false,
+            at: Date.now(),
+          };
+          showNotice("mic-denied");
+        }
         else if (event.error === "audio-capture") showNotice("mic-busy");
         else if (event.error === "network" && session.local) showNotice("unavailable");
         else if (event.error !== "aborted" && event.error !== "no-speech") console.error("Speech recognition failed:", event.error);
@@ -791,12 +812,17 @@ export default function useVoiceInput({
         } catch { session.audioContext = null; }
       }
 
-      void navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      const opened = (stream: MediaStream) => {
         // Permission can arrive after Stop, navigation, or another recording.
         if (!current() || session.stopped) { stream.getTracks().forEach(track => track.stop()); return; }
         session.stream = stream;
         // She hears again: the earmuffs come off.
         if (voiceStage.deaf) setVoiceDeaf(false);
+        // A second try left no meter of ours open; one now, with the
+        // microphone live (which is what lets iOS start it outside a tap).
+        if (!session.audioContext && Context) {
+          try { session.audioContext = new Context(); } catch { session.audioContext = null; }
+        }
         const recorder = createRecorder(stream);
         session.recorder = recorder;
         recorder.ondataavailable = event => { if (event.data.size > 0) session.chunks.push(event.data); };
@@ -811,14 +837,40 @@ export default function useVoiceInput({
         // read zeros and never hear the speaker finish.
         void session.audioContext?.resume?.().catch(() => undefined);
         meter(session, stream);
-      }).catch(error => {
+      };
+      const refused = (error: unknown, retried: boolean) => {
         if (!current()) return;
+        voiceStage.lastError = {
+          name: String((error as { name?: unknown } | null)?.name ?? "Error"),
+          message: String((error as { message?: unknown } | null)?.message ?? "").slice(0, 160),
+          session: sessionBefore === null ? null : `${sessionBefore}→${audioSessionType()}`,
+          retried,
+          at: Date.now(),
+        };
         try { recognition?.abort(); } catch { /* Already ended. */ }
         release(session);
         sessionRef.current = null;
         setPhase("idle");
         setCaption("");
         showNotice(micNoticeFor(error));
+      };
+      void navigator.mediaDevices.getUserMedia({ audio: true }).then(opened, error => {
+        if (!current() || session.stopped) return;
+        /*
+         * Asked another way, once (Chi, 2026-11-27: 自動換方式重試). A refusal
+         * that arrives at once is as often the audio session as the reader:
+         * the record session is asked for again, our own meter's context is
+         * closed so nothing of ours holds the audio, and a quarter of a
+         * second later the microphone is asked for again.
+         */
+        void session.audioContext?.close().catch(() => undefined);
+        session.audioContext = null;
+        reassertCapture();
+        setTimeout(() => {
+          if (!current() || session.stopped) return;
+          navigator.mediaDevices.getUserMedia({ audio: true }).then(opened, second => refused(second, true));
+        }, 250);
+        void error;
       });
     }
 

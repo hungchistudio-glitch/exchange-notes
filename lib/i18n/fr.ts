@@ -816,6 +816,8 @@ const french: TranslationDictionary = {
         missing: "Aucun micro trouvé. Branchez un casque ou un micro et réessayez.",
         close: "Fermer",
         yumiDeaf: "Yumi a mis ses cache-oreilles : le micro est désactivé. Touchez-la pour savoir comment l’activer.",
+        notSettings: "Ce n’est pas un réglage : le son de l’iPhone est bloqué. Recharger la page règle souvent le problème.",
+        reload: "Recharger la page",
       },
     },
 
@@ -2565,7 +2567,7 @@ const french: TranslationDictionary = {
     resolve: "Traité",
     ownerRow: "Signalements des lecteurs",
     ownerRowDescription: "{count} en attente",
-    surfaces: { word: "Mot", news: "Actualités", game: "Jeu de mots", lab: "Laboratoire de prononciation" },
+    surfaces: { word: "Mot", news: "Actualités", game: "Jeu de mots", lab: "Laboratoire de prononciation", device: "Diagnostic de l’appareil" },
   },
 
   settings: {
@@ -2892,6 +2894,13 @@ const french: TranslationDictionary = {
       hearingOffline: "Pas de connexion pour l’instant. Réessayez la reconnaissance avec un bon signal.",
       allGood: "Tout va bien ! La recherche vocale est prête.",
       howTo: "Comment l’activer",
+      diagnosticTitle: "Code de diagnostic",
+      diagnosticHint: "Ce que le navigateur a répondu en refusant, et l’état du son à ce moment-là.",
+      send: "Envoyer le diagnostic",
+      sending: "Envoi…",
+      sent: "Envoyé, merci !",
+      sendFailed: "Envoi impossible. Faites une capture d’écran de ce code.",
+      retriedNote: "Une autre méthode a été essayée automatiquement.",
     },
     newsSource: {
       rowTitle: "La clé du Guardian ne fonctionne plus",

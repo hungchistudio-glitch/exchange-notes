@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { useReloadHold } from "@/lib/pwa/reloadHolds";
+import { beginCapture, reassertCapture } from "@/lib/audio/session";
 import { meterStream } from "@/lib/voice/signal";
 
 import {
@@ -72,6 +73,8 @@ export default function useRecorder(): RecorderControls {
   const mountedRef = useRef(true);
   const generationRef = useRef(0);
   const meterRef = useRef<{ context: AudioContext | null; stop: (() => void) | null }>({ context: null, stop: null });
+  /* Hands the audio session back once the microphone closes (lib/audio/session.ts). */
+  const endCaptureRef = useRef<(() => void) | null>(null);
 
   const releaseStream = useCallback(() => {
     generationRef.current += 1;
@@ -103,6 +106,8 @@ export default function useRecorder(): RecorderControls {
     // off.
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    endCaptureRef.current?.();
+    endCaptureRef.current = null;
   }, []);
 
   const revokeClip = useCallback(() => {
@@ -160,15 +165,29 @@ export default function useRecorder(): RecorderControls {
     revokeClip();
     dispatch({ type: "request" });
     const generation = generationRef.current;
+    // In the tap, before the meter and the microphone: the record session.
+    // A speaker or the interface's ticks may have left it in one with no
+    // input on an iPhone (Chi, 2026-11-27).
+    const endCapture = beginCapture();
+    endCaptureRef.current = endCapture;
     const meterContext = audioContext();
     meterRef.current.context = meterContext;
 
     let stream: MediaStream;
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch {
+        // Asked another way, once: the session asked for afresh, a moment later.
+        reassertCapture();
+        await new Promise(resolve => setTimeout(resolve, 250));
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
     } catch (error) {
       void meterContext?.close().catch(() => undefined);
+      endCapture();
+      if (endCaptureRef.current === endCapture) endCaptureRef.current = null;
       if (!mountedRef.current || generation !== generationRef.current) return false;
 
       const name = error instanceof DOMException ? error.name : "";

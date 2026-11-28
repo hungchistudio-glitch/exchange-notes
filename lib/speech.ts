@@ -1,3 +1,4 @@
+import { preferAudioSession } from "@/lib/audio/session";
 import {
   SPEECH_TAGS,
   getLanguageBySpeechTag,
@@ -644,12 +645,8 @@ let silence: HTMLAudioElement | null = null;
  */
 export function preferPlaybackAudio(): void {
   if (!isAppleTouchDevice()) return;
-  try {
-    const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
-    if (session && session.type !== "playback") session.type = "playback";
-  } catch {
-    /* An older Safari: the clip below is the other way in. */
-  }
+  // Not while a microphone is open: playback has no input (lib/audio/session.ts).
+  preferAudioSession("playback");
   try {
     if (!silence) {
       silence = new Audio(URL.createObjectURL(silentWav()));

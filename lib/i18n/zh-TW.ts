@@ -816,6 +816,8 @@ const traditionalChinese: TranslationDictionary = {
         missing: "找不到麥克風。接上耳機或麥克風後再試一次。",
         close: "關閉",
         yumiDeaf: "Yumi 戴上了耳罩：麥克風被關掉了。點她看怎麼打開。",
+        notSettings: "這次不是設定的問題：iPhone 的音訊系統卡住了，重新載入頁面通常就會好。",
+        reload: "重新載入頁面",
       },
     },
 
@@ -2671,7 +2673,7 @@ const traditionalChinese: TranslationDictionary = {
     resolve: "已處理",
     ownerRow: "讀者回報",
     ownerRowDescription: "{count} 則待處理",
-    surfaces: { word: "單字", news: "新聞", game: "文字遊戲", lab: "發音實驗室" },
+    surfaces: { word: "單字", news: "新聞", game: "文字遊戲", lab: "發音實驗室", device: "裝置診斷" },
   },
 
   settings: {
@@ -3064,6 +3066,13 @@ const traditionalChinese: TranslationDictionary = {
       hearingOffline: "現在連不上網路，辨識這一步等訊號好再試。",
       allGood: "都正常！可以直接用語音查詢了。",
       howTo: "怎麼開啟？",
+      diagnosticTitle: "診斷碼",
+      diagnosticHint: "瀏覽器拒絕時的原話，以及當下的音訊狀態。",
+      send: "傳送診斷",
+      sending: "傳送中…",
+      sent: "已傳送，謝謝！",
+      sendFailed: "傳送失敗，請截圖這段診斷碼。",
+      retriedNote: "已自動換一種方式再試一次。",
     },
     newsSource: {
       rowTitle: "Guardian 金鑰失效",

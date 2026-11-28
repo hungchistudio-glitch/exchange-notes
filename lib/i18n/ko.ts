@@ -768,6 +768,8 @@ const korean: TranslationDictionary = {
         missing: "마이크를 찾을 수 없어요. 이어폰이나 마이크를 연결하고 다시 시도해 주세요.",
         close: "닫기",
         yumiDeaf: "Yumi가 귀마개를 했어요: 마이크가 꺼져 있어요. 눌러서 켜는 방법을 확인하세요.",
+        notSettings: "설정 문제가 아니에요. iPhone의 오디오가 멈췄어요. 페이지를 새로 고치면 대개 해결돼요.",
+        reload: "페이지 새로 고침",
       },
     },
     insight: {
@@ -2491,7 +2493,7 @@ const korean: TranslationDictionary = {
     resolve: "처리함",
     ownerRow: "독자 신고",
     ownerRowDescription: "처리 대기 {count}건",
-    surfaces: { word: "단어", news: "뉴스", game: "단어 게임", lab: "발음 연구실" },
+    surfaces: { word: "단어", news: "뉴스", game: "단어 게임", lab: "발음 연구실", device: "기기 진단" },
   },
 
   settings: {
@@ -2814,6 +2816,13 @@ const korean: TranslationDictionary = {
       hearingOffline: "지금은 연결이 안 돼요. 신호가 좋을 때 인식 단계를 다시 해 보세요.",
       allGood: "모두 정상이에요! 음성 검색을 바로 쓸 수 있어요.",
       howTo: "켜는 방법",
+      diagnosticTitle: "진단 코드",
+      diagnosticHint: "브라우저가 거부할 때 남긴 메시지와 그때의 오디오 상태예요.",
+      send: "진단 보내기",
+      sending: "보내는 중…",
+      sent: "보냈어요. 고마워요!",
+      sendFailed: "보내지 못했어요. 이 코드를 스크린샷으로 남겨 주세요.",
+      retriedNote: "자동으로 다른 방법으로도 시도했어요.",
     },
     newsSource: {
       rowTitle: "The Guardian 키가 작동하지 않아요",

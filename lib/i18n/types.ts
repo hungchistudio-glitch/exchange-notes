@@ -814,6 +814,9 @@ export type TranslationDictionary = {
         close: string;
         /** Yumi's own label while she wears her earmuffs. */
         yumiDeaf: string;
+        /** When the refusal is the iPhone's audio, not a setting (WebKit bug 319706). */
+        notSettings: string;
+        reload: string;
       };
     };
 
@@ -2609,7 +2612,7 @@ export type TranslationDictionary = {
     resolve: string;
     ownerRow: string;
     ownerRowDescription: string;
-    surfaces: { word: string; news: string; game: string; lab: string };
+    surfaces: { word: string; news: string; game: string; lab: string; device: string };
   };
 
   settings: {
@@ -2983,6 +2986,14 @@ export type TranslationDictionary = {
       hearingOffline: string;
       allGood: string;
       howTo: string;
+      /** The browser's own words for a refusal, and sending them to the owner (/reports). */
+      diagnosticTitle: string;
+      diagnosticHint: string;
+      send: string;
+      sending: string;
+      sent: string;
+      sendFailed: string;
+      retriedNote: string;
     };
     /**
      * Shown only to the app's owner, when the Guardian refuses the news's key

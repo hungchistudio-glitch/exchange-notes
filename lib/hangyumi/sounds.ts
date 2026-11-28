@@ -11,6 +11,8 @@
    phone on silent stays silent.
    ========================================================= */
 
+import { preferAudioSession } from "@/lib/audio/session";
+
 const STORAGE_KEY = "hangyumi-sound";
 
 type Context = AudioContext;
@@ -39,14 +41,8 @@ export function unlockSounds() {
   if (typeof window === "undefined" || !soundsOn()) return;
   // Safari 17+: an ambient session mixes with other audio and keeps to
   // the silent switch.
-  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
-  if (session && session.type !== "ambient") {
-    try {
-      session.type = "ambient";
-    } catch {
-      // Older Safari: Web Audio is ambient there already.
-    }
-  }
+  // Never while a microphone is open, where ambient leaves no input.
+  preferAudioSession("ambient");
   const Constructor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Constructor) return;
   try {

@@ -768,6 +768,8 @@ const japanese: TranslationDictionary = {
         missing: "マイクが見つかりません。イヤホンやマイクをつないでお試しください。",
         close: "閉じる",
         yumiDeaf: "Yumi が耳あてをしています：マイクがオフです。タップするとオンにする方法が見られます。",
+        notSettings: "設定の問題ではありません。iPhone の音声が止まっています。ページを再読み込みすると、たいてい直ります。",
+        reload: "ページを再読み込み",
       },
     },
     insight: {
@@ -2491,7 +2493,7 @@ const japanese: TranslationDictionary = {
     resolve: "対応済み",
     ownerRow: "読者からの報告",
     ownerRowDescription: "未対応 {count} 件",
-    surfaces: { word: "単語", news: "ニュース", game: "言葉のゲーム", lab: "発音ラボ" },
+    surfaces: { word: "単語", news: "ニュース", game: "言葉のゲーム", lab: "発音ラボ", device: "端末の診断" },
   },
 
   settings: {
@@ -2814,6 +2816,13 @@ const japanese: TranslationDictionary = {
       hearingOffline: "いまはつながりません。電波のよいときに認識の手順をお試しください。",
       allGood: "すべて正常です！音声検索が使えます。",
       howTo: "オンにする方法",
+      diagnosticTitle: "診断コード",
+      diagnosticHint: "ブラウザが拒否したときのメッセージと、その時の音声の状態です。",
+      send: "診断を送信",
+      sending: "送信中…",
+      sent: "送信しました。ありがとうございます！",
+      sendFailed: "送信できませんでした。このコードのスクリーンショットを撮ってください。",
+      retriedNote: "自動で別の方法でも試しました。",
     },
     newsSource: {
       rowTitle: "The Guardian のキーが使えません",
